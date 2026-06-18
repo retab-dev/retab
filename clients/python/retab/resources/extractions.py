@@ -116,6 +116,7 @@ class ExtractionsMixin:
         stream: bool = False,
         background: bool = False,
         chunking_keys: dict[str, str] | None = None,
+        image_resolution_dpi: int | None = None,
         **extra_params: Any,
     ) -> PreparedRequest:
         """Create Extraction Run a structured extraction on a document. Extracts structured data from the `document` according to the supplied `json_schema`, using the requested `model`. Returns the extraction with its `output`, consensus details, and usage on `201`. When `stream` is `true`, partial results are streamed back as they are produced."""
@@ -138,6 +139,7 @@ class ExtractionsMixin:
             stream=cast(Any, stream),
             background=cast(Any, background),
             chunking_keys=cast(Any, chunking_keys),
+            image_resolution_dpi=cast(Any, image_resolution_dpi),
         )
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/extractions", params=params or None, data=data)
@@ -155,6 +157,7 @@ class ExtractionsMixin:
         stream: bool = False,
         background: bool = False,
         chunking_keys: dict[str, str] | None = None,
+        image_resolution_dpi: int | None = None,
         **extra_params: Any,
     ) -> PreparedRequest:
         """Create Extraction Stream Run a structured extraction on a document and stream partial results as they are produced."""
@@ -177,6 +180,7 @@ class ExtractionsMixin:
             stream=cast(Any, stream),
             background=cast(Any, background),
             chunking_keys=cast(Any, chunking_keys),
+            image_resolution_dpi=cast(Any, image_resolution_dpi),
         )
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/extractions/stream", params=params or None, data=data)
@@ -270,6 +274,7 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
         stream: bool = False,
         background: bool = False,
         chunking_keys: dict[str, str] | None = None,
+        image_resolution_dpi: int | None = None,
         **extra_params: Any,
     ) -> Extraction:
         """Create Extraction Run a structured extraction on a document. Extracts structured data from the `document` according to the supplied `json_schema`, using the requested `model`. Returns the extraction with its `output`, consensus details, and usage on `201`. When `stream` is `true`, partial results are streamed back as they are produced."""
@@ -288,6 +293,7 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
             stream=stream,
             background=background,
             chunking_keys=chunking_keys,
+            image_resolution_dpi=image_resolution_dpi,
             **extra_params,
         )
         response = self._client._prepared_request(prepared_request)
@@ -306,6 +312,7 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
         stream: bool = False,
         background: bool = False,
         chunking_keys: dict[str, str] | None = None,
+        image_resolution_dpi: int | None = None,
         **extra_params: Any,
     ) -> Any:
         """Create Extraction Stream Run a structured extraction on a document and stream partial results as they are produced."""
@@ -324,6 +331,7 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
             stream=stream,
             background=background,
             chunking_keys=chunking_keys,
+            image_resolution_dpi=image_resolution_dpi,
             **extra_params,
         )
         response = self._client._prepared_request(prepared_request)
@@ -404,6 +412,7 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
         stream: bool = False,
         background: bool = False,
         chunking_keys: dict[str, str] | None = None,
+        image_resolution_dpi: int | None = None,
         **extra_params: Any,
     ) -> Extraction:
         """Create Extraction Run a structured extraction on a document. Extracts structured data from the `document` according to the supplied `json_schema`, using the requested `model`. Returns the extraction with its `output`, consensus details, and usage on `201`. When `stream` is `true`, partial results are streamed back as they are produced."""
@@ -422,6 +431,7 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
             stream=stream,
             background=background,
             chunking_keys=chunking_keys,
+            image_resolution_dpi=image_resolution_dpi,
             **extra_params,
         )
         response = await self._client._prepared_request(prepared_request)
@@ -440,6 +450,7 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
         stream: bool = False,
         background: bool = False,
         chunking_keys: dict[str, str] | None = None,
+        image_resolution_dpi: int | None = None,
         **extra_params: Any,
     ) -> Any:
         """Create Extraction Stream Run a structured extraction on a document and stream partial results as they are produced."""
@@ -458,6 +469,7 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
             stream=stream,
             background=background,
             chunking_keys=chunking_keys,
+            image_resolution_dpi=image_resolution_dpi,
             **extra_params,
         )
         response = await self._client._prepared_request(prepared_request)

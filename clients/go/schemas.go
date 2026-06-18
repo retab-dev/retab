@@ -18,17 +18,19 @@ type SchemasGenerateParams struct {
 	Model        *string `json:"model,omitempty" url:"-"`
 	Instructions *string `json:"instructions,omitempty" url:"-"`
 	// Background is if true, run asynchronously: returns immediately with status 'queued'. Poll GET /v1/schemas/generate/{schema_generation_id} until status is terminal.
-	Background *bool `json:"background,omitempty" url:"-"`
+	Background         *bool `json:"background,omitempty" url:"-"`
+	ImageResolutionDpi *int  `json:"image_resolution_dpi,omitempty" url:"-"`
 }
 
 // Generate schema From Examples
 // Generates a JSON Schema from scratch by inferring structure from the content of the provided example documents.
 func (s *SchemaService) Generate(ctx context.Context, params *SchemasGenerateParams, opts ...RequestOption) (*SchemaGeneration, error) {
 	type generateWireBody struct {
-		Documents    []MIMEData `json:"documents"`
-		Model        *string    `json:"model,omitempty"`
-		Instructions *string    `json:"instructions,omitempty"`
-		Background   *bool      `json:"background,omitempty"`
+		Documents          []MIMEData `json:"documents"`
+		Model              *string    `json:"model,omitempty"`
+		Instructions       *string    `json:"instructions,omitempty"`
+		Background         *bool      `json:"background,omitempty"`
+		ImageResolutionDpi *int       `json:"image_resolution_dpi,omitempty"`
 	}
 	if params == nil {
 		return nil, fmt.Errorf("retab: params is required")
@@ -54,10 +56,11 @@ func (s *SchemaService) Generate(ctx context.Context, params *SchemasGeneratePar
 		}
 	}
 	body := generateWireBody{
-		Documents:    coercedDocuments,
-		Model:        params.Model,
-		Instructions: params.Instructions,
-		Background:   params.Background,
+		Documents:          coercedDocuments,
+		Model:              params.Model,
+		Instructions:       params.Instructions,
+		Background:         params.Background,
+		ImageResolutionDpi: params.ImageResolutionDpi,
 	}
 	var result SchemaGeneration
 	_, err := s.client.request(ctx, "POST", "/v1/schemas/generate", nil, body, &result, opts)

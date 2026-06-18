@@ -18,6 +18,7 @@ readonly class GenerateSchemaRequest implements \JsonSerializable
         public ?string $instructions = null,
         /** If true, run asynchronously: returns immediately with status 'queued'. Poll GET /v1/schemas/generate/{schema_generation_id} until status is terminal. */
         public ?bool $background = null,
+        public ?int $imageResolutionDpi = null,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -35,6 +36,7 @@ readonly class GenerateSchemaRequest implements \JsonSerializable
             model: $data['model'] ?? null,
             instructions: $data['instructions'] ?? null,
             background: $data['background'] ?? null,
+            imageResolutionDpi: $data['image_resolution_dpi'] ?? null,
         );
     }
 
@@ -46,6 +48,7 @@ readonly class GenerateSchemaRequest implements \JsonSerializable
             'model' => $this->model,
             'instructions' => $this->instructions,
             'background' => $this->background,
+            'image_resolution_dpi' => $this->imageResolutionDpi,
         ];
     }
 }

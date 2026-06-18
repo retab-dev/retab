@@ -41,6 +41,7 @@ class ParseRequest(BaseModel):
         default=False,
         description="If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.",
     )
+    image_resolution_dpi: int | None = None
 
 
 class Parse(BaseModel):

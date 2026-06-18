@@ -102,7 +102,8 @@ public final class ExtractionsApi {
         request == null ? null : request.isBustCache(),
         request == null ? null : request.isStream(),
         request == null ? null : request.isBackground(),
-        request == null ? null : request.getChunkingKeys());
+        request == null ? null : request.getChunkingKeys(),
+        request == null ? null : request.getImageResolutionDpi());
   }
 
   public Extraction create(
@@ -116,7 +117,8 @@ public final class ExtractionsApi {
       Boolean bustCache,
       Boolean stream,
       Boolean background,
-      Map<String, String> chunkingKeys)
+      Map<String, String> chunkingKeys,
+      Long imageResolutionDpi)
       throws IOException, InterruptedException {
     String path = "/v1/extractions";
     StringBuilder query = new StringBuilder();
@@ -151,6 +153,9 @@ public final class ExtractionsApi {
     if (chunkingKeys != null) {
       body.put("chunking_keys", chunkingKeys);
     }
+    if (imageResolutionDpi != null) {
+      body.put("image_resolution_dpi", imageResolutionDpi);
+    }
     String requestBody = client.getObjectMapper().writeValueAsString(body);
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);
     HttpRequest.Builder requestBuilder =
@@ -182,7 +187,8 @@ public final class ExtractionsApi {
         request == null ? null : request.isBustCache(),
         request == null ? null : request.isStream(),
         request == null ? null : request.isBackground(),
-        request == null ? null : request.getChunkingKeys());
+        request == null ? null : request.getChunkingKeys(),
+        request == null ? null : request.getImageResolutionDpi());
   }
 
   public Object createStream(
@@ -196,7 +202,8 @@ public final class ExtractionsApi {
       Boolean bustCache,
       Boolean stream,
       Boolean background,
-      Map<String, String> chunkingKeys)
+      Map<String, String> chunkingKeys,
+      Long imageResolutionDpi)
       throws IOException, InterruptedException {
     String path = "/v1/extractions/stream";
     StringBuilder query = new StringBuilder();
@@ -230,6 +237,9 @@ public final class ExtractionsApi {
     }
     if (chunkingKeys != null) {
       body.put("chunking_keys", chunkingKeys);
+    }
+    if (imageResolutionDpi != null) {
+      body.put("image_resolution_dpi", imageResolutionDpi);
     }
     String requestBody = client.getObjectMapper().writeValueAsString(body);
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);

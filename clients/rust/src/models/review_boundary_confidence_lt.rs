@@ -5,7 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
-/// Gate when any split boundary's confidence is below `threshold`.
+/// Gate when any split consensus boundary likelihood is below `threshold`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReviewBoundaryConfidenceLt {
     /// Defaults to `boundary_confidence_lt`.

@@ -31,10 +31,11 @@ module Retab
         file_id: String,
         intent: T.nilable(String),
         background: T.nilable(T::Boolean),
+        mode: T.nilable(String),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::FileBlueprint)
     end
-    def create_blueprint(file_id:, intent:, background:, request_options:); end
+    def create_blueprint(file_id:, intent:, background:, mode:, request_options:); end
 
     sig do
       params(

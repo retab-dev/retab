@@ -80,6 +80,7 @@ module Retab
     # @param instructions [String, nil] Free-form instructions appended to the system prompt to steer the parse.
     # @param bust_cache [Boolean, nil] If true, skip the LLM cache and force a fresh completion
     # @param background [Boolean, nil] If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
+    # @param image_resolution_dpi [Integer, nil]
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::Parse]
     def create(
@@ -89,6 +90,7 @@ module Retab
       instructions: nil,
       bust_cache: nil,
       background: nil,
+      image_resolution_dpi: nil,
       request_options: {}
     )
       document = Retab::MimeData.coerce(document, client: @client) unless document.nil?
@@ -98,7 +100,8 @@ module Retab
         "table_parsing_format" => table_parsing_format,
         "instructions" => instructions,
         "bust_cache" => bust_cache,
-        "background" => background
+        "background" => background,
+        "image_resolution_dpi" => image_resolution_dpi
       }.compact
       response = @client.request(
         method: :post,

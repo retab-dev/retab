@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "java",
-  "generatedAt": "2026-06-18T14:25:50.633Z",
+  "generatedAt": "2026-06-18T15:12:25.394Z",
   "files": [
     "build.gradle.kts",
     "checkstyle.xml",
@@ -334,6 +334,7 @@
     "src/main/java/com/retab/types/ConditionEvaluationDetailsLogicalOperator.java",
     "src/main/java/com/retab/types/ConditionEvaluationResultLogicalOperator.java",
     "src/main/java/com/retab/types/CreateExperimentRequestNConsensus.java",
+    "src/main/java/com/retab/types/CreateFileBlueprintRequestMode.java",
     "src/main/java/com/retab/types/DeclarativeApplyResponseAction.java",
     "src/main/java/com/retab/types/DeclarativePlanFieldChangeAction.java",
     "src/main/java/com/retab/types/DeclarativePlanResourceChangeActions.java",
@@ -359,6 +360,7 @@
     "src/main/java/com/retab/types/ExtractionWorkflowArtifactStatus.java",
     "src/main/java/com/retab/types/ExtractionsStatus.java",
     "src/main/java/com/retab/types/FieldType.java",
+    "src/main/java/com/retab/types/FileBlueprintMode.java",
     "src/main/java/com/retab/types/FileBlueprintStatus.java",
     "src/main/java/com/retab/types/LatestBlockTestRunSummaryOutcome.java",
     "src/main/java/com/retab/types/LatestBlockTestRunSummaryStatus.java",

@@ -18,6 +18,7 @@ readonly class CreateFileBlueprintRequest implements \JsonSerializable
         public ?string $intent = null,
         /** If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream. */
         public ?bool $background = null,
+        public ?FileBlueprintMode $mode = null,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -34,6 +35,7 @@ readonly class CreateFileBlueprintRequest implements \JsonSerializable
             fileId: $data['file_id'],
             intent: $data['intent'] ?? null,
             background: $data['background'] ?? null,
+            mode: isset($data['mode']) ? FileBlueprintMode::from($data['mode']) : null,
         );
     }
 
@@ -44,6 +46,7 @@ readonly class CreateFileBlueprintRequest implements \JsonSerializable
             'file_id' => $this->fileId,
             'intent' => $this->intent,
             'background' => $this->background,
+            'mode' => $this->mode?->value,
         ];
     }
 }

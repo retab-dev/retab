@@ -92,18 +92,21 @@ module Retab
     # @param file_id [String] File id to analyze.
     # @param intent [String, nil] Optional user intent used to guide the blueprint analysis.
     # @param background [Boolean, nil] If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
+    # @param mode [Retab::Types::CreateFileBlueprintRequestMode, nil]
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::FileBlueprint]
     def create_blueprint(
       file_id:,
       intent: nil,
       background: nil,
+      mode: nil,
       request_options: {}
     )
       body = {
         "file_id" => file_id,
         "intent" => intent,
-        "background" => background
+        "background" => background,
+        "mode" => mode
       }.compact
       response = @client.request(
         method: :post,

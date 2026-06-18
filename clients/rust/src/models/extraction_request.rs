@@ -48,6 +48,8 @@ pub struct ExtractionRequest {
     pub background: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub chunking_keys: Option<std::collections::HashMap<String, String>>,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub image_resolution_dpi: Option<i64>,
 }
 impl ExtractionRequest {
     /// Construct a new `ExtractionRequest` with the required fields set.
@@ -68,6 +70,7 @@ impl ExtractionRequest {
             stream: Default::default(),
             background: Default::default(),
             chunking_keys: Default::default(),
+            image_resolution_dpi: Default::default(),
         }
     }
 }

@@ -100,6 +100,7 @@ class ParsesMixin:
         instructions: str | None = None,
         bust_cache: bool = False,
         background: bool = False,
+        image_resolution_dpi: int | None = None,
         **extra_params: Any,
     ) -> PreparedRequest:
         """Create Parse Create a parse. Extracts the full text of a `document` into per-page and concatenated text using the chosen `model`. Tables are rendered in the requested `table_parsing_format`, and optional `instructions` steer the parse. Returns the stored `Parse` with its `output` and `usage`, and responds with `201`."""
@@ -117,6 +118,7 @@ class ParsesMixin:
             instructions=cast(Any, instructions),
             bust_cache=cast(Any, bust_cache),
             background=cast(Any, background),
+            image_resolution_dpi=cast(Any, image_resolution_dpi),
         )
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/parses", params=params or None, data=data)
@@ -177,6 +179,7 @@ class Parses(SyncAPIResource, ParsesMixin):
         instructions: str | None = None,
         bust_cache: bool = False,
         background: bool = False,
+        image_resolution_dpi: int | None = None,
         **extra_params: Any,
     ) -> Parse:
         """Create Parse Create a parse. Extracts the full text of a `document` into per-page and concatenated text using the chosen `model`. Tables are rendered in the requested `table_parsing_format`, and optional `instructions` steer the parse. Returns the stored `Parse` with its `output` and `usage`, and responds with `201`."""
@@ -190,6 +193,7 @@ class Parses(SyncAPIResource, ParsesMixin):
             instructions=instructions,
             bust_cache=bust_cache,
             background=background,
+            image_resolution_dpi=image_resolution_dpi,
             **extra_params,
         )
         response = self._client._prepared_request(prepared_request)
@@ -240,6 +244,7 @@ class AsyncParses(AsyncAPIResource, ParsesMixin):
         instructions: str | None = None,
         bust_cache: bool = False,
         background: bool = False,
+        image_resolution_dpi: int | None = None,
         **extra_params: Any,
     ) -> Parse:
         """Create Parse Create a parse. Extracts the full text of a `document` into per-page and concatenated text using the chosen `model`. Tables are rendered in the requested `table_parsing_format`, and optional `instructions` steer the parse. Returns the stored `Parse` with its `output` and `usage`, and responds with `201`."""
@@ -253,6 +258,7 @@ class AsyncParses(AsyncAPIResource, ParsesMixin):
             instructions=instructions,
             bust_cache=bust_cache,
             background=background,
+            image_resolution_dpi=image_resolution_dpi,
             **extra_params,
         )
         response = await self._client._prepared_request(prepared_request)

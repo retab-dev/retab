@@ -5,7 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
-/// Gate when (top1_prob - top2_prob) < `margin` — model was torn.
+/// Gate when the consensus margin between the top two categories is below `margin`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReviewTopMarginLt {
     /// Defaults to `top_margin_lt`.

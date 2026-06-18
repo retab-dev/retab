@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "php",
-  "generatedAt": "2026-06-18T14:27:40.067Z",
+  "generatedAt": "2026-06-18T15:12:38.922Z",
   "files": [
     "composer.json",
     "lib/Client.php",
@@ -151,6 +151,7 @@
     "lib/Resource/FieldType.php",
     "lib/Resource/File.php",
     "lib/Resource/FileBlueprint.php",
+    "lib/Resource/FileBlueprintMode.php",
     "lib/Resource/FileHandleInput.php",
     "lib/Resource/FileLink.php",
     "lib/Resource/FileRef.php",

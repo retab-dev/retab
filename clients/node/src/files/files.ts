@@ -4,6 +4,7 @@ import type { Retab } from '../retab.js';
 import { PaginatedList } from '../_pagination.js';
 import type { MIMEData, MIMEDataResponse } from '../classifications/interfaces/index.js';
 import type {
+  CreateFileBlueprintRequestMode,
   CreateUploadResponse,
   CreateUploadResponseResponse,
   File,
@@ -60,12 +61,14 @@ export class Files {
   async create_blueprint(
     fileId: string,
     intent?: string | null,
-    background?: boolean
+    background?: boolean,
+    mode?: CreateFileBlueprintRequestMode | null
   ): Promise<FileBlueprint> {
     const body = {
       file_id: fileId,
       intent: intent,
       background: background,
+      mode: mode,
     };
     const __wire = await this.client.request<FileBlueprintResponse>({
       method: 'POST',

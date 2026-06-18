@@ -148,6 +148,14 @@ const (
 	CreateExperimentRequestNConsensus7 CreateExperimentRequestNConsensus = 7
 )
 
+// CreateFileBlueprintRequestMode represents create file blueprint request mode values.
+type CreateFileBlueprintRequestMode string
+
+const (
+	CreateFileBlueprintRequestModeInstant   CreateFileBlueprintRequestMode = "instant"
+	CreateFileBlueprintRequestModeReasoning CreateFileBlueprintRequestMode = "reasoning"
+)
+
 // ParseRequestTableParsingFormat represents parse request table parsing format values.
 type ParseRequestTableParsingFormat string
 
@@ -297,6 +305,9 @@ type ExtractionWorkflowArtifactStatus = ClassificationStatus
 
 // FileBlueprintStatus is an alias for ClassificationStatus.
 type FileBlueprintStatus = ClassificationStatus
+
+// FileBlueprintMode is an alias for CreateFileBlueprintRequestMode.
+type FileBlueprintMode = CreateFileBlueprintRequestMode
 
 // LatestBlockTestRunSummaryStatus represents latest block test run summary status values.
 type LatestBlockTestRunSummaryStatus string

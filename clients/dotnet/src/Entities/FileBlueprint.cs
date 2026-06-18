@@ -28,6 +28,7 @@ namespace Retab
         public DateTimeOffset? CreatedAt { get; set; }
         public DateTimeOffset? StartedAt { get; set; }
         public DateTimeOffset? CompletedAt { get; set; }
+        public CreateFileBlueprintRequestMode? Mode { get; set; }
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

@@ -40,7 +40,8 @@ type FilesCreateBlueprintParams struct {
 	// Intent is optional user intent used to guide the blueprint analysis.
 	Intent *string `json:"intent,omitempty" url:"-"`
 	// Background is if true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
-	Background *bool `json:"background,omitempty" url:"-"`
+	Background *bool                           `json:"background,omitempty" url:"-"`
+	Mode       *CreateFileBlueprintRequestMode `json:"mode,omitempty" url:"-"`
 }
 
 // CreateBlueprint create File Blueprint

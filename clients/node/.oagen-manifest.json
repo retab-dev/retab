@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "node",
-  "generatedAt": "2026-06-18T14:30:56.874Z",
+  "generatedAt": "2026-06-18T15:12:18.713Z",
   "files": [
     "src/_pagination.ts",
     "src/classifications/classifications.ts",
@@ -76,8 +76,10 @@
     "src/extractions/interfaces/sources-response.interface.ts",
     "src/files/files.ts",
     "src/files/interfaces/complete-file-upload-request.interface.ts",
+    "src/files/interfaces/create-file-blueprint-request-mode.interface.ts",
     "src/files/interfaces/create-file-blueprint-request.interface.ts",
     "src/files/interfaces/create-upload-response.interface.ts",
+    "src/files/interfaces/file-blueprint-mode.interface.ts",
     "src/files/interfaces/file-blueprint-status.interface.ts",
     "src/files/interfaces/file-blueprint.interface.ts",
     "src/files/interfaces/file-link.interface.ts",

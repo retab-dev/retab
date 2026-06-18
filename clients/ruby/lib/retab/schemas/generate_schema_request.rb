@@ -9,14 +9,16 @@ module Retab
       documents: :documents,
       model: :model,
       instructions: :instructions,
-      background: :background
+      background: :background,
+      image_resolution_dpi: :image_resolution_dpi
     }.freeze
 
     attr_accessor(
       :documents,
       :model,
       :instructions,
-      :background
+      :background,
+      :image_resolution_dpi
     )
 
     def initialize(json)
@@ -26,6 +28,7 @@ module Retab
       @model = hash[:model].nil? ? "retab-small" : hash[:model]
       @instructions = hash[:instructions]
       @background = hash[:background].nil? ? false : hash[:background]
+      @image_resolution_dpi = hash[:image_resolution_dpi]
     end
   end
 end

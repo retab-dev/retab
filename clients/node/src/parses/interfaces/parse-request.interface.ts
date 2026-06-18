@@ -39,6 +39,7 @@ export interface ParseRequest {
    * @default false
    */
   background?: boolean;
+  imageResolutionDpi?: number;
 }
 
 export interface ParseRequestResponse {
@@ -48,6 +49,7 @@ export interface ParseRequestResponse {
   instructions?: string | null;
   bust_cache?: boolean;
   background?: boolean;
+  image_resolution_dpi?: number;
 }
 
 export const ZParseRequest = z.object({
@@ -57,6 +59,7 @@ export const ZParseRequest = z.object({
   instructions: z.string().nullable().optional(),
   bustCache: z.boolean().optional(),
   background: z.boolean().optional(),
+  imageResolutionDpi: z.number().int().optional(),
 }) as z.ZodType<ParseRequest>;
 
 export function deserializeParseRequest(wire: ParseRequestResponse): ParseRequest {
@@ -67,6 +70,7 @@ export function deserializeParseRequest(wire: ParseRequestResponse): ParseReques
     instructions: wire['instructions'],
     bustCache: wire['bust_cache'],
     background: wire['background'],
+    imageResolutionDpi: wire['image_resolution_dpi'],
   };
 }
 
@@ -78,5 +82,6 @@ export function serializeParseRequest(domain: ParseRequest): ParseRequestRespons
     instructions: domain['instructions'],
     bust_cache: domain['bustCache'],
     background: domain['background'],
+    image_resolution_dpi: domain['imageResolutionDpi'],
   };
 }

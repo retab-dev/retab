@@ -15,7 +15,8 @@ module Retab
       error: :error,
       created_at: :created_at,
       started_at: :started_at,
-      completed_at: :completed_at
+      completed_at: :completed_at,
+      mode: :mode
     }.freeze
 
     attr_accessor(
@@ -28,7 +29,8 @@ module Retab
       :error,
       :created_at,
       :started_at,
-      :completed_at
+      :completed_at,
+      :mode
     )
 
     def initialize(json)
@@ -44,6 +46,7 @@ module Retab
       @created_at = hash[:created_at]
       @started_at = hash[:started_at]
       @completed_at = hash[:completed_at]
+      @mode = hash[:mode]
     end
   end
 end

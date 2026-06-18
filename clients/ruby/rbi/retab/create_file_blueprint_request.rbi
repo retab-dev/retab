@@ -27,6 +27,12 @@ module Retab
     sig { params(value: T.nilable(T::Boolean)).returns(T.nilable(T::Boolean)) }
     def background=(value); end
 
+    sig { returns(T.nilable(String)) }
+    def mode; end
+
+    sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
+    def mode=(value); end
+
     sig { returns(T::Hash[Symbol, T.untyped]) }
     def to_h; end
 

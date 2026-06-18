@@ -6,7 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
-/** Gate when (top1_prob - top2_prob) < `margin` — model was torn. */
+/** Gate when the consensus margin between the top two categories is below `margin`. */
 readonly class ReviewTopMarginLt implements \JsonSerializable
 {
     use JsonSerializableTrait;

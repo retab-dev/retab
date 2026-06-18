@@ -7,5 +7,6 @@
   ],
   "model": "test_model",
   "instructions": "test_instructions",
-  "background": true
+  "background": true,
+  "image_resolution_dpi": 1
 }

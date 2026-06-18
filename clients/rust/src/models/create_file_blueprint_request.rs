@@ -18,6 +18,8 @@ pub struct CreateFileBlueprintRequest {
     /// Defaults to `false`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub background: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub mode: Option<CreateFileBlueprintRequestMode>,
 }
 impl CreateFileBlueprintRequest {
     /// Construct a new `CreateFileBlueprintRequest` with the required fields set.
@@ -27,6 +29,7 @@ impl CreateFileBlueprintRequest {
             file_id: file_id.into(),
             intent: Default::default(),
             background: Default::default(),
+            mode: Default::default(),
         }
     }
 }

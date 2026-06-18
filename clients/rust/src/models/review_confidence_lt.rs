@@ -5,15 +5,13 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
-/// Gate if the overall block confidence is below `threshold`.
-/// Note: LLM confidences are poorly calibrated; per-field confidence
-/// (ReviewFieldConfidenceLt) tends to behave better.
+/// Gate if the block consensus likelihood is below `threshold`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReviewConfidenceLt {
     /// Defaults to `confidence_lt`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub kind: Option<String>,
-    /// Gate fires when confidence < threshold
+    /// Gate fires when consensus likelihood < threshold
     pub threshold: f64,
 }
 impl ReviewConfidenceLt {

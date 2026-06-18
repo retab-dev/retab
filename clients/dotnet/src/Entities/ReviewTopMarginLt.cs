@@ -1,7 +1,7 @@
 namespace Retab
 {
 
-    /// <summary>Gate when (top1_prob - top2_prob) &lt; `margin` — model was torn.</summary>
+    /// <summary>Gate when the consensus margin between the top two categories is below `margin`.</summary>
     public class ReviewTopMarginLt
     {
         public string? Kind { get; set; } = "top_margin_lt";

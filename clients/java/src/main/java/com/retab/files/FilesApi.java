@@ -13,6 +13,7 @@ import com.retab.models.FileBlueprint;
 import com.retab.models.FileLink;
 import com.retab.models.MimeData;
 import com.retab.models.UploadFileRequest;
+import com.retab.types.CreateFileBlueprintRequestMode;
 import com.retab.types.SortOrder;
 import java.io.IOException;
 import java.net.URI;
@@ -93,10 +94,12 @@ public final class FilesApi {
     return createBlueprint(
         request == null ? null : request.getFileId(),
         request == null ? null : request.getIntent(),
-        request == null ? null : request.isBackground());
+        request == null ? null : request.isBackground(),
+        request == null ? null : request.getMode());
   }
 
-  public FileBlueprint createBlueprint(String fileId, String intent, Boolean background)
+  public FileBlueprint createBlueprint(
+      String fileId, String intent, Boolean background, CreateFileBlueprintRequestMode mode)
       throws IOException, InterruptedException {
     String path = "/v1/files/blueprints";
     StringBuilder query = new StringBuilder();
@@ -108,6 +111,9 @@ public final class FilesApi {
     }
     if (background != null) {
       body.put("background", background);
+    }
+    if (mode != null) {
+      body.put("mode", mode);
     }
     String requestBody = client.getObjectMapper().writeValueAsString(body);
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);

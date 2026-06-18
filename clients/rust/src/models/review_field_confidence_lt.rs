@@ -5,7 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
-/// Gate when the field at `path` has confidence below `threshold`.
+/// Gate when the field at `path` has consensus likelihood below `threshold`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReviewFieldConfidenceLt {
     /// Defaults to `field_confidence_lt`.

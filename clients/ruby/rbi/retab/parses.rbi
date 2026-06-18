@@ -31,10 +31,11 @@ module Retab
         instructions: T.nilable(String),
         bust_cache: T.nilable(T::Boolean),
         background: T.nilable(T::Boolean),
+        image_resolution_dpi: T.nilable(Integer),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::Parse)
     end
-    def create(document:, model:, table_parsing_format:, instructions:, bust_cache:, background:, request_options:); end
+    def create(document:, model:, table_parsing_format:, instructions:, bust_cache:, background:, image_resolution_dpi:, request_options:); end
 
     sig do
       params(

@@ -5,6 +5,7 @@ package com.retab.models;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.retab.types.FileBlueprintMode;
 import com.retab.types.FileBlueprintStatus;
 import java.time.OffsetDateTime;
 import java.util.Map;
@@ -21,6 +22,7 @@ public final class FileBlueprint {
   private final OffsetDateTime createdAt;
   private final OffsetDateTime startedAt;
   private final OffsetDateTime completedAt;
+  private final FileBlueprintMode mode;
 
   @JsonCreator
   public FileBlueprint(
@@ -33,7 +35,8 @@ public final class FileBlueprint {
       @JsonProperty(value = "error", required = false) PrimitiveError error,
       @JsonProperty(value = "created_at", required = false) OffsetDateTime createdAt,
       @JsonProperty(value = "started_at", required = false) OffsetDateTime startedAt,
-      @JsonProperty(value = "completed_at", required = false) OffsetDateTime completedAt) {
+      @JsonProperty(value = "completed_at", required = false) OffsetDateTime completedAt,
+      @JsonProperty(value = "mode", required = false) FileBlueprintMode mode) {
     this.objectType = objectType != null ? objectType : "file.blueprint";
     this.id = id;
     this.file = file;
@@ -44,6 +47,7 @@ public final class FileBlueprint {
     this.createdAt = createdAt;
     this.startedAt = startedAt;
     this.completedAt = completedAt;
+    this.mode = mode;
   }
 
   @JsonProperty("object")
@@ -94,5 +98,10 @@ public final class FileBlueprint {
   @JsonProperty("completed_at")
   public OffsetDateTime getCompletedAt() {
     return completedAt;
+  }
+
+  @JsonProperty("mode")
+  public FileBlueprintMode getMode() {
+    return mode;
   }
 }

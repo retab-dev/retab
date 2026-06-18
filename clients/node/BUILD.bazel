@@ -53,6 +53,7 @@ sh_test(
 # timestamp, which the drift diff normalizes).
 js_run_binary(
     name = "generated_node_sdk_formatted",
+    args = ["--formatter-output-version=1"],
     srcs = [
         "//.oagen-workspace/retab-gen:generated_node_sdk_raw",
         ".prettierrc",
@@ -60,10 +61,11 @@ js_run_binary(
     chdir = package_name(),
     env = {
         "RETAB_RAW_SDK_DIR": "$(execpath //.oagen-workspace/retab-gen:generated_node_sdk_raw)",
-        "RETAB_FORMATTED_SDK_DIR": "generated-node-formatted",
+        "RETAB_FORMATTED_SDK_DIR": "generated-node-formatted-v3",
+        "RETAB_NODE_SDK_FORMATTER_OUTPUT_VERSION": "7",
         "RETAB_PRETTIERRC": "$(execpath .prettierrc)",
     },
-    out_dirs = ["generated-node-formatted"],
+    out_dirs = ["generated-node-formatted-v3"],
     tool = ":format_generated_node_sdk_bin",
 )
 

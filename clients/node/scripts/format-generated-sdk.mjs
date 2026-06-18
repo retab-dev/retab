@@ -11,8 +11,9 @@
 //
 // Paths are passed via env:
 //   RETAB_RAW_SDK_DIR    - $(execpath) of the raw generated tree (execroot-rel).
-//   RETAB_FORMATTED_SDK_DIR - the declared out_dir (resolved against cwd; the
-//                          js_run_binary runs with chdir = this package).
+//   RETAB_FORMATTED_SDK_DIR - the declared out_dir. Plain relative values are
+//                          resolved against cwd because js_run_binary chdirs to
+//                          the Bazel package output directory before execution.
 //   RETAB_PRETTIERRC     - $(execpath) of this package's .prettierrc.
 // Relative execpath values are resolved against JS_BINARY__EXECROOT, which
 // aspect_rules_js sets to the absolute execroot even when chdir is in effect.
@@ -40,12 +41,53 @@ function fromExecroot(value) {
   return resolve(execroot ?? process.cwd(), value);
 }
 
+function outputDirPath(value) {
+  const output = value ?? 'generated-node-formatted';
+  if (isAbsolute(output)) {
+    return output;
+  }
+  const execroot = process.env.JS_BINARY__EXECROOT;
+  const bindir = process.env.BAZEL_BINDIR;
+  if (execroot && bindir && (output === bindir || output.startsWith(`${bindir}/`))) {
+    return resolve(execroot, output);
+  }
+  return resolve(output);
+}
+
 const rawDir = fromExecroot(process.env.RETAB_RAW_SDK_DIR);
-const outDir = resolve(process.env.RETAB_FORMATTED_SDK_DIR ?? 'generated-node-formatted');
+const outDir = outputDirPath(process.env.RETAB_FORMATTED_SDK_DIR);
 const prettierrcPath = fromExecroot(process.env.RETAB_PRETTIERRC);
 
+function makeWritableTree(path) {
+  const metadata = lstatSync(path);
+  if (metadata.isSymbolicLink()) {
+    return;
+  }
+  if (metadata.isDirectory()) {
+    chmodSync(path, 0o755);
+    for (const entry of readdirSync(path)) {
+      makeWritableTree(join(path, entry));
+    }
+    return;
+  }
+  chmodSync(path, 0o644);
+}
+
+function removeOutputTree(path) {
+  try {
+    rmSync(path, { recursive: true, force: true });
+  } catch (error) {
+    if (error && ['EACCES', 'ENOTEMPTY', 'EPERM'].includes(error.code)) {
+      makeWritableTree(path);
+      rmSync(path, { recursive: true, force: true });
+      return;
+    }
+    throw error;
+  }
+}
+
 // Mirror the raw tree (src/ + .oagen-manifest.json) into the declared output.
-rmSync(outDir, { recursive: true, force: true });
+removeOutputTree(outDir);
 cpSync(rawDir, outDir, { dereference: true, recursive: true });
 
 const prettierConfig = JSON.parse(readFileSync(prettierrcPath, 'utf8'));

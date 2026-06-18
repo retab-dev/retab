@@ -8,13 +8,15 @@ module Retab
     HASH_ATTRS = {
       file_id: :file_id,
       intent: :intent,
-      background: :background
+      background: :background,
+      mode: :mode
     }.freeze
 
     attr_accessor(
       :file_id,
       :intent,
-      :background
+      :background,
+      :mode
     )
 
     def initialize(json)
@@ -23,6 +25,7 @@ module Retab
       @file_id = hash[:file_id]
       @intent = hash[:intent]
       @background = hash[:background].nil? ? false : hash[:background]
+      @mode = hash[:mode]
     end
   end
 end

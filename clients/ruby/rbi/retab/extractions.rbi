@@ -41,10 +41,11 @@ module Retab
         stream: T.nilable(T::Boolean),
         background: T.nilable(T::Boolean),
         chunking_keys: T.nilable(T::Hash[String, String]),
+        image_resolution_dpi: T.nilable(Integer),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::Extraction)
     end
-    def create(document:, json_schema:, model:, instructions:, n_consensus:, metadata:, additional_messages:, bust_cache:, stream:, background:, chunking_keys:, request_options:); end
+    def create(document:, json_schema:, model:, instructions:, n_consensus:, metadata:, additional_messages:, bust_cache:, stream:, background:, chunking_keys:, image_resolution_dpi:, request_options:); end
 
     sig do
       params(
@@ -59,10 +60,11 @@ module Retab
         stream: T.nilable(T::Boolean),
         background: T.nilable(T::Boolean),
         chunking_keys: T.nilable(T::Hash[String, String]),
+        image_resolution_dpi: T.nilable(Integer),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(NilClass)
     end
-    def create_stream(document:, json_schema:, model:, instructions:, n_consensus:, metadata:, additional_messages:, bust_cache:, stream:, background:, chunking_keys:, request_options:); end
+    def create_stream(document:, json_schema:, model:, instructions:, n_consensus:, metadata:, additional_messages:, bust_cache:, stream:, background:, chunking_keys:, image_resolution_dpi:, request_options:); end
 
     sig do
       params(

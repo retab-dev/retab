@@ -22,6 +22,7 @@ export interface GenerateSchemaRequest {
    * @default false
    */
   background?: boolean;
+  imageResolutionDpi?: number;
 }
 
 export interface GenerateSchemaRequestResponse {
@@ -29,6 +30,7 @@ export interface GenerateSchemaRequestResponse {
   model?: string;
   instructions?: string | null;
   background?: boolean;
+  image_resolution_dpi?: number;
 }
 
 export const ZGenerateSchemaRequest = z.object({
@@ -36,6 +38,7 @@ export const ZGenerateSchemaRequest = z.object({
   model: z.string().optional(),
   instructions: z.string().nullable().optional(),
   background: z.boolean().optional(),
+  imageResolutionDpi: z.number().int().optional(),
 }) as z.ZodType<GenerateSchemaRequest>;
 
 export function deserializeGenerateSchemaRequest(
@@ -46,6 +49,7 @@ export function deserializeGenerateSchemaRequest(
     model: wire['model'],
     instructions: wire['instructions'],
     background: wire['background'],
+    imageResolutionDpi: wire['image_resolution_dpi'],
   };
 }
 
@@ -57,5 +61,6 @@ export function serializeGenerateSchemaRequest(
     model: domain['model'],
     instructions: domain['instructions'],
     background: domain['background'],
+    image_resolution_dpi: domain['imageResolutionDpi'],
   };
 }

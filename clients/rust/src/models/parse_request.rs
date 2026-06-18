@@ -33,6 +33,8 @@ pub struct ParseRequest {
     /// Defaults to `false`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub background: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub image_resolution_dpi: Option<i64>,
 }
 impl ParseRequest {
     /// Construct a new `ParseRequest` with the required fields set.
@@ -45,6 +47,7 @@ impl ParseRequest {
             instructions: Default::default(),
             bust_cache: Default::default(),
             background: Default::default(),
+            image_resolution_dpi: Default::default(),
         }
     }
 }

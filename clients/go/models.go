@@ -1217,10 +1217,11 @@ type FileBlueprint struct {
 	// Status is lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.
 	Status *FileBlueprintStatus `json:"status,omitempty"`
 	// Error is error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check.
-	Error       *PrimitiveError `json:"error,omitempty"`
-	CreatedAt   *time.Time      `json:"created_at,omitempty"`
-	StartedAt   *time.Time      `json:"started_at,omitempty"`
-	CompletedAt *time.Time      `json:"completed_at,omitempty"`
+	Error       *PrimitiveError    `json:"error,omitempty"`
+	CreatedAt   *time.Time         `json:"created_at,omitempty"`
+	StartedAt   *time.Time         `json:"started_at,omitempty"`
+	CompletedAt *time.Time         `json:"completed_at,omitempty"`
+	Mode        *FileBlueprintMode `json:"mode,omitempty"`
 }
 
 // FileHandleInput file reference for a handle input.
@@ -1663,7 +1664,7 @@ type ReviewAnySplitPagesLt struct {
 	MinPages int     `json:"min_pages"`
 }
 
-// ReviewBoundaryConfidenceLt gate when any split boundary's confidence is below `threshold`.
+// ReviewBoundaryConfidenceLt gate when any split consensus boundary likelihood is below `threshold`.
 type ReviewBoundaryConfidenceLt struct {
 	Kind      *string `json:"kind,omitempty"`
 	Threshold float64 `json:"threshold"`
@@ -1683,12 +1684,10 @@ type ReviewCategoryIn struct {
 	Categories []string `json:"categories"`
 }
 
-// ReviewConfidenceLt gate if the overall block confidence is below `threshold`.
-// Note: LLM confidences are poorly calibrated; per-field confidence
-// (ReviewFieldConfidenceLt) tends to behave better.
+// ReviewConfidenceLt gate if the block consensus likelihood is below `threshold`.
 type ReviewConfidenceLt struct {
 	Kind *string `json:"kind,omitempty"`
-	// Threshold is gate fires when confidence < threshold
+	// Threshold is gate fires when consensus likelihood < threshold
 	Threshold float64 `json:"threshold"`
 }
 
@@ -1718,7 +1717,7 @@ type ReviewEvaluation struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-// ReviewFieldConfidenceLt gate when the field at `path` has confidence below `threshold`.
+// ReviewFieldConfidenceLt gate when the field at `path` has consensus likelihood below `threshold`.
 type ReviewFieldConfidenceLt struct {
 	Kind *string `json:"kind,omitempty"`
 	// Path is jsonPath-style path, e.g. '$.invoice.total' or 'invoice.total'
@@ -1743,7 +1742,7 @@ type ReviewSplitCountNeq struct {
 	Expected int     `json:"expected"`
 }
 
-// ReviewTopMarginLt gate when (top1_prob - top2_prob) < `margin` — model was torn.
+// ReviewTopMarginLt gate when the consensus margin between the top two categories is below `margin`.
 type ReviewTopMarginLt struct {
 	Kind   *string `json:"kind,omitempty"`
 	Margin float64 `json:"margin"`

@@ -36,6 +36,7 @@ impl GenerateParams {
                 model: Default::default(),
                 instructions: Default::default(),
                 background: Default::default(),
+                image_resolution_dpi: Default::default(),
             },
         }
     }

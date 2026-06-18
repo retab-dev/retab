@@ -45,6 +45,7 @@ export interface ExtractionRequest {
    */
   background?: boolean;
   chunkingKeys?: Record<string, string> | null;
+  imageResolutionDpi?: number;
 }
 
 export interface ExtractionRequestResponse {
@@ -59,6 +60,7 @@ export interface ExtractionRequestResponse {
   stream?: boolean;
   background?: boolean;
   chunking_keys?: Record<string, string> | null;
+  image_resolution_dpi?: number;
 }
 
 export const ZExtractionRequest = z.object({
@@ -73,6 +75,7 @@ export const ZExtractionRequest = z.object({
   stream: z.boolean().optional(),
   background: z.boolean().optional(),
   chunkingKeys: z.record(z.string(), z.string()).nullable().optional(),
+  imageResolutionDpi: z.number().int().optional(),
 }) as z.ZodType<ExtractionRequest>;
 
 export function deserializeExtractionRequest(wire: ExtractionRequestResponse): ExtractionRequest {
@@ -88,6 +91,7 @@ export function deserializeExtractionRequest(wire: ExtractionRequestResponse): E
     stream: wire['stream'],
     background: wire['background'],
     chunkingKeys: wire['chunking_keys'],
+    imageResolutionDpi: wire['image_resolution_dpi'],
   };
 }
 
@@ -104,5 +108,6 @@ export function serializeExtractionRequest(domain: ExtractionRequest): Extractio
     stream: domain['stream'],
     background: domain['background'],
     chunking_keys: domain['chunkingKeys'],
+    image_resolution_dpi: domain['imageResolutionDpi'],
   };
 }

@@ -85,7 +85,8 @@ public final class ParsesApi {
         request == null ? null : request.getTableParsingFormat(),
         request == null ? null : request.getInstructions(),
         request == null ? null : request.isBustCache(),
-        request == null ? null : request.isBackground());
+        request == null ? null : request.isBackground(),
+        request == null ? null : request.getImageResolutionDpi());
   }
 
   public Parse create(
@@ -94,7 +95,8 @@ public final class ParsesApi {
       ParseRequestTableParsingFormat tableParsingFormat,
       String instructions,
       Boolean bustCache,
-      Boolean background)
+      Boolean background,
+      Long imageResolutionDpi)
       throws IOException, InterruptedException {
     String path = "/v1/parses";
     StringBuilder query = new StringBuilder();
@@ -115,6 +117,9 @@ public final class ParsesApi {
     }
     if (background != null) {
       body.put("background", background);
+    }
+    if (imageResolutionDpi != null) {
+      body.put("image_resolution_dpi", imageResolutionDpi);
     }
     String requestBody = client.getObjectMapper().writeValueAsString(body);
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);

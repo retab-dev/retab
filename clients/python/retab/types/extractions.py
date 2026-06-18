@@ -51,6 +51,7 @@ class ExtractionRequest(BaseModel):
         description="If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.",
     )
     chunking_keys: dict[str, str] | None = None
+    image_resolution_dpi: int | None = None
 
 
 class Extraction(BaseModel):

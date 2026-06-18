@@ -70,6 +70,7 @@ class SchemasMixin:
         model: str = "retab-small",
         instructions: str | None = None,
         background: bool = False,
+        image_resolution_dpi: int | None = None,
         **extra_params: Any,
     ) -> PreparedRequest:
         """Generate Schema From Examples Generates a JSON Schema from scratch by inferring structure from the content of the provided example documents."""
@@ -80,7 +81,13 @@ class SchemasMixin:
         documents_payload: Any = documents
         if documents_payload is not None:
             documents_payload = [_resolve_mime_document_input(__x, (lambda __fid: self._client.files.get_download_link(__fid))) for __x in documents_payload]
-        payload = GenerateSchemaRequest(documents=cast(Any, documents_payload), model=cast(Any, model), instructions=cast(Any, instructions), background=cast(Any, background))
+        payload = GenerateSchemaRequest(
+            documents=cast(Any, documents_payload),
+            model=cast(Any, model),
+            instructions=cast(Any, instructions),
+            background=cast(Any, background),
+            image_resolution_dpi=cast(Any, image_resolution_dpi),
+        )
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/schemas/generate", params=params or None, data=data)
 
@@ -94,13 +101,16 @@ class Schemas(SyncAPIResource, SchemasMixin):
         model: str = "retab-small",
         instructions: str | None = None,
         background: bool = False,
+        image_resolution_dpi: int | None = None,
         **extra_params: Any,
     ) -> SchemaGeneration:
         """Generate Schema From Examples Generates a JSON Schema from scratch by inferring structure from the content of the provided example documents."""
         documents_coerced: Any = documents
         if documents_coerced is not None:
             documents_coerced = [_resolve_mime_document_input(__x, (lambda __fid: self._client.files.get_download_link(__fid))) for __x in documents_coerced]
-        prepared_request = self.prepare_generate(documents=documents_coerced, model=model, instructions=instructions, background=background, **extra_params)
+        prepared_request = self.prepare_generate(
+            documents=documents_coerced, model=model, instructions=instructions, background=background, image_resolution_dpi=image_resolution_dpi, **extra_params
+        )
         response = self._client._prepared_request(prepared_request)
         return SchemaGeneration.model_validate(response)
 
@@ -114,13 +124,16 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
         model: str = "retab-small",
         instructions: str | None = None,
         background: bool = False,
+        image_resolution_dpi: int | None = None,
         **extra_params: Any,
     ) -> SchemaGeneration:
         """Generate Schema From Examples Generates a JSON Schema from scratch by inferring structure from the content of the provided example documents."""
         documents_coerced: Any = documents
         if documents_coerced is not None:
             documents_coerced = [await _aresolve_mime_document_input(__x, (lambda __fid: self._client.files.get_download_link(__fid))) for __x in documents_coerced]
-        prepared_request = self.prepare_generate(documents=documents_coerced, model=model, instructions=instructions, background=background, **extra_params)
+        prepared_request = self.prepare_generate(
+            documents=documents_coerced, model=model, instructions=instructions, background=background, image_resolution_dpi=image_resolution_dpi, **extra_params
+        )
         response = await self._client._prepared_request(prepared_request)
         return SchemaGeneration.model_validate(response)
 

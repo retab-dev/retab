@@ -22,5 +22,6 @@
   "background": true,
   "chunking_keys": {
     "key": "test_value"
-  }
+  },
+  "image_resolution_dpi": 1
 }

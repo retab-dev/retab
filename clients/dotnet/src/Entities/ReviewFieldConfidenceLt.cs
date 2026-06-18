@@ -1,7 +1,7 @@
 namespace Retab
 {
 
-    /// <summary>Gate when the field at `path` has confidence below `threshold`.</summary>
+    /// <summary>Gate when the field at `path` has consensus likelihood below `threshold`.</summary>
     public class ReviewFieldConfidenceLt
     {
         public string? Kind { get; set; } = "field_confidence_lt";

@@ -110,6 +110,7 @@ module Retab
     # @param stream [Boolean, nil]
     # @param background [Boolean, nil] If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
     # @param chunking_keys [Hash{String => String}, nil]
+    # @param image_resolution_dpi [Integer, nil]
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::Extraction]
     def create(
@@ -124,6 +125,7 @@ module Retab
       stream: nil,
       background: nil,
       chunking_keys: nil,
+      image_resolution_dpi: nil,
       request_options: {}
     )
       document = Retab::MimeData.coerce(document, client: @client) unless document.nil?
@@ -138,7 +140,8 @@ module Retab
         "bust_cache" => bust_cache,
         "stream" => stream,
         "background" => background,
-        "chunking_keys" => chunking_keys
+        "chunking_keys" => chunking_keys,
+        "image_resolution_dpi" => image_resolution_dpi
       }.compact
       response = @client.request(
         method: :post,
@@ -168,6 +171,7 @@ module Retab
     # @param stream [Boolean, nil]
     # @param background [Boolean, nil] If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
     # @param chunking_keys [Hash{String => String}, nil]
+    # @param image_resolution_dpi [Integer, nil]
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [void]
     def create_stream(
@@ -182,6 +186,7 @@ module Retab
       stream: nil,
       background: nil,
       chunking_keys: nil,
+      image_resolution_dpi: nil,
       request_options: {}
     )
       document = Retab::MimeData.coerce(document, client: @client) unless document.nil?
@@ -196,7 +201,8 @@ module Retab
         "bust_cache" => bust_cache,
         "stream" => stream,
         "background" => background,
-        "chunking_keys" => chunking_keys
+        "chunking_keys" => chunking_keys,
+        "image_resolution_dpi" => image_resolution_dpi
       }.compact
       @client.request(
         method: :post,

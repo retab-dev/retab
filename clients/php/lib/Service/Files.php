@@ -76,6 +76,7 @@ class Files
      * @param string $fileId File id to analyze.
      * @param string|null $intent Optional user intent used to guide the blueprint analysis.
      * @param bool|null $background If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
+     * @param \Retab\Resource\FileBlueprintMode|null $mode
      * @return \Retab\Resource\FileBlueprint
      * @throws \Retab\Exception\RetabException
      */
@@ -83,12 +84,14 @@ class Files
         string $fileId,
         ?string $intent = null,
         ?bool $background = null,
+        ?\Retab\Resource\FileBlueprintMode $mode = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\FileBlueprint {
         $body = array_filter([
             'file_id' => $fileId,
             'intent' => $intent,
             'background' => $background,
+            'mode' => $mode?->value,
         ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',

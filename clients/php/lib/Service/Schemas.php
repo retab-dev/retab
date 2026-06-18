@@ -22,6 +22,7 @@ class Schemas
      * @param string|null $model
      * @param string|null $instructions
      * @param bool|null $background If true, run asynchronously: returns immediately with status 'queued'. Poll GET /v1/schemas/generate/{schema_generation_id} until status is terminal.
+     * @param int|null $imageResolutionDpi
      * @return \Retab\Resource\SchemaGeneration
      * @throws \Retab\Exception\RetabException
      */
@@ -30,6 +31,7 @@ class Schemas
         ?string $model = null,
         ?string $instructions = null,
         ?bool $background = null,
+        ?int $imageResolutionDpi = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\SchemaGeneration {
         $documents = array_map(fn($__d) => \Retab\Resource\MimeDataCoerce::coerce($__d, $this->client), $documents);
@@ -38,6 +40,7 @@ class Schemas
             'model' => $model,
             'instructions' => $instructions,
             'background' => $background,
+            'image_resolution_dpi' => $imageResolutionDpi,
         ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',

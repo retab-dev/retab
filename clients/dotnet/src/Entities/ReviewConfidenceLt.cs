@@ -1,16 +1,12 @@
 namespace Retab
 {
 
-    /// <summary>Gate if the overall block confidence is below `threshold`.</summary>
-    /// <remarks>
-    /// Note: LLM confidences are poorly calibrated; per-field confidence
-    /// (ReviewFieldConfidenceLt) tends to behave better.
-    /// </remarks>
+    /// <summary>Gate if the block consensus likelihood is below `threshold`.</summary>
     public class ReviewConfidenceLt
     {
         public string? Kind { get; set; } = "confidence_lt";
 
-        /// <summary>Gate fires when confidence &lt; threshold</summary>
+        /// <summary>Gate fires when consensus likelihood &lt; threshold</summary>
         public double Threshold { get; set; }
 
         /// <summary>

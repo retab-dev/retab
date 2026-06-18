@@ -139,7 +139,7 @@ class ReviewAnySplitPagesLt(BaseModel):
 
 
 class ReviewBoundaryConfidenceLt(BaseModel):
-    """Gate when any split boundary's confidence is below `threshold`."""
+    """Gate when any split consensus boundary likelihood is below `threshold`."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -169,19 +169,16 @@ class ReviewCategoryIn(BaseModel):
 
 
 class ReviewConfidenceLt(BaseModel):
-    """Gate if the overall block confidence is below `threshold`.
-
-    Note: LLM confidences are poorly calibrated; per-field confidence
-    (ReviewFieldConfidenceLt) tends to behave better."""
+    """Gate if the block consensus likelihood is below `threshold`."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     kind: Literal["confidence_lt"] = Field(default="confidence_lt")
-    threshold: float = Field(..., description="Gate fires when confidence < threshold")
+    threshold: float = Field(..., description="Gate fires when consensus likelihood < threshold")
 
 
 class ReviewFieldConfidenceLt(BaseModel):
-    """Gate when the field at `path` has confidence below `threshold`."""
+    """Gate when the field at `path` has consensus likelihood below `threshold`."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -214,7 +211,7 @@ class ReviewSplitCountNeq(BaseModel):
 
 
 class ReviewTopMarginLt(BaseModel):
-    """Gate when (top1_prob - top2_prob) < `margin` — model was torn."""
+    """Gate when the consensus margin between the top two categories is below `margin`."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 

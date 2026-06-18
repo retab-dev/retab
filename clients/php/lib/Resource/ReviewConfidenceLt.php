@@ -6,18 +6,13 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
-/**
- * Gate if the overall block confidence is below `threshold`.
- *
- * Note: LLM confidences are poorly calibrated; per-field confidence
- * (ReviewFieldConfidenceLt) tends to behave better.
- */
+/** Gate if the block consensus likelihood is below `threshold`. */
 readonly class ReviewConfidenceLt implements \JsonSerializable
 {
     use JsonSerializableTrait;
 
     public function __construct(
-        /** Gate fires when confidence < threshold */
+        /** Gate fires when consensus likelihood < threshold */
         public float $threshold,
         public string $kind = 'confidence_lt',
     ) {}

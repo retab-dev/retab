@@ -76,6 +76,7 @@ class Parses
      * @param string|null $instructions Free-form instructions appended to the system prompt to steer the parse.
      * @param bool|null $bustCache If true, skip the LLM cache and force a fresh completion
      * @param bool|null $background If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
+     * @param int|null $imageResolutionDpi
      * @return \Retab\Resource\Parse
      * @throws \Retab\Exception\RetabException
      */
@@ -86,6 +87,7 @@ class Parses
         ?string $instructions = null,
         ?bool $bustCache = null,
         ?bool $background = null,
+        ?int $imageResolutionDpi = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\Parse {
         $document = \Retab\Resource\MimeDataCoerce::coerce($document, $this->client);
@@ -96,6 +98,7 @@ class Parses
             'instructions' => $instructions,
             'bust_cache' => $bustCache,
             'background' => $background,
+            'image_resolution_dpi' => $imageResolutionDpi,
         ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',

@@ -30,6 +30,7 @@ readonly class FileBlueprint implements \JsonSerializable
         public ?\DateTimeImmutable $createdAt = null,
         public ?\DateTimeImmutable $startedAt = null,
         public ?\DateTimeImmutable $completedAt = null,
+        public ?FileBlueprintMode $mode = null,
         public string $object = 'file.blueprint',
     ) {}
 
@@ -54,6 +55,7 @@ readonly class FileBlueprint implements \JsonSerializable
             createdAt: isset($data['created_at']) ? new \DateTimeImmutable($data['created_at']) : null,
             startedAt: isset($data['started_at']) ? new \DateTimeImmutable($data['started_at']) : null,
             completedAt: isset($data['completed_at']) ? new \DateTimeImmutable($data['completed_at']) : null,
+            mode: isset($data['mode']) ? FileBlueprintMode::from($data['mode']) : null,
             object: $data['object'] ?? 'file.blueprint',
         );
     }
@@ -71,6 +73,7 @@ readonly class FileBlueprint implements \JsonSerializable
             'created_at' => $this->createdAt?->format(\DateTimeInterface::RFC3339_EXTENDED),
             'started_at' => $this->startedAt?->format(\DateTimeInterface::RFC3339_EXTENDED),
             'completed_at' => $this->completedAt?->format(\DateTimeInterface::RFC3339_EXTENDED),
+            'mode' => $this->mode?->value,
             'object' => $this->object,
         ];
     }

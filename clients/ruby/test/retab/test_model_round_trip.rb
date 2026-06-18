@@ -836,7 +836,8 @@ class ModelRoundTripTest < Minitest::Test
       "bust_cache" => true,
       "stream" => true,
       "background" => true,
-      "chunking_keys" => nil
+      "chunking_keys" => nil,
+      "image_resolution_dpi" => 1
     }
     model = Retab::ExtractionRequest.new(fixture.to_json)
     json = model.to_h
@@ -848,7 +849,8 @@ class ModelRoundTripTest < Minitest::Test
     fixture = {
       "file_id" => "stub",
       "intent" => nil,
-      "background" => true
+      "background" => true,
+      "mode" => nil
     }
     model = Retab::CreateFileBlueprintRequest.new(fixture.to_json)
     json = model.to_h
@@ -882,7 +884,8 @@ class ModelRoundTripTest < Minitest::Test
       "table_parsing_format" => "stub",
       "instructions" => nil,
       "bust_cache" => true,
-      "background" => true
+      "background" => true,
+      "image_resolution_dpi" => 1
     }
     model = Retab::ParseRequest.new(fixture.to_json)
     json = model.to_h
@@ -1880,7 +1883,8 @@ class ModelRoundTripTest < Minitest::Test
       "error" => nil,
       "created_at" => nil,
       "started_at" => nil,
-      "completed_at" => nil
+      "completed_at" => nil,
+      "mode" => nil
     }
     model = Retab::FileBlueprint.new(fixture.to_json)
     json = model.to_h
@@ -1973,7 +1977,8 @@ class ModelRoundTripTest < Minitest::Test
       "documents" => [],
       "model" => "stub",
       "instructions" => nil,
-      "background" => true
+      "background" => true,
+      "image_resolution_dpi" => 1
     }
     model = Retab::GenerateSchemaRequest.new(fixture.to_json)
     json = model.to_h

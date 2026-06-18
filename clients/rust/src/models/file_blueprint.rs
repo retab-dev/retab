@@ -37,6 +37,8 @@ pub struct FileBlueprint {
     pub started_at: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub completed_at: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub mode: Option<FileBlueprintMode>,
 }
 impl FileBlueprint {
     /// Construct a new `FileBlueprint` with the required fields set.
@@ -53,6 +55,7 @@ impl FileBlueprint {
             created_at: Default::default(),
             started_at: Default::default(),
             completed_at: Default::default(),
+            mode: Default::default(),
         }
     }
 }

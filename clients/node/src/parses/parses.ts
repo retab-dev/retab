@@ -46,7 +46,8 @@ export class Parses {
     tableParsingFormat?: ParseRequestTableParsingFormat,
     instructions?: string | null,
     bustCache?: boolean,
-    background?: boolean
+    background?: boolean,
+    imageResolutionDpi?: number
   ): Promise<Parse> {
     const documentCoerced = await coerceMimeData(document, (__id) =>
       this.client.files.get_download_link(__id)
@@ -58,6 +59,7 @@ export class Parses {
       instructions: instructions,
       bust_cache: bustCache,
       background: background,
+      image_resolution_dpi: imageResolutionDpi,
     };
     const __wire = await this.client.request<ParseResponse>({
       method: 'POST',

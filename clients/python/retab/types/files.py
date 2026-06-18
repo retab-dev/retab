@@ -18,6 +18,14 @@ class FileBlueprintStatus(str, Enum):
     CANCELLED = "cancelled"
 
 
+class FileBlueprintMode(str, Enum):
+    INSTANT = "instant"
+    REASONING = "reasoning"
+
+
+CreateFileBlueprintRequestMode = FileBlueprintMode
+
+
 class CompleteFileUploadRequest(BaseModel):
     """Body to finalize a file upload, optionally carrying the uploaded content's `sha256` checksum for verification."""
 
@@ -37,6 +45,7 @@ class CreateFileBlueprintRequest(BaseModel):
         default=False,
         description="If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.",
     )
+    mode: FileBlueprintMode | None = None
 
 
 class CreateUploadResponse(BaseModel):
@@ -91,6 +100,7 @@ class FileBlueprint(BaseModel):
     created_at: datetime.datetime | None = None
     started_at: datetime.datetime | None = None
     completed_at: datetime.datetime | None = None
+    mode: FileBlueprintMode | None = None
 
 
 class FileLink(BaseModel):

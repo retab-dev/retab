@@ -19,6 +19,8 @@ import {
   deserializePrimitiveError,
   serializePrimitiveError,
 } from '../../classifications/interfaces/primitive-error.interface.js';
+import type { FileBlueprintMode } from './file-blueprint-mode.interface.js';
+import { ZFileBlueprintMode } from './file-blueprint-mode.interface.js';
 import type { FileBlueprintStatus } from './file-blueprint-status.interface.js';
 import { ZFileBlueprintStatus } from './file-blueprint-status.interface.js';
 
@@ -47,6 +49,7 @@ export interface FileBlueprint {
   createdAt?: Date | null;
   startedAt?: Date | null;
   completedAt?: Date | null;
+  mode?: FileBlueprintMode | null;
 }
 
 export interface FileBlueprintResponse {
@@ -60,6 +63,7 @@ export interface FileBlueprintResponse {
   created_at?: string | null;
   started_at?: string | null;
   completed_at?: string | null;
+  mode?: FileBlueprintMode | null;
 }
 
 export const ZFileBlueprint = z.object({
@@ -73,6 +77,7 @@ export const ZFileBlueprint = z.object({
   createdAt: z.coerce.date().nullable().optional(),
   startedAt: z.coerce.date().nullable().optional(),
   completedAt: z.coerce.date().nullable().optional(),
+  mode: ZFileBlueprintMode.nullable().optional(),
 }) as z.ZodType<FileBlueprint>;
 
 export function deserializeFileBlueprint(wire: FileBlueprintResponse): FileBlueprint {
@@ -107,6 +112,7 @@ export function deserializeFileBlueprint(wire: FileBlueprintResponse): FileBluep
         : wire['completed_at'] == null
           ? wire['completed_at']
           : new Date(wire['completed_at']),
+    mode: wire['mode'],
   };
 }
 
@@ -142,5 +148,6 @@ export function serializeFileBlueprint(domain: FileBlueprint): FileBlueprintResp
         : domain['completedAt'] == null
           ? domain['completedAt']
           : domain['completedAt'].toISOString(),
+    mode: domain['mode'],
   };
 }

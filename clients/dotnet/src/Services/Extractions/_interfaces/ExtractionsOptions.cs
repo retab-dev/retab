@@ -62,6 +62,8 @@ namespace Retab
 
         public Dictionary<string, string>? ChunkingKeys { get; set; }
 
+        public long? ImageResolutionDpi { get; set; }
+
     }
 
     /// <summary>Request options for <see cref="ExtractionsService.CreateStreamAsync"/>: Create Extraction Stream</summary>
@@ -96,6 +98,8 @@ namespace Retab
         public bool? Background { get; set; }
 
         public Dictionary<string, string>? ChunkingKeys { get; set; }
+
+        public long? ImageResolutionDpi { get; set; }
 
     }
 

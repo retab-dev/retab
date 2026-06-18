@@ -6,7 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
-/** Gate when the field at `path` has confidence below `threshold`. */
+/** Gate when the field at `path` has consensus likelihood below `threshold`. */
 readonly class ReviewFieldConfidenceLt implements \JsonSerializable
 {
     use JsonSerializableTrait;
