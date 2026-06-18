@@ -165,12 +165,19 @@ def test_filename_filter_shape(sync_client: Retab, resource_name: str, _model: t
         assert isinstance(envelope.get("data"), list)
 
 
-def test_extractions_status_filter_shape(sync_client: Retab) -> None:
-    """Extractions list accepts a status filter and returns matching-or-empty typed rows."""
+@pytest.mark.parametrize(
+    ("resource_name", "model"),
+    [
+        ("extractions", Extraction),
+        ("classifications", Classification),
+    ],
+)
+def test_status_filter_shape(sync_client: Retab, resource_name: str, model: type) -> None:
+    """Processing list endpoints accept a status filter and return matching-or-empty typed rows."""
     with sync_client as client:
-        envelope = raw_list(client, "extractions", limit=5, status="completed")
+        envelope = raw_list(client, resource_name, limit=5, status="completed")
         assert isinstance(envelope.get("data"), list)
-        validated, _skipped = validate_tolerant(envelope, Extraction)
+        validated, _skipped = validate_tolerant(envelope, model)
         for item in validated:
             assert item.status is None or str(item.status) == "completed" or item.status == "completed"
 

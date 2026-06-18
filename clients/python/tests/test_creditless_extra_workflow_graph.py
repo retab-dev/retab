@@ -136,7 +136,7 @@ def test_edges_get_by_discovered_id(sync_client: Retab) -> None:
         edges = sync_client.workflows.edges.list(workflow_id=wf.id, limit=1)
         if edges.data:
             edge_id = edges.data[0].id
-            fetched = sync_client.workflows.edges.get(edge_id)
+            fetched = sync_client.workflows.edges.get(edge_id, workflow_id=wf.id)
             assert isinstance(fetched, WorkflowEdgeDoc)
             assert fetched.id == edge_id
             return

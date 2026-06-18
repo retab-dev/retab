@@ -112,9 +112,11 @@ class WorkflowEdgesMixin:
         data = None
         return PreparedRequest(method="POST", url=f"/v1/workflows/edges/versions/{edge_version_id}/restore", params=params or None, data=data)
 
-    def prepare_get(self, edge_id: str, **extra_params: Any) -> PreparedRequest:
+    def prepare_get(self, edge_id: str, workflow_id: str | None = None, **extra_params: Any) -> PreparedRequest:
         """Get Edge Get a single edge by ID."""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+            "workflow_id": workflow_id,
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
@@ -192,9 +194,9 @@ class WorkflowEdges(SyncAPIResource, WorkflowEdgesMixin):
         response = self._client._prepared_request(prepared_request)
         return WorkflowEdgeDoc.model_validate(response)
 
-    def get(self, edge_id: str, **extra_params: Any) -> WorkflowEdgeDoc:
+    def get(self, edge_id: str, workflow_id: str | None = None, **extra_params: Any) -> WorkflowEdgeDoc:
         """Get Edge Get a single edge by ID."""
-        prepared_request = self.prepare_get(edge_id, **extra_params)
+        prepared_request = self.prepare_get(edge_id, workflow_id=workflow_id, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return WorkflowEdgeDoc.model_validate(response)
 
@@ -266,9 +268,9 @@ class AsyncWorkflowEdges(AsyncAPIResource, WorkflowEdgesMixin):
         response = await self._client._prepared_request(prepared_request)
         return WorkflowEdgeDoc.model_validate(response)
 
-    async def get(self, edge_id: str, **extra_params: Any) -> WorkflowEdgeDoc:
+    async def get(self, edge_id: str, workflow_id: str | None = None, **extra_params: Any) -> WorkflowEdgeDoc:
         """Get Edge Get a single edge by ID."""
-        prepared_request = self.prepare_get(edge_id, **extra_params)
+        prepared_request = self.prepare_get(edge_id, workflow_id=workflow_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return WorkflowEdgeDoc.model_validate(response)
 
