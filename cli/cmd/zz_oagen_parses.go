@@ -33,8 +33,8 @@ var parsesCmd = &cobra.Command{
 var parsesCreateCmd = &cobra.Command{
 	Use:     "create",
 	Short:   "Create a parse",
-	Long:    "Parse a document into LLM-ready markdown.\n\nAccepts the standard document sources (--file, --url, --file-id,\n--document-file). Tune table rendering with --table-parsing-format\n(e.g. markdown, html) and raise --image-resolution-dpi for image-heavy\nor low-quality scans where the default is too coarse.",
-	Example: "  # Parse a PDF to markdown\n  retab parses create --file ./report.pdf --model gpt-4o\n\n  # Parse an Excel file with HTML tables for downstream rendering\n  retab parses create \\\n    --file ./book.xlsx --model gpt-4o \\\n    --table-parsing-format html\n\n  # High-DPI parse for a scanned image\n  retab parses create \\\n    --file ./scan.png --model gpt-4o \\\n    --image-resolution-dpi 300",
+	Long:    "Parse a document into LLM-ready markdown.\n\nAccepts the standard document sources (--file, --url, --file-id,\n--document-file). Tune table rendering with --table-parsing-format\n(e.g. markdown, html).",
+	Example: "  # Parse a PDF to markdown\n  retab parses create --file ./report.pdf --model gpt-4o\n\n  # Parse an Excel file with HTML tables for downstream rendering\n  retab parses create \\\n    --file ./book.xlsx --model gpt-4o \\\n    --table-parsing-format html\n\n  # Parse a scanned image\n  retab parses create --file ./scan.png --model gpt-4o",
 	Args:    cobra.NoArgs,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		params := retab.ParsesCreateParams{}
@@ -51,9 +51,6 @@ var parsesCreateCmd = &cobra.Command{
 			return err
 		}
 		params.Model = ptr(model)
-		if v, _ := cmd.Flags().GetInt("image-resolution-dpi"); cmd.Flags().Changed("image-resolution-dpi") {
-			params.ImageResolutionDpi = ptr(v)
-		}
 		if v, _ := cmd.Flags().GetString("instructions"); true {
 			params.Instructions = ptr(v)
 		}
@@ -176,7 +173,7 @@ func init() {
 	parsesCreateCmd.Flags().String("model", "", "model identifier (required)")
 	_ = parsesCreateCmd.MarkFlagRequired("model")
 	parsesCreateCmd.Flags().String("table-parsing-format", "", "table parsing format")
-	parsesCreateCmd.Flags().Var(&boundedIntFlagValue{min: 96, max: 300}, "image-resolution-dpi", "image resolution DPI (96-300)")
+	parsesCreateCmd.Flags().Var(&boundedIntFlagValue{min: 96, max: 300}, "image-resolution-dpi", "ignored legacy image resolution DPI")
 	parsesCreateCmd.Flags().String("instructions", "", "extra instructions")
 	parsesCreateCmd.Flags().Bool("bust-cache", false, "bypass server-side cache")
 	parsesCreateCmd.Flags().Bool("background", false, "If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.")

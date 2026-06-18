@@ -15,7 +15,7 @@ func addExtractionBodyFlags(cmd *cobra.Command) {
 	addDocumentFlags(cmd)
 	addSchemaFlags(cmd)
 	cmd.Flags().String("model", "", "model identifier (required)")
-	cmd.Flags().Var(&boundedIntFlagValue{min: 96, max: 300}, "image-resolution-dpi", "image resolution DPI (96-300)")
+	cmd.Flags().Var(&boundedIntFlagValue{min: 96, max: 300}, "image-resolution-dpi", "ignored legacy image resolution DPI")
 	cmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 16}, "n-consensus", "consensus count (1-16)")
 	cmd.Flags().String("instructions", "", "extra instructions")
 	cmd.Flags().Bool("bust-cache", false, "bypass server-side cache")
@@ -34,7 +34,6 @@ func newExtractionRequest(cmd *cobra.Command) (retab.ExtractionsCreateParams, er
 	if err != nil {
 		return retab.ExtractionsCreateParams{}, err
 	}
-	imageDPI, _ := cmd.Flags().GetInt("image-resolution-dpi")
 	nConsensus, _ := cmd.Flags().GetInt("n-consensus")
 	instructions, _ := cmd.Flags().GetString("instructions")
 	bustCache, _ := cmd.Flags().GetBool("bust-cache")
@@ -69,7 +68,6 @@ func newExtractionRequest(cmd *cobra.Command) (retab.ExtractionsCreateParams, er
 		Document:           doc,
 		JSONSchema:         jsonSchema,
 		Model:              ptr(model),
-		ImageResolutionDpi: ptr(imageDPI),
 		NConsensus:         ptr(nConsensus),
 		Instructions:       ptr(instructions),
 		Metadata:           &metadata,
