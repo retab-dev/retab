@@ -24,20 +24,28 @@ const BASE_URL = process.env.RETAB_API_BASE_URL;
 
 const HAVE_CREDS = Boolean(API_KEY && BASE_URL);
 
+type ProbeResult = { live: true; reason: '' } | { live: false; reason: string; fatal: boolean };
+
 /**
  * Probe the configured server once at module load. The e2e suites only run when
  * BOTH credentials are present AND the server actually answers — so a stale
  * `.env.local` pointing at a `localhost:4000` that isn't running (or any offline
  * CI run) cleanly skips the e2e suites instead of failing with connection
- * errors, keeping the offline contract tests green standalone.
+ * errors, keeping the offline contract tests green standalone. A reachable
+ * server that rejects the configured API key is treated as a real e2e
+ * misconfiguration and fails at module load with a concise message.
  *
  * Top-level await is supported by Bun's test module loader.
  */
-async function probeServer(): Promise<boolean> {
-  if (!HAVE_CREDS) return false;
+async function probeServer(): Promise<ProbeResult> {
+  if (!HAVE_CREDS) {
+    return {
+      live: false,
+      fatal: false,
+      reason: 'live e2e skipped: set RETAB_API_KEY and RETAB_API_BASE_URL to run against a server',
+    };
+  }
   try {
-    // A bare GET against the API root; any HTTP answer (even 401/404) proves the
-    // host is reachable. We do not assert status — only that a response came back.
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), 4000);
     const res = await fetch(`${BASE_URL}/v1/files?limit=1`, {
@@ -46,19 +54,41 @@ async function probeServer(): Promise<boolean> {
       signal: ctrl.signal,
     });
     clearTimeout(t);
-    return res.status > 0;
+    if (res.status >= 200 && res.status < 300) {
+      return { live: true, reason: '' };
+    }
+    if (res.status === 401) {
+      return {
+        live: false,
+        fatal: true,
+        reason: 'live e2e preflight failed: RETAB_API_KEY was rejected by the configured server',
+      };
+    }
+    return {
+      live: false,
+      fatal: true,
+      reason: `live e2e preflight failed: ${BASE_URL}/v1/files?limit=1 returned HTTP ${res.status}: ${(await res.text()).slice(0, 240)}`,
+    };
   } catch {
-    return false;
+    return {
+      live: false,
+      fatal: false,
+      reason:
+        'live e2e skipped: configured server is unreachable (start the server or point RETAB_API_BASE_URL at one)',
+    };
   }
 }
 
+const PROBE = await probeServer();
+if (!PROBE.live && PROBE.fatal) {
+  throw new Error(PROBE.reason);
+}
+
 /** True only when creds are present AND the configured server is reachable. */
-export const LIVE = await probeServer();
+export const LIVE = PROBE.live;
 
 /** Reason string surfaced when an e2e suite is skipped. */
-export const LIVE_SKIP_REASON = HAVE_CREDS
-  ? 'live e2e skipped: configured server is unreachable (start the server or point RETAB_API_BASE_URL at one)'
-  : 'live e2e skipped: set RETAB_API_KEY and RETAB_API_BASE_URL to run against a server';
+export const LIVE_SKIP_REASON = PROBE.reason;
 
 let cached: Retab | undefined;
 

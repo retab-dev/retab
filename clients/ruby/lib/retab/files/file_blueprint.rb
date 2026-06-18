@@ -9,8 +9,8 @@ module Retab
       object: :object,
       id: :id,
       file: :file,
-      mode: :mode,
       intent: :intent,
+      mode: :mode,
       output: :output,
       status: :status,
       error: :error,
@@ -23,8 +23,8 @@ module Retab
       :object,
       :id,
       :file,
-      :mode,
       :intent,
+      :mode,
       :output,
       :status,
       :error,
@@ -39,8 +39,8 @@ module Retab
       @object = hash[:object].nil? ? "file.blueprint" : hash[:object]
       @id = hash[:id]
       @file = hash[:file] ? Retab::FileRef.new(hash[:file]) : nil
-      @mode = hash[:mode]
       @intent = hash[:intent]
+      @mode = hash[:mode]
       @output = hash[:output] || {}
       @status = hash[:status].nil? ? "pending" : hash[:status]
       @error = hash[:error] ? Retab::PrimitiveError.new(hash[:error]) : nil

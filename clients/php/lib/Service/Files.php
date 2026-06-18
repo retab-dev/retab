@@ -74,23 +74,23 @@ class Files
      *
      * Create a Document Blueprint for an uploaded file.
      * @param string $fileId File id to analyze.
-     * @param \Retab\Resource\FileBlueprintMode|null $mode Optional analysis depth override. Omit to let Retab choose.
      * @param string|null $intent Optional user intent used to guide the blueprint analysis.
+     * @param \Retab\Resource\FileBlueprintMode|null $mode Compatibility-only analysis mode. The service currently runs a single instant pass.
      * @param bool|null $background If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
      * @return \Retab\Resource\FileBlueprint
      * @throws \Retab\Exception\RetabException
      */
     public function createBlueprint(
         string $fileId,
-        ?\Retab\Resource\FileBlueprintMode $mode = null,
         ?string $intent = null,
+        ?\Retab\Resource\FileBlueprintMode $mode = null,
         ?bool $background = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\FileBlueprint {
         $body = array_filter([
             'file_id' => $fileId,
-            'mode' => $mode?->value,
             'intent' => $intent,
+            'mode' => $mode?->value,
             'background' => $background,
         ], fn($v) => $v !== null);
         $response = $this->client->request(

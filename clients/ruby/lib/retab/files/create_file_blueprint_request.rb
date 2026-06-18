@@ -7,15 +7,15 @@ module Retab
 
     HASH_ATTRS = {
       file_id: :file_id,
-      mode: :mode,
       intent: :intent,
+      mode: :mode,
       background: :background
     }.freeze
 
     attr_accessor(
       :file_id,
-      :mode,
       :intent,
+      :mode,
       :background
     )
 
@@ -23,8 +23,8 @@ module Retab
       super()
       hash = self.class.normalize(json)
       @file_id = hash[:file_id]
-      @mode = hash[:mode]
       @intent = hash[:intent]
+      @mode = hash[:mode]
       @background = hash[:background].nil? ? false : hash[:background]
     end
   end

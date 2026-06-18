@@ -93,24 +93,24 @@ public final class FilesApi {
       throws IOException, InterruptedException {
     return createBlueprint(
         request == null ? null : request.getFileId(),
-        request == null ? null : request.getMode(),
         request == null ? null : request.getIntent(),
+        request == null ? null : request.getMode(),
         request == null ? null : request.isBackground());
   }
 
   public FileBlueprint createBlueprint(
-      String fileId, CreateFileBlueprintRequestMode mode, String intent, Boolean background)
+      String fileId, String intent, CreateFileBlueprintRequestMode mode, Boolean background)
       throws IOException, InterruptedException {
     String path = "/v1/files/blueprints";
     StringBuilder query = new StringBuilder();
     URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
     Map<String, Object> body = new LinkedHashMap<>();
     body.put("file_id", fileId);
-    if (mode != null) {
-      body.put("mode", mode);
-    }
     if (intent != null) {
       body.put("intent", intent);
+    }
+    if (mode != null) {
+      body.put("mode", mode);
     }
     if (background != null) {
       body.put("background", background);

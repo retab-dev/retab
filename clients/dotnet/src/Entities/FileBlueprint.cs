@@ -14,11 +14,11 @@ namespace Retab
         /// <summary>Information about the analyzed file.</summary>
         public BlockExecFileRef File { get; set; } = default!;
 
-        /// <summary>Analysis depth used or requested.</summary>
-        public CreateFileBlueprintRequestMode? Mode { get; set; }
-
         /// <summary>User intent supplied with the blueprint request.</summary>
         public string? Intent { get; set; }
+
+        /// <summary>Compatibility-only analysis mode. The service currently runs a single instant pass.</summary>
+        public CreateFileBlueprintRequestMode? Mode { get; set; }
 
         /// <summary>The generated Document Blueprint payload.</summary>
         public Dictionary<string, object>? Output { get; set; }

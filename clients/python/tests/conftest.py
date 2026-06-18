@@ -3,7 +3,10 @@ import re
 import warnings
 import os
 import sys
+from socket import timeout as SocketTimeout
 from typing import Any
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
 import pytest
 import pytest_asyncio
@@ -108,6 +111,39 @@ class EnvConfig(BaseModel):
     retab_api_base_url: str = Field(..., description="Retab API base URL")
 
 
+def _live_api_preflight(api_key: str, base_url: str) -> tuple[str, str]:
+    url = f"{_strip_legacy_version_suffix(base_url)}/v1/files?limit=1"
+    request = Request(
+        url,
+        headers={"Authorization": f"Bearer {api_key}", "Accept": "application/json"},
+        method="GET",
+    )
+    try:
+        with urlopen(request, timeout=4) as response:
+            status = response.status
+            body = response.read(512).decode("utf-8", errors="replace")
+    except HTTPError as exc:
+        status = exc.code
+        body = exc.read(512).decode("utf-8", errors="replace")
+    except (URLError, TimeoutError, SocketTimeout, OSError) as exc:
+        return (
+            "unreachable",
+            f"live e2e skipped: configured server is unreachable at {base_url!r} ({exc})",
+        )
+
+    if 200 <= status < 300:
+        return ("ok", "")
+    if status == 401:
+        return (
+            "invalid_key",
+            "live e2e preflight failed: RETAB_API_KEY was rejected by the configured server",
+        )
+    return (
+        "bad_response",
+        f"live e2e preflight failed: {url} returned HTTP {status}: {body[:240]}",
+    )
+
+
 @pytest.fixture(scope="session")
 def api_keys(load_env: None) -> EnvConfig:
     _ = load_env
@@ -117,9 +153,16 @@ def api_keys(load_env: None) -> EnvConfig:
     assert retab_api_key is not None, "RETAB_API_KEY must be set in environment"
     assert retab_api_base_url is not None, "RETAB_API_BASE_URL must be set in environment"
 
+    normalized_base_url = _strip_legacy_version_suffix(retab_api_base_url)
+    preflight_status, preflight_reason = _live_api_preflight(retab_api_key, normalized_base_url)
+    if preflight_status == "unreachable":
+        pytest.skip(preflight_reason)
+    if preflight_status != "ok":
+        pytest.fail(preflight_reason)
+
     return EnvConfig(
         retab_api_key=retab_api_key,
-        retab_api_base_url=_strip_legacy_version_suffix(retab_api_base_url),
+        retab_api_base_url=normalized_base_url,
     )
 
 

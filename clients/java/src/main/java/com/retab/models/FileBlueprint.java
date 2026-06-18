@@ -15,8 +15,8 @@ public final class FileBlueprint {
   private final String objectType;
   private final String id;
   private final FileRef file;
-  private final FileBlueprintMode mode;
   private final String intent;
+  private final FileBlueprintMode mode;
   private final Map<String, Object> output;
   private final FileBlueprintStatus status;
   private final PrimitiveError error;
@@ -29,8 +29,8 @@ public final class FileBlueprint {
       @JsonProperty(value = "object", required = false) String objectType,
       @JsonProperty(value = "id", required = true) String id,
       @JsonProperty(value = "file", required = true) FileRef file,
-      @JsonProperty(value = "mode", required = false) FileBlueprintMode mode,
       @JsonProperty(value = "intent", required = false) String intent,
+      @JsonProperty(value = "mode", required = false) FileBlueprintMode mode,
       @JsonProperty(value = "output", required = false) Map<String, Object> output,
       @JsonProperty(value = "status", required = false) FileBlueprintStatus status,
       @JsonProperty(value = "error", required = false) PrimitiveError error,
@@ -40,8 +40,8 @@ public final class FileBlueprint {
     this.objectType = objectType != null ? objectType : "file.blueprint";
     this.id = id;
     this.file = file;
-    this.mode = mode;
     this.intent = intent;
+    this.mode = mode;
     this.output = output;
     this.status = status;
     this.error = error;
@@ -65,14 +65,14 @@ public final class FileBlueprint {
     return file;
   }
 
-  @JsonProperty("mode")
-  public FileBlueprintMode getMode() {
-    return mode;
-  }
-
   @JsonProperty("intent")
   public String getIntent() {
     return intent;
+  }
+
+  @JsonProperty("mode")
+  public FileBlueprintMode getMode() {
+    return mode;
   }
 
   @JsonProperty("output")

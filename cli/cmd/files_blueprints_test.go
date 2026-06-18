@@ -15,7 +15,6 @@ func TestFilesBlueprintsCreatePostsPublicBlueprintEndpoint(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
 	t.Cleanup(func() {
-		_ = filesBlueprintsCreateCmd.Flags().Set("mode", "")
 		_ = filesBlueprintsCreateCmd.Flags().Set("intent", "")
 		_ = filesBlueprintsCreateCmd.Flags().Set("background", "true")
 	})

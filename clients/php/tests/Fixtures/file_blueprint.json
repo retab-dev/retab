@@ -6,8 +6,8 @@
     "filename": "Test",
     "mime_type": "test_mime_type"
   },
-  "mode": "instant",
   "intent": "test_intent",
+  "mode": "instant",
   "output": {
     "key": {}
   },

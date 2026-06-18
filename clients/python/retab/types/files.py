@@ -40,8 +40,8 @@ class CreateFileBlueprintRequest(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     file_id: str = Field(..., description="File id to analyze.")
-    mode: FileBlueprintMode | None = Field(default=None, description="Optional analysis depth override. Omit to let Retab choose.")
     intent: str | None = Field(default=None, description="Optional user intent used to guide the blueprint analysis.")
+    mode: FileBlueprintMode | None = Field(default=None, description="Compatibility-only analysis mode. The service currently runs a single instant pass.")
     background: bool | None = Field(
         default=False,
         description="If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.",
@@ -87,8 +87,8 @@ class FileBlueprint(BaseModel):
     object: Literal["file.blueprint"] = Field(default="file.blueprint")
     id: str = Field(..., description="Unique identifier of the file blueprint.")
     file: FileRef = Field(..., description="Information about the analyzed file.")
-    mode: FileBlueprintMode | None = Field(default=None, description="Analysis depth used or requested.")
     intent: str | None = Field(default=None, description="User intent supplied with the blueprint request.")
+    mode: FileBlueprintMode | None = Field(default=None, description="Compatibility-only analysis mode. The service currently runs a single instant pass.")
     output: dict[str, Any] | None = Field(default={}, description="The generated Document Blueprint payload.")
     status: FileBlueprintStatus | None = Field(
         default=cast(FileBlueprintStatus, "pending"),

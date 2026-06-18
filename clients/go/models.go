@@ -1212,10 +1212,10 @@ type FileBlueprint struct {
 	ID string `json:"id"`
 	// File is information about the analyzed file.
 	File FileRef `json:"file"`
-	// Mode is analysis depth used or requested.
-	Mode *FileBlueprintMode `json:"mode,omitempty"`
 	// Intent is user intent supplied with the blueprint request.
 	Intent *string `json:"intent,omitempty"`
+	// Mode is compatibility-only analysis mode. The service currently runs a single instant pass.
+	Mode *FileBlueprintMode `json:"mode,omitempty"`
 	// Output is the generated Document Blueprint payload.
 	Output map[string]interface{} `json:"output,omitempty"`
 	// Status is lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled.

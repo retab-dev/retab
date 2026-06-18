@@ -10,12 +10,12 @@ use serde::{Deserialize, Serialize};
 pub struct CreateFileBlueprintRequest {
     /// File id to analyze.
     pub file_id: String,
-    /// Optional analysis depth override. Omit to let Retab choose.
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub mode: Option<CreateFileBlueprintRequestMode>,
     /// Optional user intent used to guide the blueprint analysis.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub intent: Option<String>,
+    /// Compatibility-only analysis mode. The service currently runs a single instant pass.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub mode: Option<CreateFileBlueprintRequestMode>,
     /// If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
     ///
     /// Defaults to `false`.
@@ -28,8 +28,8 @@ impl CreateFileBlueprintRequest {
     pub fn new(file_id: impl Into<String>) -> Self {
         Self {
             file_id: file_id.into(),
-            mode: Default::default(),
             intent: Default::default(),
+            mode: Default::default(),
             background: Default::default(),
         }
     }

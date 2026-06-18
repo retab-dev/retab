@@ -22,6 +22,10 @@ RETAB_API_KEY=your_api_key_here
 RETAB_API_BASE_URL=https://api.retab.com  # or your local/staging URL
 ```
 
+Live e2e suites preflight `RETAB_API_BASE_URL/v1/files?limit=1`. Missing
+credentials or an unreachable local server skip live suites; a reachable server
+that rejects `RETAB_API_KEY` fails immediately with a credential error.
+
 ## Running Tests
 
 ### Against local server (http://localhost:4000):
