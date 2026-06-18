@@ -23,6 +23,8 @@ from .runs import WorkflowTestRuns, AsyncWorkflowTestRuns
 
 
 class WorkflowTestsMixin:
+    _client: Any
+
     def prepare_list(
         self,
         workflow_id: str,

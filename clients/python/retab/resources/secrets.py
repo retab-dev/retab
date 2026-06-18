@@ -10,6 +10,8 @@ from retab.types.secrets import CreateSecretRequest, SecretListResponse, SecretR
 
 
 class SecretsMixin:
+    _client: Any
+
     def prepare_list_secrets(self, **extra_params: Any) -> PreparedRequest:
         """Secret.List"""
         params: dict[str, Any] = {}

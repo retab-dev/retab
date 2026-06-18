@@ -11,6 +11,8 @@ from retab.types.workflows.spec import DeclarativeExportResponse, DeclarativeVal
 
 
 class WorkflowSpecMixin:
+    _client: Any
+
     def prepare_validate(self, yaml_definition: str, project_id: str | None = None, **extra_params: Any) -> PreparedRequest:
         """Validate Workflow Spec Validate declarative YAML without changing the workflow. Any error-level diagnostic responds with 400 and the structured issues. Warnings do not make a spec invalid: a warning-only spec responds with 200, `is_valid=True`, and the warnings in `diagnostics`."""
         params: dict[str, Any] = {}

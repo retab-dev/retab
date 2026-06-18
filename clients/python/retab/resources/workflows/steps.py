@@ -11,6 +11,8 @@ from retab.types.workflows.steps import WorkflowRunStep
 
 
 class WorkflowStepsMixin:
+    _client: Any
+
     def prepare_list(
         self,
         run_id: str | None = None,

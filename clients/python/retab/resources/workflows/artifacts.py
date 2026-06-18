@@ -26,6 +26,8 @@ from retab.types.workflows.artifacts import (
 
 
 class WorkflowArtifactsMixin:
+    _client: Any
+
     def prepare_list(
         self,
         run_id: str | None = None,

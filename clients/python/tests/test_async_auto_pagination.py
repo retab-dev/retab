@@ -26,8 +26,8 @@ from retab.types.extractions import Extraction
 from retab.types.pagination import AsyncPaginatedList
 from mocks import mock_async_client
 
-# Whole module is creditless (live list/get/pagination only; no credits).
-pytestmark = pytest.mark.creditless
+# Whole module is offline: mocked async pagination contract, no server/credentials.
+pytestmark = [pytest.mark.creditless, pytest.mark.offline_contract]
 
 
 _FILE_REF = {"id": "file_abc", "filename": "doc.pdf", "mime_type": "application/pdf"}

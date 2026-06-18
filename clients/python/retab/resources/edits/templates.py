@@ -17,7 +17,7 @@ from retab.types.edits.templates import CreateEditTemplateRequest, EditTemplate,
 from retab.types.mime import FileRef, MIMEData
 
 
-def _coerce_mime_document_input(document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl) -> dict[str, Any]:
+def _coerce_mime_document_input(document: Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl) -> dict[str, Any]:
     mime_data = prepare_mime_document(document)
     return {
         "filename": mime_data.filename,
@@ -42,7 +42,7 @@ def _file_link_to_mime_dict(link: Any, fallback_filename: str | None) -> dict[st
 
 
 def _resolve_mime_document_input(
-    document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl | dict[str, Any], resolve_file_id: Callable[[str], Any]
+    document: FileRef | Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl | dict[str, Any], resolve_file_id: Callable[[str], Any]
 ) -> dict[str, Any]:
     if isinstance(document, dict):
         return document
@@ -53,7 +53,7 @@ def _resolve_mime_document_input(
 
 
 async def _aresolve_mime_document_input(
-    document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl | dict[str, Any], resolve_file_id: Callable[[str], Any]
+    document: FileRef | Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl | dict[str, Any], resolve_file_id: Callable[[str], Any]
 ) -> dict[str, Any]:
     if isinstance(document, dict):
         return document
@@ -64,6 +64,8 @@ async def _aresolve_mime_document_input(
 
 
 class EditTemplatesMixin:
+    _client: Any
+
     def prepare_list(
         self,
         before: str | None = None,
@@ -90,7 +92,7 @@ class EditTemplatesMixin:
         return PreparedRequest(method="GET", url="/v1/edits/templates", params=params or None, data=data)
 
     def prepare_create(
-        self, name: str, document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl, form_fields: list[FormField], **extra_params: Any
+        self, name: str, document: FileRef | Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl, form_fields: list[FormField], **extra_params: Any
     ) -> PreparedRequest:
         """Create Template Create an edit template. Stores a reusable form template from an empty `document` (PDF or Office document) plus its `form_fields` and a `name`. Later edits can reference the returned template id instead of re-uploading the document. An unsupported document format responds with `400`; on success responds with `201`."""
         params: dict[str, Any] = {}
@@ -151,7 +153,7 @@ class EditTemplates(SyncAPIResource, EditTemplatesMixin):
         return self.request_page(prepared_request, model=EditTemplate)
 
     def create(
-        self, name: str, document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl, form_fields: list[FormField], **extra_params: Any
+        self, name: str, document: FileRef | Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl, form_fields: list[FormField], **extra_params: Any
     ) -> EditTemplate:
         """Create Template Create an edit template. Stores a reusable form template from an empty `document` (PDF or Office document) plus its `form_fields` and a `name`. Later edits can reference the returned template id instead of re-uploading the document. An unsupported document format responds with `400`; on success responds with `201`."""
         document_coerced: Any = document
@@ -198,7 +200,7 @@ class AsyncEditTemplates(AsyncAPIResource, EditTemplatesMixin):
         return await self.request_page(prepared_request, model=EditTemplate)
 
     async def create(
-        self, name: str, document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl, form_fields: list[FormField], **extra_params: Any
+        self, name: str, document: FileRef | Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl, form_fields: list[FormField], **extra_params: Any
     ) -> EditTemplate:
         """Create Template Create an edit template. Stores a reusable form template from an empty `document` (PDF or Office document) plus its `form_fields` and a `name`. Later edits can reference the returned template id instead of re-uploading the document. An unsupported document format responds with `400`; on success responds with `201`."""
         document_coerced: Any = document

@@ -24,6 +24,8 @@ from .runs import ExperimentRuns, AsyncExperimentRuns
 
 
 class WorkflowExperimentsMixin:
+    _client: Any
+
     def prepare_list(
         self,
         workflow_id: str,

@@ -17,6 +17,7 @@ from retab.resources.workflows.tests import (
     AsyncWorkflowTests,
     WorkflowTests,
 )
+from retab.types.workflows.experiments import JsonHandleInput
 
 # Whole module is unit (pure offline; no server/credentials needed).
 pytestmark = pytest.mark.unit
@@ -401,17 +402,16 @@ _RUN_RESPONSE = {
 
 _RESULT_RESPONSE = {
     "id": "wfresult_abc",
-    "run_id": "wftestrun_q1z2",
+    "workflow_test_run_id": "wftestrun_q1z2",
     "test_id": "wfnodetest_abc",
     "workflow_id": "wf_abc123",
+    "block_id": "block_extract",
+    "block_type": "function",
     "lifecycle": _COMPLETED,
     "timing": _TIMING,
-    "target": {"type": "block", "block_id": "block_extract"},
-    "source": {"type": "manual", "handle_inputs": {}},
     "execution_fingerprint": "f1",
-    "outputs": {"output-json-0": {"total": 1234.56}},
+    "handle_outputs": {"output-json-0": {"type": "json", "data": {"total": 1234.56}}},
     "warnings": [],
-    "skipped": False,
     "verdict": "passed",
 }
 
@@ -501,14 +501,14 @@ def test_workflow_test_result_matches_run_record_shape() -> None:
     result = WorkflowTestResult.model_validate(
         {
             **_RESULT_RESPONSE,
-            "run_id": None,
+            "workflow_test_run_id": None,
             "lifecycle": None,
             "timing": None,
         }
     )
 
     assert result.workflow_id == "wf_abc123"
-    assert result.run_id is None
+    assert result.workflow_test_run_id is None
     assert result.lifecycle is None
     assert result.timing is None
 
@@ -549,7 +549,10 @@ def test_runs_results_list_uses_run_id_first_results_route() -> None:
     assert request.url == "/v1/workflows/tests/results"
     assert request.params == {"run_id": "wftestrun_q1z2", "limit": 20, "order": "desc"}
     assert result.data[0].test_id == "wfnodetest_abc"
-    assert result.data[0].outputs == {"output-json-0": {"total": 1234.56}}
+    assert result.data[0].handle_outputs is not None
+    output_payload = result.data[0].handle_outputs["output-json-0"]
+    assert isinstance(output_payload, JsonHandleInput)
+    assert output_payload.data == {"total": 1234.56}
 
 
 def test_runs_results_get_uses_flat_result_id_route() -> None:

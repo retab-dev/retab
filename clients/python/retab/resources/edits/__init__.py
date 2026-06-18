@@ -20,7 +20,7 @@ from retab.types.mime import FileRef, MIMEData
 from .templates import EditTemplates, AsyncEditTemplates
 
 
-def _coerce_mime_document_input(document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl) -> dict[str, Any]:
+def _coerce_mime_document_input(document: Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl) -> dict[str, Any]:
     mime_data = prepare_mime_document(document)
     return {
         "filename": mime_data.filename,
@@ -45,7 +45,7 @@ def _file_link_to_mime_dict(link: Any, fallback_filename: str | None) -> dict[st
 
 
 def _resolve_mime_document_input(
-    document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl | dict[str, Any], resolve_file_id: Callable[[str], Any]
+    document: FileRef | Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl | dict[str, Any], resolve_file_id: Callable[[str], Any]
 ) -> dict[str, Any]:
     if isinstance(document, dict):
         return document
@@ -56,7 +56,7 @@ def _resolve_mime_document_input(
 
 
 async def _aresolve_mime_document_input(
-    document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl | dict[str, Any], resolve_file_id: Callable[[str], Any]
+    document: FileRef | Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl | dict[str, Any], resolve_file_id: Callable[[str], Any]
 ) -> dict[str, Any]:
     if isinstance(document, dict):
         return document
@@ -67,6 +67,8 @@ async def _aresolve_mime_document_input(
 
 
 class EditsMixin:
+    _client: Any
+
     def prepare_list(
         self,
         before: str | None = None,
@@ -101,7 +103,7 @@ class EditsMixin:
     def prepare_create(
         self,
         instructions: str,
-        document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl | None = None,
+        document: FileRef | Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
         template_id: str | None = None,
         model: str = "retab-small",
         config: EditConfig | None = None,
@@ -188,7 +190,7 @@ class Edits(SyncAPIResource, EditsMixin):
     def create(
         self,
         instructions: str,
-        document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl | None = None,
+        document: FileRef | Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
         template_id: str | None = None,
         model: str = "retab-small",
         config: EditConfig | None = None,
@@ -254,7 +256,7 @@ class AsyncEdits(AsyncAPIResource, EditsMixin):
     async def create(
         self,
         instructions: str,
-        document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl | None = None,
+        document: FileRef | Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
         template_id: str | None = None,
         model: str = "retab-small",
         config: EditConfig | None = None,

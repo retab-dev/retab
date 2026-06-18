@@ -12,6 +12,8 @@ from retab.types.workflows.experiments.runs import CancelWorkflowExperimentRunRe
 
 
 class ExperimentRunsMixin:
+    _client: Any
+
     def prepare_list(
         self,
         workflow_id: str | None = None,

@@ -25,6 +25,8 @@ from .executions import WorkflowBlockExecutions, AsyncWorkflowBlockExecutions
 
 
 class WorkflowBlocksMixin:
+    _client: Any
+
     def prepare_list(self, workflow_id: str, before: str | None = None, after: str | None = None, limit: int | None = 100, **extra_params: Any) -> PreparedRequest:
         """List Blocks List blocks for a workflow with keyset cursor pagination. Sorted by `updated_at` descending with `id` as the tiebreaker. Pass `after` (the previous response's `list_metadata.after`) for the next page, `before` for the previous page. They are mutually exclusive; the 400 cleanly tells the caller which to drop."""
         params: dict[str, Any] = {

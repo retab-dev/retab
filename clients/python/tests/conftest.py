@@ -2,9 +2,8 @@ import json
 import re
 import warnings
 import os
-import shutil
 import sys
-from typing import IO, Any
+from typing import Any
 
 import pytest
 import pytest_asyncio
@@ -22,7 +21,7 @@ SDK_ROOT = os.path.dirname(TEST_DIR)
 if SDK_ROOT not in sys.path:
     sys.path.insert(0, SDK_ROOT)
 
-from retab import AsyncRetab, Retab
+from retab import AsyncRetab, Retab  # noqa: E402
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -35,9 +34,13 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 def pytest_configure(config: pytest.Config) -> None:
     """Register the credit-cost markers so the suite can be sliced safely.
 
+    ``offline_contract`` — pure route/model/local-logic contract tests. These
+    do not require a server, credentials, or environment file.
+
     ``creditless`` — exercises only storage / config CRUD / list / get / error
     paths; never runs a model or document-processing primitive, so it is safe to
-    run against any environment (including production) without consuming credits.
+    run against any environment (including production) without consuming credits,
+    but it may still require a live API and credentials.
 
     ``billable`` — creates extractions/parses/splits/classifications/edits (the
     ``created_*`` fixtures), which run real inference and DO consume credits.
@@ -45,7 +48,8 @@ def pytest_configure(config: pytest.Config) -> None:
     Run the safe subset with ``pytest -m creditless`` (or exclude the costly one
     with ``-m "not billable"``).
     """
-    config.addinivalue_line("markers", "creditless: makes no billable/LLM/processing calls; safe to run anywhere")
+    config.addinivalue_line("markers", "offline_contract: pure offline contract test; no server or credentials needed")
+    config.addinivalue_line("markers", "creditless: makes no billable/LLM/processing calls; may still require live API credentials")
     config.addinivalue_line("markers", "billable: creates primitives that consume credits (runs real inference)")
     config.addinivalue_line("markers", "unit: pure offline test (mocked client / local logic); no server or credentials needed")
 
@@ -68,6 +72,9 @@ def load_env(request: pytest.FixtureRequest) -> None:
         # needs no server or credentials, so this must NOT hard-fail; any live
         # test (creditless/billable) that needs a key will fail clearly at the
         # ``api_keys`` fixture instead.
+        marker_expr = str(request.config.option.markexpr or "")
+        if "unit" in marker_expr or "offline_contract" in marker_expr:
+            return
         warnings.warn(
             "No environment specified (--env-file/--production/--local/--staging); running offline. Live tests will fail at the api_keys fixture.",
             UserWarning,

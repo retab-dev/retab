@@ -11,6 +11,8 @@ from retab.types.workflows.blocks.executions import CreateBlockExecutionRequest,
 
 
 class WorkflowBlockExecutionsMixin:
+    _client: Any
+
     def prepare_list(
         self,
         run_id: str,

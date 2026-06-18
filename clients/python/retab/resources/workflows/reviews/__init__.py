@@ -14,6 +14,8 @@ from .versions import WorkflowReviewVersions, AsyncWorkflowReviewVersions
 
 
 class WorkflowReviewsMixin:
+    _client: Any
+
     def prepare_list(
         self,
         workflow_id: str | None = None,

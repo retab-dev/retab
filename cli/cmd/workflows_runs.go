@@ -945,7 +945,7 @@ which addresses a parent collection, takes a workflow id. The same holds for
   # Poll until done
   while [ "$(retab workflows runs get run_xyz789 | jq -r '.lifecycle.status')" = "running" ]; do
     sleep 2
-	done`,
+  done`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		runID := strings.TrimSpace(args[0])

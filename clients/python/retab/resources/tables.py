@@ -31,6 +31,8 @@ from retab.types.tables import (
 
 
 class TablesMixin:
+    _client: Any
+
     def prepare_list(self, project_id: str | None = None, **extra_params: Any) -> PreparedRequest:
         """Table.List"""
         params: dict[str, Any] = {

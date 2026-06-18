@@ -16,7 +16,7 @@ from retab.types.classifications import Category, Classification, Classification
 from retab.types.mime import FileRef, MIMEData
 
 
-def _coerce_mime_document_input(document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl) -> dict[str, Any]:
+def _coerce_mime_document_input(document: Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl) -> dict[str, Any]:
     mime_data = prepare_mime_document(document)
     return {
         "filename": mime_data.filename,
@@ -41,7 +41,7 @@ def _file_link_to_mime_dict(link: Any, fallback_filename: str | None) -> dict[st
 
 
 def _resolve_mime_document_input(
-    document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl | dict[str, Any], resolve_file_id: Callable[[str], Any]
+    document: FileRef | Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl | dict[str, Any], resolve_file_id: Callable[[str], Any]
 ) -> dict[str, Any]:
     if isinstance(document, dict):
         return document
@@ -52,7 +52,7 @@ def _resolve_mime_document_input(
 
 
 async def _aresolve_mime_document_input(
-    document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl | dict[str, Any], resolve_file_id: Callable[[str], Any]
+    document: FileRef | Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl | dict[str, Any], resolve_file_id: Callable[[str], Any]
 ) -> dict[str, Any]:
     if isinstance(document, dict):
         return document
@@ -63,6 +63,8 @@ async def _aresolve_mime_document_input(
 
 
 class ClassificationsMixin:
+    _client: Any
+
     def prepare_list(
         self,
         before: str | None = None,
@@ -94,7 +96,7 @@ class ClassificationsMixin:
 
     def prepare_create(
         self,
-        document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl,
+        document: FileRef | Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         categories: list[Category],
         model: str = "retab-small",
         first_n_pages: int | None = None,
@@ -178,7 +180,7 @@ class Classifications(SyncAPIResource, ClassificationsMixin):
 
     def create(
         self,
-        document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl,
+        document: FileRef | Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         categories: list[Category],
         model: str = "retab-small",
         first_n_pages: int | None = None,
@@ -248,7 +250,7 @@ class AsyncClassifications(AsyncAPIResource, ClassificationsMixin):
 
     async def create(
         self,
-        document: Path | str | bytes | IOBase | FileRef | MIMEData | PIL.Image.Image | HttpUrl,
+        document: FileRef | Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         categories: list[Category],
         model: str = "retab-small",
         first_n_pages: int | None = None,

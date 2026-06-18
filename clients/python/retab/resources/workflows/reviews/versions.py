@@ -11,6 +11,8 @@ from retab.types.workflows.reviews.versions import CreateReviewVersionRequest, R
 
 
 class WorkflowReviewVersionsMixin:
+    _client: Any
+
     def prepare_list(self, review_id: str, before: str | None = None, after: str | None = None, limit: int | None = 50, **extra_params: Any) -> PreparedRequest:
         """List Review Versions List versions for one review. `review_id` is required by design — listing versions across all reviews has no product use and would expose a needlessly wide query surface."""
         params: dict[str, Any] = {

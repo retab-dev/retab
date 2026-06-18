@@ -11,6 +11,8 @@ from retab.types.workflows.experiments.results import ExperimentResult
 
 
 class ExperimentRunResultsMixin:
+    _client: Any
+
     def prepare_list(
         self,
         run_id: str,

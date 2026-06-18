@@ -11,6 +11,8 @@ from retab.types.workflows.edges import WorkflowEdgeCreateRequest, WorkflowEdgeD
 
 
 class WorkflowEdgesMixin:
+    _client: Any
+
     def prepare_list(
         self,
         workflow_id: str,

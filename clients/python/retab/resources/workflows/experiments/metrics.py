@@ -19,6 +19,8 @@ from retab.types.workflows.experiments.metrics import (
 
 
 class ExperimentRunMetricsMixin:
+    _client: Any
+
     def prepare_get(
         self,
         run_id: str,

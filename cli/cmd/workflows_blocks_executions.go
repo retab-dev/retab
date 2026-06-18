@@ -5,6 +5,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
@@ -43,6 +44,15 @@ step.`,
     --step-id step_iter_0_block_extract_1`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		runID := strings.TrimSpace(args[0])
+		if runID == "" {
+			return fmt.Errorf("expected the run id")
+		}
+		blockID, _ := cmd.Flags().GetString("block-id")
+		blockID = strings.TrimSpace(blockID)
+		if blockID == "" {
+			return fmt.Errorf("--block-id is required")
+		}
 		nConsensus := 0
 		if raw, _ := cmd.Flags().GetString("n-consensus"); raw != "" {
 			switch raw {
@@ -59,9 +69,10 @@ step.`,
 		if err := validateBlockExecutionNConsensus(nConsensus); err != nil {
 			return err
 		}
-		request := retab.WorkflowBlockExecutionsCreateParams{RunID: args[0]}
-		request.BlockID, _ = cmd.Flags().GetString("block-id")
-		if stepID, _ := cmd.Flags().GetString("step-id"); stepID != "" {
+		request := retab.WorkflowBlockExecutionsCreateParams{RunID: runID}
+		request.BlockID = blockID
+		if stepID, _ := cmd.Flags().GetString("step-id"); strings.TrimSpace(stepID) != "" {
+			stepID = strings.TrimSpace(stepID)
 			request.StepID = ptr(stepID)
 		}
 		if nConsensus != 0 {
@@ -99,6 +110,15 @@ block execution history should be returned.`,
   retab workflows blocks executions list run_xyz789 --block-id block_extract_1 --limit 10`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		runID := strings.TrimSpace(args[0])
+		if runID == "" {
+			return fmt.Errorf("expected the run id")
+		}
+		blockID, _ := cmd.Flags().GetString("block-id")
+		blockID = strings.TrimSpace(blockID)
+		if blockID == "" {
+			return fmt.Errorf("--block-id is required")
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
@@ -107,9 +127,9 @@ block execution history should be returned.`,
 		defer cancel()
 		params := retab.WorkflowBlockExecutionsListParams{
 			PaginationParams: collectListParams(cmd),
-			RunID:            args[0],
+			RunID:            runID,
 		}
-		params.BlockID, _ = cmd.Flags().GetString("block-id")
+		params.BlockID = blockID
 		result, err := client.Workflows.Blocks.Executions.List(ctx, &params)
 		if err != nil {
 			return err
@@ -128,13 +148,12 @@ var blockExecutionColumns = []TableColumn{
 }
 
 func printBlockExecutionsListResult(cmd *cobra.Command, result *retab.PaginatedList[retab.StoredBlockExecution]) error {
-	if cmd != nil {
-		if f := cmd.Root().PersistentFlags().Lookup("output"); f != nil {
-			switch f.Value.String() {
-			case string(OutputTable), string(OutputCSV):
-				return RenderList(os.Stdout, OutputFormat(f.Value.String()), result, blockExecutionColumns)
-			}
-		}
+	format, err := ResolveOutputFormat(cmd, os.Stdout)
+	if err != nil {
+		return err
+	}
+	if format == OutputTable || format == OutputCSV {
+		return RenderList(os.Stdout, format, result, blockExecutionColumns)
 	}
 	return printJSON(result)
 }

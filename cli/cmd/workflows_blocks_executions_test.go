@@ -125,6 +125,98 @@ func TestWorkflowsBlocksExecutionsListUsesCanonicalEndpoint(t *testing.T) {
 	}
 }
 
+func TestWorkflowsBlocksExecutionsCreateRejectsEmptyRunIDBeforeRequest(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Fatalf("server should not be reached, got %s %s", r.Method, r.URL.Path)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := workflowsBlocksExecutionsCreateCmd.Flags().Set("block-id", "blk_extract"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		resetWorkflowBlocksExecutionsFlag(t, workflowsBlocksExecutionsCreateCmd, "block-id")
+	})
+
+	err := workflowsBlocksExecutionsCreateCmd.RunE(workflowsBlocksExecutionsCreateCmd, []string{""})
+	if err == nil || !strings.Contains(err.Error(), "expected the run id") {
+		t.Fatalf("error = %v, want local empty run id rejection", err)
+	}
+}
+
+func TestWorkflowsBlocksExecutionsCreateRejectsEmptyBlockIDBeforeRequest(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Fatalf("server should not be reached, got %s %s", r.Method, r.URL.Path)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := workflowsBlocksExecutionsCreateCmd.Flags().Set("block-id", ""); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		resetWorkflowBlocksExecutionsFlag(t, workflowsBlocksExecutionsCreateCmd, "block-id")
+	})
+
+	err := workflowsBlocksExecutionsCreateCmd.RunE(workflowsBlocksExecutionsCreateCmd, []string{"run_123"})
+	if err == nil || !strings.Contains(err.Error(), "--block-id is required") {
+		t.Fatalf("error = %v, want local empty block id rejection", err)
+	}
+}
+
+func TestWorkflowsBlocksExecutionsListRejectsEmptyRunIDBeforeRequest(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Fatalf("server should not be reached, got %s %s", r.Method, r.URL.Path)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := workflowsBlocksExecutionsListCmd.Flags().Set("block-id", "blk_extract"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		resetWorkflowBlocksExecutionsFlag(t, workflowsBlocksExecutionsListCmd, "block-id")
+	})
+
+	err := workflowsBlocksExecutionsListCmd.RunE(workflowsBlocksExecutionsListCmd, []string{""})
+	if err == nil || !strings.Contains(err.Error(), "expected the run id") {
+		t.Fatalf("error = %v, want local empty run id rejection", err)
+	}
+}
+
+func TestWorkflowsBlocksExecutionsListRejectsEmptyBlockIDBeforeRequest(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Fatalf("server should not be reached, got %s %s", r.Method, r.URL.Path)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := workflowsBlocksExecutionsListCmd.Flags().Set("block-id", ""); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		resetWorkflowBlocksExecutionsFlag(t, workflowsBlocksExecutionsListCmd, "block-id")
+	})
+
+	err := workflowsBlocksExecutionsListCmd.RunE(workflowsBlocksExecutionsListCmd, []string{"run_123"})
+	if err == nil || !strings.Contains(err.Error(), "--block-id is required") {
+		t.Fatalf("error = %v, want local empty block id rejection", err)
+	}
+}
+
 func TestWorkflowsBlocksExecutionsListTableRendersStatusAndBlock(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())

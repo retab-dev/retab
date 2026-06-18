@@ -32,6 +32,8 @@ from .tests import WorkflowTests, AsyncWorkflowTests
 
 
 class WorkflowsMixin:
+    _client: Any
+
     def prepare_list(
         self,
         before: str | None = None,

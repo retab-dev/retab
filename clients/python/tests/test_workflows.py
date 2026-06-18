@@ -22,13 +22,11 @@ from retab.types.workflows.model import (
     WorkflowRun,
     WorkflowBlock,
     Workflow,
-    WorkflowBlockCreateRequest,
-    UpdateWorkflowBlockRequest,
-    WorkflowEdgeCreateRequest,
     WorkflowGraphVersion,
     StepExecutionResponse,
     StoredBlockExecution,
 )
+from retab.types.workflows.blocks.executions import BlockExecJsonHandleInput
 from retab.types.workflows.steps import PublicHandlePayload
 
 # Whole module is unit (pure offline; no server/credentials needed).
@@ -925,7 +923,9 @@ def test_step_execution_response_ignores_removed_payload_schema_fields() -> None
     assert removed_payload_key not in dumped
     assert "json_schema" not in dumped
     assert step_execution.handle_outputs is not None
-    assert step_execution.handle_outputs["output-json-0"]["data"] == {"invoice_number": "INV-001"}
+    output_payload = step_execution.handle_outputs["output-json-0"]
+    assert isinstance(output_payload, BlockExecJsonHandleInput)
+    assert output_payload.data == {"invoice_number": "INV-001"}
 
 
 def test_workflow_edges_create_accepts_typed_request() -> None:

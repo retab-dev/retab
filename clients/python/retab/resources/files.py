@@ -21,6 +21,8 @@ from retab.types.mime import MIMEData
 
 
 class FilesMixin:
+    _client: Any
+
     def prepare_list(
         self,
         before: str | None = None,

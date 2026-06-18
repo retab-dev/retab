@@ -11,6 +11,8 @@ from retab.types.workflows.tests.results import WorkflowTestResult
 
 
 class WorkflowTestRunResultsMixin:
+    _client: Any
+
     def prepare_list(
         self,
         run_id: str,
