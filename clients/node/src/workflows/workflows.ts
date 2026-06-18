@@ -81,9 +81,9 @@ export class Workflows {
   /** Create Workflow */
   async create(projectId: string, name?: string, description?: string): Promise<Workflow> {
     const body = {
+      project_id: projectId,
       name: name,
       description: description,
-      project_id: projectId,
     };
     const __wire = await this.client.request<WorkflowResponse>({
       method: 'POST',

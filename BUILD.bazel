@@ -138,12 +138,12 @@ sh_test(
     srcs = ["//tools/bazel:diff_generated_sdk_tree.sh"],
     args = [
         "node",
-        "$(location :generated_node_sdk)",
+        "$(location //open-source/sdk/clients/node:generated_node_sdk_formatted)",
         "$(location //open-source/sdk/clients/node:committed_node_sdk_tree)",
     ],
     data = [
         "//open-source/sdk/clients/node:committed_node_sdk_tree",
-        ":generated_node_sdk",
+        "//open-source/sdk/clients/node:generated_node_sdk_formatted",
     ],
     tags = ["generated-check"],
 )
@@ -420,7 +420,7 @@ SDK_UPDATE_SPECS = [
     {
         "check": ":check_node",
         "client": "open-source/sdk/clients/node",
-        "generated": ":generated_node_sdk",
+        "generated": "//open-source/sdk/clients/node:generated_node_sdk_formatted",
         "language": "node",
         "snippet": "//open-source/docs:snippet_lint_typescript",
     },

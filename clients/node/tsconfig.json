@@ -4,6 +4,7 @@
     "module": "ESNext",
     "lib": ["ES2020"],
     "moduleResolution": "node",
+    "ignoreDeprecations": "5.0",
     "declaration": true,
     "declarationMap": true,
     "outDir": "./dist",

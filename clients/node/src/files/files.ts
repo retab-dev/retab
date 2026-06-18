@@ -113,8 +113,8 @@ export class Files {
   ): Promise<CreateUploadResponse> {
     const body = {
       filename: filename,
-      content_type: contentType,
       size_bytes: sizeBytes,
+      content_type: contentType,
       sha256: sha256,
     };
     const __wire = await this.client.request<CreateUploadResponseResponse>({

@@ -77,8 +77,8 @@ export class WorkflowTests {
           >
         )[(source as unknown as Record<string, string>)['type']]?.() ??
         (source as unknown as ManualWorkflowTestSourceResponse | RunStepWorkflowTestSourceResponse),
-      name: name,
       assertion: serializeAssertionSpec(assertion),
+      name: name,
     };
     const __wire = await this.client.request<WorkflowTestResponse>({
       method: 'POST',

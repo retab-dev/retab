@@ -56,9 +56,9 @@ export class WorkflowEdges {
   ): Promise<WorkflowEdgeDoc> {
     const body = {
       workflow_id: workflowId,
-      id: id,
       source_block: sourceBlock,
       target_block: targetBlock,
+      id: id,
       source_handle: sourceHandle,
       target_handle: targetHandle,
     };

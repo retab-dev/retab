@@ -67,8 +67,8 @@ export class WorkflowBlocks {
   ): Promise<WorkflowBlock> {
     const body = {
       workflow_id: workflowId,
-      id: id,
       type: type,
+      id: id,
       label: label,
       position_x: positionX,
       position_y: positionY,
