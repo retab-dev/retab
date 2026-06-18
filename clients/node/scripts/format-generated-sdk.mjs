@@ -19,6 +19,7 @@
 import {
   chmodSync,
   cpSync,
+  lstatSync,
   readFileSync,
   readdirSync,
   rmSync,
@@ -75,11 +76,19 @@ for (const file of files) {
   // (`prettier --write "src/**/*.ts"`); the .prettierrc options are applied on
   // top so the output is byte-identical to the committed, hand-run formatting.
   const formatted = await prettier.format(source, { ...prettierConfig, filepath: file });
-  if (formatted !== source) {
+  const fileMetadata = lstatSync(file);
+  if (formatted !== source || fileMetadata.isSymbolicLink()) {
     // cpSync preserves the read-only mode of the Bazel-declared raw tree inputs,
-    // so make the copy writable before overwriting it with the formatted output.
-    chmodSync(file, 0o644);
+    // so make the copy writable before overwriting it. If the copied path is a
+    // runfiles symlink, replace the link itself instead of mutating its target.
+    if (fileMetadata.isSymbolicLink()) {
+      rmSync(file);
+    } else {
+      chmodSync(file, 0o644);
+    }
     writeFileSync(file, formatted);
+  }
+  if (formatted !== source) {
     formattedCount += 1;
   }
 }

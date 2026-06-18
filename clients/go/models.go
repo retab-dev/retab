@@ -1394,7 +1394,7 @@ type Parse struct {
 	Model string `json:"model"`
 	// TableParsingFormat is format used to render tables extracted from the document
 	TableParsingFormat TableParsingFormat `json:"table_parsing_format"`
-	// ImageResolutionDpi is dpi used when rasterizing pages for the parser
+	// ImageResolutionDpi is legacy stored DPI value, retained only for compatibility.
 	ImageResolutionDpi int `json:"image_resolution_dpi"`
 	// Instructions is free-form instructions supplied with the parse request.
 	Instructions *string `json:"instructions,omitempty"`
@@ -1427,7 +1427,7 @@ type ParseWorkflowArtifact struct {
 	Model string `json:"model"`
 	// TableParsingFormat is format used to render tables extracted from the document
 	TableParsingFormat ParseWorkflowArtifactTableParsingFormat `json:"table_parsing_format"`
-	// ImageResolutionDpi is dpi used when rasterizing pages for the parser
+	// ImageResolutionDpi is legacy stored DPI value, retained only for compatibility.
 	ImageResolutionDpi int `json:"image_resolution_dpi"`
 	// Instructions is free-form instructions supplied with the parse request.
 	Instructions *string `json:"instructions,omitempty"`

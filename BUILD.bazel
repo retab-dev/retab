@@ -527,6 +527,7 @@ test_suite(
     tests = [
         "//tools/bazel:oagen_core_dist_freshness",
         ":check_python",
+        "//open-source/sdk/clients/node:format_generated_node_sdk_test",
         ":check_node",
         ":check_go",
         ":check_rust",

@@ -49,7 +49,7 @@ export interface Parse {
   model: string;
   /** Format used to render tables extracted from the document */
   tableParsingFormat: TableParsingFormat;
-  /** DPI used when rasterizing pages for the parser */
+  /** Legacy stored DPI value, retained only for compatibility. */
   imageResolutionDpi: number;
   /** Free-form instructions supplied with the parse request. */
   instructions?: string | null;
