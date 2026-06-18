@@ -17,8 +17,6 @@ type SchemasGenerateParams struct {
 	Documents    any     `json:"documents" url:"-"`
 	Model        *string `json:"model,omitempty" url:"-"`
 	Instructions *string `json:"instructions,omitempty" url:"-"`
-	// ImageResolutionDpi is resolution of the image sent to the LLM
-	ImageResolutionDpi *int `json:"image_resolution_dpi,omitempty" url:"-"`
 	// Background is if true, run asynchronously: returns immediately with status 'queued'. Poll GET /v1/schemas/generate/{schema_generation_id} until status is terminal.
 	Background *bool `json:"background,omitempty" url:"-"`
 }
@@ -27,11 +25,10 @@ type SchemasGenerateParams struct {
 // Generates a JSON Schema from scratch by inferring structure from the content of the provided example documents.
 func (s *SchemaService) Generate(ctx context.Context, params *SchemasGenerateParams, opts ...RequestOption) (*SchemaGeneration, error) {
 	type generateWireBody struct {
-		Documents          []MIMEData `json:"documents"`
-		Model              *string    `json:"model,omitempty"`
-		Instructions       *string    `json:"instructions,omitempty"`
-		ImageResolutionDpi *int       `json:"image_resolution_dpi,omitempty"`
-		Background         *bool      `json:"background,omitempty"`
+		Documents    []MIMEData `json:"documents"`
+		Model        *string    `json:"model,omitempty"`
+		Instructions *string    `json:"instructions,omitempty"`
+		Background   *bool      `json:"background,omitempty"`
 	}
 	if params == nil {
 		return nil, fmt.Errorf("retab: params is required")
@@ -57,11 +54,10 @@ func (s *SchemaService) Generate(ctx context.Context, params *SchemasGeneratePar
 		}
 	}
 	body := generateWireBody{
-		Documents:          coercedDocuments,
-		Model:              params.Model,
-		Instructions:       params.Instructions,
-		ImageResolutionDpi: params.ImageResolutionDpi,
-		Background:         params.Background,
+		Documents:    coercedDocuments,
+		Model:        params.Model,
+		Instructions: params.Instructions,
+		Background:   params.Background,
 	}
 	var result SchemaGeneration
 	_, err := s.client.request(ctx, "POST", "/v1/schemas/generate", nil, body, &result, opts)

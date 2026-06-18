@@ -19,11 +19,6 @@ pub struct ExtractionRequest {
     /// Defaults to `retab-small`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub model: Option<String>,
-    /// Resolution of the image sent to the LLM
-    ///
-    /// Defaults to `192`.
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub image_resolution_dpi: Option<i64>,
     /// Free-form instructions appended to the system prompt to steer the extraction.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub instructions: Option<String>,
@@ -65,7 +60,6 @@ impl ExtractionRequest {
             document: document.into(),
             json_schema,
             model: Default::default(),
-            image_resolution_dpi: Default::default(),
             instructions: Default::default(),
             n_consensus: Default::default(),
             metadata: Default::default(),

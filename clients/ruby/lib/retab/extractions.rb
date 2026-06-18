@@ -102,7 +102,6 @@ module Retab
     # @param document [Retab::MimeData, Pathname, IO, String, Hash]
     # @param json_schema [Hash{String => Object}] JSON schema describing the structured output
     # @param model [String, nil] The model to use for the extraction
-    # @param image_resolution_dpi [Integer, nil] Resolution of the image sent to the LLM
     # @param instructions [String, nil] Free-form instructions appended to the system prompt to steer the extraction.
     # @param n_consensus [Integer, nil] Number of consensus extraction runs to perform. Uses deterministic single-pass when set to 1.
     # @param metadata [Hash{String => String}, nil] User-defined metadata to associate with this extraction
@@ -117,7 +116,6 @@ module Retab
       document:,
       json_schema:,
       model: nil,
-      image_resolution_dpi: nil,
       instructions: nil,
       n_consensus: nil,
       metadata: nil,
@@ -133,7 +131,6 @@ module Retab
         "document" => document,
         "json_schema" => json_schema,
         "model" => model,
-        "image_resolution_dpi" => image_resolution_dpi,
         "instructions" => instructions,
         "n_consensus" => n_consensus,
         "metadata" => metadata,
@@ -163,7 +160,6 @@ module Retab
     # @param document [Retab::MimeData, Pathname, IO, String, Hash]
     # @param json_schema [Hash{String => Object}] JSON schema describing the structured output
     # @param model [String, nil] The model to use for the extraction
-    # @param image_resolution_dpi [Integer, nil] Resolution of the image sent to the LLM
     # @param instructions [String, nil] Free-form instructions appended to the system prompt to steer the extraction.
     # @param n_consensus [Integer, nil] Number of consensus extraction runs to perform. Uses deterministic single-pass when set to 1.
     # @param metadata [Hash{String => String}, nil] User-defined metadata to associate with this extraction
@@ -178,7 +174,6 @@ module Retab
       document:,
       json_schema:,
       model: nil,
-      image_resolution_dpi: nil,
       instructions: nil,
       n_consensus: nil,
       metadata: nil,
@@ -194,7 +189,6 @@ module Retab
         "document" => document,
         "json_schema" => json_schema,
         "model" => model,
-        "image_resolution_dpi" => image_resolution_dpi,
         "instructions" => instructions,
         "n_consensus" => n_consensus,
         "metadata" => metadata,

@@ -9,7 +9,6 @@ module Retab
       documents: :documents,
       model: :model,
       instructions: :instructions,
-      image_resolution_dpi: :image_resolution_dpi,
       background: :background
     }.freeze
 
@@ -17,7 +16,6 @@ module Retab
       :documents,
       :model,
       :instructions,
-      :image_resolution_dpi,
       :background
     )
 
@@ -27,7 +25,6 @@ module Retab
       @documents = (hash[:documents] || []).map { |item| item ? Retab::MimeData.new(item) : nil }
       @model = hash[:model].nil? ? "retab-small" : hash[:model]
       @instructions = hash[:instructions]
-      @image_resolution_dpi = hash[:image_resolution_dpi]
       @background = hash[:background].nil? ? false : hash[:background]
     end
   end

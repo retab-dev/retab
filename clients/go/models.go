@@ -1089,8 +1089,8 @@ type Extraction struct {
 	JSONSchema map[string]interface{} `json:"json_schema"`
 	// NConsensus is number of consensus votes used
 	NConsensus int `json:"n_consensus,omitempty"`
-	// ImageResolutionDpi is dpi used to render document images
-	ImageResolutionDpi int `json:"image_resolution_dpi,omitempty"`
+	// ImageResolutionDpi is legacy stored DPI value, retained only for compatibility.
+	ImageResolutionDpi *int `json:"image_resolution_dpi,omitempty"`
 	// Instructions is free-form instructions supplied with the extraction request.
 	Instructions *string `json:"instructions,omitempty"`
 	// Output is the extracted structured data
@@ -1112,7 +1112,6 @@ type Extraction struct {
 // nil-checks or zero-value second-guessing.
 func (r *Extraction) UnmarshalJSON(data []byte) error {
 	r.NConsensus = 1
-	r.ImageResolutionDpi = 192
 	type alias Extraction
 	return json.Unmarshal(data, (*alias)(r))
 }
@@ -1157,8 +1156,8 @@ type ExtractionWorkflowArtifact struct {
 	JSONSchema map[string]interface{} `json:"json_schema"`
 	// NConsensus is number of consensus votes used
 	NConsensus int `json:"n_consensus,omitempty"`
-	// ImageResolutionDpi is dpi used to render document images
-	ImageResolutionDpi int `json:"image_resolution_dpi,omitempty"`
+	// ImageResolutionDpi is legacy stored DPI value, retained only for compatibility.
+	ImageResolutionDpi *int `json:"image_resolution_dpi,omitempty"`
 	// Instructions is free-form instructions supplied with the extraction request.
 	Instructions *string `json:"instructions,omitempty"`
 	// Output is the extracted structured data
@@ -1183,7 +1182,6 @@ type ExtractionWorkflowArtifact struct {
 // nil-checks or zero-value second-guessing.
 func (r *ExtractionWorkflowArtifact) UnmarshalJSON(data []byte) error {
 	r.NConsensus = 1
-	r.ImageResolutionDpi = 192
 	type alias ExtractionWorkflowArtifact
 	return json.Unmarshal(data, (*alias)(r))
 }

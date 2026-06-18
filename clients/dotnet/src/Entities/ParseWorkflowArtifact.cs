@@ -22,7 +22,7 @@ namespace Retab
         [STJS.JsonIgnore(Condition = STJS.JsonIgnoreCondition.WhenWritingDefault)]
         public ParseRequestTableParsingFormat TableParsingFormat { get; set; }
 
-        /// <summary>DPI used when rasterizing pages for the parser</summary>
+        /// <summary>Legacy stored DPI value, retained only for compatibility.</summary>
         public long ImageResolutionDpi { get; set; }
 
         /// <summary>Free-form instructions supplied with the parse request.</summary>

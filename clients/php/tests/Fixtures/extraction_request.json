@@ -7,7 +7,6 @@
     "key": {}
   },
   "model": "test_model",
-  "image_resolution_dpi": 1,
   "instructions": "test_instructions",
   "n_consensus": 1,
   "metadata": {

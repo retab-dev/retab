@@ -28,14 +28,13 @@ module Retab
         document: T.any(Retab::MimeData, Pathname, IO, String, T::Hash[Symbol, T.untyped]),
         model: T.nilable(String),
         table_parsing_format: T.nilable(String),
-        image_resolution_dpi: T.nilable(Integer),
         instructions: T.nilable(String),
         bust_cache: T.nilable(T::Boolean),
         background: T.nilable(T::Boolean),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::Parse)
     end
-    def create(document:, model:, table_parsing_format:, image_resolution_dpi:, instructions:, bust_cache:, background:, request_options:); end
+    def create(document:, model:, table_parsing_format:, instructions:, bust_cache:, background:, request_options:); end
 
     sig do
       params(

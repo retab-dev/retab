@@ -35,7 +35,6 @@ impl GenerateParams {
                 documents: documents.into_iter().map(Into::into).collect(),
                 model: Default::default(),
                 instructions: Default::default(),
-                image_resolution_dpi: Default::default(),
                 background: Default::default(),
             },
         }

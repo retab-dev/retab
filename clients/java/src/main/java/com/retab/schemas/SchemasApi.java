@@ -33,16 +33,11 @@ public final class SchemasApi {
         request == null ? null : request.getDocuments(),
         request == null ? null : request.getModel(),
         request == null ? null : request.getInstructions(),
-        request == null ? null : request.getImageResolutionDpi(),
         request == null ? null : request.isBackground());
   }
 
   public SchemaGeneration generate(
-      List<MimeData> documents,
-      String model,
-      String instructions,
-      Long imageResolutionDpi,
-      Boolean background)
+      List<MimeData> documents, String model, String instructions, Boolean background)
       throws IOException, InterruptedException {
     String path = "/v1/schemas/generate";
     StringBuilder query = new StringBuilder();
@@ -54,9 +49,6 @@ public final class SchemasApi {
     }
     if (instructions != null) {
       body.put("instructions", instructions);
-    }
-    if (imageResolutionDpi != null) {
-      body.put("image_resolution_dpi", imageResolutionDpi);
     }
     if (background != null) {
       body.put("background", background);

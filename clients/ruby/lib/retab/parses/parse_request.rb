@@ -9,7 +9,6 @@ module Retab
       document: :document,
       model: :model,
       table_parsing_format: :table_parsing_format,
-      image_resolution_dpi: :image_resolution_dpi,
       instructions: :instructions,
       bust_cache: :bust_cache,
       background: :background
@@ -19,7 +18,6 @@ module Retab
       :document,
       :model,
       :table_parsing_format,
-      :image_resolution_dpi,
       :instructions,
       :bust_cache,
       :background
@@ -31,7 +29,6 @@ module Retab
       @document = hash[:document] ? Retab::MimeData.new(hash[:document]) : nil
       @model = hash[:model].nil? ? "retab-small" : hash[:model]
       @table_parsing_format = hash[:table_parsing_format].nil? ? "html" : hash[:table_parsing_format]
-      @image_resolution_dpi = hash[:image_resolution_dpi]
       @instructions = hash[:instructions]
       @bust_cache = hash[:bust_cache].nil? ? false : hash[:bust_cache]
       @background = hash[:background].nil? ? false : hash[:background]

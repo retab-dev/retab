@@ -829,7 +829,6 @@ class ModelRoundTripTest < Minitest::Test
       "document" => {},
       "json_schema" => {},
       "model" => "stub",
-      "image_resolution_dpi" => 1,
       "instructions" => nil,
       "n_consensus" => 1,
       "metadata" => nil,
@@ -881,7 +880,6 @@ class ModelRoundTripTest < Minitest::Test
       "document" => {},
       "model" => "stub",
       "table_parsing_format" => "stub",
-      "image_resolution_dpi" => 1,
       "instructions" => nil,
       "bust_cache" => true,
       "background" => true
@@ -1975,7 +1973,6 @@ class ModelRoundTripTest < Minitest::Test
       "documents" => [],
       "model" => "stub",
       "instructions" => nil,
-      "image_resolution_dpi" => 1,
       "background" => true
     }
     model = Retab::GenerateSchemaRequest.new(fixture.to_json)

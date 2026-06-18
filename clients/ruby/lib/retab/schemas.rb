@@ -14,7 +14,6 @@ module Retab
     # @param documents [Array<Retab::MimeData, Pathname, IO, String, Hash>]
     # @param model [String, nil]
     # @param instructions [String, nil]
-    # @param image_resolution_dpi [Integer, nil] Resolution of the image sent to the LLM
     # @param background [Boolean, nil] If true, run asynchronously: returns immediately with status 'queued'. Poll GET /v1/schemas/generate/{schema_generation_id} until status is terminal.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::SchemaGeneration]
@@ -22,7 +21,6 @@ module Retab
       documents:,
       model: nil,
       instructions: nil,
-      image_resolution_dpi: nil,
       background: nil,
       request_options: {}
     )
@@ -31,7 +29,6 @@ module Retab
         "documents" => documents,
         "model" => model,
         "instructions" => instructions,
-        "image_resolution_dpi" => image_resolution_dpi,
         "background" => background
       }.compact
       response = @client.request(

@@ -26,7 +26,6 @@ class GenerateSchemaRequest(BaseModel):
     documents: list[MIMEData]
     model: str | None = Field(default="retab-small")
     instructions: str | None = None
-    image_resolution_dpi: int | None = Field(default=192, description="Resolution of the image sent to the LLM")
     background: bool | None = Field(
         default=False,
         description="If true, run asynchronously: returns immediately with status 'queued'. Poll GET /v1/schemas/generate/{schema_generation_id} until status is terminal.",

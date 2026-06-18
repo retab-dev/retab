@@ -16,8 +16,6 @@ readonly class GenerateSchemaRequest implements \JsonSerializable
         public array $documents,
         public ?string $model = null,
         public ?string $instructions = null,
-        /** Resolution of the image sent to the LLM */
-        public ?int $imageResolutionDpi = null,
         /** If true, run asynchronously: returns immediately with status 'queued'. Poll GET /v1/schemas/generate/{schema_generation_id} until status is terminal. */
         public ?bool $background = null,
     ) {}
@@ -36,7 +34,6 @@ readonly class GenerateSchemaRequest implements \JsonSerializable
             documents: array_map(fn($item) => MimeData::fromArray($item), $data['documents']),
             model: $data['model'] ?? null,
             instructions: $data['instructions'] ?? null,
-            imageResolutionDpi: $data['image_resolution_dpi'] ?? null,
             background: $data['background'] ?? null,
         );
     }
@@ -48,7 +45,6 @@ readonly class GenerateSchemaRequest implements \JsonSerializable
             'documents' => array_map(fn($item) => $item->toArray(), $this->documents),
             'model' => $this->model,
             'instructions' => $this->instructions,
-            'image_resolution_dpi' => $this->imageResolutionDpi,
             'background' => $this->background,
         ];
     }

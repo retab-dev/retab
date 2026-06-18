@@ -40,9 +40,6 @@ namespace Retab
         /// <summary>The model to use for the extraction</summary>
         public string? Model { get; set; }
 
-        /// <summary>Resolution of the image sent to the LLM</summary>
-        public long? ImageResolutionDpi { get; set; }
-
         /// <summary>Free-form instructions appended to the system prompt to steer the extraction.</summary>
         public string? Instructions { get; set; }
 
@@ -77,9 +74,6 @@ namespace Retab
 
         /// <summary>The model to use for the extraction</summary>
         public string? Model { get; set; }
-
-        /// <summary>Resolution of the image sent to the LLM</summary>
-        public long? ImageResolutionDpi { get; set; }
 
         /// <summary>Free-form instructions appended to the system prompt to steer the extraction.</summary>
         public string? Instructions { get; set; }

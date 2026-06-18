@@ -9,7 +9,6 @@ module Retab
       document: :document,
       json_schema: :json_schema,
       model: :model,
-      image_resolution_dpi: :image_resolution_dpi,
       instructions: :instructions,
       n_consensus: :n_consensus,
       metadata: :metadata,
@@ -24,7 +23,6 @@ module Retab
       :document,
       :json_schema,
       :model,
-      :image_resolution_dpi,
       :instructions,
       :n_consensus,
       :metadata,
@@ -41,7 +39,6 @@ module Retab
       @document = hash[:document] ? Retab::MimeData.new(hash[:document]) : nil
       @json_schema = hash[:json_schema] || {}
       @model = hash[:model].nil? ? "retab-small" : hash[:model]
-      @image_resolution_dpi = hash[:image_resolution_dpi]
       @instructions = hash[:instructions]
       @n_consensus = hash[:n_consensus]
       @metadata = hash[:metadata] || {}

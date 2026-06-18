@@ -21,7 +21,6 @@ class Schemas
      * @param array<\Retab\Resource\FileRef|\Retab\Resource\MimeData|\SplFileInfo|string|resource|array{filename?: string, url: string}|array{id: string, filename?: string, mime_type?: string}> $documents
      * @param string|null $model
      * @param string|null $instructions
-     * @param int|null $imageResolutionDpi Resolution of the image sent to the LLM
      * @param bool|null $background If true, run asynchronously: returns immediately with status 'queued'. Poll GET /v1/schemas/generate/{schema_generation_id} until status is terminal.
      * @return \Retab\Resource\SchemaGeneration
      * @throws \Retab\Exception\RetabException
@@ -30,7 +29,6 @@ class Schemas
         mixed $documents,
         ?string $model = null,
         ?string $instructions = null,
-        ?int $imageResolutionDpi = null,
         ?bool $background = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\SchemaGeneration {
@@ -39,7 +37,6 @@ class Schemas
             'documents' => $documents,
             'model' => $model,
             'instructions' => $instructions,
-            'image_resolution_dpi' => $imageResolutionDpi,
             'background' => $background,
         ], fn($v) => $v !== null);
         $response = $this->client->request(

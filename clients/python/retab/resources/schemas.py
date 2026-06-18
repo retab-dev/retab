@@ -69,7 +69,6 @@ class SchemasMixin:
         documents: list[FileRef | Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl],
         model: str = "retab-small",
         instructions: str | None = None,
-        image_resolution_dpi: int = 192,
         background: bool = False,
         **extra_params: Any,
     ) -> PreparedRequest:
@@ -81,13 +80,7 @@ class SchemasMixin:
         documents_payload: Any = documents
         if documents_payload is not None:
             documents_payload = [_resolve_mime_document_input(__x, (lambda __fid: self._client.files.get_download_link(__fid))) for __x in documents_payload]
-        payload = GenerateSchemaRequest(
-            documents=cast(Any, documents_payload),
-            model=cast(Any, model),
-            instructions=cast(Any, instructions),
-            image_resolution_dpi=cast(Any, image_resolution_dpi),
-            background=cast(Any, background),
-        )
+        payload = GenerateSchemaRequest(documents=cast(Any, documents_payload), model=cast(Any, model), instructions=cast(Any, instructions), background=cast(Any, background))
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/schemas/generate", params=params or None, data=data)
 
@@ -100,7 +93,6 @@ class Schemas(SyncAPIResource, SchemasMixin):
         documents: list[FileRef | Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl],
         model: str = "retab-small",
         instructions: str | None = None,
-        image_resolution_dpi: int = 192,
         background: bool = False,
         **extra_params: Any,
     ) -> SchemaGeneration:
@@ -108,9 +100,7 @@ class Schemas(SyncAPIResource, SchemasMixin):
         documents_coerced: Any = documents
         if documents_coerced is not None:
             documents_coerced = [_resolve_mime_document_input(__x, (lambda __fid: self._client.files.get_download_link(__fid))) for __x in documents_coerced]
-        prepared_request = self.prepare_generate(
-            documents=documents_coerced, model=model, instructions=instructions, image_resolution_dpi=image_resolution_dpi, background=background, **extra_params
-        )
+        prepared_request = self.prepare_generate(documents=documents_coerced, model=model, instructions=instructions, background=background, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return SchemaGeneration.model_validate(response)
 
@@ -123,7 +113,6 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
         documents: list[FileRef | Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl],
         model: str = "retab-small",
         instructions: str | None = None,
-        image_resolution_dpi: int = 192,
         background: bool = False,
         **extra_params: Any,
     ) -> SchemaGeneration:
@@ -131,9 +120,7 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
         documents_coerced: Any = documents
         if documents_coerced is not None:
             documents_coerced = [await _aresolve_mime_document_input(__x, (lambda __fid: self._client.files.get_download_link(__fid))) for __x in documents_coerced]
-        prepared_request = self.prepare_generate(
-            documents=documents_coerced, model=model, instructions=instructions, image_resolution_dpi=image_resolution_dpi, background=background, **extra_params
-        )
+        prepared_request = self.prepare_generate(documents=documents_coerced, model=model, instructions=instructions, background=background, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return SchemaGeneration.model_validate(response)
 

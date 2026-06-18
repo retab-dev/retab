@@ -26,8 +26,6 @@ readonly class ExtractionRequest implements \JsonSerializable
         public array $jsonSchema,
         /** The model to use for the extraction */
         public ?string $model = null,
-        /** Resolution of the image sent to the LLM */
-        public ?int $imageResolutionDpi = null,
         /** Free-form instructions appended to the system prompt to steer the extraction. */
         public ?string $instructions = null,
         /** Number of consensus extraction runs to perform. Uses deterministic single-pass when set to 1. */
@@ -66,7 +64,6 @@ readonly class ExtractionRequest implements \JsonSerializable
             document: MimeData::fromArray($data['document']),
             jsonSchema: $data['json_schema'],
             model: $data['model'] ?? null,
-            imageResolutionDpi: $data['image_resolution_dpi'] ?? null,
             instructions: $data['instructions'] ?? null,
             nConsensus: $data['n_consensus'] ?? null,
             metadata: $data['metadata'] ?? null,
@@ -85,7 +82,6 @@ readonly class ExtractionRequest implements \JsonSerializable
             'document' => $this->document->toArray(),
             'json_schema' => $this->jsonSchema,
             'model' => $this->model,
-            'image_resolution_dpi' => $this->imageResolutionDpi,
             'instructions' => $this->instructions,
             'n_consensus' => $this->nConsensus,
             'metadata' => $this->metadata,

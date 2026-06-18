@@ -83,7 +83,6 @@ public final class ParsesApi {
         request == null ? null : request.getDocument(),
         request == null ? null : request.getModel(),
         request == null ? null : request.getTableParsingFormat(),
-        request == null ? null : request.getImageResolutionDpi(),
         request == null ? null : request.getInstructions(),
         request == null ? null : request.isBustCache(),
         request == null ? null : request.isBackground());
@@ -93,7 +92,6 @@ public final class ParsesApi {
       MimeData document,
       String model,
       ParseRequestTableParsingFormat tableParsingFormat,
-      Long imageResolutionDpi,
       String instructions,
       Boolean bustCache,
       Boolean background)
@@ -108,9 +106,6 @@ public final class ParsesApi {
     }
     if (tableParsingFormat != null) {
       body.put("table_parsing_format", tableParsingFormat);
-    }
-    if (imageResolutionDpi != null) {
-      body.put("image_resolution_dpi", imageResolutionDpi);
     }
     if (instructions != null) {
       body.put("instructions", instructions);

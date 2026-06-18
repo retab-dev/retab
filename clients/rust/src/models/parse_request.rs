@@ -20,11 +20,6 @@ pub struct ParseRequest {
     /// Defaults to `html`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub table_parsing_format: Option<ParseRequestTableParsingFormat>,
-    /// DPI used when rasterizing pages for the parser
-    ///
-    /// Defaults to `192`.
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub image_resolution_dpi: Option<i64>,
     /// Free-form instructions appended to the system prompt to steer the parse.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub instructions: Option<String>,
@@ -47,7 +42,6 @@ impl ParseRequest {
             document: document.into(),
             model: Default::default(),
             table_parsing_format: Default::default(),
-            image_resolution_dpi: Default::default(),
             instructions: Default::default(),
             bust_cache: Default::default(),
             background: Default::default(),

@@ -55,10 +55,7 @@ export interface ExtractionWorkflowArtifact {
    * @default 1
    */
   nConsensus?: number;
-  /**
-   * DPI used to render document images
-   * @default 192
-   */
+  /** Legacy stored DPI value, retained only for compatibility. */
   imageResolutionDpi?: number;
   /** Free-form instructions supplied with the extraction request. */
   instructions?: string | null;

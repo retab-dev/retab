@@ -14,11 +14,6 @@ pub struct GenerateSchemaRequest {
     pub model: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub instructions: Option<String>,
-    /// Resolution of the image sent to the LLM
-    ///
-    /// Defaults to `192`.
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub image_resolution_dpi: Option<i64>,
     /// If true, run asynchronously: returns immediately with status 'queued'. Poll GET /v1/schemas/generate/{schema_generation_id} until status is terminal.
     ///
     /// Defaults to `false`.
@@ -33,7 +28,6 @@ impl GenerateSchemaRequest {
             documents,
             model: Default::default(),
             instructions: Default::default(),
-            image_resolution_dpi: Default::default(),
             background: Default::default(),
         }
     }

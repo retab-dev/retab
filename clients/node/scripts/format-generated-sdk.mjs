@@ -16,7 +16,15 @@
 //   RETAB_PRETTIERRC     - $(execpath) of this package's .prettierrc.
 // Relative execpath values are resolved against JS_BINARY__EXECROOT, which
 // aspect_rules_js sets to the absolute execroot even when chdir is in effect.
-import { chmodSync, cpSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync,
+  cpSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import { isAbsolute, join, resolve } from 'node:path';
 import prettier from 'prettier';
 
@@ -37,7 +45,7 @@ const prettierrcPath = fromExecroot(process.env.RETAB_PRETTIERRC);
 
 // Mirror the raw tree (src/ + .oagen-manifest.json) into the declared output.
 rmSync(outDir, { recursive: true, force: true });
-cpSync(rawDir, outDir, { recursive: true });
+cpSync(rawDir, outDir, { dereference: true, recursive: true });
 
 const prettierConfig = JSON.parse(readFileSync(prettierrcPath, 'utf8'));
 
@@ -47,7 +55,10 @@ function collectTsFiles(dir) {
     const full = join(dir, entry.name);
     if (entry.isDirectory()) {
       out.push(...collectTsFiles(full));
-    } else if (entry.isFile() && entry.name.endsWith('.ts')) {
+    } else if ((entry.isFile() || entry.isSymbolicLink()) && entry.name.endsWith('.ts')) {
+      if (!statSync(full).isFile()) {
+        continue;
+      }
       out.push(full);
     }
   }

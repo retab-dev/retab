@@ -27,12 +27,6 @@ module Retab
     sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
     def instructions=(value); end
 
-    sig { returns(T.nilable(Integer)) }
-    def image_resolution_dpi; end
-
-    sig { params(value: T.nilable(Integer)).returns(T.nilable(Integer)) }
-    def image_resolution_dpi=(value); end
-
     sig { returns(T.nilable(T::Boolean)) }
     def background; end
 

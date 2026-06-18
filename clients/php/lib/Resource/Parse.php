@@ -20,7 +20,7 @@ readonly class Parse implements \JsonSerializable
         public string $model,
         /** Format used to render tables extracted from the document */
         public TableParsingFormat $tableParsingFormat,
-        /** DPI used when rasterizing pages for the parser */
+        /** Legacy stored DPI value, retained only for compatibility. */
         public int $imageResolutionDpi,
         /** The parsed document content */
         public ParseOutput $output,

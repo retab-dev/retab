@@ -28,9 +28,6 @@ namespace Retab
         /// <summary>Format used to render tables extracted from the document</summary>
         public ParseRequestTableParsingFormat? TableParsingFormat { get; set; }
 
-        /// <summary>DPI used when rasterizing pages for the parser</summary>
-        public long? ImageResolutionDpi { get; set; }
-
         /// <summary>Free-form instructions appended to the system prompt to steer the parse.</summary>
         public string? Instructions { get; set; }
 

@@ -90,7 +90,6 @@ func TestResourceCreateRequestShapes(t *testing.T) {
 					Document:           document,
 					JSONSchema:         map[string]interface{}{"type": "object"},
 					Model:              ptrTo("retab-small"),
-					ImageResolutionDpi: ptrTo(192),
 					NConsensus:         ptrTo(2),
 					Instructions:       ptrTo("read totals"),
 					Metadata:           ptrTo(map[string]string{"source": "test"}),
@@ -103,7 +102,6 @@ func TestResourceCreateRequestShapes(t *testing.T) {
 			wantPath:   "/v1/extractions",
 			assertBody: func(t *testing.T, body Resource) {
 				assertBodyString(t, body, "model", "retab-small")
-				assertBodyNumber(t, body, "image_resolution_dpi", 192)
 				assertBodyNumber(t, body, "n_consensus", 2)
 				assertBodyBool(t, body, "bust_cache", true)
 				assertNestedString(t, body, "document", "filename", "invoice.pdf")
@@ -177,7 +175,6 @@ func TestResourceCreateRequestShapes(t *testing.T) {
 					Document:           document,
 					Model:              ptrTo("retab-small"),
 					TableParsingFormat: &format,
-					ImageResolutionDpi: ptrTo(192),
 					Instructions:       ptrTo("tables"),
 					BustCache:          ptrTo(true),
 				})

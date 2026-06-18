@@ -88,7 +88,6 @@ class Extractions
      * @param \Retab\Resource\FileRef|\Retab\Resource\MimeData|\SplFileInfo|string|resource|array{filename?: string, url: string}|array{id: string, filename?: string, mime_type?: string} $document
      * @param array<string, mixed> $jsonSchema JSON schema describing the structured output
      * @param string|null $model The model to use for the extraction
-     * @param int|null $imageResolutionDpi Resolution of the image sent to the LLM
      * @param string|null $instructions Free-form instructions appended to the system prompt to steer the extraction.
      * @param int|null $nConsensus Number of consensus extraction runs to perform. Uses deterministic single-pass when set to 1.
      * @param array<string, string>|null $metadata User-defined metadata to associate with this extraction
@@ -104,7 +103,6 @@ class Extractions
         mixed $document,
         array $jsonSchema,
         ?string $model = null,
-        ?int $imageResolutionDpi = null,
         ?string $instructions = null,
         ?int $nConsensus = null,
         ?array $metadata = null,
@@ -120,7 +118,6 @@ class Extractions
             'document' => $document,
             'json_schema' => $jsonSchema,
             'model' => $model,
-            'image_resolution_dpi' => $imageResolutionDpi,
             'instructions' => $instructions,
             'n_consensus' => $nConsensus,
             'metadata' => $metadata,
@@ -146,7 +143,6 @@ class Extractions
      * @param \Retab\Resource\FileRef|\Retab\Resource\MimeData|\SplFileInfo|string|resource|array{filename?: string, url: string}|array{id: string, filename?: string, mime_type?: string} $document
      * @param array<string, mixed> $jsonSchema JSON schema describing the structured output
      * @param string|null $model The model to use for the extraction
-     * @param int|null $imageResolutionDpi Resolution of the image sent to the LLM
      * @param string|null $instructions Free-form instructions appended to the system prompt to steer the extraction.
      * @param int|null $nConsensus Number of consensus extraction runs to perform. Uses deterministic single-pass when set to 1.
      * @param array<string, string>|null $metadata User-defined metadata to associate with this extraction
@@ -162,7 +158,6 @@ class Extractions
         mixed $document,
         array $jsonSchema,
         ?string $model = null,
-        ?int $imageResolutionDpi = null,
         ?string $instructions = null,
         ?int $nConsensus = null,
         ?array $metadata = null,
@@ -178,7 +173,6 @@ class Extractions
             'document' => $document,
             'json_schema' => $jsonSchema,
             'model' => $model,
-            'image_resolution_dpi' => $imageResolutionDpi,
             'instructions' => $instructions,
             'n_consensus' => $nConsensus,
             'metadata' => $metadata,

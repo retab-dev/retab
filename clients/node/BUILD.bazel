@@ -32,6 +32,22 @@ js_binary(
     entry_point = "scripts/format-generated-sdk.mjs",
 )
 
+js_binary(
+    name = "format_generated_node_sdk_test_bin",
+    data = [
+        ":node_modules",
+        ".prettierrc",
+        "scripts/format-generated-sdk.mjs",
+    ],
+    entry_point = "scripts/format-generated-sdk.test.mjs",
+)
+
+sh_test(
+    name = "format_generated_node_sdk_test",
+    srcs = [":format_generated_node_sdk_test_bin"],
+    tags = ["generated-check"],
+)
+
 # Run the formatter over the raw generated tree, producing a formatted tree that
 # is byte-identical to the committed src/ + manifest (modulo the generatedAt
 # timestamp, which the drift diff normalizes).

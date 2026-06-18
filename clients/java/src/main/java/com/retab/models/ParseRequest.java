@@ -12,7 +12,6 @@ public final class ParseRequest {
   private final MimeData document;
   private final String model;
   private final ParseRequestTableParsingFormat tableParsingFormat;
-  private final Long imageResolutionDpi;
   private final String instructions;
   private final Boolean bustCache;
   private final Boolean background;
@@ -23,14 +22,12 @@ public final class ParseRequest {
       @JsonProperty(value = "model", required = false) String model,
       @JsonProperty(value = "table_parsing_format", required = false)
           ParseRequestTableParsingFormat tableParsingFormat,
-      @JsonProperty(value = "image_resolution_dpi", required = false) Long imageResolutionDpi,
       @JsonProperty(value = "instructions", required = false) String instructions,
       @JsonProperty(value = "bust_cache", required = false) Boolean bustCache,
       @JsonProperty(value = "background", required = false) Boolean background) {
     this.document = document;
     this.model = model != null ? model : "retab-small";
     this.tableParsingFormat = tableParsingFormat;
-    this.imageResolutionDpi = imageResolutionDpi;
     this.instructions = instructions;
     this.bustCache = bustCache != null ? bustCache : false;
     this.background = background != null ? background : false;
@@ -49,11 +46,6 @@ public final class ParseRequest {
   @JsonProperty("table_parsing_format")
   public ParseRequestTableParsingFormat getTableParsingFormat() {
     return tableParsingFormat;
-  }
-
-  @JsonProperty("image_resolution_dpi")
-  public Long getImageResolutionDpi() {
-    return imageResolutionDpi;
   }
 
   @JsonProperty("instructions")

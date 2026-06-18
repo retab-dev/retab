@@ -14,12 +14,11 @@ module Retab
         documents: T::Array[T.any(Retab::MimeData, Pathname, IO, String, T::Hash[Symbol, T.untyped])],
         model: T.nilable(String),
         instructions: T.nilable(String),
-        image_resolution_dpi: T.nilable(Integer),
         background: T.nilable(T::Boolean),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::SchemaGeneration)
     end
-    def generate(documents:, model:, instructions:, image_resolution_dpi:, background:, request_options:); end
+    def generate(documents:, model:, instructions:, background:, request_options:); end
 
   end
 end

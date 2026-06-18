@@ -70,7 +70,6 @@ impl CreateParams {
                 document: document.into(),
                 model: Default::default(),
                 table_parsing_format: Default::default(),
-                image_resolution_dpi: Default::default(),
                 instructions: Default::default(),
                 bust_cache: Default::default(),
                 background: Default::default(),

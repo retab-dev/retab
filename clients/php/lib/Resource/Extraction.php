@@ -30,7 +30,7 @@ readonly class Extraction implements \JsonSerializable
         public array $output,
         /** Number of consensus votes used */
         public ?int $nConsensus = null,
-        /** DPI used to render document images */
+        /** Legacy stored DPI value, retained only for compatibility. */
         public ?int $imageResolutionDpi = null,
         /** Free-form instructions supplied with the extraction request. */
         public ?string $instructions = null,

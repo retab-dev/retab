@@ -73,7 +73,6 @@ class Parses
      * @param \Retab\Resource\FileRef|\Retab\Resource\MimeData|\SplFileInfo|string|resource|array{filename?: string, url: string}|array{id: string, filename?: string, mime_type?: string} $document The document to parse
      * @param string|null $model The model to use for parsing
      * @param \Retab\Resource\TableParsingFormat|null $tableParsingFormat Format used to render tables extracted from the document
-     * @param int|null $imageResolutionDpi DPI used when rasterizing pages for the parser
      * @param string|null $instructions Free-form instructions appended to the system prompt to steer the parse.
      * @param bool|null $bustCache If true, skip the LLM cache and force a fresh completion
      * @param bool|null $background If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
@@ -84,7 +83,6 @@ class Parses
         mixed $document,
         ?string $model = null,
         ?\Retab\Resource\TableParsingFormat $tableParsingFormat = null,
-        ?int $imageResolutionDpi = null,
         ?string $instructions = null,
         ?bool $bustCache = null,
         ?bool $background = null,
@@ -95,7 +93,6 @@ class Parses
             'document' => $document,
             'model' => $model,
             'table_parsing_format' => $tableParsingFormat?->value,
-            'image_resolution_dpi' => $imageResolutionDpi,
             'instructions' => $instructions,
             'bust_cache' => $bustCache,
             'background' => $background,

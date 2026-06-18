@@ -95,7 +95,6 @@ public final class ExtractionsApi {
         request == null ? null : request.getDocument(),
         request == null ? null : request.getJsonSchema(),
         request == null ? null : request.getModel(),
-        request == null ? null : request.getImageResolutionDpi(),
         request == null ? null : request.getInstructions(),
         request == null ? null : request.getNConsensus(),
         request == null ? null : request.getMetadata(),
@@ -110,7 +109,6 @@ public final class ExtractionsApi {
       MimeData document,
       Map<String, Object> jsonSchema,
       String model,
-      Long imageResolutionDpi,
       String instructions,
       Long nConsensus,
       Map<String, String> metadata,
@@ -128,9 +126,6 @@ public final class ExtractionsApi {
     body.put("json_schema", jsonSchema);
     if (model != null) {
       body.put("model", model);
-    }
-    if (imageResolutionDpi != null) {
-      body.put("image_resolution_dpi", imageResolutionDpi);
     }
     if (instructions != null) {
       body.put("instructions", instructions);
@@ -180,7 +175,6 @@ public final class ExtractionsApi {
         request == null ? null : request.getDocument(),
         request == null ? null : request.getJsonSchema(),
         request == null ? null : request.getModel(),
-        request == null ? null : request.getImageResolutionDpi(),
         request == null ? null : request.getInstructions(),
         request == null ? null : request.getNConsensus(),
         request == null ? null : request.getMetadata(),
@@ -195,7 +189,6 @@ public final class ExtractionsApi {
       MimeData document,
       Map<String, Object> jsonSchema,
       String model,
-      Long imageResolutionDpi,
       String instructions,
       Long nConsensus,
       Map<String, String> metadata,
@@ -213,9 +206,6 @@ public final class ExtractionsApi {
     body.put("json_schema", jsonSchema);
     if (model != null) {
       body.put("model", model);
-    }
-    if (imageResolutionDpi != null) {
-      body.put("image_resolution_dpi", imageResolutionDpi);
     }
     if (instructions != null) {
       body.put("instructions", instructions);

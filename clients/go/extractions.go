@@ -44,8 +44,6 @@ type ExtractionsCreateParams struct {
 	JSONSchema map[string]interface{} `json:"json_schema" url:"-"`
 	// Model is the model to use for the extraction
 	Model *string `json:"model,omitempty" url:"-"`
-	// ImageResolutionDpi is resolution of the image sent to the LLM
-	ImageResolutionDpi *int `json:"image_resolution_dpi,omitempty" url:"-"`
 	// Instructions is free-form instructions appended to the system prompt to steer the extraction.
 	Instructions *string `json:"instructions,omitempty" url:"-"`
 	// NConsensus is number of consensus extraction runs to perform. Uses deterministic single-pass when set to 1.
@@ -85,7 +83,6 @@ func (s *ExtractionService) Create(ctx context.Context, params *ExtractionsCreat
 		Document           *MIMEData                `json:"document"`
 		JSONSchema         map[string]interface{}   `json:"json_schema"`
 		Model              *string                  `json:"model,omitempty"`
-		ImageResolutionDpi *int                     `json:"image_resolution_dpi,omitempty"`
 		Instructions       *string                  `json:"instructions,omitempty"`
 		NConsensus         *int                     `json:"n_consensus,omitempty"`
 		Metadata           *map[string]string       `json:"metadata,omitempty"`
@@ -110,7 +107,6 @@ func (s *ExtractionService) Create(ctx context.Context, params *ExtractionsCreat
 		Document:           coercedDocument,
 		JSONSchema:         params.JSONSchema,
 		Model:              params.Model,
-		ImageResolutionDpi: params.ImageResolutionDpi,
 		Instructions:       params.Instructions,
 		NConsensus:         params.NConsensus,
 		Metadata:           params.Metadata,
@@ -135,8 +131,6 @@ type ExtractionsCreateStreamParams struct {
 	JSONSchema map[string]interface{} `json:"json_schema" url:"-"`
 	// Model is the model to use for the extraction
 	Model *string `json:"model,omitempty" url:"-"`
-	// ImageResolutionDpi is resolution of the image sent to the LLM
-	ImageResolutionDpi *int `json:"image_resolution_dpi,omitempty" url:"-"`
 	// Instructions is free-form instructions appended to the system prompt to steer the extraction.
 	Instructions *string `json:"instructions,omitempty" url:"-"`
 	// NConsensus is number of consensus extraction runs to perform. Uses deterministic single-pass when set to 1.
@@ -160,7 +154,6 @@ func (s *ExtractionService) CreateStream(ctx context.Context, params *Extraction
 		Document           *MIMEData                `json:"document"`
 		JSONSchema         map[string]interface{}   `json:"json_schema"`
 		Model              *string                  `json:"model,omitempty"`
-		ImageResolutionDpi *int                     `json:"image_resolution_dpi,omitempty"`
 		Instructions       *string                  `json:"instructions,omitempty"`
 		NConsensus         *int                     `json:"n_consensus,omitempty"`
 		Metadata           *map[string]string       `json:"metadata,omitempty"`
@@ -185,7 +178,6 @@ func (s *ExtractionService) CreateStream(ctx context.Context, params *Extraction
 		Document:           coercedDocument,
 		JSONSchema:         params.JSONSchema,
 		Model:              params.Model,
-		ImageResolutionDpi: params.ImageResolutionDpi,
 		Instructions:       params.Instructions,
 		NConsensus:         params.NConsensus,
 		Metadata:           params.Metadata,

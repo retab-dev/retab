@@ -40,7 +40,6 @@ class ExtractionRequest(BaseModel):
     document: MIMEData
     json_schema: dict[str, Any] = Field(..., description="JSON schema describing the structured output")
     model: str | None = Field(default="retab-small", description="The model to use for the extraction")
-    image_resolution_dpi: int | None = Field(default=192, description="Resolution of the image sent to the LLM")
     instructions: str | None = Field(default=None, description="Free-form instructions appended to the system prompt to steer the extraction.")
     n_consensus: int | None = Field(default=1, description="Number of consensus extraction runs to perform. Uses deterministic single-pass when set to 1.")
     metadata: dict[str, str] | None = Field(default=None, description="User-defined metadata to associate with this extraction")
@@ -64,7 +63,7 @@ class Extraction(BaseModel):
     model: str = Field(..., description="Model used for the extraction")
     json_schema: dict[str, Any] = Field(..., description="JSON schema used for the extraction")
     n_consensus: int | None = Field(default=1, description="Number of consensus votes used")
-    image_resolution_dpi: int | None = Field(default=192, description="DPI used to render document images")
+    image_resolution_dpi: int | None = Field(default=None, description="Legacy stored DPI value, retained only for compatibility.")
     instructions: str | None = Field(default=None, description="Free-form instructions supplied with the extraction request.")
     output: dict[str, Any] = Field(..., description="The extracted structured data")
     status: ExtractionStatus | None = Field(

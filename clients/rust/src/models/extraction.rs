@@ -21,9 +21,7 @@ pub struct Extraction {
     /// Defaults to `1`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub n_consensus: Option<i64>,
-    /// DPI used to render document images
-    ///
-    /// Defaults to `192`.
+    /// Legacy stored DPI value, retained only for compatibility.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub image_resolution_dpi: Option<i64>,
     /// Free-form instructions supplied with the extraction request.

@@ -16,7 +16,7 @@ pub struct ParseWorkflowArtifact {
     pub model: String,
     /// Format used to render tables extracted from the document
     pub table_parsing_format: ParseWorkflowArtifactTableParsingFormat,
-    /// DPI used when rasterizing pages for the parser
+    /// Legacy stored DPI value, retained only for compatibility.
     pub image_resolution_dpi: i64,
     /// Free-form instructions supplied with the parse request.
     #[serde(skip_serializing_if = "Option::is_none", default)]

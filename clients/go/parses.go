@@ -39,8 +39,6 @@ type ParsesCreateParams struct {
 	Model *string `json:"model,omitempty" url:"-"`
 	// TableParsingFormat is format used to render tables extracted from the document
 	TableParsingFormat *ParseRequestTableParsingFormat `json:"table_parsing_format,omitempty" url:"-"`
-	// ImageResolutionDpi is dpi used when rasterizing pages for the parser
-	ImageResolutionDpi *int `json:"image_resolution_dpi,omitempty" url:"-"`
 	// Instructions is free-form instructions appended to the system prompt to steer the parse.
 	Instructions *string `json:"instructions,omitempty" url:"-"`
 	// BustCache is if true, skip the LLM cache and force a fresh completion
@@ -69,7 +67,6 @@ func (s *ParseService) Create(ctx context.Context, params *ParsesCreateParams, o
 		Document           *MIMEData                       `json:"document"`
 		Model              *string                         `json:"model,omitempty"`
 		TableParsingFormat *ParseRequestTableParsingFormat `json:"table_parsing_format,omitempty"`
-		ImageResolutionDpi *int                            `json:"image_resolution_dpi,omitempty"`
 		Instructions       *string                         `json:"instructions,omitempty"`
 		BustCache          *bool                           `json:"bust_cache,omitempty"`
 		Background         *bool                           `json:"background,omitempty"`
@@ -89,7 +86,6 @@ func (s *ParseService) Create(ctx context.Context, params *ParsesCreateParams, o
 		Document:           coercedDocument,
 		Model:              params.Model,
 		TableParsingFormat: params.TableParsingFormat,
-		ImageResolutionDpi: params.ImageResolutionDpi,
 		Instructions:       params.Instructions,
 		BustCache:          params.BustCache,
 		Background:         params.Background,

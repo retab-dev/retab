@@ -28,12 +28,11 @@ func newExtractionRequestTestCmd(t *testing.T) *cobra.Command {
 	return cmd
 }
 
-// TestNewExtractionRequestGatesBoundedIntParams pins that unset
-// --n-consensus / --image-resolution-dpi are OMITTED from the request, not
-// sent as 0. A non-nil *int(0) survives omitempty, and 0 is below the flags'
-// own ranges (1-16, 96-300), so an unconditional ptr() wired an invalid value
-// on the default invocation.
-func TestNewExtractionRequestGatesBoundedIntParams(t *testing.T) {
+// TestNewExtractionRequestGatesConsensusParam pins that unset --n-consensus is
+// OMITTED from the request, not sent as 0. The legacy --image-resolution-dpi
+// flag remains accepted for CLI compatibility but is no longer present in the
+// generated request type.
+func TestNewExtractionRequestGatesConsensusParam(t *testing.T) {
 	t.Run("omitted when unset", func(t *testing.T) {
 		cmd := newExtractionRequestTestCmd(t)
 		for n, v := range map[string]string{
@@ -51,9 +50,6 @@ func TestNewExtractionRequestGatesBoundedIntParams(t *testing.T) {
 		}
 		if params.NConsensus != nil {
 			t.Fatalf("NConsensus must be nil when --n-consensus unset, got %d", *params.NConsensus)
-		}
-		if params.ImageResolutionDpi != nil {
-			t.Fatalf("ImageResolutionDpi must be nil when unset, got %d", *params.ImageResolutionDpi)
 		}
 	})
 
@@ -76,9 +72,6 @@ func TestNewExtractionRequestGatesBoundedIntParams(t *testing.T) {
 		}
 		if params.NConsensus == nil || *params.NConsensus != 3 {
 			t.Fatalf("NConsensus = %v, want 3", params.NConsensus)
-		}
-		if params.ImageResolutionDpi != nil {
-			t.Fatalf("ImageResolutionDpi must be ignored, got %d", *params.ImageResolutionDpi)
 		}
 	})
 }

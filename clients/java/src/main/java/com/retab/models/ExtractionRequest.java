@@ -13,7 +13,6 @@ public final class ExtractionRequest {
   private final MimeData document;
   private final Map<String, Object> jsonSchema;
   private final String model;
-  private final Long imageResolutionDpi;
   private final String instructions;
   private final Long nConsensus;
   private final Map<String, String> metadata;
@@ -28,7 +27,6 @@ public final class ExtractionRequest {
       @JsonProperty(value = "document", required = true) MimeData document,
       @JsonProperty(value = "json_schema", required = true) Map<String, Object> jsonSchema,
       @JsonProperty(value = "model", required = false) String model,
-      @JsonProperty(value = "image_resolution_dpi", required = false) Long imageResolutionDpi,
       @JsonProperty(value = "instructions", required = false) String instructions,
       @JsonProperty(value = "n_consensus", required = false) Long nConsensus,
       @JsonProperty(value = "metadata", required = false) Map<String, String> metadata,
@@ -41,7 +39,6 @@ public final class ExtractionRequest {
     this.document = document;
     this.jsonSchema = jsonSchema;
     this.model = model != null ? model : "retab-small";
-    this.imageResolutionDpi = imageResolutionDpi;
     this.instructions = instructions;
     this.nConsensus = nConsensus;
     this.metadata = metadata;
@@ -65,11 +62,6 @@ public final class ExtractionRequest {
   @JsonProperty("model")
   public String getModel() {
     return model;
-  }
-
-  @JsonProperty("image_resolution_dpi")
-  public Long getImageResolutionDpi() {
-    return imageResolutionDpi;
   }
 
   @JsonProperty("instructions")

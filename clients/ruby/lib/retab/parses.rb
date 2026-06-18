@@ -77,7 +77,6 @@ module Retab
     # @param document [Retab::MimeData, Pathname, IO, String, Hash] The document to parse
     # @param model [String, nil] The model to use for parsing
     # @param table_parsing_format [Retab::Types::ParseRequestTableParsingFormat, nil] Format used to render tables extracted from the document
-    # @param image_resolution_dpi [Integer, nil] DPI used when rasterizing pages for the parser
     # @param instructions [String, nil] Free-form instructions appended to the system prompt to steer the parse.
     # @param bust_cache [Boolean, nil] If true, skip the LLM cache and force a fresh completion
     # @param background [Boolean, nil] If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
@@ -87,7 +86,6 @@ module Retab
       document:,
       model: nil,
       table_parsing_format: nil,
-      image_resolution_dpi: nil,
       instructions: nil,
       bust_cache: nil,
       background: nil,
@@ -98,7 +96,6 @@ module Retab
         "document" => document,
         "model" => model,
         "table_parsing_format" => table_parsing_format,
-        "image_resolution_dpi" => image_resolution_dpi,
         "instructions" => instructions,
         "bust_cache" => bust_cache,
         "background" => background
