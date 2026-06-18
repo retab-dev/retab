@@ -8,10 +8,10 @@ import { ZCreateFileBlueprintRequestMode } from './create-file-blueprint-request
 export interface CreateFileBlueprintRequest {
   /** File id to analyze. */
   fileId: string;
-  /** Optional user intent used to guide the blueprint analysis. */
-  intent?: string | null;
   /** Compatibility-only analysis mode. The service currently runs a single instant pass. */
   mode?: CreateFileBlueprintRequestMode | null;
+  /** Optional user intent used to guide the blueprint analysis. */
+  intent?: string | null;
   /**
    * If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
    * @default false
@@ -21,15 +21,15 @@ export interface CreateFileBlueprintRequest {
 
 export interface CreateFileBlueprintRequestResponse {
   file_id: string;
-  intent?: string | null;
   mode?: CreateFileBlueprintRequestMode | null;
+  intent?: string | null;
   background?: boolean;
 }
 
 export const ZCreateFileBlueprintRequest = z.object({
   fileId: z.string(),
-  intent: z.string().nullable().optional(),
   mode: ZCreateFileBlueprintRequestMode.nullable().optional(),
+  intent: z.string().nullable().optional(),
   background: z.boolean().optional(),
 }) as z.ZodType<CreateFileBlueprintRequest>;
 
@@ -38,8 +38,8 @@ export function deserializeCreateFileBlueprintRequest(
 ): CreateFileBlueprintRequest {
   return {
     fileId: wire['file_id'],
-    intent: wire['intent'],
     mode: wire['mode'],
+    intent: wire['intent'],
     background: wire['background'],
   };
 }
@@ -49,8 +49,8 @@ export function serializeCreateFileBlueprintRequest(
 ): CreateFileBlueprintRequestResponse {
   return {
     file_id: domain['fileId'],
-    intent: domain['intent'],
     mode: domain['mode'],
+    intent: domain['intent'],
     background: domain['background'],
   };
 }
