@@ -119,34 +119,29 @@ sh_test(
 )
 
 # Fully hermetic Node SDK drift check (blueprint Phase 4, gold standard): runs
-# SANDBOXED with no network and is cached on no-op reruns. Both inputs are
-# Bazel-declared TreeArtifacts:
-#   * generated_node_sdk_formatted -- the raw generator output (sandboxed, from
-#     the committed OpenAPI contract on the pinned Node toolchain via the
-#     lockfile-materialized oagen_npm closure) re-formatted with the Node SDK
-#     client's own vendored prettier (node_sdk_npm).
-#   * committed_node_sdk_tree -- the committed src/ + manifest staged into a tree.
-# diff_generated_sdk_tree.sh compares the two inside the sandbox (normalizing the
-# manifest generatedAt timestamp), so nothing reaches the live working tree. This
-# replaces the old LOCAL/no-sandbox check that regenerated on the host and read
-# the committed tree via RETAB_REPO_ROOT. The retab-node-oagen-emitter service
-# boundary selects this target for real regenerate-and-diff drift coverage,
-# instead of the //api-quality:unit_tests proxy other (still-manual) languages
-# use.
+# SANDBOXED with no network and does not read the live working tree. The test
+# formats the raw generated tree inside its own action before diffing against the
+# committed src/ + manifest snapshot, so a stale cached formatted intermediate
+# cannot make the freshness gate flaky.
 sh_test(
     name = "check_node",
-    srcs = ["//tools/bazel:diff_generated_sdk_tree.sh"],
+    srcs = ["//tools/bazel:diff_node_sdk_tree.sh"],
     args = [
-        "node",
-        "$(location //open-source/sdk/clients/node:generated_node_sdk_formatted)",
+        "$(location //.oagen-workspace/retab-gen:generated_node_sdk_raw)",
         "$(location //open-source/sdk/clients/node:committed_node_sdk_tree)",
+        "$(location //open-source/sdk/clients/node:format_generated_node_sdk_bin)",
+        "$(location //open-source/sdk/clients/node:.prettierrc)",
+        "$(location //tools/bazel:diff_generated_sdk_tree.sh)",
     ],
     data = [
+        "//.oagen-workspace/retab-gen:generated_node_sdk_raw",
         "//open-source/sdk/clients/node:committed_node_sdk_tree",
-        "//open-source/sdk/clients/node:generated_node_sdk_formatted",
+        "//open-source/sdk/clients/node:format_generated_node_sdk_bin",
+        "//open-source/sdk/clients/node:.prettierrc",
+        "//tools/bazel:diff_generated_sdk_tree.sh",
     ],
     env = {
-        "RETAB_NODE_SDK_CHECK_VERSION": "2",
+        "RETAB_NODE_SDK_CHECK_VERSION": "3",
     },
     tags = ["generated-check", "no-cache"],
 )
