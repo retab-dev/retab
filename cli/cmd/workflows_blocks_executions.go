@@ -4,6 +4,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
@@ -113,8 +114,29 @@ block execution history should be returned.`,
 		if err != nil {
 			return err
 		}
-		return printResult(cmd, result)
+		return printBlockExecutionsListResult(cmd, result)
 	}),
+}
+
+var blockExecutionColumns = []TableColumn{
+	{Header: "ID", Extract: func(row any) string { return workflowExperimentCell(row, "id") }},
+	{Header: "STATUS", Extract: func(row any) string { return workflowExperimentCell(row, "lifecycle.status") }},
+	{Header: "BLOCK", Extract: func(row any) string { return workflowExperimentCell(row, "block_id") }},
+	{Header: "BLOCK_KIND", Extract: func(row any) string { return workflowExperimentCell(row, "block_type") }},
+	{Header: "ARTIFACT", Extract: func(row any) string { return workflowExperimentCell(row, "artifact.id") }},
+	{Header: "CREATED_AT", Extract: func(row any) string { return workflowExperimentCell(row, "created_at") }},
+}
+
+func printBlockExecutionsListResult(cmd *cobra.Command, result *retab.PaginatedList[retab.StoredBlockExecution]) error {
+	if cmd != nil {
+		if f := cmd.Root().PersistentFlags().Lookup("output"); f != nil {
+			switch f.Value.String() {
+			case string(OutputTable), string(OutputCSV):
+				return RenderList(os.Stdout, OutputFormat(f.Value.String()), result, blockExecutionColumns)
+			}
+		}
+	}
+	return printJSON(result)
 }
 
 func validateBlockExecutionNConsensus(value int) error {

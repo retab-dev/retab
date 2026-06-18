@@ -100,6 +100,33 @@ func TestWorkflowsRunsGetHonorsTableOutputFallback(t *testing.T) {
 	}
 }
 
+func TestWorkflowsRunsGetRejectsEmptyRunIDBeforeRequest(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits.Add(1)
+		t.Fatalf("server should not be reached for empty run id, got %s %s", r.Method, r.URL.Path)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	err := workflowsRunsGetCmd.RunE(workflowsRunsGetCmd, []string{""})
+	if err == nil {
+		t.Fatal("expected empty run id error")
+	}
+	if unwrapped := errors.Unwrap(err); unwrapped != nil {
+		err = unwrapped
+	}
+	if !strings.Contains(err.Error(), "run id") {
+		t.Fatalf("error should mention run id, got %v", err)
+	}
+	if got := hits.Load(); got != 0 {
+		t.Fatalf("server was hit %d time(s), want 0", got)
+	}
+}
+
 func TestWorkflowsRunsCancelSurfacesPendingCancellationStatusToStderr(t *testing.T) {
 	// Regression: the cancel endpoint returns 200 even when the cancel
 	// signal has not yet been confirmed by Temporal. Previously the CLI

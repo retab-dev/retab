@@ -945,16 +945,20 @@ which addresses a parent collection, takes a workflow id. The same holds for
   # Poll until done
   while [ "$(retab workflows runs get run_xyz789 | jq -r '.lifecycle.status')" = "running" ]; do
     sleep 2
-  done`,
+	done`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		runID := strings.TrimSpace(args[0])
+		if runID == "" {
+			return fmt.Errorf("expected the run id")
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Runs.Get(ctx, args[0])
+		result, err := client.Workflows.Runs.Get(ctx, runID)
 		if err != nil {
 			return err
 		}
@@ -963,7 +967,7 @@ which addresses a parent collection, takes a workflow id. The same holds for
 		// so callers get the run + its execution records in one command
 		// instead of a second `workflows steps list` round trip.
 		if includeSteps, _ := cmd.Flags().GetBool("steps"); includeSteps {
-			steps, err := client.Workflows.Steps.List(ctx, &retab.WorkflowStepsListParams{RunID: ptr(args[0])})
+			steps, err := client.Workflows.Steps.List(ctx, &retab.WorkflowStepsListParams{RunID: ptr(runID)})
 			if err != nil {
 				return err
 			}

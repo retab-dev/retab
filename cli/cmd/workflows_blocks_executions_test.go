@@ -125,6 +125,57 @@ func TestWorkflowsBlocksExecutionsListUsesCanonicalEndpoint(t *testing.T) {
 	}
 }
 
+func TestWorkflowsBlocksExecutionsListTableRendersStatusAndBlock(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet || r.URL.Path != "/v1/workflows/blocks/executions" {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"data": []map[string]any{{
+				"id":          "exec_123",
+				"workflow_id": "wf_123",
+				"run_id":      "run_123",
+				"block_id":    "blk_extract",
+				"block_type":  "extract",
+				"lifecycle":   map[string]any{"status": "completed"},
+				"artifact":    map[string]any{"id": "extr_123", "operation": "extraction"},
+				"created_at":  "2026-06-18T06:52:26Z",
+			}},
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := workflowsBlocksExecutionsListCmd.Flags().Set("block-id", "blk_extract"); err != nil {
+		t.Fatal(err)
+	}
+	if err := rootCmd.PersistentFlags().Set("output", "table"); err != nil {
+		t.Fatalf("set output: %v", err)
+	}
+	t.Cleanup(func() {
+		resetWorkflowBlocksExecutionsFlag(t, workflowsBlocksExecutionsListCmd, "block-id")
+		_ = rootCmd.PersistentFlags().Set("output", "")
+	})
+
+	stdout, stderr := captureStd(t, func() {
+		if err := workflowsBlocksExecutionsListCmd.RunE(workflowsBlocksExecutionsListCmd, []string{"run_123"}); err != nil {
+			t.Fatalf("block executions list: %v", err)
+		}
+	})
+	if stderr != "" {
+		t.Fatalf("unexpected stderr: %q", stderr)
+	}
+	for _, want := range []string{"STATUS", "BLOCK", "BLOCK_KIND", "ARTIFACT", "completed", "blk_extract", "extract", "extr_123"} {
+		if !strings.Contains(stdout, want) {
+			t.Fatalf("block executions table missing %q:\n%s", want, stdout)
+		}
+	}
+}
+
 func TestWorkflowsBlocksExecutionsRejectsInvalidNConsensusBeforeRequest(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
