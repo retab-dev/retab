@@ -451,6 +451,13 @@ func init() {
 	schemasCmd.AddCommand(schemasGenerateCmd)
 	schemasCmd.AddCommand(schemasGetCmd)
 	schemasCmd.AddCommand(schemasCancelCmd)
-	schemasCmd.AddCommand(primitiveWaitCommand(schemaGenerationWaitSpec))
+	// Register the wait subcommand together with its --poll-interval-ms /
+	// --timeout-seconds tuning flags, exactly as every other primitive does.
+	// Without addPrimitiveWaitTuningFlags the flags shown in the command's own
+	// help/Example are unknown flags, and primitiveWaitDurations silently pins
+	// `schemas wait` to the hard-coded defaults with no way to tune them.
+	schemasWaitCmd := primitiveWaitCommand(schemaGenerationWaitSpec)
+	addPrimitiveWaitTuningFlags(schemasWaitCmd, false)
+	schemasCmd.AddCommand(schemasWaitCmd)
 	rootCmd.AddCommand(schemasCmd)
 }

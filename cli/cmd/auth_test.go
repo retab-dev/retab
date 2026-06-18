@@ -732,6 +732,61 @@ func TestWriteAuthStatusTable_ExpiresAtAsTimeValue(t *testing.T) {
 	}
 }
 
+// Regression: a config can carry a leftover legacy api_key alongside a
+// higher-precedence access_token (resolveCredential ranks access_token first,
+// matching the `source` switch in authStatusCmd). `auth status` must preview
+// only the credential it actually resolves — previewing the unused api_key made
+// the human view print "Logged in as <api-key>" while Source said access_token,
+// pointing the user at a credential the CLI never sends.
+func TestAuthStatus_AccessTokenWinsHidesLeftoverAPIKeyPreview(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "")
+	t.Setenv("RETAB_NO_UPDATE_NOTIFIER", "1")
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"authenticated": true, "auth_method": "bearer_token"}`))
+	}))
+	defer server.Close()
+
+	if err := saveConfig(retabConfig{
+		BaseURL:     server.URL,
+		AccessToken: "acctk_live_token",
+		APIKey:      "sk_live_leftover",
+	}); err != nil {
+		t.Fatalf("saveConfig: %v", err)
+	}
+
+	var outBuf, errBuf bytes.Buffer
+	rootCmd.SetOut(&outBuf)
+	rootCmd.SetErr(&errBuf)
+	t.Cleanup(func() {
+		rootCmd.SetArgs(nil)
+		rootCmd.SetOut(nil)
+		rootCmd.SetErr(nil)
+		for _, name := range []string{"output", "api-key", "base-url"} {
+			_ = rootCmd.PersistentFlags().Set(name, "")
+		}
+	})
+
+	if err := ExecuteArgs([]string{"auth", "status", "--json"}); err != nil {
+		t.Fatalf("auth status: %v\nstdout:\n%s\nstderr:\n%s", err, outBuf.String(), errBuf.String())
+	}
+
+	var got map[string]any
+	if err := json.Unmarshal(outBuf.Bytes(), &got); err != nil {
+		t.Fatalf("auth status output not JSON: %v\n%s", err, outBuf.String())
+	}
+	if _, ok := got["api_key_preview"]; ok {
+		t.Errorf("api_key_preview must be absent when access_token is the resolved credential, got:\n%s", outBuf.String())
+	}
+	if got["source"] != "~/.retab/config.json (access_token)" {
+		t.Errorf("source = %#v, want ~/.retab/config.json (access_token)", got["source"])
+	}
+	if preview, _ := got["access_token_preview"].(string); preview == "" {
+		t.Errorf("access_token_preview should be present, got:\n%s", outBuf.String())
+	}
+}
+
 func TestWriteAuthStatusTable_NotLoggedIn(t *testing.T) {
 	var buf bytes.Buffer
 	payload := map[string]any{

@@ -371,7 +371,14 @@ compact human block for interactive terminals).`,
 		if source == "~/.retab/config.json (access_token)" {
 			out["access_token_preview"] = redactKey(cfg.AccessToken)
 		}
-		if flagKey != "" || envKey != "" || cfg.APIKey != "" {
+		// Only preview the API key when an API key is the *resolved* credential.
+		// A config can carry a leftover api_key alongside a higher-precedence
+		// access_token or oauth credential (the `source` switch above ranks
+		// api_key last, matching resolveCredential); previewing it regardless
+		// made `auth status` print "Logged in as <api-key>" while Source said
+		// access_token/oauth — a preview of a credential the CLI never uses.
+		switch source {
+		case "--api-key flag", "RETAB_API_KEY env", "~/.retab/config.json (api_key)":
 			key := flagKey
 			if key == "" {
 				key = envKey

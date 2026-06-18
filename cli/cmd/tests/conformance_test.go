@@ -313,3 +313,25 @@ func TestDeleteCommandsRequireYesWhenNonInteractive(t *testing.T) {
 		})
 	}
 }
+
+// Every `wait` subcommand must expose --poll-interval-ms / --timeout-seconds.
+// primitiveWaitCommand documents these flags (in its Example) and reads them
+// at runtime, but they are registered by a separate addPrimitiveWaitTuningFlags
+// call — easy to forget. Regression: `schemas wait` registered the command
+// without the tuning flags, so the flags shown in its own help were unknown
+// flags and the poll/timeout were silently pinned to the defaults.
+func TestWaitCommandsExposeTuningFlags(t *testing.T) {
+	waits := commandsNamed("wait")
+	if len(waits) == 0 {
+		t.Fatal("discovered no wait commands; discovery is broken")
+	}
+	for _, c := range waits {
+		t.Run(c.CommandPath(), func(t *testing.T) {
+			for _, flag := range []string{"poll-interval-ms", "timeout-seconds"} {
+				if !hasFlag(c, flag) {
+					t.Fatalf("%s: missing --%s flag", c.CommandPath(), flag)
+				}
+			}
+		})
+	}
+}

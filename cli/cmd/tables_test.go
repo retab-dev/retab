@@ -239,6 +239,34 @@ func tableFixture() map[string]any {
 	}
 }
 
+// normalizeCSVHeaders must never emit the same name twice — the names become
+// map keys when CSV rows are rendered as a table, so a collision silently drops
+// a column's data. A one-shot `name_N` suffix can itself collide with an
+// existing header (["a","a","a_2"] -> "a_2" twice); the disambiguator has to
+// keep probing until the result is genuinely unused.
+func TestNormalizeCSVHeadersAreUnique(t *testing.T) {
+	cases := [][]string{
+		{"a", "a", "a_2"},
+		{"a", "a", "a"},
+		{"a", "a_2", "a"},
+		{"", "", "column_1"},
+		{"x", "y", "z"},
+	}
+	for _, headers := range cases {
+		got := normalizeCSVHeaders(headers)
+		if len(got) != len(headers) {
+			t.Fatalf("normalizeCSVHeaders(%v) length = %d, want %d (%v)", headers, len(got), len(headers), got)
+		}
+		seen := map[string]bool{}
+		for _, name := range got {
+			if seen[name] {
+				t.Fatalf("normalizeCSVHeaders(%v) produced duplicate %q: %v", headers, name, got)
+			}
+			seen[name] = true
+		}
+	}
+}
+
 func TestTablesDoNotExposeCellLevelMutationCommands(t *testing.T) {
 	for _, path := range [][]string{
 		{"tables", "columns"},

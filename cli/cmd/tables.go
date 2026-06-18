@@ -498,17 +498,25 @@ func renderDownloadedCSVTable(body []byte) error {
 }
 
 func normalizeCSVHeaders(headers []string) []string {
-	seen := map[string]int{}
+	used := map[string]bool{}
 	normalized := make([]string, 0, len(headers))
 	for index, header := range headers {
 		name := strings.TrimSpace(header)
 		if name == "" {
 			name = fmt.Sprintf("column_%d", index+1)
 		}
-		seen[name]++
-		if seen[name] > 1 {
-			name = fmt.Sprintf("%s_%d", name, seen[name])
+		// Disambiguate duplicates, but keep probing suffixes until the result
+		// is genuinely unused — a one-shot `name_N` can itself collide with an
+		// existing header (e.g. ["a","a","a_2"] -> "a_2" twice), and these
+		// names become map keys downstream where a collision silently drops a
+		// column's data.
+		if used[name] {
+			base := name
+			for n := 2; used[name]; n++ {
+				name = fmt.Sprintf("%s_%d", base, n)
+			}
 		}
+		used[name] = true
 		normalized = append(normalized, name)
 	}
 	if len(normalized) == 0 {
@@ -867,6 +875,12 @@ func renderWorkflowTableRowsCSV(result *retab.WorkflowTableRowsResponse, options
 		return err
 	}
 	for _, row := range result.Rows {
+		if row == nil {
+			// result.Rows is []*WorkflowTableRow; a null array element decodes
+			// to a nil pointer. The table renderer and workflowTableColumnNames
+			// both guard this — mirror them so the CSV path can't panic.
+			continue
+		}
 		record := []string{}
 		if options.ShowRowID {
 			record = append(record, row.ID)
