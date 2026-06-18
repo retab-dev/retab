@@ -3,6 +3,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -106,5 +107,69 @@ func TestWorkflowsUpdateCommandsRejectNoOpBeforeRequest(t *testing.T) {
 				t.Fatalf("server was hit %d time(s), want the guard to fail before any request", got)
 			}
 		})
+	}
+}
+
+func TestWorkflowsBlocksUpdateSendsExplicitZeroPositions(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var gotBody map[string]any
+	var gotPath string
+	var gotQuery string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		gotQuery = r.URL.RawQuery
+		if r.Method != http.MethodPatch {
+			t.Fatalf("method = %s, want PATCH", r.Method)
+		}
+		if err := json.NewDecoder(r.Body).Decode(&gotBody); err != nil {
+			t.Fatalf("decode request body: %v", err)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{
+			"id": "blk_123",
+			"workflow_id": "wf_123",
+			"type": "function",
+			"label": "Function",
+			"position_x": 0,
+			"position_y": 0,
+			"updated_at": "2026-06-18T00:00:00Z"
+		}`))
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	cmd := &cobra.Command{Use: "test-block-update", RunE: workflowsBlocksUpdateCmd.RunE}
+	cmd.Flags().String("label", "", "")
+	cmd.Flags().Float64("position-x", 0, "")
+	cmd.Flags().Float64("position-y", 0, "")
+	cmd.Flags().Var(&nonNegativeFloatFlagValue{}, "width", "")
+	cmd.Flags().Var(&nonNegativeFloatFlagValue{}, "height", "")
+	cmd.Flags().String("parent-id", "", "")
+	cmd.Flags().String("config-file", "", "")
+	cmd.Flags().String("merge-config-file", "", "")
+	if err := cmd.Flags().Set("position-x", "0"); err != nil {
+		t.Fatalf("set position-x: %v", err)
+	}
+	if err := cmd.Flags().Set("position-y", "0"); err != nil {
+		t.Fatalf("set position-y: %v", err)
+	}
+
+	if err := cmd.RunE(cmd, []string{"wf_123", "blk_123"}); err != nil {
+		t.Fatalf("update command: %v", err)
+	}
+
+	if gotPath != "/v1/workflows/blocks/blk_123" {
+		t.Fatalf("path = %q, want /v1/workflows/blocks/blk_123", gotPath)
+	}
+	if !strings.Contains(gotQuery, "workflow_id=wf_123") {
+		t.Fatalf("query = %q, want workflow_id=wf_123", gotQuery)
+	}
+	if gotBody["position_x"] != float64(0) {
+		t.Fatalf("position_x body value = %#v, want explicit 0; body=%v", gotBody["position_x"], gotBody)
+	}
+	if gotBody["position_y"] != float64(0) {
+		t.Fatalf("position_y body value = %#v, want explicit 0; body=%v", gotBody["position_y"], gotBody)
 	}
 }
