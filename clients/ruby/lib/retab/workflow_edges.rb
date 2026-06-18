@@ -246,16 +246,22 @@ module Retab
 
     # Get Edge
     # @param edge_id [String]
+    # @param workflow_id [String, nil]
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::WorkflowEdgeDoc]
     def get(
       edge_id:,
+      workflow_id: nil,
       request_options: {}
     )
+      params = {
+        "workflow_id" => workflow_id
+      }.compact
       response = @client.request(
         method: :get,
         path: "/v1/workflows/edges/#{Retab::Util.encode_path(edge_id)}",
         auth: true,
+        params: params,
         request_options: request_options
       )
       result = Retab::WorkflowEdgeDoc.new(response.body)

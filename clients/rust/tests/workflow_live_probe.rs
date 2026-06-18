@@ -264,7 +264,12 @@ spec:
             ));
         }
         let edge = api!(
-            client.workflows().edges().get(&edges.data[0].id),
+            client.workflows().edges().get(
+                &edges.data[0].id,
+                resources::workflow_edges::GetParams {
+                    workflow_id: Some(workflow_id.clone()),
+                },
+            ),
             "get workflow edge"
         );
         if edge.workflow_id != workflow_id {

@@ -27,6 +27,10 @@ public final class WorkflowArtifactsApi {
     return client;
   }
 
+  public List<WorkflowArtifact> list() throws IOException, InterruptedException {
+    return list(null, null, null, null, null, null, null);
+  }
+
   public List<WorkflowArtifact> list(
       String runId,
       WorkflowArtifactsOperation operation,

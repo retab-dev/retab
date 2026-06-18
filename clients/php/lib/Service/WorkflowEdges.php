@@ -205,16 +205,22 @@ class WorkflowEdges
      *
      * Get a single edge by ID.
      * @param string $edgeId
+     * @param string|null $workflowId
      * @return \Retab\Resource\WorkflowEdgeDoc
      * @throws \Retab\Exception\RetabException
      */
     public function get(
         string $edgeId,
+        ?string $workflowId = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\WorkflowEdgeDoc {
+        $query = array_filter([
+            'workflow_id' => $workflowId,
+        ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'GET',
             path: 'v1/workflows/edges/' . rawurlencode($edgeId),
+            query: $query,
             options: $options,
         );
         return WorkflowEdgeDoc::fromArray($response);

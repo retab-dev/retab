@@ -10,22 +10,27 @@ export interface WorkflowArtifact {
   operation: WorkflowArtifactOperation;
   /** Resource identifier */
   id: string;
+  /** Additional properties not captured by named fields */
+  additionalProperties?: Record<string, unknown>;
 }
 
 export interface WorkflowArtifactResponse {
   operation: WorkflowArtifactOperation;
   id: string;
+  additionalProperties?: Record<string, unknown>;
 }
 
 export const ZWorkflowArtifact = z.object({
   operation: ZWorkflowArtifactOperation,
   id: z.string(),
+  additionalProperties: z.record(z.string(), z.unknown()).optional(),
 }) as z.ZodType<WorkflowArtifact>;
 
 export function deserializeWorkflowArtifact(wire: WorkflowArtifactResponse): WorkflowArtifact {
   return {
     operation: wire['operation'],
     id: wire['id'],
+    additionalProperties: wire['additionalProperties'],
   };
 }
 
@@ -33,5 +38,6 @@ export function serializeWorkflowArtifact(domain: WorkflowArtifact): WorkflowArt
   return {
     operation: domain['operation'],
     id: domain['id'],
+    additionalProperties: domain['additionalProperties'],
   };
 }

@@ -32,6 +32,10 @@ public final class SplitsApi {
     return client;
   }
 
+  public List<Split> list() throws IOException, InterruptedException {
+    return list(null, null, null, null, null, null, null, null);
+  }
+
   public List<Split> list(
       String before,
       String after,
@@ -135,6 +139,10 @@ public final class SplitsApi {
       return null;
     }
     return client.getObjectMapper().readValue(response.body(), Split.class);
+  }
+
+  public Split get(String splitId) throws IOException, InterruptedException {
+    return get(splitId, null);
   }
 
   public Split get(String splitId, Boolean includeOutput) throws IOException, InterruptedException {

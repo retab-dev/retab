@@ -40,6 +40,10 @@ public final class WorkflowRunsApi {
     return client;
   }
 
+  public List<WorkflowRun> list() throws IOException, InterruptedException {
+    return list(null, null, null, null, null, null, null, null, null, null, null, null, null, null);
+  }
+
   public List<WorkflowRun> list(
       String workflowId,
       WorkflowRunsStatus status,

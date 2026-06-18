@@ -37,6 +37,10 @@ public final class TablesApi {
     return client;
   }
 
+  public WorkflowTableListResponse list() throws IOException, InterruptedException {
+    return list(null);
+  }
+
   public WorkflowTableListResponse list(String projectId) throws IOException, InterruptedException {
     String path = "/v1/tables";
     StringBuilder query = new StringBuilder();
@@ -253,6 +257,11 @@ public final class TablesApi {
       return null;
     }
     return client.getObjectMapper().readValue(response.body(), Object.class);
+  }
+
+  public WorkflowTableProfileResponse profile(String tableId)
+      throws IOException, InterruptedException {
+    return profile(tableId, null);
   }
 
   public WorkflowTableProfileResponse profile(String tableId, List<String> select)

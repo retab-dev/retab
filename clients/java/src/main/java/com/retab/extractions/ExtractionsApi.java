@@ -32,6 +32,10 @@ public final class ExtractionsApi {
     return client;
   }
 
+  public List<Extraction> list() throws IOException, InterruptedException {
+    return list(null, null, null, null, null, null, null, null, null, null, null, null);
+  }
+
   public List<Extraction> list(
       String before,
       String after,
@@ -254,6 +258,10 @@ public final class ExtractionsApi {
       return null;
     }
     return client.getObjectMapper().readValue(response.body(), Object.class);
+  }
+
+  public Extraction get(String extractionId) throws IOException, InterruptedException {
+    return get(extractionId, null);
   }
 
   public Extraction get(String extractionId, Boolean includeOutput)

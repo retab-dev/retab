@@ -36,6 +36,10 @@ public final class FilesApi {
     return client;
   }
 
+  public List<File> list() throws IOException, InterruptedException {
+    return list(null, null, null, null, null, null, null, null, null, null);
+  }
+
   public List<File> list(
       String before,
       String after,
@@ -128,6 +132,10 @@ public final class FilesApi {
       return null;
     }
     return client.getObjectMapper().readValue(response.body(), FileBlueprint.class);
+  }
+
+  public FileBlueprint getBlueprint(String blueprintId) throws IOException, InterruptedException {
+    return getBlueprint(blueprintId, null);
   }
 
   public FileBlueprint getBlueprint(String blueprintId, Boolean includeOutput)

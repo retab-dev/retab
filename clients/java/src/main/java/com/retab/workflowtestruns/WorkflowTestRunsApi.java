@@ -31,6 +31,10 @@ public final class WorkflowTestRunsApi {
     return client;
   }
 
+  public List<WorkflowTestRun> list() throws IOException, InterruptedException {
+    return list(null, null, null, null, null, null, null, null, null, null, null, null, null);
+  }
+
   public List<WorkflowTestRun> list(
       String workflowId,
       String testId,

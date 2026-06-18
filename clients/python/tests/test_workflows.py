@@ -965,6 +965,15 @@ def test_workflow_edges_create_accepts_typed_request() -> None:
     assert edge.id == "edge-1"
 
 
+def test_workflow_edges_get_serializes_optional_workflow_scope() -> None:
+    request = WorkflowEdges(client=MagicMock()).prepare_get("edge-1", workflow_id="wf_1")
+
+    assert request.method == "GET"
+    assert request.url == "/v1/workflows/edges/edge-1"
+    assert request.params == {"workflow_id": "wf_1"}
+    assert request.data is None
+
+
 def test_workflows_publish_route() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {

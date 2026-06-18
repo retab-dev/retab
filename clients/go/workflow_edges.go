@@ -140,14 +140,19 @@ func (s *WorkflowEdgeService) CreateVersionRestore(ctx context.Context, edgeVers
 	return &result, nil
 }
 
+// WorkflowEdgesGetParams contains the parameters for Get.
+type WorkflowEdgesGetParams struct {
+	WorkflowID *string `url:"workflow_id,omitempty" json:"-"`
+}
+
 // Get edge
 // Get a single edge by ID.
-func (s *WorkflowEdgeService) Get(ctx context.Context, edgeID string, opts ...RequestOption) (*WorkflowEdgeDoc, error) {
+func (s *WorkflowEdgeService) Get(ctx context.Context, edgeID string, params *WorkflowEdgesGetParams, opts ...RequestOption) (*WorkflowEdgeDoc, error) {
 	if edgeID == "" {
 		return nil, fmt.Errorf("retab: edge_id is required")
 	}
 	var result WorkflowEdgeDoc
-	_, err := s.client.request(ctx, "GET", fmt.Sprintf("/v1/workflows/edges/%s", url.PathEscape(edgeID)), nil, nil, &result, opts)
+	_, err := s.client.request(ctx, "GET", fmt.Sprintf("/v1/workflows/edges/%s", url.PathEscape(edgeID)), params, nil, &result, opts)
 	if err != nil {
 		return nil, err
 	}

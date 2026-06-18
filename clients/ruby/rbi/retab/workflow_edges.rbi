@@ -76,10 +76,11 @@ module Retab
     sig do
       params(
         edge_id: String,
+        workflow_id: T.nilable(String),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::WorkflowEdgeDoc)
     end
-    def get(edge_id:, request_options:); end
+    def get(edge_id:, workflow_id:, request_options:); end
 
     sig do
       params(

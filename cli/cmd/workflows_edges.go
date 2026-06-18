@@ -409,7 +409,7 @@ var workflowsEdgesGetCmd = &cobra.Command{
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Edges.Get(ctx, args[0])
+		result, err := client.Workflows.Edges.Get(ctx, args[0], nil)
 		if err != nil {
 			return err
 		}

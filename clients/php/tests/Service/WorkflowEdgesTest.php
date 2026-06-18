@@ -115,7 +115,7 @@ class WorkflowEdgesTest extends TestCase
     {
         $fixture = $this->loadFixture('workflow_edge_doc');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflows()->edges()->get('test_edge_id');
+        $result = $client->workflows()->edges()->get('test_edge_id', workflowId: 'test_value');
         $this->assertInstanceOf(\Retab\Resource\WorkflowEdgeDoc::class, $result);
         $this->assertSame($fixture['id'], $result->id);
         $this->assertSame($fixture['workflow_id'], $result->workflowId);
@@ -123,6 +123,8 @@ class WorkflowEdgesTest extends TestCase
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());
         $this->assertStringEndsWith('v1/workflows/edges/test_edge_id', $request->getUri()->getPath());
+        parse_str($request->getUri()->getQuery(), $query);
+        $this->assertSame('test_value', $query['workflow_id']);
     }
 
     public function testDelete(): void

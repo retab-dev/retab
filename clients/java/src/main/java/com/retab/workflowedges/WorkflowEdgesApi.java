@@ -238,8 +238,14 @@ public final class WorkflowEdgesApi {
   }
 
   public WorkflowEdgeDoc get(String edgeId) throws IOException, InterruptedException {
+    return get(edgeId, null);
+  }
+
+  public WorkflowEdgeDoc get(String edgeId, String workflowId)
+      throws IOException, InterruptedException {
     String path = "/v1/workflows/edges/" + encodePathSegment(edgeId);
     StringBuilder query = new StringBuilder();
+    appendQueryParam(query, "workflow_id", workflowId);
     URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
     HttpRequest.Builder requestBuilder =

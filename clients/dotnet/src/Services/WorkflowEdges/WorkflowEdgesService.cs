@@ -149,18 +149,19 @@ namespace Retab
         /// Get a single edge by ID.
         /// </remarks>
         /// <param name="edgeId">The edge id.</param>
+        /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The <see cref="WorkflowEdgeDoc"/> result.</returns>
-        public virtual async Task<WorkflowEdgeDoc> GetAsync(string edgeId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual async Task<WorkflowEdgeDoc> GetAsync(string edgeId, WorkflowEdgesGetOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return await this.GetAsync<WorkflowEdgeDoc>($"/v1/workflows/edges/{Uri.EscapeDataString(edgeId)}", null, requestOptions, cancellationToken);
+            return await this.GetAsync<WorkflowEdgeDoc>($"/v1/workflows/edges/{Uri.EscapeDataString(edgeId)}", options, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="GetAsync"/>.</summary>
-        public virtual Task<WorkflowEdgeDoc> Get(string edgeId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<WorkflowEdgeDoc> Get(string edgeId, WorkflowEdgesGetOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return this.GetAsync(edgeId, requestOptions, cancellationToken);
+            return this.GetAsync(edgeId, options, requestOptions, cancellationToken);
         }
 
         /// <summary>Delete Edge</summary>

@@ -137,11 +137,14 @@ export class WorkflowEdges {
   }
 
   /** Get Edge */
-  async get(edgeId: string): Promise<WorkflowEdgeDoc> {
+  async get(
+    edgeId: string,
+    options?: { workflowId?: string | null | undefined }
+  ): Promise<WorkflowEdgeDoc> {
     const __wire = await this.client.request<WorkflowEdgeDocResponse>({
       method: 'GET',
       path: `/v1/workflows/edges/${edgeId}`,
-      query: undefined,
+      query: { workflow_id: options?.workflowId },
       body: undefined,
     });
     return deserializeWorkflowEdgeDoc(__wire);

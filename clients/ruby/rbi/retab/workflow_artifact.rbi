@@ -21,6 +21,12 @@ module Retab
     sig { params(value: String).returns(String) }
     def id=(value); end
 
+    sig { returns(T.nilable(T::Hash[String, T.untyped])) }
+    def additional_properties; end
+
+    sig { params(value: T.nilable(T::Hash[String, T.untyped])).returns(T.nilable(T::Hash[String, T.untyped])) }
+    def additional_properties=(value); end
+
     sig { returns(T::Hash[Symbol, T.untyped]) }
     def to_h; end
 

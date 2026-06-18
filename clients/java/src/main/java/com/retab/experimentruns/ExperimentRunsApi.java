@@ -32,6 +32,10 @@ public final class ExperimentRunsApi {
     return client;
   }
 
+  public List<ExperimentRun> list() throws IOException, InterruptedException {
+    return list(null, null, null, null, null, null, null, null, null, null, null, null, null);
+  }
+
   public List<ExperimentRun> list(
       String workflowId,
       String experimentId,

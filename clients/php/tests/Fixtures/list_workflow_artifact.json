@@ -2,7 +2,10 @@
   "data": [
     {
       "operation": "extraction",
-      "id": "01234"
+      "id": "01234",
+      "additionalProperties": {
+        "key": {}
+      }
     }
   ],
   "list_metadata": {

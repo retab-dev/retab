@@ -6,18 +6,23 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.retab.types.WorkflowArtifactOperation;
+import java.util.Map;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class WorkflowArtifact {
   private final WorkflowArtifactOperation operation;
   private final String id;
+  private final Map<String, Object> additionalProperties;
 
   @JsonCreator
   public WorkflowArtifact(
       @JsonProperty(value = "operation", required = true) WorkflowArtifactOperation operation,
-      @JsonProperty(value = "id", required = true) String id) {
+      @JsonProperty(value = "id", required = true) String id,
+      @JsonProperty(value = "additionalProperties", required = false)
+          Map<String, Object> additionalProperties) {
     this.operation = operation;
     this.id = id;
+    this.additionalProperties = additionalProperties;
   }
 
   @JsonProperty("operation")
@@ -28,5 +33,10 @@ public final class WorkflowArtifact {
   @JsonProperty("id")
   public String getId() {
     return id;
+  }
+
+  @JsonProperty("additionalProperties")
+  public Map<String, Object> getAdditionalProperties() {
+    return additionalProperties;
   }
 }

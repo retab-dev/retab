@@ -12,6 +12,10 @@ pub struct WorkflowArtifact {
     pub operation: WorkflowArtifactOperation,
     /// Resource identifier
     pub id: String,
+    /// Additional properties not captured by named fields
+    #[serde(rename = "additionalProperties")]
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub additional_properties: Option<std::collections::HashMap<String, serde_json::Value>>,
 }
 impl WorkflowArtifact {
     /// Construct a new `WorkflowArtifact` with the required fields set.
@@ -20,6 +24,7 @@ impl WorkflowArtifact {
         Self {
             operation,
             id: id.into(),
+            additional_properties: Default::default(),
         }
     }
 }

@@ -31,14 +31,14 @@ namespace Retab
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>A page of <see cref="StepArtifactRef"/> results.</returns>
-        public virtual async Task<PaginatedList<StepArtifactRef>> ListAsync(WorkflowArtifactsListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        /// <returns>A page of <see cref="WorkflowArtifact"/> results.</returns>
+        public virtual async Task<PaginatedList<WorkflowArtifact>> ListAsync(WorkflowArtifactsListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return await this.FetchPageAsync<StepArtifactRef>("/v1/workflows/artifacts", options, null, requestOptions, cancellationToken);
+            return await this.FetchPageAsync<WorkflowArtifact>("/v1/workflows/artifacts", options, null, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="ListAsync"/>.</summary>
-        public virtual Task<PaginatedList<StepArtifactRef>> List(WorkflowArtifactsListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<PaginatedList<WorkflowArtifact>> List(WorkflowArtifactsListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
             return this.ListAsync(options, requestOptions, cancellationToken);
         }
@@ -47,10 +47,10 @@ namespace Retab
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>An async sequence of <see cref="StepArtifactRef"/> items.</returns>
-        public virtual IAsyncEnumerable<StepArtifactRef> ListAutoPagingAsync(WorkflowArtifactsListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        /// <returns>An async sequence of <see cref="WorkflowArtifact"/> items.</returns>
+        public virtual IAsyncEnumerable<WorkflowArtifact> ListAutoPagingAsync(WorkflowArtifactsListOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return base.ListAutoPagingAsync<StepArtifactRef>("/v1/workflows/artifacts", options, requestOptions, cancellationToken);
+            return base.ListAutoPagingAsync<WorkflowArtifact>("/v1/workflows/artifacts", options, requestOptions, cancellationToken);
         }
 
         /// <summary>Get Workflow Artifact By Id</summary>

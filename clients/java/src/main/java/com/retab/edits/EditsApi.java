@@ -37,6 +37,10 @@ public final class EditsApi {
     return new EditTemplatesApi(client);
   }
 
+  public List<Edit> list() throws IOException, InterruptedException {
+    return list(null, null, null, null, null, null, null, null, null);
+  }
+
   public List<Edit> list(
       String before,
       String after,
@@ -144,6 +148,10 @@ public final class EditsApi {
       return null;
     }
     return client.getObjectMapper().readValue(response.body(), Edit.class);
+  }
+
+  public Edit get(String editId) throws IOException, InterruptedException {
+    return get(editId, null);
   }
 
   public Edit get(String editId, Boolean includeOutput) throws IOException, InterruptedException {

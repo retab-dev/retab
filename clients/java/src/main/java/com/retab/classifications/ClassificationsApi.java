@@ -32,6 +32,10 @@ public final class ClassificationsApi {
     return client;
   }
 
+  public List<Classification> list() throws IOException, InterruptedException {
+    return list(null, null, null, null, null, null, null, null);
+  }
+
   public List<Classification> list(
       String before,
       String after,
@@ -142,6 +146,10 @@ public final class ClassificationsApi {
       return null;
     }
     return client.getObjectMapper().readValue(response.body(), Classification.class);
+  }
+
+  public Classification get(String classificationId) throws IOException, InterruptedException {
+    return get(classificationId, null);
   }
 
   public Classification get(String classificationId, Boolean includeOutput)

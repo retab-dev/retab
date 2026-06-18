@@ -103,6 +103,23 @@ func TestParseBlockCreateAcceptsOmittedID(t *testing.T) {
 	}
 }
 
+func TestParseBlockCreatePreservesExplicitZeroPositions(t *testing.T) {
+	req, err := parseBlockCreate(map[string]any{
+		"type":       "function",
+		"position_x": float64(0),
+		"position_y": float64(0),
+	})
+	if err != nil {
+		t.Fatalf("zero positions should be accepted, got error: %v", err)
+	}
+	if req.PositionX == nil || *req.PositionX != 0 {
+		t.Fatalf("position_x = %v, want explicit 0 pointer", req.PositionX)
+	}
+	if req.PositionY == nil || *req.PositionY != 0 {
+		t.Fatalf("position_y = %v, want explicit 0 pointer", req.PositionY)
+	}
+}
+
 func TestParseBlockCreateRejectsMismatchedWorkflowID(t *testing.T) {
 	// If the block-file body carries a ``workflow_id`` that disagrees
 	// with the positional ``<workflow-id>``, the CLI must reject the

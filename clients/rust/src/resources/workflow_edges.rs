@@ -128,6 +128,12 @@ impl ListDiffParams {
     }
 }
 
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct GetParams {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub workflow_id: Option<String>,
+}
+
 impl<'a> WorkflowEdgesApi<'a> {
     /// List Edges
     ///
@@ -264,21 +270,22 @@ impl<'a> WorkflowEdgesApi<'a> {
     /// Get Edge
     ///
     /// Get a single edge by ID.
-    pub async fn get(&self, edge_id: &str) -> Result<WorkflowEdgeDoc, Error> {
-        self.get_with_options(edge_id, None).await
+    pub async fn get(&self, edge_id: &str, params: GetParams) -> Result<WorkflowEdgeDoc, Error> {
+        self.get_with_options(edge_id, params, None).await
     }
 
     /// Variant of [`Self::get`] that accepts per-request [`crate::RequestOptions`].
     pub async fn get_with_options(
         &self,
         edge_id: &str,
+        params: GetParams,
         options: Option<&crate::RequestOptions>,
     ) -> Result<WorkflowEdgeDoc, Error> {
         let edge_id = crate::client::path_segment(edge_id);
         let path = format!("/v1/workflows/edges/{edge_id}");
         let method = http::Method::GET;
         self.client
-            .request_with_query_opts(method, &path, &(), options)
+            .request_with_query_opts(method, &path, &params, options)
             .await
     }
 

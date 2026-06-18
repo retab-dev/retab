@@ -154,6 +154,28 @@ describe('workflow sub-resource list envelopes', () => {
     expect(result.data[0].targetHandle).toBe('input-file-0');
   });
 
+  test('edges.get sends optional workflow_id scope and deserializes WorkflowEdgeDoc', async () => {
+    const { client, calls } = clientCapturing({
+      id: 'edge-1',
+      workflow_id: 'wf_aaa',
+      source_block: 'start-1',
+      target_block: 'extract-1',
+      source_handle: 'output-file-0',
+      target_handle: 'input-file-0',
+      updated_at: '2026-01-01T00:00:00Z',
+    });
+
+    const result = await client.workflows.edges.get('edge-1', { workflowId: 'wf_aaa' });
+
+    const call = lastCall(calls);
+    expect(call.method).toBe('GET');
+    expect(call.path).toBe('/v1/workflows/edges/edge-1');
+    expect(call.query.workflow_id).toBe('wf_aaa');
+    expect(result.id).toBe('edge-1');
+    expect(result.workflowId).toBe('wf_aaa');
+    expect(result.targetBlock).toBe('extract-1');
+  });
+
   test('artifacts.list filters by run_id and deserializes WorkflowArtifact items', async () => {
     const { client, calls } = clientCapturing(
       envelope({ operation: 'extraction', id: 'ext_123' }, { operation: 'parse', id: 'parse_456' })

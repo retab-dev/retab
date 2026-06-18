@@ -62,4 +62,11 @@ namespace Retab
         public string ToEdgeVersionId { get; set; } = default!;
 
     }
+
+    /// <summary>Request options for <see cref="WorkflowEdgesService.GetAsync"/>: Get Edge</summary>
+    public class WorkflowEdgesGetOptions : BaseOptions
+    {
+        public string? WorkflowId { get; set; }
+
+    }
 }

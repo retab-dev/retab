@@ -262,6 +262,10 @@ public final class WorkflowBlocksApi {
     return client.getObjectMapper().readValue(response.body(), WorkflowBlock.class);
   }
 
+  public WorkflowBlock get(String blockId) throws IOException, InterruptedException {
+    return get(blockId, null);
+  }
+
   public WorkflowBlock get(String blockId, String workflowId)
       throws IOException, InterruptedException {
     String path = "/v1/workflows/blocks/" + encodePathSegment(blockId);
@@ -358,6 +362,10 @@ public final class WorkflowBlocksApi {
       return null;
     }
     return client.getObjectMapper().readValue(response.body(), WorkflowBlock.class);
+  }
+
+  public Object delete(String blockId) throws IOException, InterruptedException {
+    return delete(blockId, null);
   }
 
   public Object delete(String blockId, String workflowId) throws IOException, InterruptedException {

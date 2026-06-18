@@ -31,6 +31,10 @@ public final class ParsesApi {
     return client;
   }
 
+  public List<Parse> list() throws IOException, InterruptedException {
+    return list(null, null, null, null, null, null, null);
+  }
+
   public List<Parse> list(
       String before,
       String after,
@@ -134,6 +138,10 @@ public final class ParsesApi {
       return null;
     }
     return client.getObjectMapper().readValue(response.body(), Parse.class);
+  }
+
+  public Parse get(String parseId) throws IOException, InterruptedException {
+    return get(parseId, null);
   }
 
   public Parse get(String parseId, Boolean includeOutput) throws IOException, InterruptedException {

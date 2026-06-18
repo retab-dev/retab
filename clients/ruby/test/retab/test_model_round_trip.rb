@@ -3300,7 +3300,8 @@ class ModelRoundTripTest < Minitest::Test
   def test_workflow_artifact_round_trip
     fixture = {
       "operation" => "stub",
-      "id" => "stub"
+      "id" => "stub",
+      "additionalProperties" => {}
     }
     model = Retab::WorkflowArtifact.new(fixture.to_json)
     json = model.to_h

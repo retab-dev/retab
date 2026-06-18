@@ -16,6 +16,11 @@ readonly class WorkflowArtifact implements \JsonSerializable
         public StepArtifactRefOperation $operation,
         /** Resource identifier */
         public string $id,
+        /**
+         * Additional properties not captured by named fields
+         * @var array<string, mixed>|null
+         */
+        public ?array $additionalProperties = null,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -32,6 +37,7 @@ readonly class WorkflowArtifact implements \JsonSerializable
         return new self(
             operation: StepArtifactRefOperation::from($data['operation']),
             id: $data['id'],
+            additionalProperties: $data['additionalProperties'] ?? null,
         );
     }
 
@@ -41,6 +47,7 @@ readonly class WorkflowArtifact implements \JsonSerializable
         return [
             'operation' => $this->operation->value,
             'id' => $this->id,
+            'additionalProperties' => $this->additionalProperties,
         ];
     }
 }

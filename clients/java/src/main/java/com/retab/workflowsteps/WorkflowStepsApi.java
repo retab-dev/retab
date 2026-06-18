@@ -25,6 +25,10 @@ public final class WorkflowStepsApi {
     return client;
   }
 
+  public List<WorkflowRunStep> list() throws IOException, InterruptedException {
+    return list(null, null, null, null, null, null, null, null);
+  }
+
   public List<WorkflowRunStep> list(
       String runId,
       String blockId,
@@ -69,6 +73,10 @@ public final class WorkflowStepsApi {
         .getObjectMapper()
         .readValue(
             data.traverse(client.getObjectMapper()), new TypeReference<List<WorkflowRunStep>>() {});
+  }
+
+  public WorkflowRunStep get(String stepId) throws IOException, InterruptedException {
+    return get(stepId, null);
   }
 
   public WorkflowRunStep get(String stepId, String runId) throws IOException, InterruptedException {

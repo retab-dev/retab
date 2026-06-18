@@ -32,6 +32,10 @@ public final class EditTemplatesApi {
     return client;
   }
 
+  public List<EditTemplate> list() throws IOException, InterruptedException {
+    return list(null, null, null, null, null, null);
+  }
+
   public List<EditTemplate> list(
       String before, String after, Long limit, SortOrder order, String name, String sortBy)
       throws IOException, InterruptedException {

@@ -36,6 +36,10 @@ public final class WorkflowReviewsApi {
     return new WorkflowReviewVersionsApi(client);
   }
 
+  public List<Review> list() throws IOException, InterruptedException {
+    return list(null, null, null, null, null, null, null, null, null);
+  }
+
   public List<Review> list(
       String workflowId,
       String runId,

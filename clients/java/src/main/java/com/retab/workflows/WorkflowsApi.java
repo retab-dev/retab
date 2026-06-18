@@ -80,6 +80,10 @@ public final class WorkflowsApi {
     return new WorkflowTestsApi(client);
   }
 
+  public List<Workflow> list() throws IOException, InterruptedException {
+    return list(null, null, null, null, null, null);
+  }
+
   public List<Workflow> list(
       String before, String after, Long limit, SortOrder order, String sortBy, String projectId)
       throws IOException, InterruptedException {

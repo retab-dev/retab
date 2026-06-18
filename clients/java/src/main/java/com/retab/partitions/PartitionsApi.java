@@ -31,6 +31,10 @@ public final class PartitionsApi {
     return client;
   }
 
+  public List<Partition> list() throws IOException, InterruptedException {
+    return list(null, null, null, null, null, null, null, null);
+  }
+
   public List<Partition> list(
       String before,
       String after,
@@ -138,6 +142,10 @@ public final class PartitionsApi {
       return null;
     }
     return client.getObjectMapper().readValue(response.body(), Partition.class);
+  }
+
+  public Partition get(String partitionId) throws IOException, InterruptedException {
+    return get(partitionId, null);
   }
 
   public Partition get(String partitionId, Boolean includeOutput)
