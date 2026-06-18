@@ -35,7 +35,6 @@ func newExtractionRequest(cmd *cobra.Command) (retab.ExtractionsCreateParams, er
 	if err != nil {
 		return retab.ExtractionsCreateParams{}, err
 	}
-	imageDPI, _ := cmd.Flags().GetInt("image-resolution-dpi")
 	nConsensus, _ := cmd.Flags().GetInt("n-consensus")
 	instructions, _ := cmd.Flags().GetString("instructions")
 	bustCache, _ := cmd.Flags().GetBool("bust-cache")
@@ -76,15 +75,8 @@ func newExtractionRequest(cmd *cobra.Command) (retab.ExtractionsCreateParams, er
 		BustCache:          ptr(bustCache),
 		Background:         primitiveBackgroundParam(cmd),
 	}
-	// Only send the bounded int params when the user actually set them.
-	// Their flag value is "0" when unset, and a non-nil *int(0) is NOT
-	// dropped by omitempty — so an unconditional ptr() would wire
-	// image_resolution_dpi:0 / n_consensus:0, values the flags' own ranges
-	// (96-300, 1-16) reject. (parses.go gates --image-resolution-dpi the
-	// same way.)
-	if cmd.Flags().Changed("image-resolution-dpi") {
-		params.ImageResolutionDpi = ptr(imageDPI)
-	}
+	// Only send bounded int params when the user actually set them. The legacy
+	// --image-resolution-dpi flag is accepted for compatibility but ignored.
 	if cmd.Flags().Changed("n-consensus") {
 		params.NConsensus = ptr(nConsensus)
 	}
@@ -353,7 +345,7 @@ func addExtractionBodyFlags(cmd *cobra.Command) {
 	addDocumentFlags(cmd)
 	addSchemaFlags(cmd)
 	cmd.Flags().String("model", "", "model identifier (required)")
-	cmd.Flags().Var(&boundedIntFlagValue{min: 96, max: 300}, "image-resolution-dpi", "image resolution DPI (96-300)")
+	cmd.Flags().Var(&boundedIntFlagValue{min: 96, max: 300}, "image-resolution-dpi", "ignored legacy image resolution DPI")
 	cmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 16}, "n-consensus", "consensus count (1-16)")
 	cmd.Flags().String("instructions", "", "extra instructions")
 	cmd.Flags().Bool("bust-cache", false, "bypass server-side cache")

@@ -57,7 +57,7 @@ func TestNewExtractionRequestGatesBoundedIntParams(t *testing.T) {
 		}
 	})
 
-	t.Run("sent when set", func(t *testing.T) {
+	t.Run("consensus sent and legacy dpi ignored when set", func(t *testing.T) {
 		cmd := newExtractionRequestTestCmd(t)
 		for n, v := range map[string]string{
 			"url":                  "https://example.com/x.pdf",
@@ -77,8 +77,8 @@ func TestNewExtractionRequestGatesBoundedIntParams(t *testing.T) {
 		if params.NConsensus == nil || *params.NConsensus != 3 {
 			t.Fatalf("NConsensus = %v, want 3", params.NConsensus)
 		}
-		if params.ImageResolutionDpi == nil || *params.ImageResolutionDpi != 150 {
-			t.Fatalf("ImageResolutionDpi = %v, want 150", params.ImageResolutionDpi)
+		if params.ImageResolutionDpi != nil {
+			t.Fatalf("ImageResolutionDpi must be ignored, got %d", *params.ImageResolutionDpi)
 		}
 	})
 }

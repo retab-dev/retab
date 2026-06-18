@@ -83,7 +83,6 @@ describe('document resources — create wire contract', () => {
       TEXT_DATA_URI,
       { type: 'object', properties: { invoice_id: { type: 'string' } } },
       'retab-micro',
-      96,
       'be precise',
       3,
       { tenant: 'acme' },
@@ -101,7 +100,6 @@ describe('document resources — create wire contract', () => {
       document: { filename: 'uploaded_file.plain', url: TEXT_DATA_URI },
       json_schema: { type: 'object', properties: { invoice_id: { type: 'string' } } },
       model: 'retab-micro',
-      image_resolution_dpi: 96,
       instructions: 'be precise',
       n_consensus: 3,
       metadata: { tenant: 'acme' },
@@ -129,14 +127,14 @@ describe('document resources — create wire contract', () => {
     expect((call.body as Record<string, unknown>).json_schema).toEqual({ type: 'object' });
   });
 
-  test('parses.create maps tableParsingFormat/imageResolutionDpi/bustCache', async () => {
+  test('parses.create maps tableParsingFormat/instructions/bustCache', async () => {
     const { client, calls } = clientCapturing({
       id: 'parse_1',
       file: FILE_REF,
       output: { text: 'hi' },
     });
 
-    await client.parses.create(TEXT_DATA_URI, 'retab-micro', 'html', 96, 'go', true, false);
+    await client.parses.create(TEXT_DATA_URI, 'retab-micro', 'html', 'go', true, false);
 
     const call = lastCall(calls);
     expect(call.method).toBe('POST');
@@ -145,7 +143,6 @@ describe('document resources — create wire contract', () => {
       document: { filename: 'uploaded_file.plain', url: TEXT_DATA_URI },
       model: 'retab-micro',
       table_parsing_format: 'html',
-      image_resolution_dpi: 96,
       instructions: 'go',
       bust_cache: true,
       background: false,

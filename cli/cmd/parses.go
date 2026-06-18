@@ -42,9 +42,7 @@ var parsesCreateCmd = &cobra.Command{
 
 Accepts the standard document sources (` + "`--file`" + `, ` + "`--url`" + `,
 ` + "`--file-id`" + `, ` + "`--document-file`" + `). Tune table rendering with
-` + "`--table-parsing-format`" + ` (e.g. ` + "`markdown`" + `, ` + "`html`" + `) and
-raise ` + "`--image-resolution-dpi`" + ` for image-heavy or low-quality scans
-where the default is too coarse.`,
+` + "`--table-parsing-format`" + ` (e.g. ` + "`markdown`" + `, ` + "`html`" + `).`,
 	Example: `  # Parse a PDF to markdown
   retab parses create --file ./report.pdf --model gpt-4o
 
@@ -53,10 +51,8 @@ where the default is too coarse.`,
     --file ./book.xlsx --model gpt-4o \
     --table-parsing-format html
 
-  # High-DPI parse for a scanned image
-  retab parses create \
-    --file ./scan.png --model gpt-4o \
-    --image-resolution-dpi 300`,
+  # Parse a scanned image
+  retab parses create --file ./scan.png --model gpt-4o`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		tableFormat, _ := cmd.Flags().GetString("table-parsing-format")
 		if err := validateTableParsingFormat(tableFormat); err != nil {
@@ -76,7 +72,6 @@ where the default is too coarse.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		dpi, _ := cmd.Flags().GetInt("image-resolution-dpi")
 		instructions, _ := cmd.Flags().GetString("instructions")
 		bustCache, _ := cmd.Flags().GetBool("bust-cache")
 		params := &retab.ParsesCreateParams{
@@ -89,9 +84,6 @@ where the default is too coarse.`,
 		if tableFormat != "" {
 			tpf := retab.ParseRequestTableParsingFormat(tableFormat)
 			params.TableParsingFormat = &tpf
-		}
-		if cmd.Flags().Changed("image-resolution-dpi") {
-			params.ImageResolutionDpi = ptr(dpi)
 		}
 		result, err := client.Parses.Create(ctx, params)
 		if err != nil {
@@ -220,7 +212,7 @@ func init() {
 	addDocumentFlags(parsesCreateCmd)
 	parsesCreateCmd.Flags().String("model", "", "model identifier (required)")
 	parsesCreateCmd.Flags().String("table-parsing-format", "", "table parsing format")
-	parsesCreateCmd.Flags().Var(&boundedIntFlagValue{min: 96, max: 300}, "image-resolution-dpi", "image resolution DPI (96-300)")
+	parsesCreateCmd.Flags().Var(&boundedIntFlagValue{min: 96, max: 300}, "image-resolution-dpi", "ignored legacy image resolution DPI")
 	parsesCreateCmd.Flags().String("instructions", "", "extra instructions")
 	parsesCreateCmd.Flags().Bool("bust-cache", false, "bypass server-side cache")
 	addPrimitiveBackgroundFlag(parsesCreateCmd)
