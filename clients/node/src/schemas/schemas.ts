@@ -13,7 +13,6 @@ export class Schemas {
     documents: DocumentInput[],
     model?: string,
     instructions?: string | null,
-    imageResolutionDpi?: number,
     background?: boolean
   ): Promise<SchemaGeneration> {
     const documentsCoerced = await Promise.all(
@@ -25,7 +24,6 @@ export class Schemas {
       documents: documentsCoerced,
       model: model,
       instructions: instructions,
-      image_resolution_dpi: imageResolutionDpi,
       background: background,
     };
     const __wire = await this.client.request<SchemaGenerationResponse>({

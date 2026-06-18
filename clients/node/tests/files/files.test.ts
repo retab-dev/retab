@@ -137,20 +137,19 @@ describe('files upload lifecycle', () => {
 });
 
 describe('files blueprint paths', () => {
-  test('create_blueprint posts file_id/mode/intent to /v1/files/blueprints', async () => {
+  test('create_blueprint posts file_id/intent/background to /v1/files/blueprints', async () => {
     const { client, calls } = clientCapturing({
       id: 'bp_1',
       file: { id: 'file_1', filename: 'a.pdf', mime_type: 'application/pdf' },
     });
 
-    await client.files.create_blueprint('file_1', 'full', 'extract invoices', false);
+    await client.files.create_blueprint('file_1', 'extract invoices', false);
 
     const call = lastCall(calls);
     expect(call.method).toBe('POST');
     expect(call.path).toBe('/v1/files/blueprints');
     expect(call.body).toEqual({
       file_id: 'file_1',
-      mode: 'full',
       intent: 'extract invoices',
       background: false,
     });

@@ -21,11 +21,6 @@ export interface ExtractionRequest {
    * @default "retab-small"
    */
   model?: string;
-  /**
-   * Resolution of the image sent to the LLM
-   * @default 192
-   */
-  imageResolutionDpi?: number;
   /** Free-form instructions appended to the system prompt to steer the extraction. */
   instructions?: string | null;
   /**
@@ -56,7 +51,6 @@ export interface ExtractionRequestResponse {
   document: MIMEDataResponse;
   json_schema: Record<string, unknown>;
   model?: string;
-  image_resolution_dpi?: number;
   instructions?: string | null;
   n_consensus?: number;
   metadata?: Record<string, string> | null;
@@ -71,7 +65,6 @@ export const ZExtractionRequest = z.object({
   document: ZMIMEData,
   jsonSchema: z.record(z.string(), z.unknown()),
   model: z.string().optional(),
-  imageResolutionDpi: z.number().int().optional(),
   instructions: z.string().nullable().optional(),
   nConsensus: z.number().int().optional(),
   metadata: z.record(z.string(), z.string()).nullable().optional(),
@@ -87,7 +80,6 @@ export function deserializeExtractionRequest(wire: ExtractionRequestResponse): E
     document: deserializeMIMEData(wire['document']),
     jsonSchema: wire['json_schema'],
     model: wire['model'],
-    imageResolutionDpi: wire['image_resolution_dpi'],
     instructions: wire['instructions'],
     nConsensus: wire['n_consensus'],
     metadata: wire['metadata'],
@@ -104,7 +96,6 @@ export function serializeExtractionRequest(domain: ExtractionRequest): Extractio
     document: serializeMIMEData(domain['document']),
     json_schema: domain['jsonSchema'],
     model: domain['model'],
-    image_resolution_dpi: domain['imageResolutionDpi'],
     instructions: domain['instructions'],
     n_consensus: domain['nConsensus'],
     metadata: domain['metadata'],

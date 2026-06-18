@@ -44,7 +44,6 @@ export class Parses {
     document: DocumentInput,
     model?: string,
     tableParsingFormat?: ParseRequestTableParsingFormat,
-    imageResolutionDpi?: number,
     instructions?: string | null,
     bustCache?: boolean,
     background?: boolean
@@ -56,7 +55,6 @@ export class Parses {
       document: documentCoerced,
       model: model,
       table_parsing_format: tableParsingFormat,
-      image_resolution_dpi: imageResolutionDpi,
       instructions: instructions,
       bust_cache: bustCache,
       background: background,

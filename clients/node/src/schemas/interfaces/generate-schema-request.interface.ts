@@ -18,11 +18,6 @@ export interface GenerateSchemaRequest {
   model?: string;
   instructions?: string | null;
   /**
-   * Resolution of the image sent to the LLM
-   * @default 192
-   */
-  imageResolutionDpi?: number;
-  /**
    * If true, run asynchronously: returns immediately with status 'queued'. Poll GET /v1/schemas/generate/{schema_generation_id} until status is terminal.
    * @default false
    */
@@ -33,7 +28,6 @@ export interface GenerateSchemaRequestResponse {
   documents: MIMEDataResponse[];
   model?: string;
   instructions?: string | null;
-  image_resolution_dpi?: number;
   background?: boolean;
 }
 
@@ -41,7 +35,6 @@ export const ZGenerateSchemaRequest = z.object({
   documents: ZMIMEData.array(),
   model: z.string().optional(),
   instructions: z.string().nullable().optional(),
-  imageResolutionDpi: z.number().int().optional(),
   background: z.boolean().optional(),
 }) as z.ZodType<GenerateSchemaRequest>;
 
@@ -52,7 +45,6 @@ export function deserializeGenerateSchemaRequest(
     documents: wire['documents'].map((__i) => deserializeMIMEData(__i)),
     model: wire['model'],
     instructions: wire['instructions'],
-    imageResolutionDpi: wire['image_resolution_dpi'],
     background: wire['background'],
   };
 }
@@ -64,7 +56,6 @@ export function serializeGenerateSchemaRequest(
     documents: domain['documents'].map((__i) => serializeMIMEData(__i)),
     model: domain['model'],
     instructions: domain['instructions'],
-    image_resolution_dpi: domain['imageResolutionDpi'],
     background: domain['background'],
   };
 }

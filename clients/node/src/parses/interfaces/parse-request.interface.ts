@@ -27,11 +27,6 @@ export interface ParseRequest {
    * @default "html"
    */
   tableParsingFormat?: ParseRequestTableParsingFormat;
-  /**
-   * DPI used when rasterizing pages for the parser
-   * @default 192
-   */
-  imageResolutionDpi?: number;
   /** Free-form instructions appended to the system prompt to steer the parse. */
   instructions?: string | null;
   /**
@@ -50,7 +45,6 @@ export interface ParseRequestResponse {
   document: MIMEDataResponse;
   model?: string;
   table_parsing_format?: ParseRequestTableParsingFormat;
-  image_resolution_dpi?: number;
   instructions?: string | null;
   bust_cache?: boolean;
   background?: boolean;
@@ -60,7 +54,6 @@ export const ZParseRequest = z.object({
   document: ZMIMEData,
   model: z.string().optional(),
   tableParsingFormat: ZParseRequestTableParsingFormat.optional(),
-  imageResolutionDpi: z.number().int().optional(),
   instructions: z.string().nullable().optional(),
   bustCache: z.boolean().optional(),
   background: z.boolean().optional(),
@@ -71,7 +64,6 @@ export function deserializeParseRequest(wire: ParseRequestResponse): ParseReques
     document: deserializeMIMEData(wire['document']),
     model: wire['model'],
     tableParsingFormat: wire['table_parsing_format'],
-    imageResolutionDpi: wire['image_resolution_dpi'],
     instructions: wire['instructions'],
     bustCache: wire['bust_cache'],
     background: wire['background'],
@@ -83,7 +75,6 @@ export function serializeParseRequest(domain: ParseRequest): ParseRequestRespons
     document: serializeMIMEData(domain['document']),
     model: domain['model'],
     table_parsing_format: domain['tableParsingFormat'],
-    image_resolution_dpi: domain['imageResolutionDpi'],
     instructions: domain['instructions'],
     bust_cache: domain['bustCache'],
     background: domain['background'],

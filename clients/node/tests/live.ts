@@ -35,15 +35,19 @@ const BASE_URL = process.env.RETAB_API_BASE_URL;
  * Top-level await is supported by Bun's test module loader.
  */
 const PROBE = await probeLiveServer(API_KEY, BASE_URL);
-if (!PROBE.live && PROBE.fatal) {
-  throw new Error(PROBE.reason);
-}
 
 /** True only when creds are present AND the configured server is reachable. */
 export const LIVE = PROBE.live;
 
 /** Reason string surfaced when an e2e suite is skipped. */
 export const LIVE_SKIP_REASON = PROBE.reason;
+
+/**
+ * Non-empty when credentials/server are configured but unusable. The dedicated
+ * live preflight e2e test fails on this, while other e2e files skip cleanly
+ * instead of cascading import-initialization errors.
+ */
+export const LIVE_FATAL_REASON = !PROBE.live && PROBE.fatal ? PROBE.reason : '';
 
 let cached: Retab | undefined;
 
@@ -53,7 +57,9 @@ let cached: Retab | undefined;
  */
 export function liveClient(): Retab {
   if (!LIVE) {
-    throw new Error('liveClient() called without RETAB_API_KEY/RETAB_API_BASE_URL');
+    throw new Error(
+      LIVE_FATAL_REASON || LIVE_SKIP_REASON || 'liveClient() called without live e2e configuration'
+    );
   }
   if (!cached) {
     cached = new Retab({ apiKey: API_KEY as string, baseUrl: BASE_URL as string });
