@@ -101,7 +101,11 @@ func parseExperimentDocs(cmd *cobra.Command) ([]*retab.ExperimentDocumentCapture
 			}
 			doc := &retab.ExplicitExperimentDocumentRequest{}
 			if v, ok := obj["handle_inputs"].(map[string]any); ok {
-				doc.HandleInputs = experimentHandleInputsFromMap(v)
+				inputs, err := experimentHandleInputsFromMap(v)
+				if err != nil {
+					return nil, nil, fmt.Errorf("--documents-file[%d].handle_inputs: %w", i, err)
+				}
+				doc.HandleInputs = inputs
 			}
 			if doc.HandleInputs == nil {
 				return nil, nil, fmt.Errorf("--documents-file[%d]: handle_inputs is required", i)
@@ -129,30 +133,66 @@ func parseExperimentDocs(cmd *cobra.Command) ([]*retab.ExperimentDocumentCapture
 // The wire shape carries an optional `type` discriminator on each value, but
 // the CLI's JSON descriptors have historically used the raw value form; both
 // shapes are normalized here so legacy descriptor files keep working.
-func experimentHandleInputsFromMap(raw map[string]any) map[string]retab.HandleInputType {
+func experimentHandleInputsFromMap(raw map[string]any) (map[string]retab.HandleInputType, error) {
 	if raw == nil {
-		return nil
+		return nil, nil
 	}
 	out := make(map[string]retab.HandleInputType, len(raw))
 	for key, value := range raw {
 		input := retab.JSONHandleInput{}
 		if obj, ok := value.(map[string]any); ok {
 			if t, ok := obj["type"].(string); ok && t != "" {
-				typeCopy := t
-				input.Type = &typeCopy
-				if data, ok := obj["data"]; ok {
-					dataCopy := data
-					input.Data = &dataCopy
+				switch t {
+				case "file":
+					fileInput, err := experimentFileHandleInputFromMap(obj)
+					if err != nil {
+						return nil, fmt.Errorf("%s: %w", key, err)
+					}
+					out[key] = retab.HandleInputTypeFromFileHandleInput(fileInput)
+					continue
+				case "json":
+					if data, ok := obj["data"]; ok {
+						dataCopy := data
+						input.Data = &dataCopy
+					}
+					out[key] = retab.HandleInputTypeFromJSONHandleInput(input)
+					continue
+				default:
+					return nil, fmt.Errorf("%s: unsupported handle input type %q (want: file | json)", key, t)
 				}
-				out[key] = retab.HandleInputTypeFromJSONHandleInput(input)
-				continue
 			}
 		}
 		dataCopy := value
 		input.Data = &dataCopy
 		out[key] = retab.HandleInputTypeFromJSONHandleInput(input)
 	}
-	return out
+	return out, nil
+}
+
+func experimentFileHandleInputFromMap(obj map[string]any) (retab.FileHandleInput, error) {
+	rawDocument, ok := obj["document"].(map[string]any)
+	if !ok {
+		return retab.FileHandleInput{}, fmt.Errorf("file handle input requires document")
+	}
+	id, _ := rawDocument["id"].(string)
+	filename, _ := rawDocument["filename"].(string)
+	mimeType, _ := rawDocument["mime_type"].(string)
+	if strings.TrimSpace(id) == "" {
+		return retab.FileHandleInput{}, fmt.Errorf("file handle document.id is required")
+	}
+	if strings.TrimSpace(filename) == "" {
+		return retab.FileHandleInput{}, fmt.Errorf("file handle document.filename is required")
+	}
+	if strings.TrimSpace(mimeType) == "" {
+		return retab.FileHandleInput{}, fmt.Errorf("file handle document.mime_type is required")
+	}
+	return retab.FileHandleInput{
+		Document: retab.ResultFileRef{
+			ID:       id,
+			Filename: filename,
+			MIMEType: mimeType,
+		},
+	}, nil
 }
 
 // resolveExperimentIDArg implements the uniform positional contract shared

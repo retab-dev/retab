@@ -345,6 +345,26 @@ func TestParseBlockCreatePreservesExplicitZeroPositions(t *testing.T) {
 	}
 }
 
+func TestDeriveBlockHandlesUsesRuntimeFunctionInputHandle(t *testing.T) {
+	handles := deriveBlockHandles(map[string]any{
+		"type": "function",
+		"config": map[string]any{
+			"code": "from models import Input, Output\n",
+			"inputs": []any{
+				map[string]any{"name": "payload", "type": "json"},
+			},
+			"output_schema": map[string]any{"type": "object"},
+		},
+	})
+	inputs, ok := handles["input"].([]string)
+	if !ok {
+		t.Fatalf("handles[input] = %#v, want []string", handles["input"])
+	}
+	if len(inputs) != 1 || inputs[0] != "input-json-0" {
+		t.Fatalf("function input handles = %#v, want [input-json-0]", inputs)
+	}
+}
+
 func TestParseBlockCreateRejectsMismatchedWorkflowID(t *testing.T) {
 	// If the block-file body carries a ``workflow_id`` that disagrees
 	// with the positional ``<workflow-id>``, the CLI must reject the

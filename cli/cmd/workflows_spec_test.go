@@ -30,6 +30,14 @@ func withSpecApplyProjectID(t *testing.T) {
 	t.Cleanup(func() { _ = workflowsSpecApplyCmd.Flags().Set("project-id", "") })
 }
 
+func withSpecPlanProjectID(t *testing.T) {
+	t.Helper()
+	if err := workflowsSpecPlanCmd.Flags().Set("project-id", "proj_test"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = workflowsSpecPlanCmd.Flags().Set("project-id", "") })
+}
+
 // readSpecYAML is the only piece of logic in workflows_spec.go that isn't
 // already exercised by TestCommandTreeShape (which walks every registered
 // command and checks RunE / sibling-name uniqueness for the 4 new leaves).
@@ -167,6 +175,19 @@ func TestWorkflowsSpecHelpUsesWorkflowVocabulary(t *testing.T) {
 	for _, want := range []string{"declarative workflow", "review-then-apply"} {
 		if !strings.Contains(text, want) {
 			t.Fatalf("spec help should mention %q, got:\n%s", want, text)
+		}
+	}
+}
+
+func TestWorkflowsSpecPlanHelpShowsRequiredProjectIDForCreatePlan(t *testing.T) {
+	help := workflowsSpecCmd.Example + "\n" + workflowsSpecPlanCmd.Long + "\n" + workflowsSpecPlanCmd.Example
+	for _, want := range []string{
+		"workflow.yaml --project-id proj_abc123",
+		"create-new plan, which must be scoped with",
+		"spec plan - --project-id proj_abc123",
+	} {
+		if !strings.Contains(help, want) {
+			t.Fatalf("spec plan help should mention %q, got:\n%s", want, help)
 		}
 	}
 }
@@ -677,6 +698,7 @@ func TestWorkflowsSpecPlanReturnsErrorWhenDiagnosticsAreInvalid(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	withSpecPlanProjectID(t)
 	var err error
 	_, stderr := captureStd(t, func() {
 		err = workflowsSpecPlanCmd.RunE(workflowsSpecPlanCmd, []string{path})
@@ -689,6 +711,25 @@ func TestWorkflowsSpecPlanReturnsErrorWhenDiagnosticsAreInvalid(t *testing.T) {
 	}
 	if !strings.Contains(stderr, "UNKNOWN_BLOCK_REFERENCE") {
 		t.Fatalf("stderr should include diagnostic JSON, got:\n%s", stderr)
+	}
+}
+
+func TestWorkflowsSpecPlanRequiresProjectIDForCreatePlan(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("RETAB_API_BASE_URL", "https://example.invalid")
+
+	path := filepath.Join(t.TempDir(), "workflow.yaml")
+	if err := os.WriteFile(path, []byte("apiVersion: workflows.retab.com/v1alpha2\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	err := workflowsSpecPlanCmd.RunE(workflowsSpecPlanCmd, []string{path})
+	if err == nil {
+		t.Fatal("expected missing --project-id to fail before the API call")
+	}
+	if !strings.Contains(errors.Unwrap(err).Error(), "--project-id is required for create-new plans") {
+		t.Fatalf("error = %v, want missing project-id message", err)
 	}
 }
 

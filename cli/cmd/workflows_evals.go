@@ -578,6 +578,9 @@ func printWorkflowEvalsListResult(cmd *cobra.Command, result *retab.PaginatedLis
 		if f := cmd.Root().PersistentFlags().Lookup("output"); f != nil && f.Value.String() == string(OutputTable) {
 			return RenderList(os.Stdout, OutputTable, result, workflowEvalColumns)
 		}
+		if f := cmd.Root().PersistentFlags().Lookup("output"); f != nil && f.Value.String() == string(OutputCSV) {
+			return RenderList(os.Stdout, OutputCSV, result, workflowEvalColumns)
+		}
 	}
 	return printJSON(result)
 }
@@ -1117,14 +1120,20 @@ workspace-wide.`,
 		}
 		dateQuery := url.Values{}
 		if v, _ := cmd.Flags().GetString("from-date"); v != "" {
-			parsed, _ := time.Parse("2006-01-02", v)
+			parsed, formatted, err := workflowEvalRunDateQueryValue(v, false)
+			if err != nil {
+				return err
+			}
 			params.FromDate = &parsed
-			dateQuery.Set("from_date", v)
+			dateQuery.Set("from_date", formatted)
 		}
 		if v, _ := cmd.Flags().GetString("to-date"); v != "" {
-			parsed, _ := time.Parse("2006-01-02", v)
+			parsed, formatted, err := workflowEvalRunDateQueryValue(v, true)
+			if err != nil {
+				return err
+			}
 			params.ToDate = &parsed
-			dateQuery.Set("to_date", v)
+			dateQuery.Set("to_date", formatted)
 		}
 		if v, _ := cmd.Flags().GetString("sort-by"); v != "" {
 			params.SortBy = ptr(v)
@@ -1179,6 +1188,18 @@ func validateWorkflowEvalsRunsListFilters(cmd *cobra.Command) error {
 		return err
 	}
 	return validateDateFlag(cmd, "to-date")
+}
+
+func workflowEvalRunDateQueryValue(raw string, endOfDay bool) (time.Time, string, error) {
+	parsed, err := time.Parse("2006-01-02", raw)
+	if err != nil {
+		return time.Time{}, "", err
+	}
+	parsed = parsed.UTC()
+	if endOfDay {
+		parsed = time.Date(parsed.Year(), parsed.Month(), parsed.Day(), 23, 59, 59, 0, time.UTC)
+	}
+	return parsed, parsed.Format(time.RFC3339), nil
 }
 
 var workflowsEvalsRunsGetCmd = &cobra.Command{

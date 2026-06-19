@@ -74,9 +74,10 @@ draft (` + "`create`" + `, ` + "`blocks create`" + `/` + "`update`" + `, ` + "`e
 against production. The confirmation gate (pass ` + "`--confirm`" + `, or type
 "production" at the prompt) fires only at the commit boundaries that have a
 runtime or irreversible effect: ` + "`publish`" + ` (releases an immutable
-version), ` + "`runs create`" + ` (executes against live inputs), and the
-` + "`delete`" + ` commands. So you can wire and reconfigure a draft freely, and
-only the act of publishing, running, or deleting asks you to confirm.
+version), ` + "`runs create`" + `/` + "`runs restart`" + ` (execute against live
+inputs), and the ` + "`delete`" + ` commands. So you can wire and reconfigure a
+draft freely, and only the act of publishing, running, restarting, or deleting
+asks you to confirm.
 
 Review is configured on the block (` + "`config.review`" + `), not as a
 standalone block. A reviewed run pauses with status

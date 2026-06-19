@@ -522,6 +522,94 @@ func TestWorkflowsEvalsListTableRendersFreshnessColumn(t *testing.T) {
 	}
 }
 
+func TestWorkflowsEvalsListCSVUsesDedicatedColumns(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v1/workflows/evals" {
+			t.Fatalf("path = %q, want /v1/workflows/evals", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{
+			"data": [{
+				"id": "wfnodeeval_csv",
+				"name": "csv smoke",
+				"target": {"type": "block", "block_id": "blk_fn"},
+				"freshness": {"status": "fresh"},
+				"schema_drift": "none",
+				"created_at": "2026-06-19T08:13:28Z"
+			}],
+			"list_metadata": {}
+		}`))
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := rootCmd.PersistentFlags().Set("output", "csv"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = rootCmd.PersistentFlags().Set("output", "") })
+
+	stdout, _ := captureStd(t, func() {
+		if err := workflowsEvalsListCmd.RunE(workflowsEvalsListCmd, []string{"wrk_123"}); err != nil {
+			t.Fatalf("evals list: %v", err)
+		}
+	})
+	if strings.HasPrefix(strings.TrimSpace(stdout), "{") {
+		t.Fatalf("expected CSV, got JSON:\n%s", stdout)
+	}
+	for _, want := range []string{"ID,NAME,TARGET_BLOCK_ID,FRESHNESS,SCHEMA_DRIFT,CREATED_AT", "wfnodeeval_csv,csv smoke,blk_fn,fresh,none"} {
+		if !strings.Contains(stdout, want) {
+			t.Fatalf("CSV missing %q:\n%s", want, stdout)
+		}
+	}
+}
+
+func TestWorkflowsEvalsRunsListFormatsDateFiltersAsRFC3339(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var gotFrom, gotTo string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v1/workflows/evals/runs" {
+			t.Fatalf("path = %q, want /v1/workflows/evals/runs", r.URL.Path)
+		}
+		gotFrom = r.URL.Query().Get("from_date")
+		gotTo = r.URL.Query().Get("to_date")
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"data":[],"list_metadata":{}}`))
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	for flag, value := range map[string]string{
+		"from-date": "2026-06-19",
+		"to-date":   "2026-06-19",
+	} {
+		if err := workflowsEvalsRunsListCmd.Flags().Set(flag, value); err != nil {
+			t.Fatalf("set --%s: %v", flag, err)
+		}
+		flag := flag
+		t.Cleanup(func() {
+			_ = workflowsEvalsRunsListCmd.Flags().Set(flag, "")
+			workflowsEvalsRunsListCmd.Flags().Lookup(flag).Changed = false
+		})
+	}
+
+	_, _ = captureStd(t, func() {
+		if err := workflowsEvalsRunsListCmd.RunE(workflowsEvalsRunsListCmd, []string{"wrk_123"}); err != nil {
+			t.Fatalf("evals runs list: %v", err)
+		}
+	})
+	if gotFrom != "2026-06-19T00:00:00Z" {
+		t.Fatalf("from_date = %q, want 2026-06-19T00:00:00Z", gotFrom)
+	}
+	if gotTo != "2026-06-19T23:59:59Z" {
+		t.Fatalf("to_date = %q, want 2026-06-19T23:59:59Z", gotTo)
+	}
+}
+
 func TestWorkflowsEvalsListCommandsRejectOverLimitLocally(t *testing.T) {
 	for _, tc := range []struct {
 		name string

@@ -3,8 +3,12 @@
 package cmd
 
 import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -22,6 +26,7 @@ func newSafetyTestCmd(t *testing.T, cls safetyClass, apiKey string) *cobra.Comma
 	root.PersistentFlags().Bool("debug", false, "")
 	root.PersistentFlags().Bool("live", false, "")
 	root.PersistentFlags().String("env", "", "")
+	root.PersistentFlags().String("environment-id", "", "")
 
 	child := &cobra.Command{Use: "publish", RunE: func(*cobra.Command, []string) error { return nil }}
 	root.AddCommand(child)
@@ -158,6 +163,48 @@ func TestProductionGate_HighRisk_OAuthNonProductionEnv_NeverGated(t *testing.T) 
 	}
 	if dec.prompted {
 		t.Fatal("non-production OAuth session must never prompt")
+	}
+}
+
+func TestProductionGate_HighRisk_OAuthExplicitNonProductionEnvironmentID_NeverGated(t *testing.T) {
+	isolateHome(t)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v1/environments/env_staging123" {
+			t.Fatalf("path = %q, want /v1/environments/env_staging123", r.URL.Path)
+		}
+		if r.Header.Get("Authorization") != "Bearer oauth-access-token" {
+			t.Fatalf("Authorization = %q, want Bearer oauth-access-token", r.Header.Get("Authorization"))
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(cliEnvironment{
+			ID:   "env_staging123",
+			Name: "Staging",
+			Type: cliEnvironmentTypeNonProduction,
+		})
+	}))
+	defer server.Close()
+
+	if err := saveConfig(retabConfig{
+		BaseURL: server.URL,
+		OAuth: &oauthTokens{
+			AccessToken: "oauth-access-token",
+			ExpiresAt:   time.Now().Add(time.Hour),
+		},
+		EnvironmentID:   "env_prod123",
+		EnvironmentType: "production",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	cmd := newSafetyTestCmd(t, classHighRisk, "")
+	if err := cmd.Root().PersistentFlags().Set("environment-id", "env_staging123"); err != nil {
+		t.Fatalf("set --environment-id: %v", err)
+	}
+	dec := &fakeDecider{interactive: false}
+	if err := productionGate(cmd, dec); err != nil {
+		t.Fatalf("explicit non-production --environment-id must not be gated, got: %v", err)
+	}
+	if dec.prompted {
+		t.Fatal("explicit non-production --environment-id must never prompt")
 	}
 }
 
@@ -305,6 +352,9 @@ func TestClassification_KnownCommands(t *testing.T) {
 	if got := safetyClassOf(workflowsRunsCreateCmd); got != classHighRisk {
 		t.Errorf("workflows runs create should be high-risk, got %q", got)
 	}
+	if got := safetyClassOf(workflowsRunsRestartCmd); got != classHighRisk {
+		t.Errorf("workflows runs restart should be high-risk, got %q", got)
+	}
 	if got := safetyClassOf(workflowsListCmd); got != classReadOnly {
 		t.Errorf("workflows list should be read-only, got %q", got)
 	}
@@ -326,5 +376,8 @@ func TestClassification_KnownCommands(t *testing.T) {
 	}
 	if got := safetyClassOf(filesUploadCmd); got != classNormalWrite {
 		t.Errorf("files upload should be normal-write, got %q", got)
+	}
+	if workflowsRunsRestartCmd.Flags().Lookup(confirmFlagName) == nil {
+		t.Errorf("workflows runs restart should expose --confirm")
 	}
 }

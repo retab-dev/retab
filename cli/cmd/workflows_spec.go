@@ -105,15 +105,15 @@ between them. ` + "`spec get`" + ` emits children nested the same way.
   retab workflows spec get wf_abc123 > workflow.yaml
   $EDITOR workflow.yaml
   retab workflows spec validate workflow.yaml
-  retab workflows spec plan     workflow.yaml
+  retab workflows spec plan     workflow.yaml --project-id proj_abc123
   retab workflows spec plan-to  wf_abc123 workflow.yaml
   retab workflows spec apply-to wf_abc123 workflow.yaml
 
   # Create a new workflow from a spec
-  retab workflows spec apply workflow.yaml
+  retab workflows spec apply workflow.yaml --project-id proj_abc123
 
   # Tail of a pipe
-  cat workflow.yaml | retab workflows spec apply -`,
+  cat workflow.yaml | retab workflows spec apply - --project-id proj_abc123`,
 }
 
 // specMetadataIDPattern matches a spec's metadata.id (a wrk_ id). In a spec,
@@ -205,16 +205,16 @@ var workflowsSpecPlanCmd = &cobra.Command{
 	Long: `Compute what would change if the spec were applied: which
 blocks would be created, updated, deleted; which edges would be re-wired.
 
-By default this is a create-new plan (optionally scoped with
-` + "`--project-id`" + `). Pass ` + "`--to <workflow-id>`" + ` to diff against an
+By default this is a create-new plan, which must be scoped with
+` + "`--project-id`" + `. Pass ` + "`--to <workflow-id>`" + ` to diff against an
 existing workflow draft instead; ` + "`--to`" + ` and ` + "`--project-id`" + ` are
 mutually exclusive.
 
 Plan is read-only — safe to run on production specs. Pair it with
 ` + "`apply`" + ` for a declarative workflow review-then-apply loop.`,
-	Example: `  retab workflows spec plan ./workflow.yaml
+	Example: `  retab workflows spec plan ./workflow.yaml --project-id proj_abc123
   retab workflows spec plan ./workflow.yaml --to wf_abc123   # diff against an existing workflow
-  cat workflow.yaml | retab workflows spec plan - | jq .resource_changes`,
+  cat workflow.yaml | retab workflows spec plan - --project-id proj_abc123 | jq .resource_changes`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		yaml, err := readSpecYAML(args[0])
@@ -225,6 +225,9 @@ Plan is read-only — safe to run on production specs. Pair it with
 		projectID, _ := cmd.Flags().GetString("project-id")
 		if to != "" && projectID != "" {
 			return fmt.Errorf("--to and --project-id are mutually exclusive: --to diffs against an existing workflow, --project-id scopes a create-new plan")
+		}
+		if to == "" && projectID == "" {
+			return fmt.Errorf("--project-id is required for create-new plans; pass --to <workflow-id> to diff an existing workflow draft")
 		}
 		client, err := newClient(cmd)
 		if err != nil {
@@ -736,7 +739,7 @@ func init() {
 	workflowsSpecValidateCmd.Flags().String("project-id", "", "project to authorize a create-spec validation against (required for a spec with no metadata.id)")
 	workflowsSpecApplyCmd.Flags().String("project-id", "", "project that will own the new workflow (required unless --to is given)")
 	workflowsSpecApplyCmd.Flags().String("to", "", "apply to an existing workflow draft instead of creating a new one (mutually exclusive with --project-id)")
-	workflowsSpecPlanCmd.Flags().String("project-id", "", "project to scope a create-new plan to (matches the --project-id used by apply)")
+	workflowsSpecPlanCmd.Flags().String("project-id", "", "project to scope a create-new plan to (required unless --to is given; matches the --project-id used by apply)")
 	workflowsSpecPlanCmd.Flags().String("to", "", "diff against an existing workflow draft instead of a create-new plan (mutually exclusive with --project-id)")
 	workflowsSpecApplyToCmd.Flags().BoolP("yes", "y", false, "skip the destructive-change confirmation prompt (required when stdin is not a TTY and the plan would destroy resources)")
 

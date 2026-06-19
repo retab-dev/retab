@@ -2,8 +2,12 @@ package cmd
 
 import (
 	"bufio"
+	"context"
+	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
+	"net/url"
 	"os"
 	"strings"
 
@@ -136,12 +140,12 @@ func productionGate(cmd *cobra.Command, decider confirmDecider) error {
 		return nil
 	}
 
-	cred, err := resolveCredential(cmd)
+	cred, baseURL, cfg, err := resolveCLIRequest(cmd)
 	if err != nil {
 		// Let the command body report the credential failure itself.
 		return nil
 	}
-	if cred.ExpectedEnvironment != slugProduction {
+	if expectedEnvironmentForSafety(cmd, cfg, cred, baseURL) != slugProduction {
 		return nil
 	}
 
@@ -163,6 +167,81 @@ func productionGate(cmd *cobra.Command, decider confirmDecider) error {
 		return fmt.Errorf("aborted: confirmation did not match %q", slugProduction)
 	}
 	return nil
+}
+
+func expectedEnvironmentForSafety(cmd *cobra.Command, cfg retabConfig, cred resolvedCredential, baseURL string) string {
+	expected := cred.ExpectedEnvironment
+	if expected != slugProduction || cred.OAuth == nil {
+		return expected
+	}
+
+	environmentID, source := selectedEnvironmentIDWithSource(cmd, cfg)
+	if !isExplicitEnvironmentSelector(source) || strings.TrimSpace(environmentID) == "" {
+		return expected
+	}
+
+	environmentType, ok := lookupEnvironmentTypeForSafety(cmd, cred, baseURL, environmentID)
+	if ok && environmentType == cliEnvironmentTypeNonProduction {
+		return ""
+	}
+	// Fail safe: if an explicit override cannot be proven non-production,
+	// keep the production confirmation gate engaged.
+	return slugProduction
+}
+
+func isExplicitEnvironmentSelector(source string) bool {
+	return source == "--environment-id flag" || source == "RETAB_ENVIRONMENT_ID env"
+}
+
+func lookupEnvironmentTypeForSafety(cmd *cobra.Command, cred resolvedCredential, baseURL string, environmentID string) (cliEnvironmentType, bool) {
+	if cred.OAuth == nil {
+		return "", false
+	}
+	ctx, cancel := ctxFor(cmd)
+	defer cancel()
+
+	rawToken, err := makeOAuthTokenProvider(cred.OAuth)(ctx)
+	if err != nil {
+		return "", false
+	}
+	environment, err := fetchEnvironmentForSafety(ctx, baseURL, rawToken, environmentID)
+	if err != nil {
+		return "", false
+	}
+	return environment.Type, true
+}
+
+func fetchEnvironmentForSafety(ctx context.Context, baseURL string, rawOAuthToken string, environmentID string) (*cliEnvironment, error) {
+	if strings.TrimSpace(rawOAuthToken) == "" {
+		return nil, fmt.Errorf("OAuth access token is empty")
+	}
+	if strings.TrimSpace(environmentID) == "" {
+		return nil, fmt.Errorf("environment id is required")
+	}
+	requestURL, err := buildCLIRequestURL(baseURL, "/v1/environments/"+url.PathEscape(environmentID), nil)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, requestURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Authorization", "Bearer "+rawOAuthToken)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("environment lookup failed: %s", resp.Status)
+	}
+	var environment cliEnvironment
+	if err := json.NewDecoder(resp.Body).Decode(&environment); err != nil {
+		return nil, err
+	}
+	return &environment, nil
 }
 
 // productionConfirmPrompt renders the blueprint's confirmation prompt: it

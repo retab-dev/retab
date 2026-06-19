@@ -53,6 +53,7 @@ func highRiskCommands() []*cobra.Command {
 		workflowsPublishCmd,
 		workflowsDeleteCmd,
 		workflowsRunsCreateCmd,
+		workflowsRunsRestartCmd,
 	}
 }
 
