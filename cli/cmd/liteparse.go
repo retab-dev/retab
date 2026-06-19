@@ -36,7 +36,10 @@ type ParseOptions struct {
 }
 
 func defaultParseOptions() ParseOptions {
-	return ParseOptions{OCR: true, OCRLanguage: "eng", DPI: 150}
+	// Latin = the multilingual Latin-script Tesseract model (en/fr/de/es/it/pt/…),
+	// matching the AI server's PaddleOCR lang='la' and the bundled
+	// Latin.traineddata. Override per-invocation with --ocr-language.
+	return ParseOptions{OCR: true, OCRLanguage: "Latin", DPI: 150}
 }
 
 // fingerprint is a stable string identifying the parse options, used as part
@@ -161,7 +164,7 @@ func defaultResolveLiteParser(bin string) (LiteParser, error) {
 // holding a bundled libpdfium; it's exported to `lit` as PDFIUM_LIB_PATH so a
 // managed bundle can dlopen its own pdfium instead of requiring one on the
 // system. tessdataDir, when non-empty, is the directory holding the bundled
-// eng.traineddata; it's passed via --tessdata-path so OCR finds its language
+// Latin.traineddata; it's passed via --tessdata-path so OCR finds its language
 // data. For a user-provided `lit` (PATH/flag/env) both are empty and we leave
 // the environment + args untouched.
 type litCLI struct {

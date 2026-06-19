@@ -103,7 +103,7 @@ func explicitOutputJSON(cmd *cobra.Command) bool {
 // grep, and inspect. Defaults mirror defaultParseOptions().
 func addParseOptionFlags(cmd *cobra.Command) {
 	cmd.Flags().Bool("no-ocr", false, "disable OCR (pdf/image; native text layer only)")
-	cmd.Flags().String("ocr-language", "eng", "Tesseract OCR language code")
+	cmd.Flags().String("ocr-language", "Latin", "Tesseract OCR language code (Latin = multilingual Latin-script; e.g. eng, fra)")
 	cmd.Flags().String("ocr-server-url", "", "URL of an external OCR server (default: bundled Tesseract)")
 	cmd.Flags().Var(&boundedIntFlagValue{min: 36, max: 600, value: "150"}, "dpi", "rendering DPI for OCR/screenshots (36-600)")
 	cmd.Flags().String("pages", "", "limit parsing to these pages, e.g. 1-5,10 (pdf/image)")

@@ -24,11 +24,12 @@
 #   3. Downloads the prebuilt libpdfium matching $PDFIUM_TAG for this target
 #      from run-llama/pdfium-binaries (the same fork + tag LiteParse pins in
 #      crates/pdfium-sys/build.rs).
-#   4. When OCR is on, downloads the English Tesseract model (eng.traineddata,
-#      tessdata_best @ $TESSDATA_TAG). lit's Tesseract is statically linked but
-#      still loads the model file from disk at runtime; bundling it lets OCR
-#      work fully offline (the consumer passes --tessdata-path <bundle dir>).
-#   5. Stages `lit` + the pdfium shared library (+ eng.traineddata + LICENSE)
+#   4. When OCR is on, downloads the multilingual Latin-script Tesseract model
+#      (script/Latin -> Latin.traineddata, tessdata_fast @ $TESSDATA_TAG). lit's
+#      Tesseract is statically linked but still loads the model file from disk at
+#      runtime; bundling it lets OCR work fully offline (the consumer passes
+#      --tessdata-path <bundle dir>).
+#   5. Stages `lit` + the pdfium shared library (+ Latin.traineddata + LICENSE)
 #      into $STAGE_DIR.
 #
 # Archiving + checksums are intentionally left to the caller (the workflow).
@@ -46,7 +47,7 @@
 #   LITEPARSE_REF git tag/branch/sha to build       (default: crates-v2.0.3)
 #   LITEPARSE_SRC pre-existing source tree          (optional; skips clone)
 #   PDFIUM_TAG    pdfium-binaries release tag        (default: chromium/7847)
-#   TESSDATA_TAG  tessdata_best git tag to fetch eng (default: 4.1.0)
+#   TESSDATA_TAG  tessdata git tag for script/Latin     (default: 4.1.0)
 #   STAGE_DIR     output staging dir                 (default: ./dist/lit-<os>-<arch>)
 #
 set -euo pipefail
@@ -62,7 +63,9 @@ PDFIUM_TAG="${PDFIUM_TAG:-chromium/7847}"
 TESSDATA_TAG="${TESSDATA_TAG:-4.1.0}"
 LITEPARSE_REPO="${LITEPARSE_REPO:-https://github.com/run-llama/liteparse.git}"
 PDFIUM_REPO="${PDFIUM_REPO:-run-llama/pdfium-binaries}"
-TESSDATA_REPO="${TESSDATA_REPO:-tesseract-ocr/tessdata_best}"
+# tessdata_fast: script/Latin in tessdata_best is ~3x larger; fast matches the
+# AI server's Latin model and keeps the embedded CLI bundle from ballooning.
+TESSDATA_REPO="${TESSDATA_REPO:-tesseract-ocr/tessdata_fast}"
 STAGE_DIR="${STAGE_DIR:-dist/lit-${LIT_OS}-${LIT_ARCH}}"
 
 # --- Map target -> rust triple, pdfium asset, and lib layout ----------------
@@ -126,17 +129,21 @@ tar xzf "${PDFIUM_TGZ}" -C "${PDFIUM_EXTRACT}"
 PDFIUM_LIB="${PDFIUM_EXTRACT}/${PDFIUM_MEMBER}"
 [ -f "${PDFIUM_LIB}" ] || die "pdfium member ${PDFIUM_MEMBER} missing from ${PDFIUM_ASSET}"
 
-# --- 3.5 Fetch the English Tesseract model (OCR builds only) ----------------
+# --- 3.5 Fetch the Latin-script Tesseract model (OCR builds only) -----------
 # lit's Tesseract is statically linked but still reads the model file from disk
-# at runtime. Bundling eng.traineddata (tessdata_best) lets OCR run fully
-# offline; the consumer passes --tessdata-path pointing at the bundle dir.
+# at runtime. We bundle the multilingual Latin-SCRIPT model (script/Latin covers
+# en/fr/de/es/it/pt/…), matching the AI server's PaddleOCR lang='la', so one
+# model handles all Latin-script documents instead of English only. The consumer
+# passes --tessdata-path pointing at the bundle dir. NOTE: script/Latin is ~89MB
+# (tessdata_fast) vs eng's ~12MB — it dominates the bundle (and thus the embedded
+# `retab` binary) size.
 TESSDATA_LOCAL=""
 if [ "${LIT_OCR}" != "0" ]; then
-  TESSDATA_URL="https://github.com/${TESSDATA_REPO}/raw/${TESSDATA_TAG}/eng.traineddata"
-  log "downloading eng.traineddata from ${TESSDATA_REPO}@${TESSDATA_TAG}"
-  TESSDATA_LOCAL="${WORKDIR}/eng.traineddata"
+  TESSDATA_URL="https://github.com/${TESSDATA_REPO}/raw/${TESSDATA_TAG}/script/Latin.traineddata"
+  log "downloading script/Latin.traineddata from ${TESSDATA_REPO}@${TESSDATA_TAG}"
+  TESSDATA_LOCAL="${WORKDIR}/Latin.traineddata"
   curl -fsSL -o "${TESSDATA_LOCAL}" "${TESSDATA_URL}"
-  [ -s "${TESSDATA_LOCAL}" ] || die "eng.traineddata download was empty"
+  [ -s "${TESSDATA_LOCAL}" ] || die "Latin.traineddata download was empty"
 fi
 
 # --- 4. Stage the bundle ----------------------------------------------------
@@ -144,7 +151,7 @@ rm -rf "${STAGE_DIR}"
 mkdir -p "${STAGE_DIR}"
 cp "${LIT_BUILT}" "${STAGE_DIR}/${LIT_BIN_NAME}"
 cp "${PDFIUM_LIB}" "${STAGE_DIR}/${LIB_NAME}"
-[ -n "${TESSDATA_LOCAL}" ] && cp "${TESSDATA_LOCAL}" "${STAGE_DIR}/eng.traineddata"
+[ -n "${TESSDATA_LOCAL}" ] && cp "${TESSDATA_LOCAL}" "${STAGE_DIR}/Latin.traineddata"
 chmod +x "${STAGE_DIR}/${LIT_BIN_NAME}" 2>/dev/null || true
 
 # Carry licenses so the redistributable bundle is compliant.
@@ -163,7 +170,7 @@ LiteParse \`lit\` bundle for ${LIT_OS}/${LIT_ARCH}
 
 Contents:
   ${LIT_BIN_NAME}   - LiteParse CLI
-  ${LIB_NAME}       - PDFium shared library (dlopen'd by lit at runtime)$( [ "${LIT_OCR}" = "0" ] || printf '\n  eng.traineddata   - Tesseract English OCR model (tessdata_best @ %s)' "${TESSDATA_TAG}" )
+  ${LIB_NAME}       - PDFium shared library (dlopen'd by lit at runtime)$( [ "${LIT_OCR}" = "0" ] || printf '\n  Latin.traineddata - Tesseract multilingual Latin-script OCR model (tessdata_fast @ %s)' "${TESSDATA_TAG}" )
 
 The consumer MUST set PDFIUM_LIB_PATH to this directory before running lit:
   PDFIUM_LIB_PATH=<this dir> ${LIT_BIN_NAME} parse <file>$( [ "${LIT_OCR}" = "0" ] || printf '\nFor OCR, also pass --tessdata-path <this dir>.' )
@@ -178,6 +185,6 @@ if [ -n "${GITHUB_OUTPUT:-}" ]; then
     echo "stage_dir=${STAGE_DIR}"
     echo "lit_bin=${LIT_BIN_NAME}"
     echo "pdfium_lib=${LIB_NAME}"
-    echo "tessdata=$( [ -n "${TESSDATA_LOCAL}" ] && echo eng.traineddata || echo "" )"
+    echo "tessdata=$( [ -n "${TESSDATA_LOCAL}" ] && echo Latin.traineddata || echo "" )"
   } >> "${GITHUB_OUTPUT}"
 fi

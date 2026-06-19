@@ -20,7 +20,7 @@
 #
 # Inputs (env vars)
 # -----------------
-#   LIT_BUNDLE_TAG       release tag to fetch (default: lit-v2.0.3 — keep in
+#   LIT_BUNDLE_TAG       release tag to fetch (default: lit-v2.0.3-r2 — keep in
 #                        sync with litBundleTag in cli/cmd/liteparse_managed.go)
 #   LIT_BUNDLE_BASE_URL  download root (default: the retab-dev/retab releases)
 #   ASSETS_DIR           output dir (default: <repo>/cli/cmd/assets)
@@ -32,7 +32,7 @@ set -euo pipefail
 die() { echo "::error::$*" >&2; exit 1; }
 log() { echo ">> $*" >&2; }
 
-LIT_BUNDLE_TAG="${LIT_BUNDLE_TAG:-lit-v2.0.3}"
+LIT_BUNDLE_TAG="${LIT_BUNDLE_TAG:-lit-v2.0.3-r2}"
 LIT_BUNDLE_BASE_URL="${LIT_BUNDLE_BASE_URL:-https://github.com/retab-dev/retab/releases/download}"
 VERIFY_CHECKSUMS="${VERIFY_CHECKSUMS:-1}"
 

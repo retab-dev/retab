@@ -18,7 +18,7 @@
 #   GoReleaser builds with `-tags retab_embed_lit`, whose before-hook
 #   (scripts/fetch-lit-assets.sh) downloads the 6 `lit-<os>-<arch>.tar.gz`
 #   bundles for the tag pinned in cli/cmd/liteparse_managed.go (litBundleTag,
-#   currently lit-v2.0.3) and embeds them into `retab`. That `lit-v*` release
+#   currently lit-v2.0.3-r2) and embeds them into `retab`. That `lit-v*` release
 #   is produced by build-liteparse.yml. Cut/verify it BEFORE tagging cli-v*,
 #   or the hook fails with a download error.
 #

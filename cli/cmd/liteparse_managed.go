@@ -22,9 +22,9 @@ import (
 // ----------------------------
 // The local-first `files parse|grep|inspect` commands shell out to LiteParse's
 // `lit` CLI. `lit` is a Rust+C++ binary that dlopen()s libpdfium at runtime and
-// reads Tesseract OCR data (eng.traineddata) from disk — none of which fits in
+// reads Tesseract OCR data (Latin.traineddata) from disk — none of which fits in
 // our pure-Go, CGO-free `retab` binary. So we ship `lit` as a bundle of three
-// files (lit + libpdfium + eng.traineddata) and resolve it one of two ways:
+// files (lit + libpdfium + Latin.traineddata) and resolve it one of two ways:
 //
 //   1. Embedded (default release build, -tags retab_embed_lit): the bundle for
 //      the current platform is baked into `retab` via go:embed and unpacked to
@@ -37,8 +37,13 @@ import (
 // language data). See litCLI.command / parseArgs.
 
 // litBundleTag pins the bundle release this CLI build expects. It matches the
-// tag published by build-liteparse.yml and the assets goreleaser embeds.
-const litBundleTag = "lit-v2.0.3"
+// tag published by build-liteparse.yml and the assets goreleaser embeds. Keep
+// in sync with LIT_BUNDLE_TAG in scripts/fetch-lit-assets.sh.
+//
+// -r2: re-bundle of the crates-v2.0.3 `lit` source carrying the multilingual
+// Latin-script tessdata model (Latin.traineddata) instead of the original
+// English-only eng.traineddata. The lit binary is unchanged.
+const litBundleTag = "lit-v2.0.3-r2"
 
 // litBundleBaseURL is the download root for the fallback (non-embedded) path.
 // Overridable via RETAB_LITEPARSE_BUNDLE_URL for mirrors and tests.
@@ -56,7 +61,7 @@ type litBundle struct {
 	SHA256   string // hex sha256 of the archive; empty => download disabled
 	LitBin   string // binary name inside the archive (lit or lit.exe)
 	Pdfium   string // pdfium shared-library filename inside the archive
-	Tessdata string // OCR data filename (eng.traineddata); empty if no OCR
+	Tessdata string // OCR data filename (Latin.traineddata); empty if no OCR
 }
 
 // litBundles is the per-platform manifest, keyed by GOOS/GOARCH.
@@ -67,11 +72,11 @@ type litBundle struct {
 // build-liteparse.yml publishes. windows/arm64 ships OCR-less (no Tessdata),
 // matching the build matrix.
 var litBundles = map[string]litBundle{
-	"linux/amd64":   {Asset: "lit-linux-amd64.tar.gz", SHA256: "", LitBin: "lit", Pdfium: "libpdfium.so", Tessdata: "eng.traineddata"},
-	"linux/arm64":   {Asset: "lit-linux-arm64.tar.gz", SHA256: "", LitBin: "lit", Pdfium: "libpdfium.so", Tessdata: "eng.traineddata"},
-	"darwin/amd64":  {Asset: "lit-darwin-amd64.tar.gz", SHA256: "", LitBin: "lit", Pdfium: "libpdfium.dylib", Tessdata: "eng.traineddata"},
-	"darwin/arm64":  {Asset: "lit-darwin-arm64.tar.gz", SHA256: "", LitBin: "lit", Pdfium: "libpdfium.dylib", Tessdata: "eng.traineddata"},
-	"windows/amd64": {Asset: "lit-windows-amd64.tar.gz", SHA256: "", LitBin: "lit.exe", Pdfium: "pdfium.dll", Tessdata: "eng.traineddata"},
+	"linux/amd64":   {Asset: "lit-linux-amd64.tar.gz", SHA256: "", LitBin: "lit", Pdfium: "libpdfium.so", Tessdata: "Latin.traineddata"},
+	"linux/arm64":   {Asset: "lit-linux-arm64.tar.gz", SHA256: "", LitBin: "lit", Pdfium: "libpdfium.so", Tessdata: "Latin.traineddata"},
+	"darwin/amd64":  {Asset: "lit-darwin-amd64.tar.gz", SHA256: "", LitBin: "lit", Pdfium: "libpdfium.dylib", Tessdata: "Latin.traineddata"},
+	"darwin/arm64":  {Asset: "lit-darwin-arm64.tar.gz", SHA256: "", LitBin: "lit", Pdfium: "libpdfium.dylib", Tessdata: "Latin.traineddata"},
+	"windows/amd64": {Asset: "lit-windows-amd64.tar.gz", SHA256: "", LitBin: "lit.exe", Pdfium: "pdfium.dll", Tessdata: "Latin.traineddata"},
 	"windows/arm64": {Asset: "lit-windows-arm64.tar.gz", SHA256: "", LitBin: "lit.exe", Pdfium: "pdfium.dll", Tessdata: ""},
 }
 

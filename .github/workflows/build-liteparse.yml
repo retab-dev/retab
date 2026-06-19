@@ -8,8 +8,8 @@
 # tarballs, and those contain ONLY the `lit` binary — not the libpdfium that
 # `lit` dlopen()s at runtime. This workflow builds `lit` from a pinned source
 # tag on native runners for all 6 targets and bundles each `lit` together with
-# the matching prebuilt libpdfium plus the English Tesseract model
-# (eng.traineddata), so the Retab CLI can embed or download a single
+# the matching prebuilt libpdfium plus the multilingual Latin-script Tesseract
+# model (Latin.traineddata), so the Retab CLI can embed or download a single
 # self-contained, checksum-verified `.tar.gz` per platform.
 #
 # The heavy lifting (cargo build + pdfium fetch + staging) lives in
@@ -19,6 +19,11 @@
 # Cut a release of the bundles:
 #   git tag lit-v2.0.3        # match the LiteParse source ref you're building
 #   git push origin lit-v2.0.3
+#
+# Re-bundle the SAME lit source with a different payload (e.g. a new tessdata
+# model) using a -rN bundle-revision suffix — it still builds crates-v2.0.3:
+#   git tag lit-v2.0.3-r2     # 2nd bundling of the crates-v2.0.3 `lit` source
+#   git push origin lit-v2.0.3-r2
 #
 # Or run manually from the Actions UI (workflow_dispatch) to produce artifacts
 # without publishing a release.
@@ -105,8 +110,15 @@ jobs:
           if [ -n "${{ github.event.inputs.liteparse_ref }}" ]; then
             REF="${{ github.event.inputs.liteparse_ref }}"
           elif [ "${GITHUB_REF}" != "${GITHUB_REF#refs/tags/lit-v}" ]; then
-            # Tag lit-vX.Y.Z -> build LiteParse crates-vX.Y.Z by convention.
-            REF="crates-v${GITHUB_REF#refs/tags/lit-v}"
+            # Tag lit-vX.Y.Z[-rN] -> build LiteParse crates-vX.Y.Z by convention.
+            # The optional -rN suffix is a BUNDLE revision: re-packing the same
+            # `lit` source with a different payload (e.g. swapping the bundled
+            # tessdata model) without an upstream source change. It is stripped
+            # before mapping to the LiteParse source tag, so a re-bundle never
+            # needs a fake `crates-v*` tag to exist. lit-v2.0.3 and lit-v2.0.3-r2
+            # both build crates-v2.0.3.
+            VER="${GITHUB_REF#refs/tags/lit-v}"   # X.Y.Z or X.Y.Z-rN
+            REF="crates-v${VER%%-r[0-9]*}"        # drop -rN -> crates-vX.Y.Z
           else
             REF="${DEFAULT_LITEPARSE_REF}"
           fi
@@ -231,14 +243,15 @@ jobs:
 
           Each `.tar.gz` contains the `lit` binary, the matching libpdfium
           (PDFium shared library) it dlopen()s at runtime, and — on OCR builds —
-          the English Tesseract model (`eng.traineddata`, tessdata_best). The
+          the multilingual Latin-script Tesseract model (`Latin.traineddata`,
+          tessdata_fast). The
           Retab CLI either embeds these bundles directly (single fat binary,
           built with `-tags retab_embed_lit`) or downloads the per-platform
           bundle on demand, verifies its sha256 against a pinned manifest, sets
           `PDFIUM_LIB_PATH` to the extracted directory, and passes
           `--tessdata-path` for OCR before invoking `lit`.
 
-          windows/arm64 ships OCR-less (no `eng.traineddata`).
+          windows/arm64 ships OCR-less (no `Latin.traineddata`).
 
           See `checksums.txt` for sha256 sums.
           EOF
