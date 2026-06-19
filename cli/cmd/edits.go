@@ -34,6 +34,9 @@ created with ` + "`retab edits templates create`" + ` to reuse a saved set of
 form fields. ` + "`--instructions`" + ` is always required and describes the edit
 to perform in plain English.
 
+One-off edits currently support PDF and Office documents. Convert image inputs
+to PDF before using ` + "`retab edits create`" + `.
+
 Use ` + "`--color`" + ` to set the visual annotation color overlaid on the
 rendered output (handy when distinguishing edits from multiple passes).`,
 	Example: `  # One-off edit against an ad-hoc document

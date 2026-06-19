@@ -156,6 +156,34 @@ func TestRenderWorkflowASCIIViewBranchingWorkflowPreservesVerticalShape(t *testi
 	}
 }
 
+func TestRenderWorkflowASCIIViewSuppressesContainerRoutingHandles(t *testing.T) {
+	workflow := &workflowGraph{
+		Workflow: retab.Workflow{ID: "wf_container", Name: "Container routing"},
+		Blocks: []retab.WorkflowBlock{
+			{ID: "start", Type: "start", Label: ptr("Start"), PositionX: ptr(float64(0)), PositionY: ptr(float64(0))},
+			{ID: "fanout", Type: "for_each", Label: ptr("Fan Out"), PositionX: ptr(float64(300)), PositionY: ptr(float64(0))},
+			{ID: "score", Type: "function", Label: ptr("Score Item"), PositionX: ptr(float64(600)), PositionY: ptr(float64(0))},
+		},
+		Edges: []retab.WorkflowEdgeDoc{
+			{ID: "edge_start_fanout", SourceBlock: "start", TargetBlock: "fanout", SourceHandle: ptr("output-json-0"), TargetHandle: ptr("fe-left-in")},
+			{ID: "edge_fanout_score", SourceBlock: "fanout", TargetBlock: "score", SourceHandle: ptr("fe-right-out"), TargetHandle: ptr("input-json-0")},
+			{ID: "edge_score_fanout", SourceBlock: "score", TargetBlock: "fanout", SourceHandle: ptr("output-json-0"), TargetHandle: ptr("fe-right-in")},
+		},
+	}
+
+	out := renderWorkflowASCIIViewString(t, workflow)
+	for _, unexpected := range []string{"fe left", "fe right"} {
+		if strings.Contains(out, unexpected) {
+			t.Fatalf("container routing handle %q should not be rendered:\n%s", unexpected, out)
+		}
+	}
+	for _, want := range []string{"| Fan Out", "| Score Item"} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("expected %q in output:\n%s", want, out)
+		}
+	}
+}
+
 func TestRenderWorkflowASCIIViewMergedWorkflowKeepsVisualColumns(t *testing.T) {
 	workflow := &workflowGraph{
 		Workflow: retab.Workflow{ID: "wf_merge", Name: "Reconciliation flow"},

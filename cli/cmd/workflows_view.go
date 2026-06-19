@@ -828,7 +828,9 @@ func workflowASCIIHandleLabel(handle string) string {
 
 func workflowASCIIIsDefaultHandle(handle string) bool {
 	switch strings.TrimSpace(handle) {
-	case "", "0", "json 0", "file 0", "data", "document":
+	case "", "0", "json 0", "file 0", "data", "document",
+		"fe left in", "fe left out", "fe right in", "fe right out",
+		"loop left in", "loop left out", "loop right in", "loop right out", "loop termination":
 		return true
 	default:
 		return false

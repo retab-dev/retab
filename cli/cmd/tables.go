@@ -302,7 +302,7 @@ func printTableCommandResult(cmd *cobra.Command, result any) error {
 	if tableSelected(cmd) {
 		return renderTableCommandResult(result)
 	}
-	return printJSON(result)
+	return printJSON(tableCommandResultForPrint(result))
 }
 
 func renderTableCommandResult(result any) error {
@@ -332,6 +332,7 @@ func normalizeTableCommandResult(result any) (map[string]any, error) {
 	if result == nil {
 		return map[string]any{}, nil
 	}
+	result = tableCommandResultForPrint(result)
 	raw, err := json.Marshal(result)
 	if err != nil {
 		return nil, fmt.Errorf("render table result: marshal failed: %w", err)
@@ -341,6 +342,25 @@ func normalizeTableCommandResult(result any) (map[string]any, error) {
 		return nil, fmt.Errorf("render table result: decode failed: %w", err)
 	}
 	return normalized, nil
+}
+
+func tableCommandResultForPrint(result any) any {
+	switch typed := result.(type) {
+	case *retab.WorkflowTableListResponse:
+		tables := typed.Tables
+		if tables == nil {
+			tables = []*retab.WorkflowTable{}
+		}
+		return map[string]any{"tables": tables}
+	case retab.WorkflowTableListResponse:
+		tables := typed.Tables
+		if tables == nil {
+			tables = []*retab.WorkflowTable{}
+		}
+		return map[string]any{"tables": tables}
+	default:
+		return result
+	}
 }
 
 func renderTableMetadataRows(rows []map[string]any) error {

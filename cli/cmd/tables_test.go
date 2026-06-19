@@ -173,6 +173,42 @@ func TestTablesCommandsHonorOutputTable(t *testing.T) {
 	}
 }
 
+func TestTablesListEmptyPreservesTablesArray(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	resetProjectID := func() {
+		if f := tablesListCmd.Flags().Lookup("project-id"); f != nil {
+			_ = f.Value.Set("")
+			f.Changed = false
+		}
+	}
+	resetProjectID()
+	t.Cleanup(resetProjectID)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet || r.URL.Path != "/v1/tables" || r.URL.Query().Get("project_id") != "proj_empty" {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.RequestURI())
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"tables":[]}`))
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	stdout, stderr := captureStd(t, func() {
+		if err := runRootForTest(t, "tables", "list", "--project-id", "proj_empty", "--output", "json"); err != nil {
+			t.Fatalf("tables list: %v", err)
+		}
+	})
+	if stderr != "" {
+		t.Fatalf("stderr = %q, want empty", stderr)
+	}
+	if !strings.Contains(stdout, `"tables": []`) {
+		t.Fatalf("empty table list should preserve the public array field, got:\n%s", stdout)
+	}
+}
+
 func tableListFixture() map[string]any {
 	return map[string]any{"tables": []map[string]any{tableFixture()}}
 }
