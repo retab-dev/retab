@@ -688,7 +688,7 @@ consumers.`,
 var workflowsExperimentsRunsCreateCmd = &cobra.Command{
 	Use:   "create <experiment-id>",
 	Short: "Create a new experiment run",
-	Long: `Create an experiment run that testuates the candidate config across every
+	Long: `Create an experiment run that evaluates the candidate config across every
 document in its set.
 
 The workflow id is derived server-side from the experiment record, so
