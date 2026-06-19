@@ -350,7 +350,13 @@ func readFunctionInputSchemaSidecar(dir string) (map[string]any, error) {
 }
 
 func hydrateFunctionCommonFiles(dir string, config map[string]any, force bool) error {
-	secrets := collectFunctionSecretNames(config)
+	// Key the generated .env files by each secret's `env` field — that is the
+	// environment-variable name the running function reads, and the name the
+	// --fill-secrets path (fillLocalSecretsFromRetab keys by secret.Env) writes.
+	// Using the display `name` instead produced a .env keyed by the wrong
+	// identifier whenever name != env, so the runtime saw no value and
+	// --fill-secrets appended a duplicate line. Mirror the api_call hydrate.
+	secrets := collectFunctionSecretEnvNames(config)
 	if err := writeTextFileIfAllowed(filepath.Join(dir, ".env.example"), renderEnvFile(secrets, false), force, 0o600); err != nil {
 		return err
 	}
@@ -384,28 +390,6 @@ func writeTextFileIfAllowed(path string, content string, force bool, perm os.Fil
 		return err
 	}
 	return os.WriteFile(path, []byte(content), perm)
-}
-
-func collectFunctionSecretNames(config map[string]any) []string {
-	mounts, _ := config["mounts"].(map[string]any)
-	rawSecrets, _ := mounts["secrets"].([]any)
-	seen := map[string]bool{}
-	var names []string
-	for _, raw := range rawSecrets {
-		secret, _ := raw.(map[string]any)
-		name, _ := secret["name"].(string)
-		if strings.TrimSpace(name) == "" {
-			name, _ = secret["env"].(string)
-		}
-		name = strings.TrimSpace(name)
-		if name == "" || seen[name] {
-			continue
-		}
-		seen[name] = true
-		names = append(names, name)
-	}
-	sort.Strings(names)
-	return names
 }
 
 func collectFunctionSecretEnvNames(config map[string]any) []string {

@@ -2021,7 +2021,12 @@ func redactSensitiveDebugBody(body []byte, contentType, path string) []byte {
 	if len(body) == 0 {
 		return body
 	}
-	if strings.Contains(path, "/secrets/") {
+	// Redact any secrets-resource body wholesale. Match both the collection
+	// path (".../secrets", e.g. POST create whose body carries a value) and any
+	// sub-resource (".../secrets/<name>[/value]"). The trailing-slash-only check
+	// missed the bare collection path, which would dump a create body in clear.
+	// HasSuffix/"/secrets/" avoids matching unrelated paths like "/secretsfoo".
+	if strings.Contains(path, "/secrets/") || strings.HasSuffix(path, "/secrets") {
 		return []byte("[REDACTED]")
 	}
 	if !strings.Contains(strings.ToLower(contentType), "json") {
