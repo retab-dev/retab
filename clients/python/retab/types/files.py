@@ -41,11 +41,11 @@ class CreateFileBlueprintRequest(BaseModel):
 
     file_id: str = Field(..., description="File id to analyze.")
     intent: str | None = Field(default=None, description="Optional user intent used to guide the blueprint analysis.")
+    mode: FileBlueprintMode | None = Field(default=None, description="Legacy compatibility field. Blueprint analysis always runs a single pass.")
     background: bool | None = Field(
         default=False,
         description="If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.",
     )
-    mode: FileBlueprintMode | None = None
 
 
 class CreateUploadResponse(BaseModel):

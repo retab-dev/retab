@@ -453,14 +453,14 @@ SDK_UPDATE_SPECS = [
     {
         "check": ":check_ruby",
         "client": "open-source/sdk/clients/ruby",
-        "generated": ":generated_ruby_sdk",
+        "generated": "//open-source/sdk/clients/ruby:generated_ruby_sdk_formatted",
         "language": "ruby",
         "snippet": "//open-source/docs:snippet_lint_ruby",
     },
     {
         "check": ":check_java",
         "client": "open-source/sdk/clients/java",
-        "generated": ":generated_java_sdk",
+        "generated": "//open-source/sdk/clients/java:generated_java_sdk_formatted",
         "language": "java",
         "snippet": "//open-source/docs:snippet_lint_java",
     },

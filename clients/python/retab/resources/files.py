@@ -57,14 +57,14 @@ class FilesMixin:
         return PreparedRequest(method="GET", url="/v1/files", params=params or None, data=data)
 
     def prepare_create_blueprint(
-        self, file_id: str, intent: str | None = None, background: bool = False, mode: CreateFileBlueprintRequestMode | None = None, **extra_params: Any
+        self, file_id: str, intent: str | None = None, mode: CreateFileBlueprintRequestMode | None = None, background: bool = False, **extra_params: Any
     ) -> PreparedRequest:
         """Create File Blueprint Create a Document Blueprint for an uploaded file."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
-        payload = CreateFileBlueprintRequest(file_id=cast(Any, file_id), intent=cast(Any, intent), background=cast(Any, background), mode=cast(Any, mode))
+        payload = CreateFileBlueprintRequest(file_id=cast(Any, file_id), intent=cast(Any, intent), mode=cast(Any, mode), background=cast(Any, background))
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/files/blueprints", params=params or None, data=data)
 
@@ -161,10 +161,10 @@ class Files(SyncAPIResource, FilesMixin):
         return self.request_page(prepared_request, model=File)
 
     def create_blueprint(
-        self, file_id: str, intent: str | None = None, background: bool = False, mode: CreateFileBlueprintRequestMode | None = None, **extra_params: Any
+        self, file_id: str, intent: str | None = None, mode: CreateFileBlueprintRequestMode | None = None, background: bool = False, **extra_params: Any
     ) -> FileBlueprint:
         """Create File Blueprint Create a Document Blueprint for an uploaded file."""
-        prepared_request = self.prepare_create_blueprint(file_id=file_id, intent=intent, background=background, mode=mode, **extra_params)
+        prepared_request = self.prepare_create_blueprint(file_id=file_id, intent=intent, mode=mode, background=background, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return FileBlueprint.model_validate(response)
 
@@ -239,10 +239,10 @@ class AsyncFiles(AsyncAPIResource, FilesMixin):
         return await self.request_page(prepared_request, model=File)
 
     async def create_blueprint(
-        self, file_id: str, intent: str | None = None, background: bool = False, mode: CreateFileBlueprintRequestMode | None = None, **extra_params: Any
+        self, file_id: str, intent: str | None = None, mode: CreateFileBlueprintRequestMode | None = None, background: bool = False, **extra_params: Any
     ) -> FileBlueprint:
         """Create File Blueprint Create a Document Blueprint for an uploaded file."""
-        prepared_request = self.prepare_create_blueprint(file_id=file_id, intent=intent, background=background, mode=mode, **extra_params)
+        prepared_request = self.prepare_create_blueprint(file_id=file_id, intent=intent, mode=mode, background=background, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return FileBlueprint.model_validate(response)
 

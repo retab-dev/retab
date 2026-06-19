@@ -17,7 +17,7 @@ begin
 
 rescue LoadError
   # WebMock is only needed by the generated service tests. The MimeData
-  # smoke eval runs without it.
+  # smoke test runs without it.
 end
 
 # Minimal FixtureHelper stub. Generated tests `include FixtureHelper` but

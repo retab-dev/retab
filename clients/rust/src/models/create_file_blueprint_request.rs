@@ -13,13 +13,14 @@ pub struct CreateFileBlueprintRequest {
     /// Optional user intent used to guide the blueprint analysis.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub intent: Option<String>,
+    /// Legacy compatibility field. Blueprint analysis always runs a single pass.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub mode: Option<CreateFileBlueprintRequestMode>,
     /// If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
     ///
     /// Defaults to `false`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub background: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub mode: Option<CreateFileBlueprintRequestMode>,
 }
 impl CreateFileBlueprintRequest {
     /// Construct a new `CreateFileBlueprintRequest` with the required fields set.
@@ -28,8 +29,8 @@ impl CreateFileBlueprintRequest {
         Self {
             file_id: file_id.into(),
             intent: Default::default(),
-            background: Default::default(),
             mode: Default::default(),
+            background: Default::default(),
         }
     }
 }

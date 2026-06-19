@@ -16,9 +16,10 @@ readonly class CreateFileBlueprintRequest implements \JsonSerializable
         public string $fileId,
         /** Optional user intent used to guide the blueprint analysis. */
         public ?string $intent = null,
+        /** Legacy compatibility field. Blueprint analysis always runs a single pass. */
+        public ?FileBlueprintMode $mode = null,
         /** If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream. */
         public ?bool $background = null,
-        public ?FileBlueprintMode $mode = null,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -34,8 +35,8 @@ readonly class CreateFileBlueprintRequest implements \JsonSerializable
         return new self(
             fileId: $data['file_id'],
             intent: $data['intent'] ?? null,
-            background: $data['background'] ?? null,
             mode: isset($data['mode']) ? FileBlueprintMode::from($data['mode']) : null,
+            background: $data['background'] ?? null,
         );
     }
 
@@ -45,8 +46,8 @@ readonly class CreateFileBlueprintRequest implements \JsonSerializable
         return [
             'file_id' => $this->fileId,
             'intent' => $this->intent,
-            'background' => $this->background,
             'mode' => $this->mode?->value,
+            'background' => $this->background,
         ];
     }
 }

@@ -11,19 +11,19 @@ import com.retab.types.CreateFileBlueprintRequestMode;
 public final class CreateFileBlueprintRequest {
   private final String fileId;
   private final String intent;
-  private final Boolean background;
   private final CreateFileBlueprintRequestMode mode;
+  private final Boolean background;
 
   @JsonCreator
   public CreateFileBlueprintRequest(
       @JsonProperty(value = "file_id", required = true) String fileId,
       @JsonProperty(value = "intent", required = false) String intent,
-      @JsonProperty(value = "background", required = false) Boolean background,
-      @JsonProperty(value = "mode", required = false) CreateFileBlueprintRequestMode mode) {
+      @JsonProperty(value = "mode", required = false) CreateFileBlueprintRequestMode mode,
+      @JsonProperty(value = "background", required = false) Boolean background) {
     this.fileId = fileId;
     this.intent = intent;
-    this.background = background != null ? background : false;
     this.mode = mode;
+    this.background = background != null ? background : false;
   }
 
   @JsonProperty("file_id")
@@ -36,13 +36,13 @@ public final class CreateFileBlueprintRequest {
     return intent;
   }
 
-  @JsonProperty("background")
-  public Boolean isBackground() {
-    return background;
-  }
-
   @JsonProperty("mode")
   public CreateFileBlueprintRequestMode getMode() {
     return mode;
+  }
+
+  @JsonProperty("background")
+  public Boolean isBackground() {
+    return background;
   }
 }

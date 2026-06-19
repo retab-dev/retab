@@ -10,26 +10,27 @@ export interface CreateFileBlueprintRequest {
   fileId: string;
   /** Optional user intent used to guide the blueprint analysis. */
   intent?: string | null;
+  /** Legacy compatibility field. Blueprint analysis always runs a single pass. */
+  mode?: CreateFileBlueprintRequestMode | null;
   /**
    * If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
    * @default false
    */
   background?: boolean;
-  mode?: CreateFileBlueprintRequestMode | null;
 }
 
 export interface CreateFileBlueprintRequestResponse {
   file_id: string;
   intent?: string | null;
-  background?: boolean;
   mode?: CreateFileBlueprintRequestMode | null;
+  background?: boolean;
 }
 
 export const ZCreateFileBlueprintRequest = z.object({
   fileId: z.string(),
   intent: z.string().nullable().optional(),
-  background: z.boolean().optional(),
   mode: ZCreateFileBlueprintRequestMode.nullable().optional(),
+  background: z.boolean().optional(),
 }) as z.ZodType<CreateFileBlueprintRequest>;
 
 export function deserializeCreateFileBlueprintRequest(
@@ -38,8 +39,8 @@ export function deserializeCreateFileBlueprintRequest(
   return {
     fileId: wire['file_id'],
     intent: wire['intent'],
-    background: wire['background'],
     mode: wire['mode'],
+    background: wire['background'],
   };
 }
 
@@ -49,7 +50,7 @@ export function serializeCreateFileBlueprintRequest(
   return {
     file_id: domain['fileId'],
     intent: domain['intent'],
-    background: domain['background'],
     mode: domain['mode'],
+    background: domain['background'],
   };
 }

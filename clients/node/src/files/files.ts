@@ -61,14 +61,14 @@ export class Files {
   async create_blueprint(
     fileId: string,
     intent?: string | null,
-    background?: boolean,
-    mode?: CreateFileBlueprintRequestMode | null
+    mode?: CreateFileBlueprintRequestMode | null,
+    background?: boolean
   ): Promise<FileBlueprint> {
     const body = {
       file_id: fileId,
       intent: intent,
-      background: background,
       mode: mode,
+      background: background,
     };
     const __wire = await this.client.request<FileBlueprintResponse>({
       method: 'POST',

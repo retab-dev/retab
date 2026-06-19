@@ -848,8 +848,8 @@ class ModelRoundTripTest < Minitest::Test
     fixture = {
       "file_id" => "stub",
       "intent" => nil,
-      "background" => true,
-      "mode" => nil
+      "mode" => nil,
+      "background" => true
     }
     model = Retab::CreateFileBlueprintRequest.new(fixture.to_json)
     json = model.to_h

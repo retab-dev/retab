@@ -94,12 +94,12 @@ public final class FilesApi {
     return createBlueprint(
         request == null ? null : request.getFileId(),
         request == null ? null : request.getIntent(),
-        request == null ? null : request.isBackground(),
-        request == null ? null : request.getMode());
+        request == null ? null : request.getMode(),
+        request == null ? null : request.isBackground());
   }
 
   public FileBlueprint createBlueprint(
-      String fileId, String intent, Boolean background, CreateFileBlueprintRequestMode mode)
+      String fileId, String intent, CreateFileBlueprintRequestMode mode, Boolean background)
       throws IOException, InterruptedException {
     String path = "/v1/files/blueprints";
     StringBuilder query = new StringBuilder();
@@ -109,11 +109,11 @@ public final class FilesApi {
     if (intent != null) {
       body.put("intent", intent);
     }
-    if (background != null) {
-      body.put("background", background);
-    }
     if (mode != null) {
       body.put("mode", mode);
+    }
+    if (background != null) {
+      body.put("background", background);
     }
     String requestBody = client.getObjectMapper().writeValueAsString(body);
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);
