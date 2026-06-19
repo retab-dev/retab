@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import datetime
-from enum import Enum
-from typing import Any, Literal, TypeAlias, cast
+from typing import Literal, TypeAlias, cast
 from pydantic import BaseModel, ConfigDict, Field
-from retab.types.mime import FileRef
+from retab.types.workflows.evals import ArtifactDrift, ArtifactFreshness
+from retab.types.workflows.evals.results import FileHandleInput, JsonHandleInput
 
 
 NConsensusValue: TypeAlias = Literal[3, 5, 7]
@@ -21,49 +21,10 @@ ExperimentBlockType: TypeAlias = Literal["extract", "classifier", "split", "for_
 ExperimentSchemaDriftStatus: TypeAlias = Literal["none", "partial", "drifted", "unknown"]
 
 
-class ArtifactDriftStatus(str, Enum):
-    NONE = "none"
-    DRIFTED = "drifted"
-    BROKEN = "broken"
-    UNKNOWN = "unknown"
-
-
-class ArtifactFreshnessStatus(str, Enum):
-    FRESH = "fresh"
-    STALE = "stale"
-    UNKNOWN = "unknown"
-
-
-class ArtifactFreshnessReasons(str, Enum):
-    VALIDITY_CHANGED = "validity_changed"
-    INPUTS_CHANGED = "inputs_changed"
-    ENGINE_CHANGED = "engine_changed"
-    METRICS_ENGINE_CHANGED = "metrics_engine_changed"
-    NO_BASELINE = "no_baseline"
-
-
 CreateExperimentRequestNConsensus = NConsensusValue
 
 
 UpdateExperimentRequestNConsensus = NConsensusValue
-
-
-class ArtifactDrift(BaseModel):
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    status: ArtifactDriftStatus | None = Field(default=cast(ArtifactDriftStatus, "unknown"), validate_default=True)
-    affected_targets: list[str] | None = Field(default=[])
-    detail: str | None = None
-
-
-class ArtifactFreshness(BaseModel):
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    status: ArtifactFreshnessStatus | None = Field(default=cast(ArtifactFreshnessStatus, "unknown"), validate_default=True)
-    reasons: list[ArtifactFreshnessReasons] | None = Field(default=[])
-    validity_fingerprint: str | None = None
-    input_fingerprint: str | None = None
-    baseline_run_id: str | None = None
 
 
 class CreateExperimentRequest(BaseModel):
@@ -115,24 +76,6 @@ class ExplicitExperimentDocumentRequest(BaseModel):
     provenance: ExperimentDocumentProvenance | None = None
 
 
-class FileHandleInput(BaseModel):
-    """File reference for a handle input."""
-
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    type: Literal["file"] = Field(default="file")
-    document: FileRef
-
-
-class JsonHandleInput(BaseModel):
-    """JSON payload for a handle input. `data` is the raw JSON value."""
-
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    type: Literal["json"] = Field(default="json")
-    data: Any | None = Field(default=None)
-
-
 class UpdateExperimentRequest(BaseModel):
     """Body for updating an experiment. Only the supplied fields are changed."""
 
@@ -176,11 +119,6 @@ from .results import *  # noqa: E402,F401,F403  (re-export sub-resource symbols)
 from .runs import *  # noqa: E402,F401,F403  (re-export sub-resource symbols)
 
 __all__ = [
-    "ArtifactDrift",
-    "ArtifactDriftStatus",
-    "ArtifactFreshness",
-    "ArtifactFreshnessReasons",
-    "ArtifactFreshnessStatus",
     "CancelWorkflowExperimentRunResponse",
     "CancelledWorkflowExperimentResult",
     "CancelledWorkflowExperimentRun",
@@ -224,9 +162,6 @@ __all__ = [
     "ExperimentVotesMetricDocument",
     "ExperimentVotesMetricsResponse",
     "ExplicitExperimentDocumentRequest",
-    "FileHandleInput",
-    "FileRef",
-    "JsonHandleInput",
     "NConsensusValue",
     "PendingWorkflowExperimentResult",
     "PendingWorkflowExperimentRun",
@@ -246,13 +181,9 @@ __all__ = [
 # are lazily evaluated strings under `from __future__ import
 # annotations` and a referenced symbol comes from another
 # generated module via a TYPE_CHECKING-guarded import.
-ArtifactDrift.model_rebuild()
-ArtifactFreshness.model_rebuild()
 CreateExperimentRequest.model_rebuild()
 ExperimentDocumentCaptureRequest.model_rebuild()
 ExperimentDocumentProvenance.model_rebuild()
 ExplicitExperimentDocumentRequest.model_rebuild()
-FileHandleInput.model_rebuild()
-JsonHandleInput.model_rebuild()
 UpdateExperimentRequest.model_rebuild()
 WorkflowExperiment.model_rebuild()

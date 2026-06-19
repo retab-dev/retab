@@ -16,8 +16,6 @@ pub struct Parse {
     pub model: String,
     /// Format used to render tables extracted from the document
     pub table_parsing_format: TableParsingFormat,
-    /// Legacy stored DPI value, retained only for compatibility.
-    pub image_resolution_dpi: i64,
     /// Free-form instructions supplied with the parse request.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub instructions: Option<String>,
@@ -45,7 +43,6 @@ impl Parse {
         file: FileRef,
         model: impl Into<String>,
         table_parsing_format: TableParsingFormat,
-        image_resolution_dpi: i64,
         output: ParseOutput,
     ) -> Self {
         Self {
@@ -53,7 +50,6 @@ impl Parse {
             file,
             model: model.into(),
             table_parsing_format,
-            image_resolution_dpi,
             instructions: Default::default(),
             output,
             status: Default::default(),

@@ -148,22 +148,22 @@ class PaginationContractTest < Minitest::Test
       invoke: -> (c) { c.workflows.steps.list }
     },
     {
-      service: "workflows.tests.results",
-      path: "/v1/workflows/tests/results",
+      service: "workflows.evals.results",
+      path: "/v1/workflows/evals/results",
       sample: "{}",
-      invoke: -> (c) { c.workflows.tests.results.list(run_id: "run_x") }
+      invoke: -> (c) { c.workflows.evals.results.list(run_id: "run_x") }
     },
     {
-      service: "workflows.tests.runs",
-      path: "/v1/workflows/tests/runs",
+      service: "workflows.evals.runs",
+      path: "/v1/workflows/evals/runs",
       sample: "{}",
-      invoke: -> (c) { c.workflows.tests.runs.list }
+      invoke: -> (c) { c.workflows.evals.runs.list }
     },
     {
-      service: "workflows.tests",
-      path: "/v1/workflows/tests",
+      service: "workflows.evals",
+      path: "/v1/workflows/evals",
       sample: "{}",
-      invoke: -> (c) { c.workflows.tests.list(workflow_id: "wf_x") }
+      invoke: -> (c) { c.workflows.evals.list(workflow_id: "wf_x") }
     },
     {
       service: :workflows,

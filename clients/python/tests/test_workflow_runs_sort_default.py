@@ -37,7 +37,7 @@ def _async_client() -> MagicMock:
     return client
 
 
-def test_runs_list_default_sort_by_uses_dotted_timing_path() -> None:
+def eval_runs_list_default_sort_by_uses_dotted_timing_path() -> None:
     """`client.workflows.runs.list()` with no `sort_by` MUST send
     `sort_by=timing.created_at`. The backend rejects the bare
     `created_at` with HTTP 400, so this default is load-bearing.
@@ -52,7 +52,7 @@ def test_runs_list_default_sort_by_uses_dotted_timing_path() -> None:
     assert request.params["sort_by"] == "timing.created_at"
 
 
-def test_runs_list_caller_supplied_sort_by_is_passed_through() -> None:
+def eval_runs_list_caller_supplied_sort_by_is_passed_through() -> None:
     """An explicit `sort_by` from the caller must still reach the wire
     unmodified — the default-fix must not clobber explicit overrides.
     """

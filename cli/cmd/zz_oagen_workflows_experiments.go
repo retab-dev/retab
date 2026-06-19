@@ -74,11 +74,11 @@ func parseExperimentDocs(cmd *cobra.Command) ([]*retab.ExperimentDocumentCapture
 	return captures, explicit, nil
 }
 
-func experimentHandleInputsFromMap(raw map[string]any) map[string]retab.HandleInput {
+func experimentHandleInputsFromMap(raw map[string]any) map[string]retab.HandleInputType {
 	if raw == nil {
 		return nil
 	}
-	out := make(map[string]retab.HandleInput, len(raw))
+	out := make(map[string]retab.HandleInputType, len(raw))
 	for key, value := range raw {
 		input := retab.JSONHandleInput{}
 		if obj, ok := value.(map[string]any); ok {
@@ -89,13 +89,13 @@ func experimentHandleInputsFromMap(raw map[string]any) map[string]retab.HandleIn
 					dataCopy := data
 					input.Data = &dataCopy
 				}
-				out[key] = retab.HandleInputFromJSONHandleInput(input)
+				out[key] = retab.HandleInputTypeFromJSONHandleInput(input)
 				continue
 			}
 		}
 		dataCopy := value
 		input.Data = &dataCopy
-		out[key] = retab.HandleInputFromJSONHandleInput(input)
+		out[key] = retab.HandleInputTypeFromJSONHandleInput(input)
 	}
 	return out
 }
@@ -136,7 +136,7 @@ func workflowExperimentCell(row any, key string) string {
 var workflowsExperimentsCmd = &cobra.Command{
 	Use:     "experiments",
 	Short:   "Manage block experiments",
-	Long:    "A/B-style alternate block configurations layered on a workflow\nfor measuring quality differences.\n\nAn experiment owns a candidate block config and a set of input documents\n(either captured from past production runs, or supplied explicitly).\nRunning the experiment executes the candidate config against every\ndocument and stores the outputs in isolation - production traffic is never\naffected.\n\nCompare experiment outputs to a baseline via\n`workflows experiments metrics get`. Create a run inside an\nexperiment via `workflows experiments runs create`.\n\nFor deterministic regression testing of a single pinned assertion, see\n`retab workflows tests --help`.",
+	Long:    "A/B-style alternate block configurations layered on a workflow\nfor measuring quality differences.\n\nAn experiment owns a candidate block config and a set of input documents\n(either captured from past production runs, or supplied explicitly).\nRunning the experiment executes the candidate config against every\ndocument and stores the outputs in isolation - production traffic is never\naffected.\n\nCompare experiment outputs to a baseline via\n`workflows experiments metrics get`. Create a run inside an\nexperiment via `workflows experiments runs create`.\n\nFor deterministic regression evals of a single pinned assertion, see\n`retab workflows evals --help`.",
 	Example: "  # List experiments for a workflow\n  retab workflows experiments list wf_abc123\n\n  # Create an experiment on one block, capturing documents from real runs\n  retab workflows experiments create wf_abc123 \\\n    --block-id blk_extract_1 \\\n    --name \"Tighter schema v2\" \\\n    --captures-file ./captures.json\n\n  # Inspect quality metrics\n  retab workflows experiments metrics get exprun_abc --view summary",
 }
 

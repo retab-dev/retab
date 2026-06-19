@@ -194,7 +194,7 @@ describe('workflow sub-resource list envelopes', () => {
     expect(result.data[1].id).toBe('parse_456');
   });
 
-  test('tests.list sends workflow_id and deserializes WorkflowTest items', async () => {
+  test('tests.list sends workflow_id and deserializes WorkflowEval items', async () => {
     const { client, calls } = clientCapturing(
       envelope({
         id: 'test_1',
@@ -205,11 +205,11 @@ describe('workflow sub-resource list envelopes', () => {
       })
     );
 
-    const result = await client.workflows.tests.list({ workflowId: 'wf_aaa' });
+    const result = await client.workflows.evals.list({ workflowId: 'wf_aaa' });
 
     const call = lastCall(calls);
     expect(call.method).toBe('GET');
-    expect(call.path).toBe('/v1/workflows/tests');
+    expect(call.path).toBe('/v1/workflows/evals');
     expect(call.query.workflow_id).toBe('wf_aaa');
     expect(result).toBeInstanceOf(PaginatedList);
     expect(result.data.length).toBe(1);

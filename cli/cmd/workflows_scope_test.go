@@ -1,4 +1,4 @@
-//go:build !retab_oagen_cli_workflows_blocks && !retab_oagen_cli_workflows_edges && !retab_oagen_cli_workflows_experiments && !retab_oagen_cli_workflows_reviews && !retab_oagen_cli_workflows_tests
+//go:build !retab_oagen_cli_workflows_blocks && !retab_oagen_cli_workflows_edges && !retab_oagen_cli_workflows_experiments && !retab_oagen_cli_workflows_reviews && !retab_oagen_cli_workflows_evals
 
 package cmd
 
@@ -79,7 +79,7 @@ func scopeListServer(t *testing.T, gotWorkflowID *string) *httptest.Server {
 	return server
 }
 
-// withFlag sets a command flag for the duration of one test, restoring it
+// withFlag sets a command flag for the duration of one eval, restoring it
 // afterward so the package-level cobra singletons don't leak between cases.
 func withFlag(t *testing.T, cmd *cobra.Command, name, value string) {
 	t.Helper()
@@ -127,7 +127,7 @@ func TestWorkflowsScopedListsAcceptFlag(t *testing.T) {
 	}{
 		{name: "blocks", cmd: workflowsBlocksListCmd},
 		{name: "edges", cmd: workflowsEdgesListCmd},
-		{name: "tests", cmd: workflowsTestsListCmd},
+		{name: "tests", cmd: workflowsEvalsListCmd},
 		{name: "experiments", cmd: workflowsExperimentsListCmd},
 	}
 	for _, tc := range cases {
@@ -198,13 +198,13 @@ func TestWorkflowsBlocksListRequiresWorkflow(t *testing.T) {
 	}
 }
 
-// TestWorkflowsTestsRunsListAcceptsPositional pins the last command that was
-// missing from the harmonization: `tests runs list` is workspace-wide
+// TestWorkflowsEvalsRunsListAcceptsPositional pins the last command that was
+// missing from the harmonization: `evals runs list` is workspace-wide
 // (optional scope, like `runs list` / `reviews list`) and must accept the
 // workflow id positionally, not flag-only. Before the fix it was
 // `Use: "list [flags]"` with `cobra.NoArgs`, so a positional was rejected
 // outright.
-func TestWorkflowsTestsRunsListAcceptsPositional(t *testing.T) {
+func TestWorkflowsEvalsRunsListAcceptsPositional(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
 	var gotWorkflowID string
@@ -212,12 +212,12 @@ func TestWorkflowsTestsRunsListAcceptsPositional(t *testing.T) {
 	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	// Positional must be allowed by the Args validator (not NoArgs anymore).
-	if err := workflowsTestsRunsListCmd.Args(workflowsTestsRunsListCmd, []string{"wf_abc"}); err != nil {
-		t.Fatalf("tests runs list should accept one positional arg: %v", err)
+	if err := workflowsEvalsRunsListCmd.Args(workflowsEvalsRunsListCmd, []string{"wf_abc"}); err != nil {
+		t.Fatalf("evals runs list should accept one positional arg: %v", err)
 	}
 	_, stderr := captureStd(t, func() {
-		if err := workflowsTestsRunsListCmd.RunE(workflowsTestsRunsListCmd, []string{"wf_abc"}); err != nil {
-			t.Fatalf("tests runs list (positional): %v", err)
+		if err := workflowsEvalsRunsListCmd.RunE(workflowsEvalsRunsListCmd, []string{"wf_abc"}); err != nil {
+			t.Fatalf("evals runs list (positional): %v", err)
 		}
 	})
 	if stderr != "" {
@@ -230,7 +230,7 @@ func TestWorkflowsTestsRunsListAcceptsPositional(t *testing.T) {
 
 // TestWorkflowScopedListCommandsAcceptPositional is the drift guard. The
 // "identity/parent is positional, filters are flags" convention drifted once
-// (tests runs list shipped flag-only). This table walks every workflow-scoped
+// (evals runs list shipped flag-only). This table walks every workflow-scoped
 // `list` command and asserts, structurally, that each one:
 //
 //   - advertises a `workflow-id` positional in its Use string, and
@@ -249,8 +249,8 @@ func TestWorkflowScopedListCommandsAcceptPositional(t *testing.T) {
 		{name: "reviews list", cmd: workflowsReviewsListCmd},
 		{name: "blocks list", cmd: workflowsBlocksListCmd},
 		{name: "edges list", cmd: workflowsEdgesListCmd},
-		{name: "tests list", cmd: workflowsTestsListCmd},
-		{name: "tests runs list", cmd: workflowsTestsRunsListCmd},
+		{name: "evals list", cmd: workflowsEvalsListCmd},
+		{name: "evals runs list", cmd: workflowsEvalsRunsListCmd},
 		{name: "experiments list", cmd: workflowsExperimentsListCmd},
 		{name: "experiments runs list", cmd: workflowsExperimentsRunsListCmd},
 	}

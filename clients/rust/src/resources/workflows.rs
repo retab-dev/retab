@@ -9,12 +9,12 @@ use crate::models::*;
 use crate::resources::workflow_artifacts::WorkflowArtifactsApi;
 use crate::resources::workflow_blocks::WorkflowBlocksApi;
 use crate::resources::workflow_edges::WorkflowEdgesApi;
+use crate::resources::workflow_evals::WorkflowEvalsApi;
 use crate::resources::workflow_experiments::WorkflowExperimentsApi;
 use crate::resources::workflow_reviews::WorkflowReviewsApi;
 use crate::resources::workflow_runs::WorkflowRunsApi;
 use crate::resources::workflow_spec::WorkflowSpecApi;
 use crate::resources::workflow_steps::WorkflowStepsApi;
-use crate::resources::workflow_tests::WorkflowTestsApi;
 #[allow(unused_imports)]
 use serde::Serialize;
 
@@ -273,6 +273,13 @@ impl<'a> WorkflowsApi<'a> {
         }
     }
 
+    /// Access the `evals` sub-resource.
+    pub fn evals(&self) -> WorkflowEvalsApi<'a> {
+        WorkflowEvalsApi {
+            client: self.client,
+        }
+    }
+
     /// Access the `experiments` sub-resource.
     pub fn experiments(&self) -> WorkflowExperimentsApi<'a> {
         WorkflowExperimentsApi {
@@ -304,13 +311,6 @@ impl<'a> WorkflowsApi<'a> {
     /// Access the `steps` sub-resource.
     pub fn steps(&self) -> WorkflowStepsApi<'a> {
         WorkflowStepsApi {
-            client: self.client,
-        }
-    }
-
-    /// Access the `tests` sub-resource.
-    pub fn tests(&self) -> WorkflowTestsApi<'a> {
-        WorkflowTestsApi {
             client: self.client,
         }
     }

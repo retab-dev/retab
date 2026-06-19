@@ -232,7 +232,7 @@ async function main() {
     // real output handle we discovered above.
     if (!testTarget) throw new Error('no extract step with a JSON output handle to target');
     console.log(`  targeting ${testTarget.blockId} handle=${testTarget.outputHandleId}`);
-    const test = await client.workflows.tests.create(
+    const test = await client.workflows.evals.create(
       WORKFLOW_ID,
       { type: 'block', blockId: testTarget.blockId },
       { type: 'run_step', runId: created.id, stepId: testTarget.stepId },
@@ -244,43 +244,43 @@ async function main() {
       `sdk-play-test-${Date.now()}`
     );
     console.log(`  test id: ${test.id}`);
-    ok('test created', !!test.id);
+    ok('eval created', !!test.id);
 
-    const gotTest = await client.workflows.tests.get(test.id);
-    ok('test get', gotTest.id === test.id);
+    const gotEval = await client.workflows.evals.get(test.id);
+    ok('eval get', gotEval.id === test.id);
 
-    const testList = await client.workflows.tests.list({ workflowId: WORKFLOW_ID, limit: 5 });
+    const evalList = await client.workflows.evals.list({ workflowId: WORKFLOW_ID, limit: 5 });
     ok(
-      'test list',
-      testList.data.some((t) => t.id === test.id)
+      'eval list',
+      evalList.data.some((t) => t.id === test.id)
     );
 
-    const testRun = await client.workflows.tests.runs.create(WORKFLOW_ID, {
+    const evalRun = await client.workflows.evals.runs.create(WORKFLOW_ID, {
       type: 'single',
       testId: test.id,
     });
-    console.log(`  test run id: ${testRun.id} status=${lc(testRun.lifecycle)}`);
-    ok('test run created', !!testRun.id);
+    console.log(`  eval run id: ${evalRun.id} status=${lc(evalRun.lifecycle)}`);
+    ok('eval run created', !!evalRun.id);
 
     const testTerm = await pollTerminal(
-      () => client.workflows.tests.runs.get(testRun.id),
+      () => client.workflows.evals.runs.get(evalRun.id),
       (r) => lc(r.lifecycle)
     );
     console.log(
-      `  test run terminal: ${lc(testTerm.lifecycle)} total=${testTerm.totalTests} outcome=${JSON.stringify(testTerm.counts?.outcome)}`
+      `  eval run terminal: ${lc(testTerm.lifecycle)} total=${testTerm.totalTests} outcome=${JSON.stringify(testTerm.counts?.outcome)}`
     );
     ok(
-      'test run reached terminal',
+      'eval run reached terminal',
       ['completed', 'error'].includes(lc(testTerm.lifecycle)),
       lc(testTerm.lifecycle)
     );
 
-    const testResults = await client.workflows.tests.results.list({ runId: testRun.id, limit: 10 });
-    console.log(`  test results: ${testResults.data.length}`);
-    for (const r of testResults.data) {
+    const evalResults = await client.workflows.evals.results.list({ runId: evalRun.id, limit: 10 });
+    console.log(`  eval results: ${evalResults.data.length}`);
+    for (const r of evalResults.data) {
       console.log(`    - ${JSON.stringify(r).slice(0, 200)}`);
     }
-    ok('test results fetched', Array.isArray(testResults.data));
+    ok('eval results fetched', Array.isArray(evalResults.data));
   } catch (e) {
     fail++;
     console.log(`  ❌ test flow threw: ${errDetail(e)}`);

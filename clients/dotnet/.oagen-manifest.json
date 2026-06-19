@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "dotnet",
-  "generatedAt": "2026-06-18T15:12:23.256Z",
+  "generatedAt": "2026-06-19T07:55:59.537Z",
   "files": [
     "README.md",
     "Retab.csproj",
@@ -19,19 +19,20 @@
     "src/Common/RetabRequest.cs",
     "src/Common/RetabStringEnumConverterFactory.cs",
     "src/Common/Service.cs",
+    "src/Converters/EvalJsonHandleInputDiscriminatorConverter.cs",
     "src/Converters/ExistConditionDiscriminatorConverter.cs",
     "src/Converters/ExperimentSummaryMetricsResponseDiscriminatorConverter.cs",
     "src/Converters/ExtractionWorkflowArtifactDiscriminatorConverter.cs",
     "src/Converters/JsonHandleInputDiscriminatorConverter.cs",
-    "src/Converters/ManualWorkflowTestSourceDiscriminatorConverter.cs",
+    "src/Converters/ManualWorkflowEvalSourceDiscriminatorConverter.cs",
     "src/Converters/PendingBlockExecutionLifecycleDiscriminatorConverter.cs",
     "src/Converters/PendingRunDiscriminatorConverter.cs",
     "src/Converters/PendingStepLifecycleDiscriminatorConverter.cs",
+    "src/Converters/PendingWorkflowEvalRunDiscriminatorConverter.cs",
     "src/Converters/PendingWorkflowExperimentResultDiscriminatorConverter.cs",
     "src/Converters/PendingWorkflowExperimentRunDiscriminatorConverter.cs",
-    "src/Converters/PendingWorkflowTestRunDiscriminatorConverter.cs",
     "src/Converters/ReviewAlwaysDiscriminatorConverter.cs",
-    "src/Converters/WorkflowTestRunSingleScopeDiscriminatorConverter.cs",
+    "src/Converters/WorkflowEvalRunSingleScopeDiscriminatorConverter.cs",
     "src/Entities/Actor.cs",
     "src/Entities/AllItemsMatchCondition.cs",
     "src/Entities/AnyItemMatchesCondition.cs",
@@ -48,12 +49,12 @@
     "src/Entities/AwaitingReviewStepLifecycle.cs",
     "src/Entities/BBox.cs",
     "src/Entities/BetweenCondition.cs",
+    "src/Entities/BlockEvalBatchExecutionCounts.cs",
+    "src/Entities/BlockEvalLifecycleCounts.cs",
+    "src/Entities/BlockEvalOutcomeCounts.cs",
     "src/Entities/BlockExecFileHandleInput.cs",
     "src/Entities/BlockExecFileRef.cs",
     "src/Entities/BlockExecJsonHandleInput.cs",
-    "src/Entities/BlockTestBatchExecutionCounts.cs",
-    "src/Entities/BlockTestLifecycleCounts.cs",
-    "src/Entities/BlockTestOutcomeCounts.cs",
     "src/Entities/CancelWorkflowExperimentRunResponse.cs",
     "src/Entities/CancelWorkflowRequest.cs",
     "src/Entities/CancelWorkflowResponse.cs",
@@ -93,7 +94,10 @@
     "src/Entities/ErrorDetails.cs",
     "src/Entities/ErrorStepLifecycle.cs",
     "src/Entities/ErrorTerminal.cs",
-    "src/Entities/ErrorWorkflowExperimentResult.cs",
+    "src/Entities/ErrorWorkflowEvalRun.cs",
+    "src/Entities/EvalRunBlockTarget.cs",
+    "src/Entities/EvalRunFreshness.cs",
+    "src/Entities/EvalRunTrigger.cs",
     "src/Entities/ExistCondition.cs",
     "src/Entities/ExperimentByDocumentMetricsResponse.cs",
     "src/Entities/ExperimentByDocumentTargetMetric.cs",
@@ -128,11 +132,11 @@
     "src/Entities/FunctionInvocation.cs",
     "src/Entities/HttpValidationError.cs",
     "src/Entities/JsonSchemaValidCondition.cs",
-    "src/Entities/LatestBlockTestRunSummary.cs",
+    "src/Entities/LatestBlockEvalRunSummary.cs",
     "src/Entities/LengthCompareCondition.cs",
     "src/Entities/LlmJudgedAsCondition.cs",
     "src/Entities/LlmNotJudgedAsCondition.cs",
-    "src/Entities/ManualWorkflowTestSource.cs",
+    "src/Entities/ManualWorkflowEvalSource.cs",
     "src/Entities/MatcheRegexCondition.cs",
     "src/Entities/MetricsStaleErrorLastRun.cs",
     "src/Entities/NotContainsCondition.cs",
@@ -175,7 +179,7 @@
     "src/Entities/ReviewValidationFailed.cs",
     "src/Entities/ReviewVersion.cs",
     "src/Entities/RunInputs.cs",
-    "src/Entities/RunStepWorkflowTestSource.cs",
+    "src/Entities/RunStepWorkflowEvalSource.cs",
     "src/Entities/RunTiming.cs",
     "src/Entities/RunningBlockExecutionLifecycle.cs",
     "src/Entities/SchemaGeneration.cs",
@@ -198,7 +202,6 @@
     "src/Entities/StoredBlockExecution.cs",
     "src/Entities/Subdocument.cs",
     "src/Entities/SubmitDecisionResponse.cs",
-    "src/Entities/TriggerInfo.cs",
     "src/Entities/ValidateWorkflowBlockConfigResponse.cs",
     "src/Entities/ValidationError.cs",
     "src/Entities/VerdictSummary.cs",
@@ -214,6 +217,12 @@
     "src/Entities/WorkflowEdgeDoc.cs",
     "src/Entities/WorkflowEdgeVersion.cs",
     "src/Entities/WorkflowEdgeVersionDiff.cs",
+    "src/Entities/WorkflowEval.cs",
+    "src/Entities/WorkflowEvalResult.cs",
+    "src/Entities/WorkflowEvalRun.cs",
+    "src/Entities/WorkflowEvalRunBlockScope.cs",
+    "src/Entities/WorkflowEvalRunSingleScope.cs",
+    "src/Entities/WorkflowEvalRunWorkflowScope.cs",
     "src/Entities/WorkflowExperiment.cs",
     "src/Entities/WorkflowExportPayloadResponse.cs",
     "src/Entities/WorkflowGraphVersion.cs",
@@ -240,13 +249,6 @@
     "src/Entities/WorkflowTableValidationColumnRule.cs",
     "src/Entities/WorkflowTableValidationDiagnostic.cs",
     "src/Entities/WorkflowTableValidationResponse.cs",
-    "src/Entities/WorkflowTest.cs",
-    "src/Entities/WorkflowTestBlockTarget.cs",
-    "src/Entities/WorkflowTestResult.cs",
-    "src/Entities/WorkflowTestRun.cs",
-    "src/Entities/WorkflowTestRunBlockScope.cs",
-    "src/Entities/WorkflowTestRunSingleScope.cs",
-    "src/Entities/WorkflowTestRunWorkflowScope.cs",
     "src/Entities/WorkflowVersionFieldDiff.cs",
     "src/Enums/ActorKind.cs",
     "src/Enums/ArtifactDriftStatus.cs",
@@ -266,12 +268,13 @@
     "src/Enums/DeclarativePlanResourceChangeType.cs",
     "src/Enums/ErrorStepLifecycleCategory.cs",
     "src/Enums/ErrorStepLifecycleStage.cs",
+    "src/Enums/EvalRunTriggerType.cs",
     "src/Enums/ExperimentBlockType.cs",
     "src/Enums/ExperimentPublicStatus.cs",
     "src/Enums/ExperimentRunMetricsView.cs",
     "src/Enums/ExperimentSchemaDriftStatus.cs",
     "src/Enums/FieldType.cs",
-    "src/Enums/LatestBlockTestRunSummaryStatus.cs",
+    "src/Enums/LatestBlockEvalRunSummaryStatus.cs",
     "src/Enums/LengthCompareConditionOp.cs",
     "src/Enums/ParseRequestTableParsingFormat.cs",
     "src/Enums/PublicHandlePayloadType.cs",
@@ -282,7 +285,6 @@
     "src/Enums/SourcesResponseDocumentType.cs",
     "src/Enums/StepArtifactRefOperation.cs",
     "src/Enums/SubmissionStatus.cs",
-    "src/Enums/TriggerInfoType.cs",
     "src/Enums/UpdateWorkflowBlockRequestConfigMode.cs",
     "src/Enums/WhileLoopTerminationTerminationReason.cs",
     "src/Enums/WorkflowAuthzStatus.cs",
@@ -337,6 +339,12 @@
     "src/Services/WorkflowBlocks/_interfaces/WorkflowBlocksOptions.cs",
     "src/Services/WorkflowEdges/WorkflowEdgesService.cs",
     "src/Services/WorkflowEdges/_interfaces/WorkflowEdgesOptions.cs",
+    "src/Services/WorkflowEvalRunResults/WorkflowEvalRunResultsService.cs",
+    "src/Services/WorkflowEvalRunResults/_interfaces/WorkflowEvalRunResultsOptions.cs",
+    "src/Services/WorkflowEvalRuns/WorkflowEvalRunsService.cs",
+    "src/Services/WorkflowEvalRuns/_interfaces/WorkflowEvalRunsOptions.cs",
+    "src/Services/WorkflowEvals/WorkflowEvalsService.cs",
+    "src/Services/WorkflowEvals/_interfaces/WorkflowEvalsOptions.cs",
     "src/Services/WorkflowExperiments/WorkflowExperimentsService.cs",
     "src/Services/WorkflowExperiments/_interfaces/WorkflowExperimentsOptions.cs",
     "src/Services/WorkflowReviewVersions/WorkflowReviewVersionsService.cs",
@@ -349,12 +357,6 @@
     "src/Services/WorkflowSpec/_interfaces/WorkflowSpecOptions.cs",
     "src/Services/WorkflowSteps/WorkflowStepsService.cs",
     "src/Services/WorkflowSteps/_interfaces/WorkflowStepsOptions.cs",
-    "src/Services/WorkflowTestRunResults/WorkflowTestRunResultsService.cs",
-    "src/Services/WorkflowTestRunResults/_interfaces/WorkflowTestRunResultsOptions.cs",
-    "src/Services/WorkflowTestRuns/WorkflowTestRunsService.cs",
-    "src/Services/WorkflowTestRuns/_interfaces/WorkflowTestRunsOptions.cs",
-    "src/Services/WorkflowTests/WorkflowTestsService.cs",
-    "src/Services/WorkflowTests/_interfaces/WorkflowTestsOptions.cs",
     "src/Services/Workflows/WorkflowsService.cs",
     "src/Services/Workflows/_interfaces/WorkflowsOptions.cs",
     "src/WorkflowRunDocumentInput.cs",
@@ -758,6 +760,50 @@
       "sdkMethod": "DeleteAsync",
       "service": "workflows.edges"
     },
+    "GET /v1/workflows/evals": {
+      "sdkMethod": "ListAsync",
+      "service": "workflows.evals"
+    },
+    "POST /v1/workflows/evals": {
+      "sdkMethod": "CreateAsync",
+      "service": "workflows.evals"
+    },
+    "GET /v1/workflows/evals/{eval_id}": {
+      "sdkMethod": "GetAsync",
+      "service": "workflows.evals"
+    },
+    "PATCH /v1/workflows/evals/{eval_id}": {
+      "sdkMethod": "UpdateAsync",
+      "service": "workflows.evals"
+    },
+    "DELETE /v1/workflows/evals/{eval_id}": {
+      "sdkMethod": "DeleteAsync",
+      "service": "workflows.evals"
+    },
+    "GET /v1/workflows/evals/results": {
+      "sdkMethod": "ListAsync",
+      "service": "workflows.evals.results"
+    },
+    "GET /v1/workflows/evals/results/{result_id}": {
+      "sdkMethod": "GetAsync",
+      "service": "workflows.evals.results"
+    },
+    "GET /v1/workflows/evals/runs": {
+      "sdkMethod": "ListAsync",
+      "service": "workflows.evals.runs"
+    },
+    "POST /v1/workflows/evals/runs": {
+      "sdkMethod": "CreateAsync",
+      "service": "workflows.evals.runs"
+    },
+    "GET /v1/workflows/evals/runs/{run_id}": {
+      "sdkMethod": "GetAsync",
+      "service": "workflows.evals.runs"
+    },
+    "POST /v1/workflows/evals/runs/{run_id}/cancel": {
+      "sdkMethod": "CancelAsync",
+      "service": "workflows.evals.runs"
+    },
     "GET /v1/workflows/experiments": {
       "sdkMethod": "ListAsync",
       "service": "workflows.experiments"
@@ -877,50 +923,6 @@
     "GET /v1/workflows/steps/{step_id}": {
       "sdkMethod": "GetAsync",
       "service": "workflows.steps"
-    },
-    "GET /v1/workflows/tests": {
-      "sdkMethod": "ListAsync",
-      "service": "workflows.tests"
-    },
-    "POST /v1/workflows/tests": {
-      "sdkMethod": "CreateAsync",
-      "service": "workflows.tests"
-    },
-    "GET /v1/workflows/tests/{test_id}": {
-      "sdkMethod": "GetAsync",
-      "service": "workflows.tests"
-    },
-    "PATCH /v1/workflows/tests/{test_id}": {
-      "sdkMethod": "UpdateAsync",
-      "service": "workflows.tests"
-    },
-    "DELETE /v1/workflows/tests/{test_id}": {
-      "sdkMethod": "DeleteAsync",
-      "service": "workflows.tests"
-    },
-    "GET /v1/workflows/tests/results": {
-      "sdkMethod": "ListAsync",
-      "service": "workflows.tests.results"
-    },
-    "GET /v1/workflows/tests/results/{result_id}": {
-      "sdkMethod": "GetAsync",
-      "service": "workflows.tests.results"
-    },
-    "GET /v1/workflows/tests/runs": {
-      "sdkMethod": "ListAsync",
-      "service": "workflows.tests.runs"
-    },
-    "POST /v1/workflows/tests/runs": {
-      "sdkMethod": "CreateAsync",
-      "service": "workflows.tests.runs"
-    },
-    "GET /v1/workflows/tests/runs/{run_id}": {
-      "sdkMethod": "GetAsync",
-      "service": "workflows.tests.runs"
-    },
-    "POST /v1/workflows/tests/runs/{run_id}/cancel": {
-      "sdkMethod": "CancelAsync",
-      "service": "workflows.tests.runs"
     }
   }
 }

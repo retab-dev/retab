@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "rust",
-  "generatedAt": "2026-06-18T15:12:42.965Z",
+  "generatedAt": "2026-06-19T07:56:12.989Z",
   "files": [
     "Cargo.toml",
     "LICENSE-MIT",
@@ -37,6 +37,9 @@
     "src/enums/error_step_lifecycle_stage.rs",
     "src/enums/error_terminal_category.rs",
     "src/enums/error_terminal_stage.rs",
+    "src/enums/eval_run_freshness_reasons.rs",
+    "src/enums/eval_run_freshness_status.rs",
+    "src/enums/eval_run_trigger_type.rs",
     "src/enums/experiment_block_type.rs",
     "src/enums/experiment_public_status.rs",
     "src/enums/experiment_result_block_type.rs",
@@ -55,8 +58,8 @@
     "src/enums/file_blueprint_mode.rs",
     "src/enums/file_blueprint_status.rs",
     "src/enums/files_order.rs",
-    "src/enums/latest_block_test_run_summary_outcome.rs",
-    "src/enums/latest_block_test_run_summary_status.rs",
+    "src/enums/latest_block_eval_run_summary_outcome.rs",
+    "src/enums/latest_block_eval_run_summary_status.rs",
     "src/enums/length_compare_condition_op.rs",
     "src/enums/mod.rs",
     "src/enums/n_consensus_value.rs",
@@ -100,6 +103,11 @@
     "src/enums/workflow_block_version_type.rs",
     "src/enums/workflow_capabilities.rs",
     "src/enums/workflow_config_block_type.rs",
+    "src/enums/workflow_eval_result_verdict.rs",
+    "src/enums/workflow_eval_run_results_order.rs",
+    "src/enums/workflow_eval_runs_order.rs",
+    "src/enums/workflow_eval_schema_drift.rs",
+    "src/enums/workflow_evals_order.rs",
     "src/enums/workflow_experiments_exclude_status.rs",
     "src/enums/workflow_experiments_order.rs",
     "src/enums/workflow_experiments_status.rs",
@@ -117,11 +125,6 @@
     "src/enums/workflow_table_sort_direction.rs",
     "src/enums/workflow_table_validation_column_rule_type.rs",
     "src/enums/workflow_table_validation_severity.rs",
-    "src/enums/workflow_test_result_verdict.rs",
-    "src/enums/workflow_test_run_results_order.rs",
-    "src/enums/workflow_test_runs_order.rs",
-    "src/enums/workflow_test_schema_drift.rs",
-    "src/enums/workflow_tests_order.rs",
     "src/enums/workflows_order.rs",
     "src/error.rs",
     "src/lib.rs",
@@ -144,22 +147,22 @@
     "src/models/awaiting_review_step_lifecycle.rs",
     "src/models/b_box.rs",
     "src/models/between_condition.rs",
+    "src/models/block_eval_batch_execution_counts.rs",
+    "src/models/block_eval_lifecycle_counts.rs",
+    "src/models/block_eval_outcome_counts.rs",
     "src/models/block_exec_file_handle_input.rs",
     "src/models/block_exec_file_ref.rs",
     "src/models/block_exec_json_handle_input.rs",
     "src/models/block_execution_list.rs",
-    "src/models/block_test_batch_execution_counts.rs",
-    "src/models/block_test_lifecycle_counts.rs",
-    "src/models/block_test_outcome_counts.rs",
     "src/models/cancel_workflow_experiment_run_response.rs",
     "src/models/cancel_workflow_request.rs",
     "src/models/cancel_workflow_response.rs",
     "src/models/cancelled_block_execution_lifecycle.rs",
     "src/models/cancelled_step_lifecycle.rs",
     "src/models/cancelled_terminal.rs",
+    "src/models/cancelled_workflow_eval_run.rs",
     "src/models/cancelled_workflow_experiment_result.rs",
     "src/models/cancelled_workflow_experiment_run.rs",
-    "src/models/cancelled_workflow_test_run.rs",
     "src/models/category.rs",
     "src/models/classification.rs",
     "src/models/classification_consensus.rs",
@@ -171,9 +174,9 @@
     "src/models/completed_block_execution_lifecycle.rs",
     "src/models/completed_step_lifecycle.rs",
     "src/models/completed_terminal.rs",
+    "src/models/completed_workflow_eval_run.rs",
     "src/models/completed_workflow_experiment_result.rs",
     "src/models/completed_workflow_experiment_run.rs",
-    "src/models/completed_workflow_test_run.rs",
     "src/models/condition_evaluation_details.rs",
     "src/models/condition_evaluation_per_item.rs",
     "src/models/condition_evaluation_result.rs",
@@ -189,11 +192,11 @@
     "src/models/create_review_version_request.rs",
     "src/models/create_secret_request.rs",
     "src/models/create_upload_response.rs",
+    "src/models/create_workflow_eval_request.rs",
+    "src/models/create_workflow_eval_run_request.rs",
     "src/models/create_workflow_request.rs",
     "src/models/create_workflow_run_request.rs",
     "src/models/create_workflow_table_upload_request.rs",
-    "src/models/create_workflow_test_request.rs",
-    "src/models/create_workflow_test_run_request.rs",
     "src/models/declarative_apply_response.rs",
     "src/models/declarative_export_response.rs",
     "src/models/declarative_plan_change.rs",
@@ -217,9 +220,15 @@
     "src/models/error_details.rs",
     "src/models/error_step_lifecycle.rs",
     "src/models/error_terminal.rs",
+    "src/models/error_workflow_eval_run.rs",
     "src/models/error_workflow_experiment_result.rs",
     "src/models/error_workflow_experiment_run.rs",
-    "src/models/error_workflow_test_run.rs",
+    "src/models/eval_file_handle_input.rs",
+    "src/models/eval_json_handle_input.rs",
+    "src/models/eval_public_file_ref.rs",
+    "src/models/eval_run_block_target.rs",
+    "src/models/eval_run_freshness.rs",
+    "src/models/eval_run_trigger.rs",
     "src/models/exist_condition.rs",
     "src/models/experiment_by_document_metrics_response.rs",
     "src/models/experiment_by_document_target_metric.rs",
@@ -263,12 +272,12 @@
     "src/models/http_validation_error.rs",
     "src/models/json_handle_input.rs",
     "src/models/json_schema_valid_condition.rs",
-    "src/models/latest_block_test_run_summary.rs",
+    "src/models/latest_block_eval_run_summary.rs",
     "src/models/length_compare_condition.rs",
     "src/models/list_metadata.rs",
     "src/models/llm_judged_as_condition.rs",
     "src/models/llm_not_judged_as_condition.rs",
-    "src/models/manual_workflow_test_source.rs",
+    "src/models/manual_workflow_eval_source.rs",
     "src/models/matche_regex_condition.rs",
     "src/models/metrics_stale_error_last_run.rs",
     "src/models/mime_data.rs",
@@ -294,20 +303,21 @@
     "src/models/pending_block_execution_lifecycle.rs",
     "src/models/pending_run.rs",
     "src/models/pending_step_lifecycle.rs",
+    "src/models/pending_workflow_eval_run.rs",
     "src/models/pending_workflow_experiment_result.rs",
     "src/models/pending_workflow_experiment_run.rs",
-    "src/models/pending_workflow_test_run.rs",
     "src/models/primitive_error.rs",
     "src/models/public_handle_payload.rs",
     "src/models/publish_workflow_request.rs",
     "src/models/query_workflow_table_request.rs",
     "src/models/queued_block_execution_lifecycle.rs",
     "src/models/queued_step_lifecycle.rs",
+    "src/models/queued_workflow_eval_run.rs",
     "src/models/queued_workflow_experiment_result.rs",
     "src/models/queued_workflow_experiment_run.rs",
-    "src/models/queued_workflow_test_run.rs",
     "src/models/reject_review_request.rs",
     "src/models/replace_workflow_table_upload_request.rs",
+    "src/models/result_file_ref.rs",
     "src/models/retab_usage.rs",
     "src/models/review.rs",
     "src/models/review_all_of.rs",
@@ -328,14 +338,14 @@
     "src/models/review_validation_failed.rs",
     "src/models/review_version.rs",
     "src/models/run_inputs.rs",
-    "src/models/run_step_workflow_test_source.rs",
+    "src/models/run_step_workflow_eval_source.rs",
     "src/models/run_timing.rs",
     "src/models/running_block_execution_lifecycle.rs",
     "src/models/running_run.rs",
     "src/models/running_step_lifecycle.rs",
+    "src/models/running_workflow_eval_run.rs",
     "src/models/running_workflow_experiment_result.rs",
     "src/models/running_workflow_experiment_run.rs",
-    "src/models/running_workflow_test_run.rs",
     "src/models/schema_generation.rs",
     "src/models/secret.rs",
     "src/models/secret_list_response.rs",
@@ -364,9 +374,9 @@
     "src/models/update_edit_template_request.rs",
     "src/models/update_experiment_request.rs",
     "src/models/update_workflow_block_request.rs",
+    "src/models/update_workflow_eval_request.rs",
     "src/models/update_workflow_request.rs",
     "src/models/update_workflow_table_request.rs",
-    "src/models/update_workflow_test_request.rs",
     "src/models/upload_file_request.rs",
     "src/models/validate_workflow_block_config_request.rs",
     "src/models/validate_workflow_block_config_response.rs",
@@ -391,6 +401,17 @@
     "src/models/workflow_edge_version.rs",
     "src/models/workflow_edge_version_diff.rs",
     "src/models/workflow_edge_version_list.rs",
+    "src/models/workflow_eval.rs",
+    "src/models/workflow_eval_block_target.rs",
+    "src/models/workflow_eval_list.rs",
+    "src/models/workflow_eval_result.rs",
+    "src/models/workflow_eval_result_list.rs",
+    "src/models/workflow_eval_run.rs",
+    "src/models/workflow_eval_run_block_scope.rs",
+    "src/models/workflow_eval_run_list.rs",
+    "src/models/workflow_eval_run_single_scope.rs",
+    "src/models/workflow_eval_run_timing.rs",
+    "src/models/workflow_eval_run_workflow_scope.rs",
     "src/models/workflow_experiment.rs",
     "src/models/workflow_experiment_list.rs",
     "src/models/workflow_experiment_result_list.rs",
@@ -429,17 +450,6 @@
     "src/models/workflow_table_validation_diagnostic.rs",
     "src/models/workflow_table_validation_request.rs",
     "src/models/workflow_table_validation_response.rs",
-    "src/models/workflow_test.rs",
-    "src/models/workflow_test_block_target.rs",
-    "src/models/workflow_test_list.rs",
-    "src/models/workflow_test_result.rs",
-    "src/models/workflow_test_result_list.rs",
-    "src/models/workflow_test_run.rs",
-    "src/models/workflow_test_run_block_scope.rs",
-    "src/models/workflow_test_run_list.rs",
-    "src/models/workflow_test_run_single_scope.rs",
-    "src/models/workflow_test_run_timing.rs",
-    "src/models/workflow_test_run_workflow_scope.rs",
     "src/models/workflow_version_field_diff.rs",
     "src/pagination.rs",
     "src/query.rs",
@@ -462,15 +472,15 @@
     "src/resources/workflow_block_executions.rs",
     "src/resources/workflow_blocks.rs",
     "src/resources/workflow_edges.rs",
+    "src/resources/workflow_eval_run_results.rs",
+    "src/resources/workflow_eval_runs.rs",
+    "src/resources/workflow_evals.rs",
     "src/resources/workflow_experiments.rs",
     "src/resources/workflow_review_versions.rs",
     "src/resources/workflow_reviews.rs",
     "src/resources/workflow_runs.rs",
     "src/resources/workflow_spec.rs",
     "src/resources/workflow_steps.rs",
-    "src/resources/workflow_test_run_results.rs",
-    "src/resources/workflow_test_runs.rs",
-    "src/resources/workflow_tests.rs",
     "src/resources/workflows.rs",
     "src/resources_api.rs",
     "src/secret.rs",
@@ -874,6 +884,50 @@
       "sdkMethod": "delete",
       "service": "workflows.edges"
     },
+    "GET /v1/workflows/evals": {
+      "sdkMethod": "list",
+      "service": "workflows.evals"
+    },
+    "POST /v1/workflows/evals": {
+      "sdkMethod": "create",
+      "service": "workflows.evals"
+    },
+    "GET /v1/workflows/evals/{eval_id}": {
+      "sdkMethod": "get",
+      "service": "workflows.evals"
+    },
+    "PATCH /v1/workflows/evals/{eval_id}": {
+      "sdkMethod": "update",
+      "service": "workflows.evals"
+    },
+    "DELETE /v1/workflows/evals/{eval_id}": {
+      "sdkMethod": "delete",
+      "service": "workflows.evals"
+    },
+    "GET /v1/workflows/evals/results": {
+      "sdkMethod": "list",
+      "service": "workflows.evals.results"
+    },
+    "GET /v1/workflows/evals/results/{result_id}": {
+      "sdkMethod": "get",
+      "service": "workflows.evals.results"
+    },
+    "GET /v1/workflows/evals/runs": {
+      "sdkMethod": "list",
+      "service": "workflows.evals.runs"
+    },
+    "POST /v1/workflows/evals/runs": {
+      "sdkMethod": "create",
+      "service": "workflows.evals.runs"
+    },
+    "GET /v1/workflows/evals/runs/{run_id}": {
+      "sdkMethod": "get",
+      "service": "workflows.evals.runs"
+    },
+    "POST /v1/workflows/evals/runs/{run_id}/cancel": {
+      "sdkMethod": "cancel",
+      "service": "workflows.evals.runs"
+    },
     "GET /v1/workflows/experiments": {
       "sdkMethod": "list",
       "service": "workflows.experiments"
@@ -993,50 +1047,6 @@
     "GET /v1/workflows/steps/{step_id}": {
       "sdkMethod": "get",
       "service": "workflows.steps"
-    },
-    "GET /v1/workflows/tests": {
-      "sdkMethod": "list",
-      "service": "workflows.tests"
-    },
-    "POST /v1/workflows/tests": {
-      "sdkMethod": "create",
-      "service": "workflows.tests"
-    },
-    "GET /v1/workflows/tests/{test_id}": {
-      "sdkMethod": "get",
-      "service": "workflows.tests"
-    },
-    "PATCH /v1/workflows/tests/{test_id}": {
-      "sdkMethod": "update",
-      "service": "workflows.tests"
-    },
-    "DELETE /v1/workflows/tests/{test_id}": {
-      "sdkMethod": "delete",
-      "service": "workflows.tests"
-    },
-    "GET /v1/workflows/tests/results": {
-      "sdkMethod": "list",
-      "service": "workflows.tests.results"
-    },
-    "GET /v1/workflows/tests/results/{result_id}": {
-      "sdkMethod": "get",
-      "service": "workflows.tests.results"
-    },
-    "GET /v1/workflows/tests/runs": {
-      "sdkMethod": "list",
-      "service": "workflows.tests.runs"
-    },
-    "POST /v1/workflows/tests/runs": {
-      "sdkMethod": "create",
-      "service": "workflows.tests.runs"
-    },
-    "GET /v1/workflows/tests/runs/{run_id}": {
-      "sdkMethod": "get",
-      "service": "workflows.tests.runs"
-    },
-    "POST /v1/workflows/tests/runs/{run_id}/cancel": {
-      "sdkMethod": "cancel",
-      "service": "workflows.tests.runs"
     }
   }
 }

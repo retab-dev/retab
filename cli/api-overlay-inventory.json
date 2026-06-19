@@ -35,7 +35,7 @@
     "create_table",
     "create_template",
     "create_test",
-    "create_test_run",
+    "create_eval_run",
     "create_workflow",
     "create_workflow_run",
     "delete_block",

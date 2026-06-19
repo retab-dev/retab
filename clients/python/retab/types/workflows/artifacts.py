@@ -287,7 +287,6 @@ class ExtractionWorkflowArtifact(BaseModel):
     model: str = Field(..., description="Model used for the extraction")
     json_schema: dict[str, Any] = Field(..., description="JSON schema used for the extraction")
     n_consensus: int | None = Field(default=1, description="Number of consensus votes used")
-    image_resolution_dpi: int | None = Field(default=None, description="Legacy stored DPI value, retained only for compatibility.")
     instructions: str | None = Field(default=None, description="Free-form instructions supplied with the extraction request.")
     output: dict[str, Any] = Field(..., description="The extracted structured data")
     status: EditWorkflowArtifactStatus | None = Field(
@@ -333,7 +332,6 @@ class ParseWorkflowArtifact(BaseModel):
     file: FileRef = Field(..., description="Information about the parsed file")
     model: str = Field(..., description="Model used for parsing")
     table_parsing_format: ParseWorkflowArtifactTableParsingFormat = Field(..., description="Format used to render tables extracted from the document")
-    image_resolution_dpi: int = Field(..., description="Legacy stored DPI value, retained only for compatibility.")
     instructions: str | None = Field(default=None, description="Free-form instructions supplied with the parse request.")
     output: ParseOutput = Field(..., description="The parsed document content")
     status: EditWorkflowArtifactStatus | None = Field(

@@ -3,6 +3,7 @@
 package cmd
 
 import (
+	"bytes"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -10,6 +11,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/spf13/cobra"
 )
 
 func TestWorkflowsBlocksCreateHelpShowsExtractReviewConfig(t *testing.T) {
@@ -23,8 +26,20 @@ func TestWorkflowsBlocksCreateHelpShowsExtractReviewConfig(t *testing.T) {
 		`"kind": "always"`,
 		`"inputs": [{"name": "document", "type": "file", "is_primary": true}]`,
 		`any_required_field_null`,
+		`confidence_lt`,
+		`field_confidence_lt`,
+		`top_margin_lt`,
+		`boundary_confidence_lt`,
 		`split_count_neq`,
 		`category_in`,
+		`json_condition`,
+		`n_consensus`,
+		`n_consensus > 1`,
+		`output-json-0`,
+		`likelihoods.invoice_total`,
+		`likelihoods.splits.invoice_type`,
+		`"n_consensus": 3`,
+		`"path": "likelihoods.invoice_total"`,
 	} {
 		if !strings.Contains(help, want) {
 			t.Fatalf("blocks create help should show review config fragment %q, got:\n%s", want, help)
@@ -33,6 +48,66 @@ func TestWorkflowsBlocksCreateHelpShowsExtractReviewConfig(t *testing.T) {
 	if strings.Contains(help, "review gate") {
 		t.Fatalf("blocks create help should use review-centric wording, got:\n%s", help)
 	}
+}
+
+func TestWorkflowsBlocksCreateRenderedHelpShowsConsensusReviewConfig(t *testing.T) {
+	help := renderWorkflowBlocksHelpForTest(t, workflowsBlocksCreateCmd)
+
+	for _, want := range []string{
+		"Reviewable block types",
+		"Consensus criteria require `n_consensus > 1`",
+		"`confidence_lt`",
+		"`field_confidence_lt`",
+		"`top_margin_lt`",
+		"`boundary_confidence_lt`",
+		"`json_condition`",
+		"`likelihoods.invoice_total`",
+		"`likelihoods.splits.invoice_type`",
+		"extract-consensus-review.json",
+		`"n_consensus": 3`,
+		`"path": "likelihoods.invoice_total"`,
+		`"operator": "is_less_than"`,
+		`"value": 0.85`,
+	} {
+		if !strings.Contains(help, want) {
+			t.Fatalf("rendered blocks create help should contain %q, got:\n%s", want, help)
+		}
+	}
+	for _, stale := range []string{"review gate", "`review` block", "`hil`"} {
+		if strings.Contains(help, stale) {
+			t.Fatalf("rendered blocks create help should not contain stale %q, got:\n%s", stale, help)
+		}
+	}
+}
+
+func TestWorkflowsBlocksCreateConsensusReviewExampleParses(t *testing.T) {
+	raw := extractHelpJSONHeredoc(t, workflowsBlocksCreateCmd.Example, "extract-consensus-review.json")
+	var obj map[string]any
+	if err := json.Unmarshal([]byte(raw), &obj); err != nil {
+		t.Fatalf("consensus review example should be valid JSON, got %v for:\n%s", err, raw)
+	}
+
+	req, err := parseBlockCreate(obj)
+	if err != nil {
+		t.Fatalf("consensus review example should parse as a block create request: %v", err)
+	}
+	if req.ID != nil {
+		t.Fatalf("consensus review example should let the server generate an id, got %q", *req.ID)
+	}
+	if req.Type != "extract" {
+		t.Fatalf("consensus review example type = %q, want extract", req.Type)
+	}
+	if req.Config == nil {
+		t.Fatal("consensus review example should preserve config")
+	}
+	cfg := *req.Config
+	if got := cfg["n_consensus"]; got != float64(3) {
+		t.Fatalf("n_consensus = %#v, want 3", got)
+	}
+	if _, ok := cfg["hil"]; ok {
+		t.Fatalf("consensus review example should not use legacy config.hil: %#v", cfg)
+	}
+	assertConsensusReviewPredicate(t, cfg, "json_condition", "likelihoods.invoice_total", "is_less_than", float64(0.85))
 }
 
 func TestWorkflowsBlocksHelpUsesReviewCentricBlockNames(t *testing.T) {
@@ -59,6 +134,9 @@ func TestWorkflowsBlocksUpdateHelpShowsReviewConfig(t *testing.T) {
 		`"kind":"always"`,
 		`--merge-config-file -`,
 		`when replacing the whole typed config`,
+		`n_consensus`,
+		`confidence_lt`,
+		`"threshold":0.8`,
 	} {
 		if !strings.Contains(help, want) {
 			t.Fatalf("blocks update help should show review config guidance %q, got:\n%s", want, help)
@@ -71,6 +149,58 @@ func TestWorkflowsBlocksUpdateHelpShowsReviewConfig(t *testing.T) {
 	}
 }
 
+func TestWorkflowsBlocksUpdateRenderedHelpShowsConsensusPatch(t *testing.T) {
+	help := renderWorkflowBlocksHelpForTest(t, workflowsBlocksUpdateCmd)
+
+	for _, want := range []string{
+		"For consensus-based review, patch both `n_consensus` and `review`",
+		`{"n_consensus":3,"review":{"predicate":{"kind":"confidence_lt","threshold":0.8}}}`,
+		"Add consensus review to an extract or classifier block",
+	} {
+		if !strings.Contains(help, want) {
+			t.Fatalf("rendered blocks update help should contain %q, got:\n%s", want, help)
+		}
+	}
+}
+
+func TestWorkflowsBlocksUpdateConsensusPatchExampleMerges(t *testing.T) {
+	raw := extractPrintfJSONContaining(t, workflowsBlocksUpdateCmd.Example, `"n_consensus":3`)
+	var patch map[string]any
+	if err := json.Unmarshal([]byte(raw), &patch); err != nil {
+		t.Fatalf("consensus review update example should be valid JSON, got %v for:\n%s", err, raw)
+	}
+
+	merged := mergeWorkflowBlockConfig(
+		map[string]any{
+			"model": "retab-small",
+			"json_schema": map[string]any{
+				"type": "object",
+			},
+		},
+		patch,
+	)
+	if got := merged["model"]; got != "retab-small" {
+		t.Fatalf("merge patch should preserve existing model, got %#v", got)
+	}
+	if got := merged["n_consensus"]; got != float64(3) {
+		t.Fatalf("merged n_consensus = %#v, want 3", got)
+	}
+	review, ok := merged["review"].(map[string]any)
+	if !ok {
+		t.Fatalf("merged review should be an object, got %#v", merged["review"])
+	}
+	predicate, ok := review["predicate"].(map[string]any)
+	if !ok {
+		t.Fatalf("merged review.predicate should be an object, got %#v", review["predicate"])
+	}
+	if got := predicate["kind"]; got != "confidence_lt" {
+		t.Fatalf("merged predicate kind = %#v, want confidence_lt", got)
+	}
+	if got := predicate["threshold"]; got != float64(0.8) {
+		t.Fatalf("merged predicate threshold = %#v, want 0.8", got)
+	}
+}
+
 func TestWorkflowsBlocksHelpDoesNotAdvertiseStandaloneReviewBlock(t *testing.T) {
 	for _, help := range []string{workflowsBlocksCmd.Long, workflowsBlocksCreateCmd.Long} {
 		if strings.Contains(help, "`review`") {
@@ -79,6 +209,101 @@ func TestWorkflowsBlocksHelpDoesNotAdvertiseStandaloneReviewBlock(t *testing.T) 
 	}
 	if !strings.Contains(workflowsBlocksCreateCmd.Long, "Review is not a standalone block type") {
 		t.Fatalf("blocks create help should state that review is configured inside block configs:\n%s", workflowsBlocksCreateCmd.Long)
+	}
+}
+
+func renderWorkflowBlocksHelpForTest(t *testing.T, cmd *cobra.Command) string {
+	t.Helper()
+	var buf bytes.Buffer
+	cmd.SetOut(&buf)
+	cmd.SetErr(&buf)
+	t.Cleanup(func() {
+		cmd.SetOut(nil)
+		cmd.SetErr(nil)
+	})
+	if err := cmd.Help(); err != nil {
+		t.Fatalf("render help for %s: %v", cmd.Use, err)
+	}
+	return buf.String()
+}
+
+func extractHelpJSONHeredoc(t *testing.T, text string, filename string) string {
+	t.Helper()
+	marker := "cat > " + filename + " <<'JSON'"
+	start := strings.Index(text, marker)
+	if start < 0 {
+		t.Fatalf("could not find heredoc marker %q in:\n%s", marker, text)
+	}
+	lines := strings.Split(text[start+len(marker):], "\n")
+	collected := make([]string, 0, len(lines))
+	for _, line := range lines {
+		if strings.TrimSpace(line) == "JSON" {
+			if len(collected) == 0 {
+				t.Fatalf("heredoc %q was empty in:\n%s", filename, text)
+			}
+			return strings.Join(collected, "\n")
+		}
+		collected = append(collected, line)
+	}
+	t.Fatalf("could not find closing JSON marker for %q in:\n%s", filename, text)
+	return ""
+}
+
+func extractPrintfJSONContaining(t *testing.T, text string, needle string) string {
+	t.Helper()
+	for _, line := range strings.Split(text, "\n") {
+		line = strings.TrimSpace(line)
+		if !strings.HasPrefix(line, "printf '") || !strings.Contains(line, needle) {
+			continue
+		}
+		rest := strings.TrimPrefix(line, "printf '")
+		end := strings.Index(rest, "'")
+		if end < 0 {
+			t.Fatalf("printf JSON line is missing closing quote: %s", line)
+		}
+		return rest[:end]
+	}
+	t.Fatalf("could not find printf JSON containing %q in:\n%s", needle, text)
+	return ""
+}
+
+func assertConsensusReviewPredicate(t *testing.T, cfg map[string]any, wantKind string, wantPath string, wantOperator string, wantValue any) {
+	t.Helper()
+	review, ok := cfg["review"].(map[string]any)
+	if !ok {
+		t.Fatalf("review should be an object, got %#v", cfg["review"])
+	}
+	predicate, ok := review["predicate"].(map[string]any)
+	if !ok {
+		t.Fatalf("review.predicate should be an object, got %#v", review["predicate"])
+	}
+	if got := predicate["kind"]; got != wantKind {
+		t.Fatalf("predicate kind = %#v, want %q", got, wantKind)
+	}
+	condition, ok := predicate["condition"].(map[string]any)
+	if !ok {
+		t.Fatalf("predicate.condition should be an object, got %#v", predicate["condition"])
+	}
+	subConditions, ok := condition["sub_conditions"].([]any)
+	if !ok || len(subConditions) != 1 {
+		t.Fatalf("sub_conditions = %#v, want one condition", condition["sub_conditions"])
+	}
+	subCondition, ok := subConditions[0].(map[string]any)
+	if !ok {
+		t.Fatalf("sub_conditions[0] should be an object, got %#v", subConditions[0])
+	}
+	pathRef, ok := subCondition["path_ref"].(map[string]any)
+	if !ok {
+		t.Fatalf("path_ref should be an object, got %#v", subCondition["path_ref"])
+	}
+	if got := pathRef["path"]; got != wantPath {
+		t.Fatalf("path_ref.path = %#v, want %q", got, wantPath)
+	}
+	if got := subCondition["operator"]; got != wantOperator {
+		t.Fatalf("condition operator = %#v, want %q", got, wantOperator)
+	}
+	if got := subCondition["value"]; got != wantValue {
+		t.Fatalf("condition value = %#v, want %#v", got, wantValue)
 	}
 }
 

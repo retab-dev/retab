@@ -143,6 +143,57 @@ func TestWorkflowHelpGuidesReviewConfig(t *testing.T) {
 	}
 }
 
+func TestWorkflowHelpMentionsConsensusReviewCriteria(t *testing.T) {
+	for _, want := range []string{
+		"n_consensus > 1",
+		"confidence_lt",
+		"field_confidence_lt",
+		"top_margin_lt",
+		"boundary_confidence_lt",
+		"json_condition",
+		"likelihoods.*",
+	} {
+		if !strings.Contains(workflowsCmd.Long, want) {
+			t.Fatalf("workflows help should mention consensus review criteria %q, got:\n%s", want, workflowsCmd.Long)
+		}
+	}
+}
+
+func TestWorkflowRenderedHelpMentionsConsensusReviewCriteria(t *testing.T) {
+	var buf bytes.Buffer
+	workflowsCmd.SetOut(&buf)
+	workflowsCmd.SetErr(&buf)
+	t.Cleanup(func() {
+		workflowsCmd.SetOut(nil)
+		workflowsCmd.SetErr(nil)
+	})
+	if err := workflowsCmd.Help(); err != nil {
+		t.Fatalf("render workflows help: %v", err)
+	}
+	help := buf.String()
+
+	for _, want := range []string{
+		"Review is configured on the block",
+		"awaiting_review",
+		"n_consensus > 1",
+		"confidence_lt",
+		"field_confidence_lt",
+		"top_margin_lt",
+		"boundary_confidence_lt",
+		"json_condition",
+		"likelihoods.*",
+	} {
+		if !strings.Contains(help, want) {
+			t.Fatalf("rendered workflows help should mention consensus review criteria %q, got:\n%s", want, help)
+		}
+	}
+	for _, stale := range []string{"review gate", "`hil`", "human-review gate"} {
+		if strings.Contains(help, stale) {
+			t.Fatalf("rendered workflows help should not contain stale %q, got:\n%s", stale, help)
+		}
+	}
+}
+
 func TestParseBlockCreateRejectsStandaloneHILBlockType(t *testing.T) {
 	_, err := parseBlockCreate(map[string]any{
 		"id":   "review",

@@ -1,4 +1,4 @@
-//go:build !retab_oagen_cli_workflows && !retab_oagen_cli_workflows_experiments && !retab_oagen_cli_workflows_runs && !retab_oagen_cli_workflows_tests
+//go:build !retab_oagen_cli_workflows && !retab_oagen_cli_workflows_experiments && !retab_oagen_cli_workflows_runs && !retab_oagen_cli_workflows_evals
 
 package cmd
 
@@ -36,7 +36,7 @@ func TestListCommandsDeclareBeforeAfterMutuallyExclusive(t *testing.T) {
 		{"workflows list", workflowsListCmd},
 		{"workflows runs list", workflowsRunsListCmd},
 		{"workflows experiments runs list", workflowsExperimentsRunsListCmd},
-		{"workflows tests runs list", workflowsTestsRunsListCmd},
+		{"workflows evals runs list", workflowsEvalsRunsListCmd},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

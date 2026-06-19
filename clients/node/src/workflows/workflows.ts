@@ -24,34 +24,34 @@ import {
 import { WorkflowArtifacts } from './artifacts/workflow-artifacts.js';
 import { WorkflowBlocks } from './blocks/workflow-blocks.js';
 import { WorkflowEdges } from './edges/workflow-edges.js';
+import { WorkflowEvals } from './evals/workflow-evals.js';
 import { WorkflowExperiments } from './experiments/workflow-experiments.js';
 import { WorkflowReviews } from './reviews/workflow-reviews.js';
 import { WorkflowRuns } from './runs/workflow-runs.js';
 import { WorkflowSpec } from './spec/workflow-spec.js';
 import { WorkflowSteps } from './steps/workflow-steps.js';
-import { WorkflowTests } from './tests/workflow-tests.js';
 
 export class Workflows {
   readonly artifacts: WorkflowArtifacts;
   readonly blocks: WorkflowBlocks;
   readonly edges: WorkflowEdges;
+  readonly evals: WorkflowEvals;
   readonly experiments: WorkflowExperiments;
   readonly reviews: WorkflowReviews;
   readonly runs: WorkflowRuns;
   readonly spec: WorkflowSpec;
   readonly steps: WorkflowSteps;
-  readonly tests: WorkflowTests;
 
   constructor(private readonly client: Retab) {
     this.artifacts = new WorkflowArtifacts(client);
     this.blocks = new WorkflowBlocks(client);
     this.edges = new WorkflowEdges(client);
+    this.evals = new WorkflowEvals(client);
     this.experiments = new WorkflowExperiments(client);
     this.reviews = new WorkflowReviews(client);
     this.runs = new WorkflowRuns(client);
     this.spec = new WorkflowSpec(client);
     this.steps = new WorkflowSteps(client);
-    this.tests = new WorkflowTests(client);
   }
 
   /** List Workflows */

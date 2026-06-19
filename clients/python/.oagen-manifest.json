@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "python",
-  "generatedAt": "2026-06-18T15:12:22.423Z",
+  "generatedAt": "2026-06-19T07:55:58.731Z",
   "files": [
     "retab/resources/__init__.py",
     "retab/resources/classifications.py",
@@ -20,6 +20,9 @@
     "retab/resources/workflows/blocks/__init__.py",
     "retab/resources/workflows/blocks/executions.py",
     "retab/resources/workflows/edges.py",
+    "retab/resources/workflows/evals/__init__.py",
+    "retab/resources/workflows/evals/results.py",
+    "retab/resources/workflows/evals/runs.py",
     "retab/resources/workflows/experiments/__init__.py",
     "retab/resources/workflows/experiments/metrics.py",
     "retab/resources/workflows/experiments/results.py",
@@ -29,9 +32,6 @@
     "retab/resources/workflows/runs.py",
     "retab/resources/workflows/spec.py",
     "retab/resources/workflows/steps.py",
-    "retab/resources/workflows/tests/__init__.py",
-    "retab/resources/workflows/tests/results.py",
-    "retab/resources/workflows/tests/runs.py",
     "retab/types/__init__.py",
     "retab/types/base.py",
     "retab/types/classifications.py",
@@ -55,6 +55,9 @@
     "retab/types/workflows/blocks/__init__.py",
     "retab/types/workflows/blocks/executions.py",
     "retab/types/workflows/edges.py",
+    "retab/types/workflows/evals/__init__.py",
+    "retab/types/workflows/evals/results.py",
+    "retab/types/workflows/evals/runs.py",
     "retab/types/workflows/experiments/__init__.py",
     "retab/types/workflows/experiments/metrics.py",
     "retab/types/workflows/experiments/results.py",
@@ -64,9 +67,6 @@
     "retab/types/workflows/reviews/versions.py",
     "retab/types/workflows/runs.py",
     "retab/types/workflows/spec.py",
-    "retab/types/workflows/steps.py",
-    "retab/types/workflows/tests/__init__.py",
-    "retab/types/workflows/tests/results.py",
-    "retab/types/workflows/tests/runs.py"
+    "retab/types/workflows/steps.py"
   ]
 }

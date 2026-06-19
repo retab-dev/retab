@@ -624,7 +624,7 @@ func TestPrintResultTableSkipsNestedObjectCells(t *testing.T) {
 	tests := map[string]any{
 		"data": []any{
 			map[string]any{
-				"id": "wfnodetest_1",
+				"id": "wfnodeeval_1",
 				"source": map[string]any{
 					"type": "manual",
 					"handle_inputs": map[string]any{
@@ -647,11 +647,11 @@ func TestPrintResultTableSkipsNestedObjectCells(t *testing.T) {
 		}
 	})
 	if stderr != "" {
-		t.Fatalf("unexpected stderr for workflow test list: %q", stderr)
+		t.Fatalf("unexpected stderr for workflow eval list: %q", stderr)
 	}
-	for _, want := range []string{"ID", "SOURCE", "TARGET", "NAME", "CREATED_AT", "wfnodetest_1", "manual", "block_calc_total", "calc-total-baseline"} {
+	for _, want := range []string{"ID", "SOURCE", "TARGET", "NAME", "CREATED_AT", "wfnodeeval_1", "manual", "block_calc_total", "calc-total-baseline"} {
 		if !strings.Contains(stdout, want) {
-			t.Fatalf("expected %q in workflow test table, got:\n%s", want, stdout)
+			t.Fatalf("expected %q in workflow eval table, got:\n%s", want, stdout)
 		}
 	}
 	if strings.Contains(stdout, "map[") {

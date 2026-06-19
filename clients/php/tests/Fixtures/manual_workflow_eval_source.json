@@ -1,0 +1,9 @@
+{
+  "type": "manual",
+  "handle_inputs": {
+    "key": {
+      "data": {},
+      "type": "json"
+    }
+  }
+}

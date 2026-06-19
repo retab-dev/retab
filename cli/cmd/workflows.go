@@ -83,6 +83,11 @@ standalone block. A reviewed run pauses with status
 ` + "`awaiting_review`" + ` and is resumed through
 ` + "`retab workflows reviews approve --version-id ...`" + ` or failed through
 ` + "`retab workflows reviews reject --version-id ... --reason ...`" + `.
+For low-confidence review, enable consensus on the reviewed block
+(` + "`n_consensus > 1`" + `) and use predicates such as
+` + "`confidence_lt`" + `, ` + "`field_confidence_lt`" + `,
+` + "`top_margin_lt`" + `, ` + "`boundary_confidence_lt`" + `, or
+` + "`json_condition`" + ` over ` + "`likelihoods.*`" + ` paths.
 
 Typical lifecycle:
 
@@ -91,7 +96,7 @@ Typical lifecycle:
   3. ` + "`workflows blocks update`" + ` — configure each block
   4. ` + "`workflows runs create`" + ` — execute against inputs
   5. ` + "`workflows steps list`" + ` — inspect per-block output
-  6. ` + "`workflows tests create`" + ` — pin the expected output for regression`,
+  6. ` + "`workflows evals create`" + ` — pin the expected output for regression`,
 	Example: `  # List your workflows
   retab workflows list
 

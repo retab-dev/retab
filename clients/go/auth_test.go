@@ -38,7 +38,7 @@ func TestApiKeyAuthSendsAuthorizationHeader(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	client, err := NewClient("sk_test_abc", WithBaseURL(srv.URL))
+	client, err := NewClient("sk_eval_abc", WithBaseURL(srv.URL))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -46,8 +46,8 @@ func TestApiKeyAuthSendsAuthorizationHeader(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if gotAuth != "Bearer sk_test_abc" {
-		t.Errorf("Authorization header: got %q, want %q", gotAuth, "Bearer sk_test_abc")
+	if gotAuth != "Bearer sk_eval_abc" {
+		t.Errorf("Authorization header: got %q, want %q", gotAuth, "Bearer sk_eval_abc")
 	}
 	if gotApiKey != "" {
 		t.Errorf("legacy credential header should be empty for API-key auth, got %q", gotApiKey)

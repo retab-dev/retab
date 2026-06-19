@@ -39,12 +39,6 @@ module Retab
     sig { params(value: T.nilable(Integer)).returns(T.nilable(Integer)) }
     def n_consensus=(value); end
 
-    sig { returns(T.nilable(Integer)) }
-    def image_resolution_dpi; end
-
-    sig { params(value: T.nilable(Integer)).returns(T.nilable(Integer)) }
-    def image_resolution_dpi=(value); end
-
     sig { returns(T.nilable(String)) }
     def instructions; end
 

@@ -30,8 +30,6 @@ readonly class Extraction implements \JsonSerializable
         public array $output,
         /** Number of consensus votes used */
         public ?int $nConsensus = null,
-        /** Legacy stored DPI value, retained only for compatibility. */
-        public ?int $imageResolutionDpi = null,
         /** Free-form instructions supplied with the extraction request. */
         public ?string $instructions = null,
         /** Lifecycle status. The synchronous path returns 'completed'. Background runs progress pending -> queued -> in_progress -> completed | failed | cancelled. */
@@ -68,7 +66,6 @@ readonly class Extraction implements \JsonSerializable
             jsonSchema: $data['json_schema'],
             output: $data['output'],
             nConsensus: $data['n_consensus'] ?? null,
-            imageResolutionDpi: $data['image_resolution_dpi'] ?? null,
             instructions: $data['instructions'] ?? null,
             status: isset($data['status']) ? EditStatus::from($data['status']) : null,
             error: isset($data['error']) ? PrimitiveError::fromArray($data['error']) : null,
@@ -89,7 +86,6 @@ readonly class Extraction implements \JsonSerializable
             'json_schema' => $this->jsonSchema,
             'output' => $this->output,
             'n_consensus' => $this->nConsensus,
-            'image_resolution_dpi' => $this->imageResolutionDpi,
             'instructions' => $this->instructions,
             'status' => $this->status?->value,
             'error' => $this->error?->toArray(),

@@ -17,7 +17,5 @@ namespace Retab
         /// <summary>If true, run asynchronously: returns immediately with status 'queued'. Poll GET /v1/schemas/generate/{schema_generation_id} until status is terminal.</summary>
         public bool? Background { get; set; }
 
-        public long? ImageResolutionDpi { get; set; }
-
     }
 }

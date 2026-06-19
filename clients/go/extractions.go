@@ -56,9 +56,8 @@ type ExtractionsCreateParams struct {
 	BustCache *bool `json:"bust_cache,omitempty" url:"-"`
 	Stream    *bool `json:"stream,omitempty" url:"-"`
 	// Background is if true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
-	Background         *bool              `json:"background,omitempty" url:"-"`
-	ChunkingKeys       *map[string]string `json:"chunking_keys,omitempty" url:"-"`
-	ImageResolutionDpi *int               `json:"image_resolution_dpi,omitempty" url:"-"`
+	Background   *bool              `json:"background,omitempty" url:"-"`
+	ChunkingKeys *map[string]string `json:"chunking_keys,omitempty" url:"-"`
 }
 
 // Create extraction
@@ -92,7 +91,6 @@ func (s *ExtractionService) Create(ctx context.Context, params *ExtractionsCreat
 		Stream             *bool                    `json:"stream,omitempty"`
 		Background         *bool                    `json:"background,omitempty"`
 		ChunkingKeys       *map[string]string       `json:"chunking_keys,omitempty"`
-		ImageResolutionDpi *int                     `json:"image_resolution_dpi,omitempty"`
 	}
 	if params == nil {
 		return nil, fmt.Errorf("retab: params is required")
@@ -117,7 +115,6 @@ func (s *ExtractionService) Create(ctx context.Context, params *ExtractionsCreat
 		Stream:             params.Stream,
 		Background:         params.Background,
 		ChunkingKeys:       params.ChunkingKeys,
-		ImageResolutionDpi: params.ImageResolutionDpi,
 	}
 	var result Extraction
 	_, err := s.client.request(ctx, "POST", "/v1/extractions", nil, body, &result, opts)
@@ -146,9 +143,8 @@ type ExtractionsCreateStreamParams struct {
 	BustCache *bool `json:"bust_cache,omitempty" url:"-"`
 	Stream    *bool `json:"stream,omitempty" url:"-"`
 	// Background is if true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
-	Background         *bool              `json:"background,omitempty" url:"-"`
-	ChunkingKeys       *map[string]string `json:"chunking_keys,omitempty" url:"-"`
-	ImageResolutionDpi *int               `json:"image_resolution_dpi,omitempty" url:"-"`
+	Background   *bool              `json:"background,omitempty" url:"-"`
+	ChunkingKeys *map[string]string `json:"chunking_keys,omitempty" url:"-"`
 }
 
 // CreateStream create Extraction Stream
@@ -166,7 +162,6 @@ func (s *ExtractionService) CreateStream(ctx context.Context, params *Extraction
 		Stream             *bool                    `json:"stream,omitempty"`
 		Background         *bool                    `json:"background,omitempty"`
 		ChunkingKeys       *map[string]string       `json:"chunking_keys,omitempty"`
-		ImageResolutionDpi *int                     `json:"image_resolution_dpi,omitempty"`
 	}
 	if params == nil {
 		return fmt.Errorf("retab: params is required")
@@ -191,7 +186,6 @@ func (s *ExtractionService) CreateStream(ctx context.Context, params *Extraction
 		Stream:             params.Stream,
 		Background:         params.Background,
 		ChunkingKeys:       params.ChunkingKeys,
-		ImageResolutionDpi: params.ImageResolutionDpi,
 	}
 	_, err := s.client.request(ctx, "POST", "/v1/extractions/stream", nil, body, nil, opts)
 	return err

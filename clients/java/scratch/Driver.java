@@ -7,12 +7,12 @@ import com.retab.models.ExperimentDocumentCaptureRequest;
 import com.retab.models.ExistCondition;
 import com.retab.models.OutputTarget;
 import com.retab.models.PublicHandlePayload;
-import com.retab.models.RunStepWorkflowTestSource;
+import com.retab.models.RunStepWorkflowEvalSource;
 import com.retab.models.WorkflowExperiment;
 import com.retab.models.WorkflowRun;
 import com.retab.models.WorkflowRunStep;
-import com.retab.models.WorkflowTest;
-import com.retab.models.WorkflowTestBlockTarget;
+import com.retab.models.WorkflowEval;
+import com.retab.models.WorkflowEvalBlockTarget;
 import com.retab.types.CreateExperimentRequestNConsensus;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -158,22 +158,22 @@ public final class Driver {
     String testStep = exampleExtractStepId != null ? exampleExtractStepId : runId + "_" + testBlock;
     String handleId = exampleHandleId != null ? exampleHandleId : "output-json-0";
 
-    WorkflowTestBlockTarget target = new WorkflowTestBlockTarget("block", testBlock);
-    RunStepWorkflowTestSource source = new RunStepWorkflowTestSource("run_step", runId, testStep);
+    WorkflowEvalBlockTarget target = new WorkflowEvalBlockTarget("block", testBlock);
+    RunStepWorkflowEvalSource source = new RunStepWorkflowEvalSource("run_step", runId, testStep);
     Condition cond = new ExistCondition("exists");
     AssertionSpec assertion =
         new AssertionSpec(null, new OutputTarget(handleId, null), cond, "handle exists");
 
-    WorkflowTest test =
-        client.workflows().tests().create(WORKFLOW_ID, target, source, "java-sdk-smoke-test", assertion);
+    WorkflowEval test =
+        client.workflows().evals().create(WORKFLOW_ID, target, source, "java-sdk-smoke-test", assertion);
     System.out.println("created test: " + test.getId() + " name=" + test.getName()
         + " target_block=" + test.getTarget().getBlockId()
         + " validation_status=" + test.getValidationStatus());
-    WorkflowTest testGet = client.workflows().tests().get(test.getId());
+    WorkflowEval testGet = client.workflows().evals().get(test.getId());
     System.out.println("get test: " + testGet.getId() + " assertion_label=" + testGet.getAssertion().getLabel());
-    List<WorkflowTest> testList =
-        client.workflows().tests().list(WORKFLOW_ID, null, null, null, 5L, null);
-    System.out.println("list tests (limit 5): " + testList.size());
+    List<WorkflowEval> evalList =
+        client.workflows().evals().list(WORKFLOW_ID, null, null, null, 5L, null);
+    System.out.println("list evals (limit 5): " + evalList.size());
 
     System.out.println("\n=== SUMMARY ===");
     System.out.println("run: " + runId + " (" + status + ")");

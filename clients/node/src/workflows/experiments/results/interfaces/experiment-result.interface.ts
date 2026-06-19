@@ -40,21 +40,21 @@ import {
 import type {
   FileHandleInput,
   FileHandleInputResponse,
-} from '../../../../workflows/experiments/interfaces/file-handle-input.interface.js';
+} from '../../../../workflows/evals/results/interfaces/file-handle-input.interface.js';
 import {
   ZFileHandleInput,
   deserializeFileHandleInput,
   serializeFileHandleInput,
-} from '../../../../workflows/experiments/interfaces/file-handle-input.interface.js';
+} from '../../../../workflows/evals/results/interfaces/file-handle-input.interface.js';
 import type {
   JsonHandleInput,
   JsonHandleInputResponse,
-} from '../../../../workflows/experiments/interfaces/json-handle-input.interface.js';
+} from '../../../../workflows/evals/results/interfaces/json-handle-input.interface.js';
 import {
   ZJsonHandleInput,
   deserializeJsonHandleInput,
   serializeJsonHandleInput,
-} from '../../../../workflows/experiments/interfaces/json-handle-input.interface.js';
+} from '../../../../workflows/evals/results/interfaces/json-handle-input.interface.js';
 import type {
   PendingWorkflowExperimentResult,
   PendingWorkflowExperimentResultResponse,

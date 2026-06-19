@@ -48,7 +48,6 @@ def test_extraction_model_accepts_canonical_consensus_shape() -> None:
             "model": "retab-small",
             "json_schema": {"type": "object"},
             "n_consensus": 1,
-            "image_resolution_dpi": 192,
             "output": {"invoice_number": "INV-001"},
             "consensus": {"choices": [], "likelihoods": None},
             "metadata": {},
@@ -137,7 +136,6 @@ def test_parse_model_excludes_updated_at_from_public_schema_and_output() -> None
             },
             "model": "retab-small",
             "table_parsing_format": "html",
-            "image_resolution_dpi": 192,
             "output": {"pages": ["page 1"], "text": "page 1"},
             "updated_at": "2026-04-17T10:00:00Z",
         }

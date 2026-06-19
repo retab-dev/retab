@@ -17,12 +17,12 @@ class Workflows
     private ?WorkflowArtifacts $artifacts = null;
     private ?WorkflowBlocks $blocks = null;
     private ?WorkflowEdges $edges = null;
+    private ?WorkflowEvals $evals = null;
     private ?WorkflowExperiments $experiments = null;
     private ?WorkflowReviews $reviews = null;
     private ?WorkflowRuns $runs = null;
     private ?WorkflowSpec $spec = null;
     private ?WorkflowSteps $steps = null;
-    private ?WorkflowTests $tests = null;
 
     public function __construct(
         private readonly \Retab\HttpClient $client,
@@ -41,6 +41,11 @@ class Workflows
     public function edges(): WorkflowEdges
     {
         return $this->edges ??= new WorkflowEdges($this->client);
+    }
+
+    public function evals(): WorkflowEvals
+    {
+        return $this->evals ??= new WorkflowEvals($this->client);
     }
 
     public function experiments(): WorkflowExperiments
@@ -66,11 +71,6 @@ class Workflows
     public function steps(): WorkflowSteps
     {
         return $this->steps ??= new WorkflowSteps($this->client);
-    }
-
-    public function tests(): WorkflowTests
-    {
-        return $this->tests ??= new WorkflowTests($this->client);
     }
 
     /**

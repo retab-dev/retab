@@ -1,4 +1,4 @@
-//go:build !retab_oagen_cli_workflows && !retab_oagen_cli_workflows_blocks && !retab_oagen_cli_workflows_experiments && !retab_oagen_cli_workflows_tests
+//go:build !retab_oagen_cli_workflows && !retab_oagen_cli_workflows_blocks && !retab_oagen_cli_workflows_experiments && !retab_oagen_cli_workflows_evals
 
 package cmd
 
@@ -67,8 +67,8 @@ func TestWorkflowsUpdateCommandsRejectNoOpBeforeRequest(t *testing.T) {
 			},
 		},
 		{
-			name: "workflows tests update",
-			runE: workflowsTestsUpdateCmd.RunE,
+			name: "workflows evals update",
+			runE: workflowsEvalsUpdateCmd.RunE,
 			args: []string{"wf_123", "tst_123"},
 			registerFlags: func(c *cobra.Command) {
 				c.Flags().String("name", "", "")

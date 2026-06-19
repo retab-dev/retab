@@ -358,10 +358,21 @@ Reviewable block types are ` + "`extract`" + `, ` + "`split`" + `, ` + "`classif
 and ` + "`for_each`" + ` only when ` + "`config.map_method`" + ` is ` + "`split_by_key`" + ` and
 ` + "`config.key`" + ` is set.
 Common review predicates are ` + "`always`" + ` and ` + "`validation_failed`" + `.
-Extract also supports ` + "`any_required_field_null`" + ` and ` + "`field_confidence_lt`" + `;
+Extract also supports ` + "`any_required_field_null`" + `, ` + "`confidence_lt`" + `,
+` + "`field_confidence_lt`" + `, and ` + "`json_condition`" + `;
 split and split-by-key ` + "`for_each`" + ` support ` + "`split_count_neq`" + `,
-` + "`any_split_pages_lt`" + `, and ` + "`boundary_confidence_lt`" + `; classifier
-supports ` + "`category_in`" + ` and ` + "`top_margin_lt`" + `.
+` + "`any_split_pages_lt`" + `, ` + "`boundary_confidence_lt`" + `, and
+` + "`json_condition`" + `; classifier supports ` + "`category_in`" + `,
+` + "`confidence_lt`" + `, ` + "`top_margin_lt`" + `, and ` + "`json_condition`" + `.
+Consensus criteria require ` + "`n_consensus > 1`" + ` on the reviewed block.
+Use ` + "`confidence_lt`" + ` for the block's overall consensus likelihood,
+` + "`field_confidence_lt`" + ` for extract field scores, ` + "`top_margin_lt`" + `
+for close classifier categories, and ` + "`boundary_confidence_lt`" + ` for split
+boundary scores. ` + "`json_condition`" + ` can target the block output through
+` + "`data.*`" + ` (or extract's ` + "`output-json-0.*`" + ` alias) and consensus
+scores through ` + "`likelihoods.*`" + ` paths such as
+` + "`likelihoods.invoice_total`" + `, ` + "`likelihoods.invoice`" + `, or
+` + "`likelihoods.splits.invoice_type`" + `.
 Review is not a standalone block type.`,
 
 	Example: `  # Add one block from a JSON file
@@ -395,6 +406,40 @@ Review is not a standalone block type.`,
   }
   JSON
   retab workflows blocks create wf_abc123 --block-file ./extract-review.json
+
+  # Consensus review: pause when the extracted total has low agreement
+  cat > extract-consensus-review.json <<'JSON'
+  {
+    "type": "extract",
+    "label": "Extract invoice with consensus review",
+    "config": {
+      "model": "retab-small",
+      "n_consensus": 3,
+      "inputs": [{"name": "document", "type": "file", "is_primary": true}],
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "invoice_total": {"type": "number"}
+        },
+        "required": ["invoice_total"]
+      },
+      "review": {
+        "predicate": {
+          "kind": "json_condition",
+          "condition": {
+            "logical_operator": "and",
+            "sub_conditions": [{
+              "path_ref": {"input": "default", "path": "likelihoods.invoice_total"},
+              "operator": "is_less_than",
+              "value": 0.85
+            }]
+          }
+        }
+      }
+    }
+  }
+  JSON
+  retab workflows blocks create wf_abc123 --block-file ./extract-consensus-review.json
 
   # Pipe a block definition from stdin
   cat block.json | retab workflows blocks create wf_abc123 --block-file -`,
@@ -446,6 +491,11 @@ slice of the config, for example adding review:
   printf '{"review":{"predicate":{"kind":"always"}}}' |
     retab workflows blocks update BLK --merge-config-file -
 
+For consensus-based review, patch both ` + "`n_consensus`" + ` and ` + "`review`" + `:
+
+  printf '{"n_consensus":3,"review":{"predicate":{"kind":"confidence_lt","threshold":0.8}}}' |
+    retab workflows blocks update BLK --merge-config-file -
+
 Pass ` + "`{\"review\":null}`" + ` to remove review without touching anything else.
 
 The flags are mutually exclusive. Layout fields (` + "`position-*`" + `,
@@ -468,6 +518,10 @@ duplicate block ids.`,
 
   # Add review to an existing block
   printf '{"review":{"predicate":{"kind":"always"}}}' |
+    retab workflows blocks update block_def456 --merge-config-file -
+
+  # Add consensus review to an extract or classifier block
+  printf '{"n_consensus":3,"review":{"predicate":{"kind":"confidence_lt","threshold":0.8}}}' |
     retab workflows blocks update block_def456 --merge-config-file -
 
   # Rename a block's label

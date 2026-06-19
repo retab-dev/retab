@@ -92,7 +92,7 @@ class PaginationContractTest extends TestCase
                 'serviceClass' => \Retab\Service\ExperimentRunResults::class,
                 'clientAccessor' => 'workflows.experiments.results',
                 'listFixture' => 'list_experiment_result',
-                'invoke' => static fn(Client $c) => $c->workflows()->experiments()->results()->list('test_run_id'),
+                'invoke' => static fn(Client $c) => $c->workflows()->experiments()->results()->list('eval_run_id'),
             ],
             'ExperimentRuns' => [
                 'serviceClass' => \Retab\Service\ExperimentRuns::class,
@@ -140,7 +140,7 @@ class PaginationContractTest extends TestCase
                 'serviceClass' => \Retab\Service\WorkflowBlockExecutions::class,
                 'clientAccessor' => 'workflows.blocks.executions',
                 'listFixture' => 'list_stored_block_execution',
-                'invoke' => static fn(Client $c) => $c->workflows()->blocks()->executions()->list('test_run_id', 'test_block_id'),
+                'invoke' => static fn(Client $c) => $c->workflows()->blocks()->executions()->list('eval_run_id', 'test_block_id'),
             ],
             'WorkflowBlocks' => [
                 'serviceClass' => \Retab\Service\WorkflowBlocks::class,
@@ -184,23 +184,23 @@ class PaginationContractTest extends TestCase
                 'listFixture' => 'list_workflow_run_step',
                 'invoke' => static fn(Client $c) => $c->workflows()->steps()->list(),
             ],
-            'WorkflowTestRunResults' => [
-                'serviceClass' => \Retab\Service\WorkflowTestRunResults::class,
-                'clientAccessor' => 'workflows.tests.results',
-                'listFixture' => 'list_workflow_test_result',
-                'invoke' => static fn(Client $c) => $c->workflows()->tests()->results()->list('test_run_id'),
+            'WorkflowEvalRunResults' => [
+                'serviceClass' => \Retab\Service\WorkflowEvalRunResults::class,
+                'clientAccessor' => 'workflows.evals.results',
+                'listFixture' => 'list_workflow_eval_result',
+                'invoke' => static fn(Client $c) => $c->workflows()->evals()->results()->list('eval_run_id'),
             ],
-            'WorkflowTestRuns' => [
-                'serviceClass' => \Retab\Service\WorkflowTestRuns::class,
-                'clientAccessor' => 'workflows.tests.runs',
-                'listFixture' => 'list_workflow_test_run',
-                'invoke' => static fn(Client $c) => $c->workflows()->tests()->runs()->list(),
+            'WorkflowEvalRuns' => [
+                'serviceClass' => \Retab\Service\WorkflowEvalRuns::class,
+                'clientAccessor' => 'workflows.evals.runs',
+                'listFixture' => 'list_workflow_eval_run',
+                'invoke' => static fn(Client $c) => $c->workflows()->evals()->runs()->list(),
             ],
-            'WorkflowTests' => [
-                'serviceClass' => \Retab\Service\WorkflowTests::class,
-                'clientAccessor' => 'workflows.tests',
-                'listFixture' => 'list_workflow_test',
-                'invoke' => static fn(Client $c) => $c->workflows()->tests()->list('test_workflow_id'),
+            'WorkflowEvals' => [
+                'serviceClass' => \Retab\Service\WorkflowEvals::class,
+                'clientAccessor' => 'workflows.evals',
+                'listFixture' => 'list_workflow_eval',
+                'invoke' => static fn(Client $c) => $c->workflows()->evals()->list('test_workflow_id'),
             ],
             'Workflows' => [
                 'serviceClass' => \Retab\Service\Workflows::class,

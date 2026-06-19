@@ -282,6 +282,25 @@ type ErrorTerminalStage = ErrorStepLifecycleStage
 // ErrorTerminalCategory is an alias for ErrorStepLifecycleCategory.
 type ErrorTerminalCategory = ErrorStepLifecycleCategory
 
+// EvalRunFreshnessStatus is an alias for ArtifactFreshnessStatus.
+type EvalRunFreshnessStatus = ArtifactFreshnessStatus
+
+// EvalRunFreshnessReasons is an alias for ArtifactFreshnessReasons.
+type EvalRunFreshnessReasons = ArtifactFreshnessReasons
+
+// EvalRunTriggerType represents eval run trigger type values.
+type EvalRunTriggerType string
+
+const (
+	EvalRunTriggerTypeManual   EvalRunTriggerType = "manual"
+	EvalRunTriggerTypeAPI      EvalRunTriggerType = "api"
+	EvalRunTriggerTypeSchedule EvalRunTriggerType = "schedule"
+	EvalRunTriggerTypeWebhook  EvalRunTriggerType = "webhook"
+	EvalRunTriggerTypeEmail    EvalRunTriggerType = "email"
+	EvalRunTriggerTypeCustom   EvalRunTriggerType = "custom"
+	EvalRunTriggerTypeRestart  EvalRunTriggerType = "restart"
+)
+
 // ExperimentSummaryMetricsResponseBlockType is an alias for ExperimentBlockType.
 type ExperimentSummaryMetricsResponseBlockType = ExperimentBlockType
 
@@ -309,20 +328,20 @@ type FileBlueprintStatus = ClassificationStatus
 // FileBlueprintMode is an alias for CreateFileBlueprintRequestMode.
 type FileBlueprintMode = CreateFileBlueprintRequestMode
 
-// LatestBlockTestRunSummaryStatus represents latest block test run summary status values.
-type LatestBlockTestRunSummaryStatus string
+// LatestBlockEvalRunSummaryStatus represents latest block eval run summary status values.
+type LatestBlockEvalRunSummaryStatus string
 
 const (
-	LatestBlockTestRunSummaryStatusPending   LatestBlockTestRunSummaryStatus = "pending"
-	LatestBlockTestRunSummaryStatusQueued    LatestBlockTestRunSummaryStatus = "queued"
-	LatestBlockTestRunSummaryStatusRunning   LatestBlockTestRunSummaryStatus = "running"
-	LatestBlockTestRunSummaryStatusCompleted LatestBlockTestRunSummaryStatus = "completed"
-	LatestBlockTestRunSummaryStatusError     LatestBlockTestRunSummaryStatus = "error"
-	LatestBlockTestRunSummaryStatusCancelled LatestBlockTestRunSummaryStatus = "cancelled"
+	LatestBlockEvalRunSummaryStatusPending   LatestBlockEvalRunSummaryStatus = "pending"
+	LatestBlockEvalRunSummaryStatusQueued    LatestBlockEvalRunSummaryStatus = "queued"
+	LatestBlockEvalRunSummaryStatusRunning   LatestBlockEvalRunSummaryStatus = "running"
+	LatestBlockEvalRunSummaryStatusCompleted LatestBlockEvalRunSummaryStatus = "completed"
+	LatestBlockEvalRunSummaryStatusError     LatestBlockEvalRunSummaryStatus = "error"
+	LatestBlockEvalRunSummaryStatusCancelled LatestBlockEvalRunSummaryStatus = "cancelled"
 )
 
-// LatestBlockTestRunSummaryOutcome is an alias for AssertionOutcome.
-type LatestBlockTestRunSummaryOutcome = AssertionOutcome
+// LatestBlockEvalRunSummaryOutcome is an alias for AssertionOutcome.
+type LatestBlockEvalRunSummaryOutcome = AssertionOutcome
 
 // LengthCompareConditionOp represents length compare condition op values.
 type LengthCompareConditionOp string
@@ -407,18 +426,8 @@ const (
 	StepArtifactRefOperationFunctionInvocation      StepArtifactRefOperation = "function_invocation"
 )
 
-// TriggerInfoType represents trigger info type values.
-type TriggerInfoType string
-
-const (
-	TriggerInfoTypeManual   TriggerInfoType = "manual"
-	TriggerInfoTypeAPI      TriggerInfoType = "api"
-	TriggerInfoTypeSchedule TriggerInfoType = "schedule"
-	TriggerInfoTypeWebhook  TriggerInfoType = "webhook"
-	TriggerInfoTypeEmail    TriggerInfoType = "email"
-	TriggerInfoTypeCustom   TriggerInfoType = "custom"
-	TriggerInfoTypeRestart  TriggerInfoType = "restart"
-)
+// TriggerInfoType is an alias for EvalRunTriggerType.
+type TriggerInfoType = EvalRunTriggerType
 
 // UpdateExperimentRequestNConsensus is an alias for CreateExperimentRequestNConsensus.
 type UpdateExperimentRequestNConsensus = CreateExperimentRequestNConsensus
@@ -499,6 +508,21 @@ type WorkflowBlockVersionType = WorkflowBlockType
 
 // WorkflowConfigBlockType is an alias for WorkflowBlockType.
 type WorkflowConfigBlockType = WorkflowBlockType
+
+// AssertionDriftStatus represents assertion drift status values.
+type AssertionDriftStatus string
+
+const (
+	AssertionDriftStatusValid   AssertionDriftStatus = "valid"
+	AssertionDriftStatusDrifted AssertionDriftStatus = "drifted"
+	AssertionDriftStatusBroken  AssertionDriftStatus = "broken"
+)
+
+// WorkflowEvalSchemaDrift is an alias for ExperimentSchemaDriftStatus.
+type WorkflowEvalSchemaDrift = ExperimentSchemaDriftStatus
+
+// WorkflowEvalResultVerdict is an alias for AssertionOutcome.
+type WorkflowEvalResultVerdict = AssertionOutcome
 
 // NConsensusValue is an alias for CreateExperimentRequestNConsensus.
 type NConsensusValue = CreateExperimentRequestNConsensus
@@ -618,28 +642,13 @@ const (
 	WorkflowTableValidationColumnRuleTypeString  WorkflowTableValidationColumnRuleType = "string"
 )
 
-// AssertionDriftStatus represents assertion drift status values.
-type AssertionDriftStatus string
+// WorkflowEvalRunScopeType represents workflow eval run scope type values.
+type WorkflowEvalRunScopeType string
 
 const (
-	AssertionDriftStatusValid   AssertionDriftStatus = "valid"
-	AssertionDriftStatusDrifted AssertionDriftStatus = "drifted"
-	AssertionDriftStatusBroken  AssertionDriftStatus = "broken"
-)
-
-// WorkflowTestSchemaDrift is an alias for ExperimentSchemaDriftStatus.
-type WorkflowTestSchemaDrift = ExperimentSchemaDriftStatus
-
-// WorkflowTestResultVerdict is an alias for AssertionOutcome.
-type WorkflowTestResultVerdict = AssertionOutcome
-
-// WorkflowTestRunScopeType represents workflow test run scope type values.
-type WorkflowTestRunScopeType string
-
-const (
-	WorkflowTestRunScopeTypeSingle   WorkflowTestRunScopeType = "single"
-	WorkflowTestRunScopeTypeWorkflow WorkflowTestRunScopeType = "workflow"
-	WorkflowTestRunScopeTypeBlock    WorkflowTestRunScopeType = "block"
+	WorkflowEvalRunScopeTypeSingle   WorkflowEvalRunScopeType = "single"
+	WorkflowEvalRunScopeTypeWorkflow WorkflowEvalRunScopeType = "workflow"
+	WorkflowEvalRunScopeTypeBlock    WorkflowEvalRunScopeType = "block"
 )
 
 // ClassificationsOrder represents classifications order values.
@@ -695,6 +704,15 @@ type WorkflowArtifactsOperation = StepArtifactRefOperation
 // WorkflowBlockExecutionsOrder is an alias for ClassificationsOrder.
 type WorkflowBlockExecutionsOrder = ClassificationsOrder
 
+// WorkflowEvalsOrder is an alias for ClassificationsOrder.
+type WorkflowEvalsOrder = ClassificationsOrder
+
+// WorkflowEvalRunResultsOrder is an alias for ClassificationsOrder.
+type WorkflowEvalRunResultsOrder = ClassificationsOrder
+
+// WorkflowEvalRunsOrder is an alias for ClassificationsOrder.
+type WorkflowEvalRunsOrder = ClassificationsOrder
+
 // WorkflowExperimentsOrder is an alias for ClassificationsOrder.
 type WorkflowExperimentsOrder = ClassificationsOrder
 
@@ -711,11 +729,11 @@ const (
 // ExperimentRunResultsOrder is an alias for ClassificationsOrder.
 type ExperimentRunResultsOrder = ClassificationsOrder
 
-// WorkflowExperimentsStatus is an alias for LatestBlockTestRunSummaryStatus.
-type WorkflowExperimentsStatus = LatestBlockTestRunSummaryStatus
+// WorkflowExperimentsStatus is an alias for LatestBlockEvalRunSummaryStatus.
+type WorkflowExperimentsStatus = LatestBlockEvalRunSummaryStatus
 
-// WorkflowExperimentsExcludeStatus is an alias for LatestBlockTestRunSummaryStatus.
-type WorkflowExperimentsExcludeStatus = LatestBlockTestRunSummaryStatus
+// WorkflowExperimentsExcludeStatus is an alias for LatestBlockEvalRunSummaryStatus.
+type WorkflowExperimentsExcludeStatus = LatestBlockEvalRunSummaryStatus
 
 // ExperimentRunsOrder is an alias for ClassificationsOrder.
 type ExperimentRunsOrder = ClassificationsOrder
@@ -742,12 +760,3 @@ type WorkflowRunsTriggerType = WorkflowExportPayloadRequestTriggerType
 
 // WorkflowRunsOrder is an alias for ClassificationsOrder.
 type WorkflowRunsOrder = ClassificationsOrder
-
-// WorkflowTestsOrder is an alias for ClassificationsOrder.
-type WorkflowTestsOrder = ClassificationsOrder
-
-// WorkflowTestRunResultsOrder is an alias for ClassificationsOrder.
-type WorkflowTestRunResultsOrder = ClassificationsOrder
-
-// WorkflowTestRunsOrder is an alias for ClassificationsOrder.
-type WorkflowTestRunsOrder = ClassificationsOrder

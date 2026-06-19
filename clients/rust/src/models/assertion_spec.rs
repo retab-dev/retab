@@ -5,7 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
-/// Block-test assertion against one declared output handle.
+/// Block-eval assertion against one declared output handle.
 /// `target` is the only supported shape: an output handle id and an
 /// optional relative path inside that handle's payload.
 #[derive(Debug, Clone, Serialize, Deserialize)]

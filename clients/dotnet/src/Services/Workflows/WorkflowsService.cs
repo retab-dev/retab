@@ -26,6 +26,9 @@ namespace Retab
         /// <summary>Gets the nested <see cref="WorkflowEdgesService"/> service.</summary>
         public virtual WorkflowEdgesService Edges => new WorkflowEdgesService(this.Client);
 
+        /// <summary>Gets the nested <see cref="WorkflowEvalsService"/> service.</summary>
+        public virtual WorkflowEvalsService Evals => new WorkflowEvalsService(this.Client);
+
         /// <summary>Gets the nested <see cref="WorkflowExperimentsService"/> service.</summary>
         public virtual WorkflowExperimentsService Experiments => new WorkflowExperimentsService(this.Client);
 
@@ -40,9 +43,6 @@ namespace Retab
 
         /// <summary>Gets the nested <see cref="WorkflowStepsService"/> service.</summary>
         public virtual WorkflowStepsService Steps => new WorkflowStepsService(this.Client);
-
-        /// <summary>Gets the nested <see cref="WorkflowTestsService"/> service.</summary>
-        public virtual WorkflowTestsService Tests => new WorkflowTestsService(this.Client);
 
         /// <summary>List Workflows</summary>
         /// <remarks>

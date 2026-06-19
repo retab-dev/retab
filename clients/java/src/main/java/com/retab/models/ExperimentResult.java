@@ -17,8 +17,8 @@ public final class ExperimentResult {
   private final WorkflowExperimentResult lifecycle;
   private final ExperimentResultTiming timing;
   private final ExperimentResultBlockType blockType;
-  private final Map<String, HandleInput> handleInputs;
-  private final Map<String, HandleInput> handleOutputs;
+  private final Map<String, HandleInputType> handleInputs;
+  private final Map<String, HandleInputType> handleOutputs;
   private final StepArtifactRef artifact;
   private final Long attempt;
 
@@ -32,9 +32,9 @@ public final class ExperimentResult {
       @JsonProperty(value = "timing", required = true) ExperimentResultTiming timing,
       @JsonProperty(value = "block_type", required = true) ExperimentResultBlockType blockType,
       @JsonProperty(value = "handle_inputs", required = false)
-          Map<String, HandleInput> handleInputs,
+          Map<String, HandleInputType> handleInputs,
       @JsonProperty(value = "handle_outputs", required = false)
-          Map<String, HandleInput> handleOutputs,
+          Map<String, HandleInputType> handleOutputs,
       @JsonProperty(value = "artifact", required = false) StepArtifactRef artifact,
       @JsonProperty(value = "attempt", required = false) Long attempt) {
     this.id = id;
@@ -86,12 +86,12 @@ public final class ExperimentResult {
   }
 
   @JsonProperty("handle_inputs")
-  public Map<String, HandleInput> getHandleInputs() {
+  public Map<String, HandleInputType> getHandleInputs() {
     return handleInputs;
   }
 
   @JsonProperty("handle_outputs")
-  public Map<String, HandleInput> getHandleOutputs() {
+  public Map<String, HandleInputType> getHandleOutputs() {
     return handleOutputs;
   }
 

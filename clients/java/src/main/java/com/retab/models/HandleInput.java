@@ -13,7 +13,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
  *
  * <pre>{@code
  * HandleInput value = api.get(...);
- * if (value instanceof FileHandleInput v) {
+ * if (value instanceof EvalFileHandleInput v) {
  *     handle(v);
  * }
  * }</pre>
@@ -24,7 +24,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
     property = "type",
     visible = true)
 @JsonSubTypes({
-  @JsonSubTypes.Type(value = FileHandleInput.class, name = "file"),
-  @JsonSubTypes.Type(value = JsonHandleInput.class, name = "json")
+  @JsonSubTypes.Type(value = EvalFileHandleInput.class, name = "file"),
+  @JsonSubTypes.Type(value = EvalJsonHandleInput.class, name = "json")
 })
-public sealed interface HandleInput permits FileHandleInput, JsonHandleInput {}
+public sealed interface HandleInput permits EvalFileHandleInput, EvalJsonHandleInput {}

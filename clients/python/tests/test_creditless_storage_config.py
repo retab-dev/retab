@@ -2,7 +2,7 @@
 
 Every test is CREDITLESS. Creating/updating/deleting a workflow *definition* is
 pure config storage and does NOT run anything (running a workflow IS billable and
-is never done here). Secret CRUD is config storage. All tests clean up the
+is never done here). Secret CRUD is config storage. All evals clean up the
 resources they create.
 """
 

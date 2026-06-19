@@ -15,7 +15,6 @@ public final class Parse {
   private final FileRef file;
   private final String model;
   private final TableParsingFormat tableParsingFormat;
-  private final Long imageResolutionDpi;
   private final String instructions;
   private final ParseOutput output;
   private final ParseStatus status;
@@ -30,7 +29,6 @@ public final class Parse {
       @JsonProperty(value = "model", required = true) String model,
       @JsonProperty(value = "table_parsing_format", required = true)
           TableParsingFormat tableParsingFormat,
-      @JsonProperty(value = "image_resolution_dpi", required = true) Long imageResolutionDpi,
       @JsonProperty(value = "instructions", required = false) String instructions,
       @JsonProperty(value = "output", required = true) ParseOutput output,
       @JsonProperty(value = "status", required = false) ParseStatus status,
@@ -41,7 +39,6 @@ public final class Parse {
     this.file = file;
     this.model = model;
     this.tableParsingFormat = tableParsingFormat;
-    this.imageResolutionDpi = imageResolutionDpi;
     this.instructions = instructions;
     this.output = output;
     this.status = status;
@@ -68,11 +65,6 @@ public final class Parse {
   @JsonProperty("table_parsing_format")
   public TableParsingFormat getTableParsingFormat() {
     return tableParsingFormat;
-  }
-
-  @JsonProperty("image_resolution_dpi")
-  public Long getImageResolutionDpi() {
-    return imageResolutionDpi;
   }
 
   @JsonProperty("instructions")

@@ -23,12 +23,12 @@ from retab.types.workflows import (
 from .artifacts import WorkflowArtifacts, AsyncWorkflowArtifacts
 from .blocks import WorkflowBlocks, AsyncWorkflowBlocks
 from .edges import WorkflowEdges, AsyncWorkflowEdges
+from .evals import WorkflowEvals, AsyncWorkflowEvals
 from .experiments import WorkflowExperiments, AsyncWorkflowExperiments
 from .reviews import WorkflowReviews, AsyncWorkflowReviews
 from .runs import WorkflowRuns, AsyncWorkflowRuns
 from .spec import WorkflowSpec, AsyncWorkflowSpec
 from .steps import WorkflowSteps, AsyncWorkflowSteps
-from .tests import WorkflowTests, AsyncWorkflowTests
 
 
 class WorkflowsMixin:
@@ -202,12 +202,12 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
         self.artifacts = WorkflowArtifacts(client=client)
         self.blocks = WorkflowBlocks(client=client)
         self.edges = WorkflowEdges(client=client)
+        self.evals = WorkflowEvals(client=client)
         self.experiments = WorkflowExperiments(client=client)
         self.reviews = WorkflowReviews(client=client)
         self.runs = WorkflowRuns(client=client)
         self.spec = WorkflowSpec(client=client)
         self.steps = WorkflowSteps(client=client)
-        self.tests = WorkflowTests(client=client)
 
     def list(
         self,
@@ -307,12 +307,12 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
         self.artifacts = AsyncWorkflowArtifacts(client=client)
         self.blocks = AsyncWorkflowBlocks(client=client)
         self.edges = AsyncWorkflowEdges(client=client)
+        self.evals = AsyncWorkflowEvals(client=client)
         self.experiments = AsyncWorkflowExperiments(client=client)
         self.reviews = AsyncWorkflowReviews(client=client)
         self.runs = AsyncWorkflowRuns(client=client)
         self.spec = AsyncWorkflowSpec(client=client)
         self.steps = AsyncWorkflowSteps(client=client)
-        self.tests = AsyncWorkflowTests(client=client)
 
     async def list(
         self,
@@ -407,12 +407,12 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
 from .artifacts import *  # noqa: E402,F401,F403  (sub-resource + grandchildren)
 from .blocks import *  # noqa: E402,F401,F403  (sub-resource + grandchildren)
 from .edges import *  # noqa: E402,F401,F403  (sub-resource + grandchildren)
+from .evals import *  # noqa: E402,F401,F403  (sub-resource + grandchildren)
 from .experiments import *  # noqa: E402,F401,F403  (sub-resource + grandchildren)
 from .reviews import *  # noqa: E402,F401,F403  (sub-resource + grandchildren)
 from .runs import *  # noqa: E402,F401,F403  (sub-resource + grandchildren)
 from .spec import *  # noqa: E402,F401,F403  (sub-resource + grandchildren)
 from .steps import *  # noqa: E402,F401,F403  (sub-resource + grandchildren)
-from .tests import *  # noqa: E402,F401,F403  (sub-resource + grandchildren)
 
 __all__ = [
     "Workflows",
@@ -430,6 +430,15 @@ __all__ = [
     "WorkflowEdges",
     "AsyncWorkflowEdges",
     "WorkflowEdgesMixin",
+    "WorkflowEvals",
+    "AsyncWorkflowEvals",
+    "WorkflowEvalsMixin",
+    "WorkflowEvalRunResults",
+    "AsyncWorkflowEvalRunResults",
+    "WorkflowEvalRunResultsMixin",
+    "WorkflowEvalRuns",
+    "AsyncWorkflowEvalRuns",
+    "WorkflowEvalRunsMixin",
     "WorkflowExperiments",
     "AsyncWorkflowExperiments",
     "WorkflowExperimentsMixin",
@@ -457,13 +466,4 @@ __all__ = [
     "WorkflowSteps",
     "AsyncWorkflowSteps",
     "WorkflowStepsMixin",
-    "WorkflowTests",
-    "AsyncWorkflowTests",
-    "WorkflowTestsMixin",
-    "WorkflowTestRunResults",
-    "AsyncWorkflowTestRunResults",
-    "WorkflowTestRunResultsMixin",
-    "WorkflowTestRuns",
-    "AsyncWorkflowTestRuns",
-    "WorkflowTestRunsMixin",
 ]

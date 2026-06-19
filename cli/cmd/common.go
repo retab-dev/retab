@@ -794,7 +794,7 @@ func doCLIBodyRequest(
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		// Surface the same `APIError` shape the SDK clients return so
 		// `runE` renders it through `renderAPIErrorForCLI`. Commands that
-		// route through this helper (experiments runs, tests runs list,
+		// route through this helper (experiments runs, evals runs list,
 		// runs restart, …) used to dump the raw HTTP envelope here while
 		// SDK-backed commands rendered "404 — Workflow not found"; that
 		// inconsistency confused users probing the CLI for status codes.
@@ -1343,7 +1343,7 @@ func validateDateRange(fromDateFlag, toDateFlag, fromVal, toVal string) error {
 
 // validateOrderFlag and validateDateFlag let plain `String` flags reuse
 // the same parsing as `orderFlagValue` / `dateFlagValue` without changing
-// flag registration. Useful for commands like `workflows tests runs list`
+// flag registration. Useful for commands like `workflows evals runs list`
 // that historically forwarded raw query strings to the server and need
 // retrofitted client-side validation.
 

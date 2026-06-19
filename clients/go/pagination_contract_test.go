@@ -140,7 +140,7 @@ func TestPaginationContract(t *testing.T) {
 
 // discoveredListMethod is one List method discovered via reflection.
 type discoveredListMethod struct {
-	// path is the dotted accessor from *Client, e.g. "Workflows.Tests.Runs.List".
+	// path is the dotted accessor from *Client, e.g. "Workflows.Evals.Runs.List".
 	path string
 	// receiver is the *Service value the method is on.
 	receiver reflect.Value

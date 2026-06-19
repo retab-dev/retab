@@ -45,9 +45,9 @@ var sdkResourceCommandAliases = map[string]string{
 	"WorkflowSpec":            "workflows spec",
 	"WorkflowSpecs":           "workflows spec",
 	"WorkflowSteps":           "workflows steps",
-	"WorkflowTestRunResults":  "workflows tests results",
-	"WorkflowTestRuns":        "workflows tests runs",
-	"WorkflowTests":           "workflows tests",
+	"WorkflowEvalRunResults":  "workflows evals results",
+	"WorkflowEvalRuns":        "workflows evals runs",
+	"WorkflowEvals":           "workflows evals",
 }
 
 var sdkOperationCommandAliases = map[string]string{
@@ -104,7 +104,7 @@ var workflowCLIOnlyCommands = map[string]string{
 	"workflows runs restart":             "local restart alias composed from runs create",
 	"workflows experiments runs wait":    "local poll loop composed from experiments runs get",
 	"workflows runs wait":                "local poll loop composed from runs get",
-	"workflows tests runs wait":          "local poll loop composed from tests runs get",
+	"workflows evals runs wait":          "local poll loop composed from evals runs get",
 	"workflows view":                     "terminal graph renderer composed from workflow graph reads",
 	"workflows access list":              "internal /v1/workflow-memberships read (dashboard-only, not in public SDK)",
 	"workflows access grant":             "internal /v1/workflow-memberships create (dashboard-only, not in public SDK)",

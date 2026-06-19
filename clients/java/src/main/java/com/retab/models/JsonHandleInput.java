@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class JsonHandleInput implements HandleInput {
+public final class JsonHandleInput implements HandleInputType {
   private final String type;
   private final Object data;
 

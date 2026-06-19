@@ -55,8 +55,6 @@ export interface ExtractionWorkflowArtifact {
    * @default 1
    */
   nConsensus?: number;
-  /** Legacy stored DPI value, retained only for compatibility. */
-  imageResolutionDpi?: number;
   /** Free-form instructions supplied with the extraction request. */
   instructions?: string | null;
   /** The extracted structured data */
@@ -88,7 +86,6 @@ export interface ExtractionWorkflowArtifactResponse {
   model: string;
   json_schema: Record<string, unknown>;
   n_consensus?: number;
-  image_resolution_dpi?: number;
   instructions?: string | null;
   output: Record<string, unknown>;
   status?: ExtractionWorkflowArtifactStatus;
@@ -106,7 +103,6 @@ export const ZExtractionWorkflowArtifact = z.object({
   model: z.string(),
   jsonSchema: z.record(z.string(), z.unknown()),
   nConsensus: z.number().int().optional(),
-  imageResolutionDpi: z.number().int().optional(),
   instructions: z.string().nullable().optional(),
   output: z.record(z.string(), z.unknown()),
   status: ZExtractionWorkflowArtifactStatus.optional(),
@@ -127,7 +123,6 @@ export function deserializeExtractionWorkflowArtifact(
     model: wire['model'],
     jsonSchema: wire['json_schema'],
     nConsensus: wire['n_consensus'],
-    imageResolutionDpi: wire['image_resolution_dpi'],
     instructions: wire['instructions'],
     output: wire['output'],
     status: wire['status'],
@@ -165,7 +160,6 @@ export function serializeExtractionWorkflowArtifact(
     model: domain['model'],
     json_schema: domain['jsonSchema'],
     n_consensus: domain['nConsensus'],
-    image_resolution_dpi: domain['imageResolutionDpi'],
     instructions: domain['instructions'],
     output: domain['output'],
     status: domain['status'],

@@ -21,7 +21,6 @@ public final class ExtractionRequest {
   private final Boolean stream;
   private final Boolean background;
   private final Map<String, String> chunkingKeys;
-  private final Long imageResolutionDpi;
 
   @JsonCreator
   public ExtractionRequest(
@@ -36,8 +35,7 @@ public final class ExtractionRequest {
       @JsonProperty(value = "bust_cache", required = false) Boolean bustCache,
       @JsonProperty(value = "stream", required = false) Boolean stream,
       @JsonProperty(value = "background", required = false) Boolean background,
-      @JsonProperty(value = "chunking_keys", required = false) Map<String, String> chunkingKeys,
-      @JsonProperty(value = "image_resolution_dpi", required = false) Long imageResolutionDpi) {
+      @JsonProperty(value = "chunking_keys", required = false) Map<String, String> chunkingKeys) {
     this.document = document;
     this.jsonSchema = jsonSchema;
     this.model = model != null ? model : "retab-small";
@@ -49,7 +47,6 @@ public final class ExtractionRequest {
     this.stream = stream != null ? stream : false;
     this.background = background != null ? background : false;
     this.chunkingKeys = chunkingKeys;
-    this.imageResolutionDpi = imageResolutionDpi;
   }
 
   @JsonProperty("document")
@@ -105,10 +102,5 @@ public final class ExtractionRequest {
   @JsonProperty("chunking_keys")
   public Map<String, String> getChunkingKeys() {
     return chunkingKeys;
-  }
-
-  @JsonProperty("image_resolution_dpi")
-  public Long getImageResolutionDpi() {
-    return imageResolutionDpi;
   }
 }

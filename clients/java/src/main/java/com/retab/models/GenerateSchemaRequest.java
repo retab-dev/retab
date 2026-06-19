@@ -13,20 +13,17 @@ public final class GenerateSchemaRequest {
   private final String model;
   private final String instructions;
   private final Boolean background;
-  private final Long imageResolutionDpi;
 
   @JsonCreator
   public GenerateSchemaRequest(
       @JsonProperty(value = "documents", required = true) List<MimeData> documents,
       @JsonProperty(value = "model", required = false) String model,
       @JsonProperty(value = "instructions", required = false) String instructions,
-      @JsonProperty(value = "background", required = false) Boolean background,
-      @JsonProperty(value = "image_resolution_dpi", required = false) Long imageResolutionDpi) {
+      @JsonProperty(value = "background", required = false) Boolean background) {
     this.documents = documents;
     this.model = model != null ? model : "retab-small";
     this.instructions = instructions;
     this.background = background != null ? background : false;
-    this.imageResolutionDpi = imageResolutionDpi;
   }
 
   @JsonProperty("documents")
@@ -47,10 +44,5 @@ public final class GenerateSchemaRequest {
   @JsonProperty("background")
   public Boolean isBackground() {
     return background;
-  }
-
-  @JsonProperty("image_resolution_dpi")
-  public Long getImageResolutionDpi() {
-    return imageResolutionDpi;
   }
 }

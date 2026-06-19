@@ -49,8 +49,6 @@ export interface Parse {
   model: string;
   /** Format used to render tables extracted from the document */
   tableParsingFormat: TableParsingFormat;
-  /** Legacy stored DPI value, retained only for compatibility. */
-  imageResolutionDpi: number;
   /** Free-form instructions supplied with the parse request. */
   instructions?: string | null;
   /** The parsed document content */
@@ -72,7 +70,6 @@ export interface ParseResponse {
   file: FileRefResponse;
   model: string;
   table_parsing_format: TableParsingFormat;
-  image_resolution_dpi: number;
   instructions?: string | null;
   output: ParseOutputResponse;
   status?: ParseStatus;
@@ -86,7 +83,6 @@ export const ZParse = z.object({
   file: ZFileRef,
   model: z.string(),
   tableParsingFormat: ZTableParsingFormat,
-  imageResolutionDpi: z.number().int(),
   instructions: z.string().nullable().optional(),
   output: ZParseOutput,
   status: ZParseStatus.optional(),
@@ -101,7 +97,6 @@ export function deserializeParse(wire: ParseResponse): Parse {
     file: deserializeFileRef(wire['file']),
     model: wire['model'],
     tableParsingFormat: wire['table_parsing_format'],
-    imageResolutionDpi: wire['image_resolution_dpi'],
     instructions: wire['instructions'],
     output: deserializeParseOutput(wire['output']),
     status: wire['status'],
@@ -132,7 +127,6 @@ export function serializeParse(domain: Parse): ParseResponse {
     file: serializeFileRef(domain['file']),
     model: domain['model'],
     table_parsing_format: domain['tableParsingFormat'],
-    image_resolution_dpi: domain['imageResolutionDpi'],
     instructions: domain['instructions'],
     output: serializeParseOutput(domain['output']),
     status: domain['status'],

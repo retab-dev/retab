@@ -1,7 +1,7 @@
 namespace Retab
 {
 
-    /// <summary>Structured block-test assertion target.</summary>
+    /// <summary>Structured block-eval assertion target.</summary>
     public class OutputTarget
     {
         public string OutputHandleId { get; set; } = default!;

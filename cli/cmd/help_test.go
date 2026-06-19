@@ -434,7 +434,7 @@ func TestHelpFunc_RootGetsCustomChildrenGetDefault(t *testing.T) {
 }
 
 // Pin the colour role of each visual element by injecting a sentinel
-// palette and asserting exact wrappers. Five roles all live in one test
+// palette and asserting exact wrappers. Five roles all live in one eval
 // so a regression on any of them points at the specific role that drifted:
 //
 //   - command names                       → bold blue   `<A>` (accent)

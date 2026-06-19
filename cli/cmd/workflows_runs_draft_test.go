@@ -13,7 +13,7 @@ import (
 // newRunsCreateTestCmd builds a bare command wired to the real runs-create RunE
 // with the flags the handler reads, matching the other runs-create tests.
 func newRunsCreateTestCmd() *cobra.Command {
-	cmd := &cobra.Command{Use: "test-run-create", RunE: workflowsRunsCreateCmd.RunE}
+	cmd := &cobra.Command{Use: "eval-run-create", RunE: workflowsRunsCreateCmd.RunE}
 	cmd.Flags().String("version", "", "")
 	cmd.Flags().Bool("draft", false, "")
 	cmd.Flags().String("documents-file", "", "")

@@ -30,7 +30,7 @@ Compare experiment outputs to a baseline via
 experiment via ` + "`workflows experiments runs create`" + `.
 
 For deterministic regression testing of a single pinned assertion, see
-` + "`retab workflows tests --help`" + `.`,
+` + "`retab workflows evals --help`" + `.`,
 	Example: `  # List experiments for a workflow
   retab workflows experiments list wf_abc123
 
@@ -129,11 +129,11 @@ func parseExperimentDocs(cmd *cobra.Command) ([]*retab.ExperimentDocumentCapture
 // The wire shape carries an optional `type` discriminator on each value, but
 // the CLI's JSON descriptors have historically used the raw value form; both
 // shapes are normalized here so legacy descriptor files keep working.
-func experimentHandleInputsFromMap(raw map[string]any) map[string]retab.HandleInput {
+func experimentHandleInputsFromMap(raw map[string]any) map[string]retab.HandleInputType {
 	if raw == nil {
 		return nil
 	}
-	out := make(map[string]retab.HandleInput, len(raw))
+	out := make(map[string]retab.HandleInputType, len(raw))
 	for key, value := range raw {
 		input := retab.JSONHandleInput{}
 		if obj, ok := value.(map[string]any); ok {
@@ -144,13 +144,13 @@ func experimentHandleInputsFromMap(raw map[string]any) map[string]retab.HandleIn
 					dataCopy := data
 					input.Data = &dataCopy
 				}
-				out[key] = retab.HandleInputFromJSONHandleInput(input)
+				out[key] = retab.HandleInputTypeFromJSONHandleInput(input)
 				continue
 			}
 		}
 		dataCopy := value
 		input.Data = &dataCopy
-		out[key] = retab.HandleInputFromJSONHandleInput(input)
+		out[key] = retab.HandleInputTypeFromJSONHandleInput(input)
 	}
 	return out
 }
@@ -648,7 +648,7 @@ consumers.`,
 var workflowsExperimentsRunsCreateCmd = &cobra.Command{
 	Use:   "create <experiment-id>",
 	Short: "Create a new experiment run",
-	Long: `Create an experiment run that evaluates the candidate config across every
+	Long: `Create an experiment run that testuates the candidate config across every
 document in its set.
 
 The workflow id is derived server-side from the experiment record, so

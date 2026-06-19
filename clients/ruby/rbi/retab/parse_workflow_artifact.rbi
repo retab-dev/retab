@@ -33,12 +33,6 @@ module Retab
     sig { params(value: String).returns(String) }
     def table_parsing_format=(value); end
 
-    sig { returns(Integer) }
-    def image_resolution_dpi; end
-
-    sig { params(value: Integer).returns(Integer) }
-    def image_resolution_dpi=(value); end
-
     sig { returns(T.nilable(String)) }
     def instructions; end
 

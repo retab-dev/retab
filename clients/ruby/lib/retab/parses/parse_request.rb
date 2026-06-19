@@ -11,8 +11,7 @@ module Retab
       table_parsing_format: :table_parsing_format,
       instructions: :instructions,
       bust_cache: :bust_cache,
-      background: :background,
-      image_resolution_dpi: :image_resolution_dpi
+      background: :background
     }.freeze
 
     attr_accessor(
@@ -21,8 +20,7 @@ module Retab
       :table_parsing_format,
       :instructions,
       :bust_cache,
-      :background,
-      :image_resolution_dpi
+      :background
     )
 
     def initialize(json)
@@ -34,7 +32,6 @@ module Retab
       @instructions = hash[:instructions]
       @bust_cache = hash[:bust_cache].nil? ? false : hash[:bust_cache]
       @background = hash[:background].nil? ? false : hash[:background]
-      @image_resolution_dpi = hash[:image_resolution_dpi]
     end
   end
 end

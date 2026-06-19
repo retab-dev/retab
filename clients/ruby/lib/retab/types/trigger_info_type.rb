@@ -4,15 +4,6 @@
 
 module Retab
   module Types
-    class TriggerInfoType
-      MANUAL = "manual"
-      API = "api"
-      SCHEDULE = "schedule"
-      WEBHOOK = "webhook"
-      EMAIL = "email"
-      CUSTOM = "custom"
-      RESTART = "restart"
-      ALL = [MANUAL, API, SCHEDULE, WEBHOOK, EMAIL, CUSTOM, RESTART].freeze
-    end
+    TriggerInfoType = EvalRunTriggerType
   end
 end

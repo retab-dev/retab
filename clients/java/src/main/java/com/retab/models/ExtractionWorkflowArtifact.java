@@ -16,7 +16,6 @@ public final class ExtractionWorkflowArtifact implements WorkflowArtifactOperati
   private final String model;
   private final Map<String, Object> jsonSchema;
   private final Long nConsensus;
-  private final Long imageResolutionDpi;
   private final String instructions;
   private final Map<String, Object> output;
   private final ExtractionWorkflowArtifactStatus status;
@@ -34,7 +33,6 @@ public final class ExtractionWorkflowArtifact implements WorkflowArtifactOperati
       @JsonProperty(value = "model", required = true) String model,
       @JsonProperty(value = "json_schema", required = true) Map<String, Object> jsonSchema,
       @JsonProperty(value = "n_consensus", required = false) Long nConsensus,
-      @JsonProperty(value = "image_resolution_dpi", required = false) Long imageResolutionDpi,
       @JsonProperty(value = "instructions", required = false) String instructions,
       @JsonProperty(value = "output", required = true) Map<String, Object> output,
       @JsonProperty(value = "status", required = false) ExtractionWorkflowArtifactStatus status,
@@ -49,7 +47,6 @@ public final class ExtractionWorkflowArtifact implements WorkflowArtifactOperati
     this.model = model;
     this.jsonSchema = jsonSchema;
     this.nConsensus = nConsensus;
-    this.imageResolutionDpi = imageResolutionDpi;
     this.instructions = instructions;
     this.output = output;
     this.status = status;
@@ -84,11 +81,6 @@ public final class ExtractionWorkflowArtifact implements WorkflowArtifactOperati
   @JsonProperty("n_consensus")
   public Long getNConsensus() {
     return nConsensus;
-  }
-
-  @JsonProperty("image_resolution_dpi")
-  public Long getImageResolutionDpi() {
-    return imageResolutionDpi;
   }
 
   @JsonProperty("instructions")

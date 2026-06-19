@@ -142,7 +142,6 @@ def test_extractions_create_accepts_signed_bucket_url() -> None:
             "model": "retab-small",
             "json_schema": {"type": "object"},
             "n_consensus": 1,
-            "image_resolution_dpi": 192,
             "output": {},
             "consensus": {"choices": []},
             "metadata": {},

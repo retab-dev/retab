@@ -1,4 +1,4 @@
-//go:build !retab_oagen_cli_workflows_tests
+//go:build !retab_oagen_cli_workflows_evals
 
 package cmd
 
@@ -40,13 +40,13 @@ func TestRequiredFlagsAdvertiseRequiredInUsage(t *testing.T) {
 	walk(rootCmd)
 }
 
-// `workflows tests create` accepts each of target/source/assertion as EITHER
+// `workflows evals create` accepts each of target/source/assertion as EITHER
 // a JSON file OR an inline flag form, so none of the file flags is
 // unconditionally required. The convention here is the inverse of
 // TestRequiredFlagsAdvertiseRequiredInUsage: the file flags must NOT claim
 // "(required)" (that would mislead users away from the inline form), and each
 // must point at its inline alternative so `--help` documents both paths.
-func TestWorkflowsTestsCreateFileFlagsAdvertiseInlineAlternative(t *testing.T) {
+func TestWorkflowsEvalsCreateFileFlagsAdvertiseInlineAlternative(t *testing.T) {
 	cases := []struct {
 		flag        string
 		alternative string
@@ -56,9 +56,9 @@ func TestWorkflowsTestsCreateFileFlagsAdvertiseInlineAlternative(t *testing.T) {
 		{"assertion-file", "--equals"},
 	}
 	for _, tc := range cases {
-		f := workflowsTestsCreateCmd.Flags().Lookup(tc.flag)
+		f := workflowsEvalsCreateCmd.Flags().Lookup(tc.flag)
 		if f == nil {
-			t.Errorf("workflows tests create has no flag --%s", tc.flag)
+			t.Errorf("workflows evals create has no flag --%s", tc.flag)
 			continue
 		}
 		if strings.Contains(f.Usage, "(required)") {

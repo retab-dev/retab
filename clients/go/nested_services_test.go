@@ -20,11 +20,11 @@ func TestNewClientWiresNestedServices(t *testing.T) {
 	if client.Workflows.Spec == nil {
 		t.Fatalf("expected client.Workflows.Spec to be wired")
 	}
-	if client.Workflows.Tests == nil {
-		t.Fatalf("expected client.Workflows.Tests to be wired")
+	if client.Workflows.Evals == nil {
+		t.Fatalf("expected client.Workflows.Evals to be wired")
 	}
-	if client.Workflows.Tests.Runs == nil {
-		t.Fatalf("expected client.Workflows.Tests.Runs to be wired")
+	if client.Workflows.Evals.Runs == nil {
+		t.Fatalf("expected client.Workflows.Evals.Runs to be wired")
 	}
 	if client.Edits.Templates == nil {
 		t.Fatalf("expected client.Edits.Templates to be wired")

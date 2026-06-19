@@ -42,8 +42,8 @@ module Retab
       @steps ||= Retab::WorkflowSteps.new(@client)
     end
 
-    def tests
-      @tests ||= Retab::WorkflowTests.new(@client)
+    def evals
+      @evals ||= Retab::WorkflowEvals.new(@client)
     end
 
     # List Workflows

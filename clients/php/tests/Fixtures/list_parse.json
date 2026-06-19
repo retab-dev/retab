@@ -9,7 +9,6 @@
       },
       "model": "test_model",
       "table_parsing_format": "markdown",
-      "image_resolution_dpi": 1,
       "instructions": "test_instructions",
       "output": {
         "pages": [

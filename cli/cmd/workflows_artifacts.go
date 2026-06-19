@@ -100,7 +100,7 @@ var workflowsArtifactsListCmd = &cobra.Command{
 ` + "`--operation`" + ` to scope to one artifact type.
 
 The run id is positional, matching the other ` + "`workflows <X> list`" + `
-commands (` + "`workflows tests list <wf-id>`" + `,
+commands (` + "`workflows evals list <wf-id>`" + `,
 ` + "`workflows steps list <run-id>`" + `, …): the positional slot is
 always the parent id, and flags are reserved for filters.
 

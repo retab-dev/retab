@@ -22,9 +22,6 @@ namespace Retab
         /// <summary>Number of consensus votes used</summary>
         public long? NConsensus { get; set; }
 
-        /// <summary>Legacy stored DPI value, retained only for compatibility.</summary>
-        public long? ImageResolutionDpi { get; set; }
-
         /// <summary>Free-form instructions supplied with the extraction request.</summary>
         public string? Instructions { get; set; }
 

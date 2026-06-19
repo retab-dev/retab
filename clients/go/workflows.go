@@ -14,12 +14,12 @@ type WorkflowService struct {
 	Artifacts   *WorkflowArtifactService
 	Blocks      *WorkflowBlockService
 	Edges       *WorkflowEdgeService
+	Evals       *WorkflowEvalService
 	Experiments *WorkflowExperimentService
 	Reviews     *WorkflowReviewService
 	Runs        *WorkflowRunService
 	Spec        *WorkflowSpecService
 	Steps       *WorkflowStepService
-	Tests       *WorkflowTestService
 }
 
 // WorkflowsListParams contains the parameters for List.

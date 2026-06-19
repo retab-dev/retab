@@ -11,7 +11,7 @@ Covered (not covered by the other ``test_creditless_*`` files):
   - ``client.workflows.blocks``      — list / get / 404 / config-validate (read-only)
   - ``client.workflows.edges``       — list / get / 404
   - ``client.workflows.experiments`` — list / get / 404 (read-only; never run)
-  - ``client.workflows.tests``       — list / get / 404 (read-only; never run)
+  - ``client.workflows.evals``       — list / get / 404 (read-only; never run)
 """
 
 from __future__ import annotations
@@ -27,7 +27,7 @@ from retab.exceptions import APIError, NotFoundError
 from retab.types.workflows.blocks import WorkflowBlock
 from retab.types.workflows.edges import WorkflowEdgeDoc
 from retab.types.workflows.experiments import WorkflowExperiment
-from retab.types.workflows.tests import WorkflowTest
+from retab.types.workflows.evals import WorkflowEval
 
 # Whole module is creditless (storage/config/list/get/error paths only).
 pytestmark = pytest.mark.creditless
@@ -193,44 +193,44 @@ def test_tests_list_shape_per_workflow(sync_client: Retab) -> None:
     workflow_id = _discover_workflow_id(sync_client)
     if not workflow_id:
         pytest.skip("no workflows on staging")
-    page = sync_client.workflows.tests.list(workflow_id=workflow_id, limit=5)
+    page = sync_client.workflows.evals.list(workflow_id=workflow_id, limit=5)
     assert isinstance(page.data, list)
     assert page.list_metadata is not None
     for test in page.data:
-        assert isinstance(test, WorkflowTest)
+        assert isinstance(test, WorkflowEval)
 
 
 def test_tests_get_by_discovered_id(sync_client: Retab) -> None:
     page = sync_client.workflows.list(limit=25)
     for wf in page.data:
         try:
-            tests = sync_client.workflows.tests.list(workflow_id=wf.id, limit=1)
+            tests = sync_client.workflows.evals.list(workflow_id=wf.id, limit=1)
         except PydanticValidationError:
-            # Staging can contain legacy workflow-test summary rows that predate
+            # Staging can contain legacy workflow-eval summary rows that predate
             # the current typed SDK contract. Keep scanning for a valid row.
             continue
         if tests.data:
-            test_id = tests.data[0].id
+            eval_id = tests.data[0].id
             try:
-                fetched = sync_client.workflows.tests.get(test_id)
+                fetched = sync_client.workflows.evals.get(eval_id)
             except PydanticValidationError:
                 continue
-            assert isinstance(fetched, WorkflowTest)
-            assert fetched.id == test_id
+            assert isinstance(fetched, WorkflowEval)
+            assert fetched.id == eval_id
             return
     pytest.skip("no valid workflow with tests on staging")
 
 
 def test_tests_get_bogus_id_404(sync_client: Retab) -> None:
     with pytest.raises(NotFoundError) as excinfo:
-        sync_client.workflows.tests.get("wtst_creditless_bogus_" + uuid.uuid4().hex)
+        sync_client.workflows.evals.get("wtst_creditless_bogus_" + uuid.uuid4().hex)
     assert excinfo.value.status_code == 404
 
 
 def test_tests_list_bogus_workflow_404(sync_client: Retab) -> None:
     """The docstring promises 404 when the workflow does not exist."""
     with pytest.raises(APIError) as excinfo:
-        sync_client.workflows.tests.list(workflow_id="wrk_creditless_bogus_" + uuid.uuid4().hex, limit=1)
+        sync_client.workflows.evals.list(workflow_id="wrk_creditless_bogus_" + uuid.uuid4().hex, limit=1)
     assert excinfo.value.status_code in (404, 400)
 
 

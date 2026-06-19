@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "go",
-  "generatedAt": "2026-06-18T15:12:17.357Z",
+  "generatedAt": "2026-06-19T07:55:54.201Z",
   "files": [
     "classifications.go",
     "compat.go",
@@ -31,6 +31,9 @@
     "workflow_block_executions.go",
     "workflow_blocks.go",
     "workflow_edges.go",
+    "workflow_eval_run_results.go",
+    "workflow_eval_runs.go",
+    "workflow_evals.go",
     "workflow_experiments.go",
     "workflow_review_versions.go",
     "workflow_reviews.go",
@@ -38,9 +41,6 @@
     "workflow_runs.go",
     "workflow_spec.go",
     "workflow_steps.go",
-    "workflow_test_run_results.go",
-    "workflow_test_runs.go",
-    "workflow_tests.go",
     "workflows.go"
   ],
   "operations": {
@@ -436,6 +436,50 @@
       "sdkMethod": "Delete",
       "service": "workflows.edges"
     },
+    "GET /v1/workflows/evals": {
+      "sdkMethod": "List",
+      "service": "workflows.evals"
+    },
+    "POST /v1/workflows/evals": {
+      "sdkMethod": "Create",
+      "service": "workflows.evals"
+    },
+    "GET /v1/workflows/evals/{eval_id}": {
+      "sdkMethod": "Get",
+      "service": "workflows.evals"
+    },
+    "PATCH /v1/workflows/evals/{eval_id}": {
+      "sdkMethod": "Update",
+      "service": "workflows.evals"
+    },
+    "DELETE /v1/workflows/evals/{eval_id}": {
+      "sdkMethod": "Delete",
+      "service": "workflows.evals"
+    },
+    "GET /v1/workflows/evals/results": {
+      "sdkMethod": "List",
+      "service": "workflows.evals.results"
+    },
+    "GET /v1/workflows/evals/results/{result_id}": {
+      "sdkMethod": "Get",
+      "service": "workflows.evals.results"
+    },
+    "GET /v1/workflows/evals/runs": {
+      "sdkMethod": "List",
+      "service": "workflows.evals.runs"
+    },
+    "POST /v1/workflows/evals/runs": {
+      "sdkMethod": "Create",
+      "service": "workflows.evals.runs"
+    },
+    "GET /v1/workflows/evals/runs/{run_id}": {
+      "sdkMethod": "Get",
+      "service": "workflows.evals.runs"
+    },
+    "POST /v1/workflows/evals/runs/{run_id}/cancel": {
+      "sdkMethod": "Cancel",
+      "service": "workflows.evals.runs"
+    },
     "GET /v1/workflows/experiments": {
       "sdkMethod": "List",
       "service": "workflows.experiments"
@@ -551,50 +595,6 @@
     "GET /v1/workflows/steps/{step_id}": {
       "sdkMethod": "Get",
       "service": "workflows.steps"
-    },
-    "GET /v1/workflows/tests": {
-      "sdkMethod": "List",
-      "service": "workflows.tests"
-    },
-    "POST /v1/workflows/tests": {
-      "sdkMethod": "Create",
-      "service": "workflows.tests"
-    },
-    "GET /v1/workflows/tests/{test_id}": {
-      "sdkMethod": "Get",
-      "service": "workflows.tests"
-    },
-    "PATCH /v1/workflows/tests/{test_id}": {
-      "sdkMethod": "Update",
-      "service": "workflows.tests"
-    },
-    "DELETE /v1/workflows/tests/{test_id}": {
-      "sdkMethod": "Delete",
-      "service": "workflows.tests"
-    },
-    "GET /v1/workflows/tests/results": {
-      "sdkMethod": "List",
-      "service": "workflows.tests.results"
-    },
-    "GET /v1/workflows/tests/results/{result_id}": {
-      "sdkMethod": "Get",
-      "service": "workflows.tests.results"
-    },
-    "GET /v1/workflows/tests/runs": {
-      "sdkMethod": "List",
-      "service": "workflows.tests.runs"
-    },
-    "POST /v1/workflows/tests/runs": {
-      "sdkMethod": "Create",
-      "service": "workflows.tests.runs"
-    },
-    "GET /v1/workflows/tests/runs/{run_id}": {
-      "sdkMethod": "Get",
-      "service": "workflows.tests.runs"
-    },
-    "POST /v1/workflows/tests/runs/{run_id}/cancel": {
-      "sdkMethod": "Cancel",
-      "service": "workflows.tests.runs"
     }
   }
 }

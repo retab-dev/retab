@@ -24,7 +24,6 @@ readonly class ParseRequest implements \JsonSerializable
         public ?bool $bustCache = null,
         /** If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream. */
         public ?bool $background = null,
-        public ?int $imageResolutionDpi = null,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -44,7 +43,6 @@ readonly class ParseRequest implements \JsonSerializable
             instructions: $data['instructions'] ?? null,
             bustCache: $data['bust_cache'] ?? null,
             background: $data['background'] ?? null,
-            imageResolutionDpi: $data['image_resolution_dpi'] ?? null,
         );
     }
 
@@ -58,7 +56,6 @@ readonly class ParseRequest implements \JsonSerializable
             'instructions' => $this->instructions,
             'bust_cache' => $this->bustCache,
             'background' => $this->background,
-            'image_resolution_dpi' => $this->imageResolutionDpi,
         ];
     }
 }

@@ -29,9 +29,9 @@ const REGISTERED_LIST_MODULES: &[&str] = &[
     "workflow_reviews.rs",
     "workflow_runs.rs",
     "workflow_steps.rs",
-    "workflow_test_run_results.rs",
-    "workflow_test_runs.rs",
-    "workflow_tests.rs",
+    "workflow_eval_run_results.rs",
+    "workflow_eval_runs.rs",
+    "workflow_evals.rs",
     "workflows.rs",
 ];
 
@@ -313,37 +313,37 @@ pagination_case!(
     }
 );
 pagination_case!(
-    workflow_test_run_results_list_auto_pages,
-    "/v1/workflows/tests/results",
+    workflow_eval_run_results_list_auto_pages,
+    "/v1/workflows/evals/results",
     |client| {
         client
             .workflows()
-            .tests()
+            .evals()
             .results()
-            .list(retab::resources::workflow_test_run_results::ListParams::new("run_x"))
+            .list(retab::resources::workflow_eval_run_results::ListParams::new("run_x"))
             .await
     }
 );
 pagination_case!(
-    workflow_test_runs_list_auto_pages,
-    "/v1/workflows/tests/runs",
+    workflow_eval_runs_list_auto_pages,
+    "/v1/workflows/evals/runs",
     |client| {
         client
             .workflows()
-            .tests()
+            .evals()
             .runs()
-            .list(retab::resources::workflow_test_runs::ListParams::default())
+            .list(retab::resources::workflow_eval_runs::ListParams::default())
             .await
     }
 );
 pagination_case!(
-    workflow_tests_list_auto_pages,
-    "/v1/workflows/tests",
+    workflow_evals_list_auto_pages,
+    "/v1/workflows/evals",
     |client| {
         client
             .workflows()
-            .tests()
-            .list(retab::resources::workflow_tests::ListParams::new("wf_x"))
+            .evals()
+            .list(retab::resources::workflow_evals::ListParams::new("wf_x"))
             .await
     }
 );

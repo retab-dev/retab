@@ -7,7 +7,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 from retab.types.workflows.artifacts import ErrorDetails
 from retab.types.workflows.blocks.executions import StepArtifactRef
-from retab.types.workflows.experiments import FileHandleInput, JsonHandleInput
+from retab.types.workflows.evals.results import FileHandleInput, JsonHandleInput
 
 
 class ExperimentResultBlockType(str, Enum):

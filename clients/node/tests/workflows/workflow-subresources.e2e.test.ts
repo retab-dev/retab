@@ -1,7 +1,7 @@
 // REAL end-to-end tests for workflow graph/runtime sub-resources.
 //
 // CREDITLESS: these tests only read existing workflow definitions, runs,
-// steps, artifacts, reviews, experiments, and saved tests. They never create a
+// steps, artifacts, reviews, experiments, and saved evals. They never create a
 // workflow run, approve/reject a review, run an experiment, or execute a block.
 
 import { describe, expect, test } from 'bun:test';
@@ -74,19 +74,19 @@ d('workflow graph sub-resources (live, read-only)', () => {
     }
   });
 
-  test('saved tests and experiments list by workflow and get discovered rows', async () => {
+  test('saved evals and experiments list by workflow and get discovered rows', async () => {
     const client = liveClient();
     const workflowId = await discoverWorkflowId(client);
     if (!workflowId) return;
 
-    const tests = await client.workflows.tests.list({ workflowId, limit: 5 });
+    const tests = await client.workflows.evals.list({ workflowId, limit: 5 });
     expect(Array.isArray(tests.data)).toBe(true);
     for (const savedTest of tests.data) {
       expect(savedTest.workflowId).toBe(workflowId);
       expect(typeof savedTest.id).toBe('string');
     }
     if (tests.data.length > 0) {
-      const fetched = await client.workflows.tests.get(tests.data[0].id);
+      const fetched = await client.workflows.evals.get(tests.data[0].id);
       expect(fetched.id).toBe(tests.data[0].id);
       expect(fetched.workflowId).toBe(workflowId);
     }

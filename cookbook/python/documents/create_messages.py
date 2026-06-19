@@ -18,7 +18,6 @@ client = Retab(api_key=retab_api_key)
 result = client.parses.create(
     document="../../../assets/docs/booking_confirmation.jpg",
     model="retab-small",
-    image_resolution_dpi=192,
 )
 
 print(result.output.pages)

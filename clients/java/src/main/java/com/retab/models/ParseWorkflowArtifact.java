@@ -15,7 +15,6 @@ public final class ParseWorkflowArtifact implements WorkflowArtifactOperation2 {
   private final FileRef file;
   private final String model;
   private final ParseWorkflowArtifactTableParsingFormat tableParsingFormat;
-  private final Long imageResolutionDpi;
   private final String instructions;
   private final ParseOutput output;
   private final ParseWorkflowArtifactStatus status;
@@ -31,7 +30,6 @@ public final class ParseWorkflowArtifact implements WorkflowArtifactOperation2 {
       @JsonProperty(value = "model", required = true) String model,
       @JsonProperty(value = "table_parsing_format", required = true)
           ParseWorkflowArtifactTableParsingFormat tableParsingFormat,
-      @JsonProperty(value = "image_resolution_dpi", required = true) Long imageResolutionDpi,
       @JsonProperty(value = "instructions", required = false) String instructions,
       @JsonProperty(value = "output", required = true) ParseOutput output,
       @JsonProperty(value = "status", required = false) ParseWorkflowArtifactStatus status,
@@ -43,7 +41,6 @@ public final class ParseWorkflowArtifact implements WorkflowArtifactOperation2 {
     this.file = file;
     this.model = model;
     this.tableParsingFormat = tableParsingFormat;
-    this.imageResolutionDpi = imageResolutionDpi;
     this.instructions = instructions;
     this.output = output;
     this.status = status;
@@ -71,11 +68,6 @@ public final class ParseWorkflowArtifact implements WorkflowArtifactOperation2 {
   @JsonProperty("table_parsing_format")
   public ParseWorkflowArtifactTableParsingFormat getTableParsingFormat() {
     return tableParsingFormat;
-  }
-
-  @JsonProperty("image_resolution_dpi")
-  public Long getImageResolutionDpi() {
-    return imageResolutionDpi;
   }
 
   @JsonProperty("instructions")

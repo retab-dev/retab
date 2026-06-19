@@ -41,7 +41,6 @@ class ParseRequest(BaseModel):
         default=False,
         description="If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.",
     )
-    image_resolution_dpi: int | None = None
 
 
 class Parse(BaseModel):
@@ -53,7 +52,6 @@ class Parse(BaseModel):
     file: FileRef = Field(..., description="Information about the parsed file")
     model: str = Field(..., description="Model used for parsing")
     table_parsing_format: TableParsingFormat = Field(..., description="Format used to render tables extracted from the document")
-    image_resolution_dpi: int = Field(..., description="Legacy stored DPI value, retained only for compatibility.")
     instructions: str | None = Field(default=None, description="Free-form instructions supplied with the parse request.")
     output: ParseOutput = Field(..., description="The parsed document content")
     status: ParseStatus | None = Field(

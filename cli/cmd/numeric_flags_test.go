@@ -1,4 +1,4 @@
-//go:build !retab_oagen_cli_classifications && !retab_oagen_cli_edits && !retab_oagen_cli_extractions && !retab_oagen_cli_files && !retab_oagen_cli_parses && !retab_oagen_cli_partitions && !retab_oagen_cli_splits && !retab_oagen_cli_workflows_blocks && !retab_oagen_cli_workflows_experiments && !retab_oagen_cli_workflows_runs && !retab_oagen_cli_workflows_tests
+//go:build !retab_oagen_cli_classifications && !retab_oagen_cli_edits && !retab_oagen_cli_extractions && !retab_oagen_cli_files && !retab_oagen_cli_parses && !retab_oagen_cli_partitions && !retab_oagen_cli_splits && !retab_oagen_cli_workflows_blocks && !retab_oagen_cli_workflows_experiments && !retab_oagen_cli_workflows_runs && !retab_oagen_cli_workflows_evals
 
 package cmd
 
@@ -17,18 +17,15 @@ func TestNonNegativeNumericFlagsRejectNegativeValuesLocally(t *testing.T) {
 		reset     string
 		wantError string
 	}{
-		{name: "parses dpi", cmd: parsesCreateCmd, flag: "image-resolution-dpi", reset: "96", wantError: "between"},
-		{name: "extractions create dpi", cmd: extractionsCreateCmd, flag: "image-resolution-dpi", reset: "96", wantError: "between"},
 		{name: "extractions create consensus", cmd: extractionsCreateCmd, flag: "n-consensus", reset: "1", wantError: "between"},
-		{name: "extractions stream dpi", cmd: extractionsStreamCmd, flag: "image-resolution-dpi", reset: "96", wantError: "between"},
 		{name: "extractions stream consensus", cmd: extractionsStreamCmd, flag: "n-consensus", reset: "1", wantError: "between"},
 		{name: "classifications consensus", cmd: classificationsCreateCmd, flag: "n-consensus", reset: "1", wantError: "between"},
 		{name: "classifications first pages", cmd: classificationsCreateCmd, flag: "first-n-pages", reset: "1", wantError: "positive"},
 		{name: "splits consensus", cmd: splitsCreateCmd, flag: "n-consensus", reset: "1", wantError: "between"},
 		{name: "partitions consensus", cmd: partitionsCreateCmd, flag: "n-consensus", reset: "1", wantError: "between"},
 		{name: "files create-upload size", cmd: filesCreateUploadCmd, flag: "size-bytes"},
-		{name: "workflow tests limit", cmd: workflowsTestsListCmd, flag: "limit", reset: "1", wantError: "between"},
-		{name: "workflow test runs limit", cmd: workflowsTestsRunsListCmd, flag: "limit", reset: "1", wantError: "between"},
+		{name: "workflow evals limit", cmd: workflowsEvalsListCmd, flag: "limit", reset: "1", wantError: "between"},
+		{name: "workflow eval runs limit", cmd: workflowsEvalsRunsListCmd, flag: "limit", reset: "1", wantError: "between"},
 		{name: "workflow experiments create consensus", cmd: workflowsExperimentsCreateCmd, flag: "n-consensus"},
 		{name: "workflow experiments update consensus", cmd: workflowsExperimentsUpdateCmd, flag: "n-consensus"},
 		{name: "workflow block width", cmd: workflowsBlocksUpdateCmd, flag: "width"},
@@ -61,32 +58,6 @@ func TestNonNegativeNumericFlagsRejectNegativeValuesLocally(t *testing.T) {
 			}
 			if resetErr := tc.cmd.Flags().Set(tc.flag, reset); resetErr != nil {
 				t.Fatalf("reset --%s: %v", tc.flag, resetErr)
-			}
-		})
-	}
-}
-
-func TestDPIFlagsRejectValuesOutsideBackendRangeLocally(t *testing.T) {
-	for _, tc := range []struct {
-		name string
-		cmd  *cobra.Command
-	}{
-		{name: "parses create", cmd: parsesCreateCmd},
-		{name: "extractions create", cmd: extractionsCreateCmd},
-		{name: "extractions stream", cmd: extractionsStreamCmd},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			for _, value := range []string{"1", "999"} {
-				err := tc.cmd.Flags().Set("image-resolution-dpi", value)
-				if err == nil {
-					t.Fatalf("expected local parse error for --image-resolution-dpi=%s", value)
-				}
-				if !strings.Contains(err.Error(), "between 96 and 300") {
-					t.Fatalf("error %q does not mention DPI range", err.Error())
-				}
-			}
-			if resetErr := tc.cmd.Flags().Set("image-resolution-dpi", "96"); resetErr != nil {
-				t.Fatalf("reset --image-resolution-dpi: %v", resetErr)
 			}
 		})
 	}

@@ -292,7 +292,7 @@ func TestWorkflowsRunsCreateSendsDocumentURLPayload(t *testing.T) {
 	defer server.Close()
 	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
-	cmd := &cobra.Command{Use: "test-run-create", RunE: workflowsRunsCreateCmd.RunE}
+	cmd := &cobra.Command{Use: "eval-run-create", RunE: workflowsRunsCreateCmd.RunE}
 	cmd.Flags().String("version", "", "")
 	cmd.Flags().String("documents-file", "", "")
 	cmd.Flags().StringArray("document", nil, "")
@@ -361,7 +361,7 @@ func TestWorkflowsRunsCreateMaterializesExternalDocumentURL(t *testing.T) {
 	defer server.Close()
 	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
-	cmd := &cobra.Command{Use: "test-run-create", RunE: workflowsRunsCreateCmd.RunE}
+	cmd := &cobra.Command{Use: "eval-run-create", RunE: workflowsRunsCreateCmd.RunE}
 	cmd.Flags().String("version", "", "")
 	cmd.Flags().String("documents-file", "", "")
 	cmd.Flags().StringArray("document", nil, "")
@@ -435,7 +435,7 @@ func TestWorkflowsRunsCreateAcceptsDocumentsFileDescriptors(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cmd := &cobra.Command{Use: "test-run-create", RunE: workflowsRunsCreateCmd.RunE}
+	cmd := &cobra.Command{Use: "eval-run-create", RunE: workflowsRunsCreateCmd.RunE}
 	cmd.Flags().String("version", "", "")
 	cmd.Flags().String("documents-file", "", "")
 	cmd.Flags().StringArray("document", nil, "")
@@ -509,7 +509,7 @@ func TestWorkflowsRunsCreateResolvesDocumentIDToStorageURL(t *testing.T) {
 	defer server.Close()
 	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
-	cmd := &cobra.Command{Use: "test-run-create", RunE: workflowsRunsCreateCmd.RunE}
+	cmd := &cobra.Command{Use: "eval-run-create", RunE: workflowsRunsCreateCmd.RunE}
 	cmd.Flags().String("version", "", "")
 	cmd.Flags().String("documents-file", "", "")
 	cmd.Flags().StringArray("document", nil, "")
@@ -595,7 +595,7 @@ func TestWorkflowsRunsCreateResolvesFileRefIDFromDocumentsFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cmd := &cobra.Command{Use: "test-run-create", RunE: workflowsRunsCreateCmd.RunE}
+	cmd := &cobra.Command{Use: "eval-run-create", RunE: workflowsRunsCreateCmd.RunE}
 	cmd.Flags().String("version", "", "")
 	cmd.Flags().String("documents-file", "", "")
 	cmd.Flags().StringArray("document", nil, "")
@@ -634,7 +634,7 @@ func TestWorkflowsRunsCreateRejectsConflictingDocumentIDAndURL(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
 
-	cmd := &cobra.Command{Use: "test-run-create", RunE: workflowsRunsCreateCmd.RunE}
+	cmd := &cobra.Command{Use: "eval-run-create", RunE: workflowsRunsCreateCmd.RunE}
 	cmd.Flags().String("version", "", "")
 	cmd.Flags().String("documents-file", "", "")
 	cmd.Flags().StringArray("document", nil, "")
@@ -704,7 +704,7 @@ func TestWorkflowsRunsCreateResolvesStartAliasFromDocumentsFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cmd := &cobra.Command{Use: "test-run-create", RunE: workflowsRunsCreateCmd.RunE}
+	cmd := &cobra.Command{Use: "eval-run-create", RunE: workflowsRunsCreateCmd.RunE}
 	cmd.Flags().String("version", "", "")
 	cmd.Flags().String("documents-file", "", "")
 	cmd.Flags().StringArray("document", nil, "")
@@ -772,7 +772,7 @@ func TestWorkflowsRunsCreateResolvesStartJSONAliasFromJSONInputsFile(t *testing.
 		t.Fatal(err)
 	}
 
-	cmd := &cobra.Command{Use: "test-run-create", RunE: workflowsRunsCreateCmd.RunE}
+	cmd := &cobra.Command{Use: "eval-run-create", RunE: workflowsRunsCreateCmd.RunE}
 	cmd.Flags().String("version", "", "")
 	cmd.Flags().String("documents-file", "", "")
 	cmd.Flags().StringArray("document", nil, "")
@@ -824,7 +824,7 @@ func TestWorkflowsRunsCreateValidatesJSONInputsBeforeResolvingStartAlias(t *test
 	defer server.Close()
 	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
-	cmd := &cobra.Command{Use: "test-run-create", RunE: workflowsRunsCreateCmd.RunE}
+	cmd := &cobra.Command{Use: "eval-run-create", RunE: workflowsRunsCreateCmd.RunE}
 	cmd.Flags().String("version", "", "")
 	cmd.Flags().String("documents-file", "", "")
 	cmd.Flags().StringArray("document", nil, "")
@@ -873,7 +873,7 @@ func TestWorkflowsRunsCreateRejectsConflictingDocumentSourcesForSameBlock(t *tes
 		t.Fatal(err)
 	}
 
-	cmd := &cobra.Command{Use: "test-run-create", RunE: workflowsRunsCreateCmd.RunE}
+	cmd := &cobra.Command{Use: "eval-run-create", RunE: workflowsRunsCreateCmd.RunE}
 	cmd.Flags().String("version", "", "")
 	cmd.Flags().String("documents-file", "", "")
 	cmd.Flags().StringArray("document", nil, "")
@@ -930,7 +930,7 @@ func TestWorkflowsRunsCreateRejectsDuplicateDocumentFlag(t *testing.T) {
 		}
 	}
 
-	cmd := &cobra.Command{Use: "test-run-create", RunE: workflowsRunsCreateCmd.RunE}
+	cmd := &cobra.Command{Use: "eval-run-create", RunE: workflowsRunsCreateCmd.RunE}
 	cmd.Flags().String("version", "", "")
 	cmd.Flags().String("documents-file", "", "")
 	cmd.Flags().StringArray("document", nil, "")
@@ -984,7 +984,7 @@ func TestWorkflowsRunsCreateRejectsDuplicateAcrossDocumentAndDocumentUrl(t *test
 		t.Fatal(err)
 	}
 
-	cmd := &cobra.Command{Use: "test-run-create", RunE: workflowsRunsCreateCmd.RunE}
+	cmd := &cobra.Command{Use: "eval-run-create", RunE: workflowsRunsCreateCmd.RunE}
 	cmd.Flags().String("version", "", "")
 	cmd.Flags().String("documents-file", "", "")
 	cmd.Flags().StringArray("document", nil, "")
@@ -1029,7 +1029,7 @@ func TestWorkflowsRunsCreateRejectsEmptyDocumentURLBlockIDBeforeRequest(t *testi
 	defer server.Close()
 	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
-	cmd := &cobra.Command{Use: "test-run-create", RunE: workflowsRunsCreateCmd.RunE}
+	cmd := &cobra.Command{Use: "eval-run-create", RunE: workflowsRunsCreateCmd.RunE}
 	cmd.Flags().String("version", "", "")
 	cmd.Flags().String("documents-file", "", "")
 	cmd.Flags().StringArray("document", nil, "")
@@ -1500,7 +1500,7 @@ func TestWorkflowsStepsGetExampleNamesARealResponseField(t *testing.T) {
 // to delete silently with no confirmation flag, breaking the convention
 // established by the rest of the destructive delete commands
 // (`workflows delete`, `workflows blocks delete`, `workflows edges delete`,
-// `workflows experiments delete`, `workflows tests delete`). This pin
+// `workflows experiments delete`, `workflows evals delete`). This pin
 // keeps `runs delete` aligned: without --yes and without a TTY stdin,
 // the command refuses, and the server is never contacted.
 func TestWorkflowsRunsDeleteRefusesWithoutYesWhenStdinNotATTY(t *testing.T) {

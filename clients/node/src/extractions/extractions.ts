@@ -66,8 +66,7 @@ export class Extractions {
     bustCache?: boolean,
     stream?: boolean,
     background?: boolean,
-    chunkingKeys?: Record<string, string> | null,
-    imageResolutionDpi?: number
+    chunkingKeys?: Record<string, string> | null
   ): Promise<Extraction> {
     const documentCoerced = await coerceMimeData(document, (__id) =>
       this.client.files.get_download_link(__id)
@@ -84,7 +83,6 @@ export class Extractions {
       stream: stream,
       background: background,
       chunking_keys: chunkingKeys,
-      image_resolution_dpi: imageResolutionDpi,
     };
     const __wire = await this.client.request<ExtractionResponse>({
       method: 'POST',
@@ -107,8 +105,7 @@ export class Extractions {
     bustCache?: boolean,
     stream?: boolean,
     background?: boolean,
-    chunkingKeys?: Record<string, string> | null,
-    imageResolutionDpi?: number
+    chunkingKeys?: Record<string, string> | null
   ): Promise<unknown> {
     const documentCoerced = await coerceMimeData(document, (__id) =>
       this.client.files.get_download_link(__id)
@@ -125,7 +122,6 @@ export class Extractions {
       stream: stream,
       background: background,
       chunking_keys: chunkingKeys,
-      image_resolution_dpi: imageResolutionDpi,
     };
     const __wire = await this.client.request<unknown>({
       method: 'POST',

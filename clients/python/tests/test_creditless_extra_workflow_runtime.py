@@ -37,7 +37,7 @@ pytestmark = pytest.mark.creditless
 # --------------------------------------------------------------------------- #
 
 
-def test_runs_list_typed_page_and_envelope(sync_client: Retab) -> None:
+def eval_runs_list_typed_page_and_envelope(sync_client: Retab) -> None:
     page = sync_client.workflows.runs.list(limit=3)
     assert len(page.data) <= 3
     assert page.list_metadata is not None
@@ -46,7 +46,7 @@ def test_runs_list_typed_page_and_envelope(sync_client: Retab) -> None:
         assert isinstance(run.id, str) and run.id.startswith("run_")
 
 
-def test_runs_pagination_after_cursor_disjoint(sync_client: Retab) -> None:
+def eval_runs_pagination_after_cursor_disjoint(sync_client: Retab) -> None:
     page1 = sync_client.workflows.runs.list(limit=2, order="desc")
     after = page1.list_metadata.after
     if after is None or len(page1.data) < 2:
@@ -57,19 +57,19 @@ def test_runs_pagination_after_cursor_disjoint(sync_client: Retab) -> None:
     assert ids1.isdisjoint(ids2), "runs cursor returned overlapping rows"
 
 
-def test_runs_status_filter_shape(sync_client: Retab) -> None:
+def eval_runs_status_filter_shape(sync_client: Retab) -> None:
     page = sync_client.workflows.runs.list(limit=5, status=WorkflowRunsStatus.COMPLETED)
     assert isinstance(page.data, list)
     for run in page.data:
         assert isinstance(run, WorkflowRun)
 
 
-def test_runs_from_date_yyyy_mm_dd_accepted(sync_client: Retab) -> None:
+def eval_runs_from_date_yyyy_mm_dd_accepted(sync_client: Retab) -> None:
     page = sync_client.workflows.runs.list(limit=3, from_date="2020-01-01")
     assert isinstance(page.data, list)
 
 
-def test_runs_get_by_discovered_id(sync_client: Retab) -> None:
+def eval_runs_get_by_discovered_id(sync_client: Retab) -> None:
     page = sync_client.workflows.runs.list(limit=10)
     if not page.data:
         pytest.skip("no workflow runs on staging to get-by-id")
@@ -79,7 +79,7 @@ def test_runs_get_by_discovered_id(sync_client: Retab) -> None:
     assert fetched.id == target_id
 
 
-def test_runs_get_bogus_id_404(sync_client: Retab) -> None:
+def eval_runs_get_bogus_id_404(sync_client: Retab) -> None:
     with pytest.raises(NotFoundError) as excinfo:
         sync_client.workflows.runs.get("run_creditless_bogus_" + uuid.uuid4().hex)
     assert excinfo.value.status_code == 404
@@ -217,7 +217,7 @@ def test_reviews_get_bogus_id_404(sync_client: Retab) -> None:
 # --------------------------------------------------------------------------- #
 
 
-def test_runs_list_bad_api_key_401(bad_key_client: Retab) -> None:
+def eval_runs_list_bad_api_key_401(bad_key_client: Retab) -> None:
     with pytest.raises(AuthenticationError) as excinfo:
         bad_key_client.workflows.runs.list(limit=1)
     assert excinfo.value.status_code == 401

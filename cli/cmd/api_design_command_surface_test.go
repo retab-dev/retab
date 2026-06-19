@@ -26,7 +26,7 @@ func TestAPICommandSurfaceUsesCanonicalResourceActionNames(t *testing.T) {
 		"reviews": true, "revoke": true, "run": true, "runs": true, "schema": true, "schemas": true, "secrets": true,
 		"set": true, "setup": true, "executions": true, "sources": true, "spec": true,
 		"splits": true, "status": true, "steps": true, "stream": true,
-		"switch": true, "sync": true, "tables": true, "templates": true, "tests": true, "update": true,
+		"switch": true, "sync": true, "tables": true, "templates": true, "evals": true, "update": true,
 		"upload": true, "validate": true, "value": true, "versions": true, "version": true,
 		"view": true, "wait": true, "which": true, "workflows": true,
 	}
@@ -109,8 +109,8 @@ func TestRemovedCommandSurfaceIsAbsent(t *testing.T) {
 		"workflows runs block executions list",
 		"workflows runs reviews",
 		"workflows runs tests",
-		"workflows tests execute",
-		"workflows tests runs execute",
+		"workflows evals execute",
+		"workflows evals runs execute",
 	}
 
 	for _, path := range removedPaths {
@@ -142,7 +142,7 @@ func TestCoreAPIResourcesExposeExpectedCommandSurface(t *testing.T) {
 		"secrets":                       {"delete", "get", "list", "set", "value"},
 		"splits":                        {"create", "get", "list", "cancel", "delete", "wait"},
 		"tables":                        {"create", "delete", "download", "get", "list", "profile", "query", "replace", "schema", "validate"},
-		"workflows":                     {"list", "get", "create", "update", "delete", "publish", "discard-draft", "versions", "view", "runs", "steps", "blocks", "edges", "artifacts", "reviews", "tests", "experiments", "spec", "access"},
+		"workflows":                     {"list", "get", "create", "update", "delete", "publish", "discard-draft", "versions", "view", "runs", "steps", "blocks", "edges", "artifacts", "reviews", "evals", "experiments", "spec", "access"},
 		"workflows access":              {"list", "grant", "get", "update", "revoke"},
 		"workflows artifacts":           {"get", "list"},
 		"workflows blocks":              {"list", "get", "create", "update", "delete", "versions", "executions", "config", "api-calls", "functions"},
@@ -163,9 +163,9 @@ func TestCoreAPIResourcesExposeExpectedCommandSurface(t *testing.T) {
 		"workflows blocks executions":   {"create", "list"},
 		"workflows spec":                {"validate", "plan", "apply", "get"},
 		"workflows steps":               {"list", "get"},
-		"workflows tests":               {"create", "get", "list", "update", "delete", "runs", "results"},
-		"workflows tests runs":          {"create", "list", "get", "cancel", "wait"},
-		"workflows tests results":       {"list", "get"},
+		"workflows evals":               {"create", "get", "list", "update", "delete", "runs", "results"},
+		"workflows evals runs":          {"create", "list", "get", "cancel", "wait"},
+		"workflows evals results":       {"list", "get"},
 	}
 
 	for commandPath, expected := range expectedChildren {

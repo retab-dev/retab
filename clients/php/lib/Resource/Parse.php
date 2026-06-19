@@ -20,8 +20,6 @@ readonly class Parse implements \JsonSerializable
         public string $model,
         /** Format used to render tables extracted from the document */
         public TableParsingFormat $tableParsingFormat,
-        /** Legacy stored DPI value, retained only for compatibility. */
-        public int $imageResolutionDpi,
         /** The parsed document content */
         public ParseOutput $output,
         /** Free-form instructions supplied with the parse request. */
@@ -43,7 +41,6 @@ readonly class Parse implements \JsonSerializable
             'file',
             'model',
             'table_parsing_format',
-            'image_resolution_dpi',
             'output',
         ] as $__required) {
             if (!array_key_exists($__required, $data)) {
@@ -55,7 +52,6 @@ readonly class Parse implements \JsonSerializable
             file: FileRef::fromArray($data['file']),
             model: $data['model'],
             tableParsingFormat: TableParsingFormat::from($data['table_parsing_format']),
-            imageResolutionDpi: $data['image_resolution_dpi'],
             output: ParseOutput::fromArray($data['output']),
             instructions: $data['instructions'] ?? null,
             status: isset($data['status']) ? EditStatus::from($data['status']) : null,
@@ -73,7 +69,6 @@ readonly class Parse implements \JsonSerializable
             'file' => $this->file->toArray(),
             'model' => $this->model,
             'table_parsing_format' => $this->tableParsingFormat->value,
-            'image_resolution_dpi' => $this->imageResolutionDpi,
             'output' => $this->output->toArray(),
             'instructions' => $this->instructions,
             'status' => $this->status?->value,

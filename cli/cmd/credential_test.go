@@ -21,7 +21,7 @@ func newTestRootCmd() *cobra.Command {
 }
 
 // isolateHome points HOME at an empty temp dir and clears the credential
-// env vars so a test starts from a known-empty config state.
+// env vars so an test starts from a known-empty config state.
 func isolateHome(t *testing.T) string {
 	t.Helper()
 	home := t.TempDir()

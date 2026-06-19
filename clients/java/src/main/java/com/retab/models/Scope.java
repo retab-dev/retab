@@ -13,7 +13,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
  *
  * <pre>{@code
  * Scope value = api.get(...);
- * if (value instanceof WorkflowTestRunBlockScope v) {
+ * if (value instanceof WorkflowEvalRunBlockScope v) {
  *     handle(v);
  * }
  * }</pre>
@@ -24,9 +24,9 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
     property = "type",
     visible = true)
 @JsonSubTypes({
-  @JsonSubTypes.Type(value = WorkflowTestRunBlockScope.class, name = "block"),
-  @JsonSubTypes.Type(value = WorkflowTestRunSingleScope.class, name = "single"),
-  @JsonSubTypes.Type(value = WorkflowTestRunWorkflowScope.class, name = "workflow")
+  @JsonSubTypes.Type(value = WorkflowEvalRunBlockScope.class, name = "block"),
+  @JsonSubTypes.Type(value = WorkflowEvalRunSingleScope.class, name = "single"),
+  @JsonSubTypes.Type(value = WorkflowEvalRunWorkflowScope.class, name = "workflow")
 })
 public sealed interface Scope
-    permits WorkflowTestRunBlockScope, WorkflowTestRunSingleScope, WorkflowTestRunWorkflowScope {}
+    permits WorkflowEvalRunBlockScope, WorkflowEvalRunSingleScope, WorkflowEvalRunWorkflowScope {}

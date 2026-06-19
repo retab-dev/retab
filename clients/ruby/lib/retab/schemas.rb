@@ -15,7 +15,6 @@ module Retab
     # @param model [String, nil]
     # @param instructions [String, nil]
     # @param background [Boolean, nil] If true, run asynchronously: returns immediately with status 'queued'. Poll GET /v1/schemas/generate/{schema_generation_id} until status is terminal.
-    # @param image_resolution_dpi [Integer, nil]
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::SchemaGeneration]
     def generate(
@@ -23,7 +22,6 @@ module Retab
       model: nil,
       instructions: nil,
       background: nil,
-      image_resolution_dpi: nil,
       request_options: {}
     )
       documents = documents.map { |d| Retab::MimeData.coerce(d, client: @client) } unless documents.nil?
@@ -31,8 +29,7 @@ module Retab
         "documents" => documents,
         "model" => model,
         "instructions" => instructions,
-        "background" => background,
-        "image_resolution_dpi" => image_resolution_dpi
+        "background" => background
       }.compact
       response = @client.request(
         method: :post,

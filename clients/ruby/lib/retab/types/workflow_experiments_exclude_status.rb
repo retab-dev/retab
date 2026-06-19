@@ -4,6 +4,6 @@
 
 module Retab
   module Types
-    WorkflowExperimentsExcludeStatus = LatestBlockTestRunSummaryStatus
+    WorkflowExperimentsExcludeStatus = LatestBlockEvalRunSummaryStatus
   end
 end

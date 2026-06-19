@@ -44,8 +44,7 @@ type ParsesCreateParams struct {
 	// BustCache is if true, skip the LLM cache and force a fresh completion
 	BustCache *bool `json:"bust_cache,omitempty" url:"-"`
 	// Background is if true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
-	Background         *bool `json:"background,omitempty" url:"-"`
-	ImageResolutionDpi *int  `json:"image_resolution_dpi,omitempty" url:"-"`
+	Background *bool `json:"background,omitempty" url:"-"`
 }
 
 // Create parse
@@ -71,7 +70,6 @@ func (s *ParseService) Create(ctx context.Context, params *ParsesCreateParams, o
 		Instructions       *string                         `json:"instructions,omitempty"`
 		BustCache          *bool                           `json:"bust_cache,omitempty"`
 		Background         *bool                           `json:"background,omitempty"`
-		ImageResolutionDpi *int                            `json:"image_resolution_dpi,omitempty"`
 	}
 	if params == nil {
 		return nil, fmt.Errorf("retab: params is required")
@@ -91,7 +89,6 @@ func (s *ParseService) Create(ctx context.Context, params *ParsesCreateParams, o
 		Instructions:       params.Instructions,
 		BustCache:          params.BustCache,
 		Background:         params.Background,
-		ImageResolutionDpi: params.ImageResolutionDpi,
 	}
 	var result Parse
 	_, err := s.client.request(ctx, "POST", "/v1/parses", nil, body, &result, opts)

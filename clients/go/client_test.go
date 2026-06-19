@@ -552,17 +552,17 @@ func TestWorkflowExperimentRunsUseRunIDFirstRoutes(t *testing.T) {
 	}
 }
 
-func TestWorkflowTestRunResultsGetUsesFlatResultIDRoute(t *testing.T) {
+func TestWorkflowEvalRunResultsGetUsesFlatResultIDRoute(t *testing.T) {
 	var requests []string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requests = append(requests, r.Method+" "+r.URL.Path)
 		w.Header().Set("Content-Type", "application/json")
 		switch {
-		case r.Method == http.MethodGet && r.URL.Path == "/v1/workflows/tests/results/wfresult_123":
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/workflows/evals/results/wfresult_123":
 			_ = json.NewEncoder(w).Encode(map[string]any{
 				"id":      "wfresult_123",
-				"run_id":  "wftestrun_123",
-				"test_id": "wfnodetest_123",
+				"run_id":  "wfevalrun_123",
+				"eval_id": "wfnodeeval_123",
 			})
 		default:
 			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
@@ -575,14 +575,14 @@ func TestWorkflowTestRunResultsGetUsesFlatResultIDRoute(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	result, err := client.Workflows.Tests.Results.Get(context.Background(), "wfresult_123")
+	result, err := client.Workflows.Evals.Results.Get(context.Background(), "wfresult_123")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if result.ID != "wfresult_123" || result.TestID != "wfnodetest_123" {
+	if result.ID != "wfresult_123" || result.EvalID != "wfnodeeval_123" {
 		t.Fatalf("result = %#v", result)
 	}
-	if strings.Join(requests, ",") != "GET /v1/workflows/tests/results/wfresult_123" {
+	if strings.Join(requests, ",") != "GET /v1/workflows/evals/results/wfresult_123" {
 		t.Fatalf("requests = %#v", requests)
 	}
 }
@@ -630,19 +630,19 @@ func TestWorkflowExperimentRunRequestsSendCanonicalBodies(t *testing.T) {
 	}
 }
 
-func TestWorkflowTestAndExperimentRunsUseDedicatedTimingShapes(t *testing.T) {
+func TestWorkflowEvalAndExperimentRunsUseDedicatedTimingShapes(t *testing.T) {
 	completedStatus := "completed"
-	testRunJSON, err := json.Marshal(WorkflowTestRun{
-		ID:        "wftestrun_123",
-		Lifecycle: WorkflowTestRunStatusFromPendingWorkflowTestRun(PendingWorkflowTestRun{Status: &completedStatus}),
-		Timing:    WorkflowTestRunTiming{},
+	evalRunJSON, err := json.Marshal(WorkflowEvalRun{
+		ID:        "wfevalrun_123",
+		Lifecycle: WorkflowEvalRunStatusFromPendingWorkflowEvalRun(PendingWorkflowEvalRun{Status: &completedStatus}),
+		Timing:    WorkflowEvalRunTiming{},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if strings.Contains(string(testRunJSON), "review_waiting_started_at") ||
-		strings.Contains(string(testRunJSON), "accumulated_review_waiting_ms") {
-		t.Fatalf("workflow test run timing should not include workflow-run review fields: %s", testRunJSON)
+	if strings.Contains(string(evalRunJSON), "review_waiting_started_at") ||
+		strings.Contains(string(evalRunJSON), "accumulated_review_waiting_ms") {
+		t.Fatalf("workflow eval run timing should not include workflow-run review fields: %s", evalRunJSON)
 	}
 
 	experimentRunJSON, err := json.Marshal(ExperimentRun{
@@ -954,17 +954,17 @@ func TestWorkflowRunsExportOmitsEmptySelectedRunIDs(t *testing.T) {
 	}
 }
 
-func TestWorkflowTestRunsCreateSendsTypedScopeBody(t *testing.T) {
+func TestWorkflowEvalRunsCreateSendsTypedScopeBody(t *testing.T) {
 	var createBody map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows/tests/runs" {
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows/evals/runs" {
 			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
 		}
 		if err := json.NewDecoder(r.Body).Decode(&createBody); err != nil {
 			t.Fatal(err)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = io.WriteString(w, `{"id":"wftestrun_123"}`)
+		_, _ = io.WriteString(w, `{"id":"wfevalrun_123"}`)
 	}))
 	defer server.Close()
 
@@ -973,25 +973,25 @@ func TestWorkflowTestRunsCreateSendsTypedScopeBody(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	testID := "wfnodetest_123"
-	created, err := client.Workflows.Tests.Runs.Create(context.Background(), &WorkflowTestRunsCreateParams{
+	evalID := "wfnodeeval_123"
+	created, err := client.Workflows.Evals.Runs.Create(context.Background(), &WorkflowEvalRunsCreateParams{
 		WorkflowID: "wf_123",
-		Scope: &WorkflowTestRunScope{
-			Type:   WorkflowTestRunScopeTypeSingle,
-			TestID: &testID,
+		Scope: &WorkflowEvalRunScope{
+			Type:   WorkflowEvalRunScopeTypeSingle,
+			EvalID: &evalID,
 		},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if created.ID != "wftestrun_123" {
+	if created.ID != "wfevalrun_123" {
 		t.Fatalf("created = %#v", created)
 	}
 	scope, ok := createBody["scope"].(map[string]any)
 	if !ok {
 		t.Fatalf("scope = %#v", createBody["scope"])
 	}
-	if createBody["workflow_id"] != "wf_123" || scope["type"] != "single" || scope["test_id"] != "wfnodetest_123" {
+	if createBody["workflow_id"] != "wf_123" || scope["type"] != "single" || scope["eval_id"] != "wfnodeeval_123" {
 		t.Fatalf("body = %#v", createBody)
 	}
 	if _, ok := createBody["n_consensus"]; ok {
@@ -1055,10 +1055,10 @@ func TestWorkflowServicesDoNotExposeRemovedMethods(t *testing.T) {
 	}
 }
 
-func TestWorkflowTestsDoNotExposeWaitForCompletion(t *testing.T) {
-	testServiceType := reflect.TypeOf(&WorkflowTestService{})
+func TestWorkflowEvalsDoNotExposeWaitForCompletion(t *testing.T) {
+	testServiceType := reflect.TypeOf(&WorkflowEvalService{})
 	if _, ok := testServiceType.MethodByName("WaitForCompletion"); ok {
-		t.Fatal("WorkflowTestService still exposes WaitForCompletion")
+		t.Fatal("WorkflowEvalService still exposes WaitForCompletion")
 	}
 }
 

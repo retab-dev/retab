@@ -7,14 +7,14 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class FileHandleInput implements HandleInput {
+public final class FileHandleInput implements HandleInputType {
   private final String type;
-  private final FileRef document;
+  private final ResultFileRef document;
 
   @JsonCreator
   public FileHandleInput(
       @JsonProperty(value = "type", required = false) String type,
-      @JsonProperty(value = "document", required = true) FileRef document) {
+      @JsonProperty(value = "document", required = true) ResultFileRef document) {
     this.type = type != null ? type : "file";
     this.document = document;
   }
@@ -25,7 +25,7 @@ public final class FileHandleInput implements HandleInput {
   }
 
   @JsonProperty("document")
-  public FileRef getDocument() {
+  public ResultFileRef getDocument() {
     return document;
   }
 }

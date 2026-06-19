@@ -137,7 +137,6 @@ def created_parse(api_keys, booking_confirmation_file_path_1: str) -> Iterable[P
             document=booking_confirmation_file_path_1,
             model="retab-micro",
             table_parsing_format="html",
-            image_resolution_dpi=96,
         )
     except InternalServerError as exc:
         _skip_if_resource_route_unavailable(exc, "/v1/parses")
@@ -247,7 +246,6 @@ def test_parses_resource_crud(sync_client: Retab, created_parse: Parse, booking_
             document=booking_confirmation_file_path_1,
             model="retab-micro",
             table_parsing_format="html",
-            image_resolution_dpi=96,
         )
         client.parses.delete(temp.id)
         _assert_deleted(client.parses.get, temp.id)

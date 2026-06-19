@@ -10,18 +10,24 @@ import {
   deserializeExperimentDocumentProvenance,
   serializeExperimentDocumentProvenance,
 } from './experiment-document-provenance.interface.js';
-import type { FileHandleInput, FileHandleInputResponse } from './file-handle-input.interface.js';
+import type {
+  FileHandleInput,
+  FileHandleInputResponse,
+} from '../../../workflows/evals/results/interfaces/file-handle-input.interface.js';
 import {
   ZFileHandleInput,
   deserializeFileHandleInput,
   serializeFileHandleInput,
-} from './file-handle-input.interface.js';
-import type { JsonHandleInput, JsonHandleInputResponse } from './json-handle-input.interface.js';
+} from '../../../workflows/evals/results/interfaces/file-handle-input.interface.js';
+import type {
+  JsonHandleInput,
+  JsonHandleInputResponse,
+} from '../../../workflows/evals/results/interfaces/json-handle-input.interface.js';
 import {
   ZJsonHandleInput,
   deserializeJsonHandleInput,
   serializeJsonHandleInput,
-} from './json-handle-input.interface.js';
+} from '../../../workflows/evals/results/interfaces/json-handle-input.interface.js';
 
 export interface ExplicitExperimentDocumentRequest {
   handleInputs: Record<string, JsonHandleInput | FileHandleInput>;

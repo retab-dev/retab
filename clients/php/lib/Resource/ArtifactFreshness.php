@@ -11,8 +11,8 @@ readonly class ArtifactFreshness implements \JsonSerializable
     use JsonSerializableTrait;
 
     public function __construct(
-        public ?ArtifactFreshnessStatus $status = null,
-        /** @var array<\Retab\Resource\ArtifactFreshnessReasons>|null */
+        public ?EvalRunFreshnessStatus $status = null,
+        /** @var array<\Retab\Resource\EvalRunFreshnessReasons>|null */
         public ?array $reasons = null,
         public ?string $validityFingerprint = null,
         public ?string $inputFingerprint = null,
@@ -23,8 +23,8 @@ readonly class ArtifactFreshness implements \JsonSerializable
     public static function fromArray(array $data): self
     {
         return new self(
-            status: isset($data['status']) ? ArtifactFreshnessStatus::from($data['status']) : null,
-            reasons: isset($data['reasons']) ? array_map(fn($item) => ArtifactFreshnessReasons::from($item), $data['reasons']) : null,
+            status: isset($data['status']) ? EvalRunFreshnessStatus::from($data['status']) : null,
+            reasons: isset($data['reasons']) ? array_map(fn($item) => EvalRunFreshnessReasons::from($item), $data['reasons']) : null,
             validityFingerprint: $data['validity_fingerprint'] ?? null,
             inputFingerprint: $data['input_fingerprint'] ?? null,
             baselineRunId: $data['baseline_run_id'] ?? null,

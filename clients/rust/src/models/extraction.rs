@@ -21,9 +21,6 @@ pub struct Extraction {
     /// Defaults to `1`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub n_consensus: Option<i64>,
-    /// Legacy stored DPI value, retained only for compatibility.
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub image_resolution_dpi: Option<i64>,
     /// Free-form instructions supplied with the extraction request.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub instructions: Option<String>,
@@ -64,7 +61,6 @@ impl Extraction {
             model: model.into(),
             json_schema,
             n_consensus: Default::default(),
-            image_resolution_dpi: Default::default(),
             instructions: Default::default(),
             output,
             status: Default::default(),

@@ -47,17 +47,17 @@ func TestWorkflowCLIUsesOnlyCanonicalReviewBlockExecutionAndTestSurface(t *testi
 		"workflows reviews versions create",
 		"workflows blocks executions create",
 		"workflows blocks executions list",
-		"workflows tests create",
-		"workflows tests list",
-		"workflows tests get",
-		"workflows tests update",
-		"workflows tests delete",
-		"workflows tests runs create",
-		"workflows tests runs list",
-		"workflows tests runs get",
-		"workflows tests runs cancel",
-		"workflows tests results list",
-		"workflows tests results get",
+		"workflows evals create",
+		"workflows evals list",
+		"workflows evals get",
+		"workflows evals update",
+		"workflows evals delete",
+		"workflows evals runs create",
+		"workflows evals runs list",
+		"workflows evals runs get",
+		"workflows evals runs cancel",
+		"workflows evals results list",
+		"workflows evals results get",
 	} {
 		if !commands[commandPath] {
 			t.Fatalf("CLI is missing canonical command retab %s", commandPath)
@@ -77,8 +77,8 @@ func TestWorkflowCLIUsesOnlyCanonicalReviewBlockExecutionAndTestSurface(t *testi
 
 	source := readCLISource(t)
 	for _, required := range []string{
-		`"/v1/workflows/tests/runs"`,
-		`"/v1/workflows/tests/results"`,
+		`"/v1/workflows/evals/runs"`,
+		`"/v1/workflows/evals/results"`,
 	} {
 		if !strings.Contains(source, required) {
 			t.Fatalf("CLI source is missing canonical route string %s", required)
@@ -140,17 +140,17 @@ func workflowCLIRouteContract() []cliRouteContract {
 		{method: http.MethodGet, path: "/workflows/reviews/versions/{version_id}"},
 		{method: http.MethodPost, path: "/workflows/blocks/executions"},
 		{method: http.MethodGet, path: "/workflows/blocks/executions"},
-		{method: http.MethodPost, path: "/workflows/tests"},
-		{method: http.MethodGet, path: "/workflows/tests"},
-		{method: http.MethodGet, path: "/workflows/tests/{test_id}"},
-		{method: http.MethodPatch, path: "/workflows/tests/{test_id}"},
-		{method: http.MethodDelete, path: "/workflows/tests/{test_id}"},
-		{method: http.MethodPost, path: "/workflows/tests/runs"},
-		{method: http.MethodGet, path: "/workflows/tests/runs"},
-		{method: http.MethodGet, path: "/workflows/tests/runs/{run_id}"},
-		{method: http.MethodPost, path: "/workflows/tests/runs/{run_id}/cancel"},
-		{method: http.MethodGet, path: "/workflows/tests/results"},
-		{method: http.MethodGet, path: "/workflows/tests/results/{result_id}"},
+		{method: http.MethodPost, path: "/workflows/evals"},
+		{method: http.MethodGet, path: "/workflows/evals"},
+		{method: http.MethodGet, path: "/workflows/evals/{eval_id}"},
+		{method: http.MethodPatch, path: "/workflows/evals/{eval_id}"},
+		{method: http.MethodDelete, path: "/workflows/evals/{eval_id}"},
+		{method: http.MethodPost, path: "/workflows/evals/runs"},
+		{method: http.MethodGet, path: "/workflows/evals/runs"},
+		{method: http.MethodGet, path: "/workflows/evals/runs/{run_id}"},
+		{method: http.MethodPost, path: "/workflows/evals/runs/{run_id}/cancel"},
+		{method: http.MethodGet, path: "/workflows/evals/results"},
+		{method: http.MethodGet, path: "/workflows/evals/results/{result_id}"},
 	}
 }
 
@@ -206,8 +206,8 @@ func normalizeDirectCLIJSONRequestPath(pathExpression string) string {
 	}{
 		{old: "/workflows/experiments/results/{}", new: "/workflows/experiments/results/{result_id}"},
 		{old: "/workflows/experiments/runs/{}", new: "/workflows/experiments/runs/{run_id}"},
-		{old: "/workflows/tests/results/{}", new: "/workflows/tests/results/{result_id}"},
-		{old: "/workflows/tests/runs/{}", new: "/workflows/tests/runs/{run_id}"},
+		{old: "/workflows/evals/results/{}", new: "/workflows/evals/results/{result_id}"},
+		{old: "/workflows/evals/runs/{}", new: "/workflows/evals/runs/{run_id}"},
 		{old: "/workflows/runs/{}", new: "/workflows/runs/{run_id}"},
 	} {
 		path = strings.Replace(path, replacement.old, replacement.new, 1)
@@ -313,9 +313,9 @@ func normalizeCLIWorkflowRouteString(path string) string {
 		{prefix: "/workflows/artifacts/", placeholder: "{artifact_id}"},
 		{prefix: "/workflows/blocks/", placeholder: "{block_id}"},
 		{prefix: "/workflows/edges/", placeholder: "{edge_id}"},
-		{prefix: "/workflows/tests/", placeholder: "{test_id}"},
-		{prefix: "/workflows/tests/runs/", placeholder: "{run_id}"},
-		{prefix: "/workflows/tests/results/", placeholder: "{result_id}"},
+		{prefix: "/workflows/evals/", placeholder: "{eval_id}"},
+		{prefix: "/workflows/evals/runs/", placeholder: "{run_id}"},
+		{prefix: "/workflows/evals/results/", placeholder: "{result_id}"},
 		{prefix: "/workflows/experiments/", placeholder: "{experiment_id}"},
 		{prefix: "/workflows/experiments/runs/", placeholder: "{run_id}"},
 		{prefix: "/workflows/experiments/results/", placeholder: "{result_id}"},

@@ -1,7 +1,7 @@
 # pyright: reportAttributeAccessIssue=false, reportArgumentType=false, reportOptionalSubscript=false
 """Smoke tests for `client.workflows.experiments.*` and `client.workflows.diagnose`.
 
-Mirrors the existing pattern from `test_workflow_tests.py`: mock the
+Mirrors the existing pattern from `test_workflow_evals.py`: mock the
 underlying `client._prepared_request` so we can assert on the constructed
 `PreparedRequest` without hitting the API.
 """

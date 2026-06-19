@@ -325,51 +325,51 @@ impl From<CancelledWorkflowExperimentRun> for CancelWorkflowExperimentRunRespons
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
-pub enum CreateWorkflowTestRequestSourceOneOf {
+pub enum CreateWorkflowEvalRequestSourceOneOf {
     #[serde(rename = "manual")]
-    ManualWorkflowTestSource(Box<ManualWorkflowTestSource>),
+    ManualWorkflowEvalSource(Box<ManualWorkflowEvalSource>),
     #[serde(rename = "run_step")]
-    RunStepWorkflowTestSource(Box<RunStepWorkflowTestSource>),
+    RunStepWorkflowEvalSource(Box<RunStepWorkflowEvalSource>),
 }
 
-impl From<ManualWorkflowTestSource> for CreateWorkflowTestRequestSourceOneOf {
-    fn from(v: ManualWorkflowTestSource) -> Self {
-        CreateWorkflowTestRequestSourceOneOf::ManualWorkflowTestSource(Box::new(v))
+impl From<ManualWorkflowEvalSource> for CreateWorkflowEvalRequestSourceOneOf {
+    fn from(v: ManualWorkflowEvalSource) -> Self {
+        CreateWorkflowEvalRequestSourceOneOf::ManualWorkflowEvalSource(Box::new(v))
     }
 }
 
-impl From<RunStepWorkflowTestSource> for CreateWorkflowTestRequestSourceOneOf {
-    fn from(v: RunStepWorkflowTestSource) -> Self {
-        CreateWorkflowTestRequestSourceOneOf::RunStepWorkflowTestSource(Box::new(v))
+impl From<RunStepWorkflowEvalSource> for CreateWorkflowEvalRequestSourceOneOf {
+    fn from(v: RunStepWorkflowEvalSource) -> Self {
+        CreateWorkflowEvalRequestSourceOneOf::RunStepWorkflowEvalSource(Box::new(v))
     }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
-pub enum CreateWorkflowTestRunRequestScopeOneOf {
+pub enum CreateWorkflowEvalRunRequestScopeOneOf {
     #[serde(rename = "single")]
-    WorkflowTestRunSingleScope(Box<WorkflowTestRunSingleScope>),
+    WorkflowEvalRunSingleScope(Box<WorkflowEvalRunSingleScope>),
     #[serde(rename = "workflow")]
-    WorkflowTestRunWorkflowScope(Box<WorkflowTestRunWorkflowScope>),
+    WorkflowEvalRunWorkflowScope(Box<WorkflowEvalRunWorkflowScope>),
     #[serde(rename = "block")]
-    WorkflowTestRunBlockScope(Box<WorkflowTestRunBlockScope>),
+    WorkflowEvalRunBlockScope(Box<WorkflowEvalRunBlockScope>),
 }
 
-impl From<WorkflowTestRunSingleScope> for CreateWorkflowTestRunRequestScopeOneOf {
-    fn from(v: WorkflowTestRunSingleScope) -> Self {
-        CreateWorkflowTestRunRequestScopeOneOf::WorkflowTestRunSingleScope(Box::new(v))
+impl From<WorkflowEvalRunSingleScope> for CreateWorkflowEvalRunRequestScopeOneOf {
+    fn from(v: WorkflowEvalRunSingleScope) -> Self {
+        CreateWorkflowEvalRunRequestScopeOneOf::WorkflowEvalRunSingleScope(Box::new(v))
     }
 }
 
-impl From<WorkflowTestRunWorkflowScope> for CreateWorkflowTestRunRequestScopeOneOf {
-    fn from(v: WorkflowTestRunWorkflowScope) -> Self {
-        CreateWorkflowTestRunRequestScopeOneOf::WorkflowTestRunWorkflowScope(Box::new(v))
+impl From<WorkflowEvalRunWorkflowScope> for CreateWorkflowEvalRunRequestScopeOneOf {
+    fn from(v: WorkflowEvalRunWorkflowScope) -> Self {
+        CreateWorkflowEvalRunRequestScopeOneOf::WorkflowEvalRunWorkflowScope(Box::new(v))
     }
 }
 
-impl From<WorkflowTestRunBlockScope> for CreateWorkflowTestRunRequestScopeOneOf {
-    fn from(v: WorkflowTestRunBlockScope) -> Self {
-        CreateWorkflowTestRunRequestScopeOneOf::WorkflowTestRunBlockScope(Box::new(v))
+impl From<WorkflowEvalRunBlockScope> for CreateWorkflowEvalRunRequestScopeOneOf {
+    fn from(v: WorkflowEvalRunBlockScope) -> Self {
+        CreateWorkflowEvalRunRequestScopeOneOf::WorkflowEvalRunBlockScope(Box::new(v))
     }
 }
 
@@ -421,6 +421,27 @@ impl From<JsonHandleInput> for ExplicitExperimentDocumentRequestHandleInputsOneO
 impl From<FileHandleInput> for ExplicitExperimentDocumentRequestHandleInputsOneOf {
     fn from(v: FileHandleInput) -> Self {
         ExplicitExperimentDocumentRequestHandleInputsOneOf::FileHandleInput(Box::new(v))
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum ManualWorkflowEvalSourceHandleInputsOneOf {
+    #[serde(rename = "json")]
+    EvalJsonHandleInput(Box<EvalJsonHandleInput>),
+    #[serde(rename = "file")]
+    EvalFileHandleInput(Box<EvalFileHandleInput>),
+}
+
+impl From<EvalJsonHandleInput> for ManualWorkflowEvalSourceHandleInputsOneOf {
+    fn from(v: EvalJsonHandleInput) -> Self {
+        ManualWorkflowEvalSourceHandleInputsOneOf::EvalJsonHandleInput(Box::new(v))
+    }
+}
+
+impl From<EvalFileHandleInput> for ManualWorkflowEvalSourceHandleInputsOneOf {
+    fn from(v: EvalFileHandleInput) -> Self {
+        ManualWorkflowEvalSourceHandleInputsOneOf::EvalFileHandleInput(Box::new(v))
     }
 }
 
@@ -538,6 +559,59 @@ impl From<ReviewAnyOf> for ReviewAllOfPredicatesOneOf {
 impl From<ReviewAllOf> for ReviewAllOfPredicatesOneOf {
     fn from(v: ReviewAllOf) -> Self {
         ReviewAllOfPredicatesOneOf::ReviewAllOf(Box::new(v))
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "status")]
+pub enum WorkflowEvalResultLifecycleOneOf {
+    #[serde(rename = "pending")]
+    PendingWorkflowEvalRun(Box<PendingWorkflowEvalRun>),
+    #[serde(rename = "queued")]
+    QueuedWorkflowEvalRun(Box<QueuedWorkflowEvalRun>),
+    #[serde(rename = "running")]
+    RunningWorkflowEvalRun(Box<RunningWorkflowEvalRun>),
+    #[serde(rename = "completed")]
+    CompletedWorkflowEvalRun(Box<CompletedWorkflowEvalRun>),
+    #[serde(rename = "error")]
+    ErrorWorkflowEvalRun(Box<ErrorWorkflowEvalRun>),
+    #[serde(rename = "cancelled")]
+    CancelledWorkflowEvalRun(Box<CancelledWorkflowEvalRun>),
+}
+
+impl From<PendingWorkflowEvalRun> for WorkflowEvalResultLifecycleOneOf {
+    fn from(v: PendingWorkflowEvalRun) -> Self {
+        WorkflowEvalResultLifecycleOneOf::PendingWorkflowEvalRun(Box::new(v))
+    }
+}
+
+impl From<QueuedWorkflowEvalRun> for WorkflowEvalResultLifecycleOneOf {
+    fn from(v: QueuedWorkflowEvalRun) -> Self {
+        WorkflowEvalResultLifecycleOneOf::QueuedWorkflowEvalRun(Box::new(v))
+    }
+}
+
+impl From<RunningWorkflowEvalRun> for WorkflowEvalResultLifecycleOneOf {
+    fn from(v: RunningWorkflowEvalRun) -> Self {
+        WorkflowEvalResultLifecycleOneOf::RunningWorkflowEvalRun(Box::new(v))
+    }
+}
+
+impl From<CompletedWorkflowEvalRun> for WorkflowEvalResultLifecycleOneOf {
+    fn from(v: CompletedWorkflowEvalRun) -> Self {
+        WorkflowEvalResultLifecycleOneOf::CompletedWorkflowEvalRun(Box::new(v))
+    }
+}
+
+impl From<ErrorWorkflowEvalRun> for WorkflowEvalResultLifecycleOneOf {
+    fn from(v: ErrorWorkflowEvalRun) -> Self {
+        WorkflowEvalResultLifecycleOneOf::ErrorWorkflowEvalRun(Box::new(v))
+    }
+}
+
+impl From<CancelledWorkflowEvalRun> for WorkflowEvalResultLifecycleOneOf {
+    fn from(v: CancelledWorkflowEvalRun) -> Self {
+        WorkflowEvalResultLifecycleOneOf::CancelledWorkflowEvalRun(Box::new(v))
     }
 }
 
@@ -713,59 +787,6 @@ impl From<SkippedStepLifecycle> for WorkflowRunStepLifecycleOneOf {
 impl From<CancelledStepLifecycle> for WorkflowRunStepLifecycleOneOf {
     fn from(v: CancelledStepLifecycle) -> Self {
         WorkflowRunStepLifecycleOneOf::CancelledStepLifecycle(Box::new(v))
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "status")]
-pub enum WorkflowTestResultLifecycleOneOf {
-    #[serde(rename = "pending")]
-    PendingWorkflowTestRun(Box<PendingWorkflowTestRun>),
-    #[serde(rename = "queued")]
-    QueuedWorkflowTestRun(Box<QueuedWorkflowTestRun>),
-    #[serde(rename = "running")]
-    RunningWorkflowTestRun(Box<RunningWorkflowTestRun>),
-    #[serde(rename = "completed")]
-    CompletedWorkflowTestRun(Box<CompletedWorkflowTestRun>),
-    #[serde(rename = "error")]
-    ErrorWorkflowTestRun(Box<ErrorWorkflowTestRun>),
-    #[serde(rename = "cancelled")]
-    CancelledWorkflowTestRun(Box<CancelledWorkflowTestRun>),
-}
-
-impl From<PendingWorkflowTestRun> for WorkflowTestResultLifecycleOneOf {
-    fn from(v: PendingWorkflowTestRun) -> Self {
-        WorkflowTestResultLifecycleOneOf::PendingWorkflowTestRun(Box::new(v))
-    }
-}
-
-impl From<QueuedWorkflowTestRun> for WorkflowTestResultLifecycleOneOf {
-    fn from(v: QueuedWorkflowTestRun) -> Self {
-        WorkflowTestResultLifecycleOneOf::QueuedWorkflowTestRun(Box::new(v))
-    }
-}
-
-impl From<RunningWorkflowTestRun> for WorkflowTestResultLifecycleOneOf {
-    fn from(v: RunningWorkflowTestRun) -> Self {
-        WorkflowTestResultLifecycleOneOf::RunningWorkflowTestRun(Box::new(v))
-    }
-}
-
-impl From<CompletedWorkflowTestRun> for WorkflowTestResultLifecycleOneOf {
-    fn from(v: CompletedWorkflowTestRun) -> Self {
-        WorkflowTestResultLifecycleOneOf::CompletedWorkflowTestRun(Box::new(v))
-    }
-}
-
-impl From<ErrorWorkflowTestRun> for WorkflowTestResultLifecycleOneOf {
-    fn from(v: ErrorWorkflowTestRun) -> Self {
-        WorkflowTestResultLifecycleOneOf::ErrorWorkflowTestRun(Box::new(v))
-    }
-}
-
-impl From<CancelledWorkflowTestRun> for WorkflowTestResultLifecycleOneOf {
-    fn from(v: CancelledWorkflowTestRun) -> Self {
-        WorkflowTestResultLifecycleOneOf::CancelledWorkflowTestRun(Box::new(v))
     }
 }
 

@@ -99,7 +99,6 @@ impl CreateParams {
                 stream: Default::default(),
                 background: Default::default(),
                 chunking_keys: Default::default(),
-                image_resolution_dpi: Default::default(),
             },
         }
     }
@@ -138,7 +137,6 @@ impl CreateStreamParams {
                 stream: Default::default(),
                 background: Default::default(),
                 chunking_keys: Default::default(),
-                image_resolution_dpi: Default::default(),
             },
         }
     }

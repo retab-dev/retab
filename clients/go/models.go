@@ -116,7 +116,7 @@ type AssertionSchemaDep struct {
 	DependsOnRoot  *bool   `json:"depends_on_root,omitempty"`
 }
 
-// AssertionSpec block-test assertion against one declared output handle.
+// AssertionSpec block-eval assertion against one declared output handle.
 // `target` is the only supported shape: an output handle id and an
 // optional relative path inside that handle's payload.
 type AssertionSpec struct {
@@ -167,6 +167,32 @@ func (r *BetweenCondition) UnmarshalJSON(data []byte) error {
 	r.Inclusive = true
 	type alias BetweenCondition
 	return json.Unmarshal(data, (*alias)(r))
+}
+
+// BlockEvalBatchExecutionCounts aggregate counts for a batch of block-eval runs.
+// Each individual run contributes to exactly one `lifecycle_counts`
+// bucket, and additionally to one `outcome` bucket when
+// `lifecycle_counts.completed` is incremented.
+type BlockEvalBatchExecutionCounts struct {
+	LifecycleCounts *BlockEvalLifecycleCounts `json:"lifecycle_counts,omitempty"`
+	Outcome         *BlockEvalOutcomeCounts   `json:"outcome,omitempty"`
+}
+
+// BlockEvalLifecycleCounts per-lifecycle counts for a batch of block-eval runs.
+type BlockEvalLifecycleCounts struct {
+	Pending   *int `json:"pending,omitempty"`
+	Queued    *int `json:"queued,omitempty"`
+	Running   *int `json:"running,omitempty"`
+	Completed *int `json:"completed,omitempty"`
+	Error     *int `json:"error,omitempty"`
+	Cancelled *int `json:"cancelled,omitempty"`
+}
+
+// BlockEvalOutcomeCounts per-outcome counts. Only completed runs contribute to these buckets.
+type BlockEvalOutcomeCounts struct {
+	Passed  *int `json:"passed,omitempty"`
+	Failed  *int `json:"failed,omitempty"`
+	Blocked *int `json:"blocked,omitempty"`
 }
 
 // BlockExecFileHandleInput represents a block exec file handle input.
@@ -236,32 +262,6 @@ type StoredBlockExecution struct {
 	AvailableIterations []map[string]interface{} `json:"available_iterations,omitempty"`
 }
 
-// BlockTestBatchExecutionCounts aggregate counts for a batch of block-test runs.
-// Each individual run contributes to exactly one `lifecycle_counts`
-// bucket, and additionally to one `outcome` bucket when
-// `lifecycle_counts.completed` is incremented.
-type BlockTestBatchExecutionCounts struct {
-	LifecycleCounts *BlockTestLifecycleCounts `json:"lifecycle_counts,omitempty"`
-	Outcome         *BlockTestOutcomeCounts   `json:"outcome,omitempty"`
-}
-
-// BlockTestLifecycleCounts per-lifecycle counts for a batch of block-test runs.
-type BlockTestLifecycleCounts struct {
-	Pending   *int `json:"pending,omitempty"`
-	Queued    *int `json:"queued,omitempty"`
-	Running   *int `json:"running,omitempty"`
-	Completed *int `json:"completed,omitempty"`
-	Error     *int `json:"error,omitempty"`
-	Cancelled *int `json:"cancelled,omitempty"`
-}
-
-// BlockTestOutcomeCounts per-outcome counts. Only completed runs contribute to these buckets.
-type BlockTestOutcomeCounts struct {
-	Passed  *int `json:"passed,omitempty"`
-	Failed  *int `json:"failed,omitempty"`
-	Blocked *int `json:"blocked,omitempty"`
-}
-
 // CancelWorkflowExperimentRunResponse result of cancelling an experiment run: the run `id` and its resulting `lifecycle` state.
 type CancelWorkflowExperimentRunResponse struct {
 	ID        string                `json:"id"`
@@ -312,14 +312,14 @@ type CancelledTerminal struct {
 	Reason *string `json:"reason,omitempty"`
 }
 
+// CancelledWorkflowEvalRun is an alias for CancelledTerminal.
+type CancelledWorkflowEvalRun = CancelledTerminal
+
 // CancelledWorkflowExperimentResult is an alias for CancelledTerminal.
 type CancelledWorkflowExperimentResult = CancelledTerminal
 
 // CancelledWorkflowExperimentRun is an alias for CancelledTerminal.
 type CancelledWorkflowExperimentRun = CancelledTerminal
-
-// CancelledWorkflowTestRun is an alias for CancelledTerminal.
-type CancelledWorkflowTestRun = CancelledTerminal
 
 // Category represents a category.
 type Category struct {
@@ -431,9 +431,9 @@ type CompletedBlockExecutionLifecycle struct {
 type (
 	CompletedStepLifecycle            = CompletedBlockExecutionLifecycle
 	CompletedTerminal                 = CompletedBlockExecutionLifecycle
+	CompletedWorkflowEvalRun          = CompletedBlockExecutionLifecycle
 	CompletedWorkflowExperimentResult = CompletedBlockExecutionLifecycle
 	CompletedWorkflowExperimentRun    = CompletedBlockExecutionLifecycle
-	CompletedWorkflowTestRun          = CompletedBlockExecutionLifecycle
 )
 
 // ConditionEvaluationDetails detailed evaluation information for frontend display.
@@ -862,8 +862,11 @@ type ErrorTerminal struct {
 	FailingStepID *string `json:"failing_step_id,omitempty"`
 }
 
-// ErrorWorkflowExperimentResult the result row failed. Per-job error message is bundled into lifecycle.
-type ErrorWorkflowExperimentResult struct {
+// ErrorWorkflowEvalRun the eval run failed. The error message lives on this variant.
+// Carries the same structured `details` envelope as workflow runs so
+// consumers can branch on `error_code` / `stage` rather than parsing
+// a free-text message.
+type ErrorWorkflowEvalRun struct {
 	Status *string `json:"status,omitempty"`
 	// Message is human-readable error message
 	Message string `json:"message,omitempty"`
@@ -874,17 +877,51 @@ type ErrorWorkflowExperimentResult struct {
 // UnmarshalJSON applies spec-declared defaults to optional fields the
 // server may omit, so callers can read them directly without
 // nil-checks or zero-value second-guessing.
-func (r *ErrorWorkflowExperimentResult) UnmarshalJSON(data []byte) error {
+func (r *ErrorWorkflowEvalRun) UnmarshalJSON(data []byte) error {
 	r.Message = "(no message)"
-	type alias ErrorWorkflowExperimentResult
+	type alias ErrorWorkflowEvalRun
 	return json.Unmarshal(data, (*alias)(r))
 }
 
-// ErrorWorkflowExperimentRun is an alias for ErrorWorkflowExperimentResult.
-type ErrorWorkflowExperimentRun = ErrorWorkflowExperimentResult
+// ErrorWorkflowExperimentResult is an alias for ErrorWorkflowEvalRun.
+type ErrorWorkflowExperimentResult = ErrorWorkflowEvalRun
 
-// ErrorWorkflowTestRun is an alias for ErrorWorkflowExperimentResult.
-type ErrorWorkflowTestRun = ErrorWorkflowExperimentResult
+// ErrorWorkflowExperimentRun is an alias for ErrorWorkflowEvalRun.
+type ErrorWorkflowExperimentRun = ErrorWorkflowEvalRun
+
+// EvalFileHandleInput represents an eval file handle input.
+type EvalFileHandleInput struct {
+	Document EvalPublicFileRef `json:"document"`
+	Type     *string           `json:"type,omitempty"`
+}
+
+// EvalJSONHandleInput is an alias for BlockExecJSONHandleInput.
+type EvalJSONHandleInput = BlockExecJSONHandleInput
+
+// EvalPublicFileRef is an alias for BlockExecFileRef.
+type EvalPublicFileRef = BlockExecFileRef
+
+// EvalRunBlockTarget public workflow-eval target.
+// The storage layer remains block-scoped today, but the API shape names the
+// tested entity explicitly so workflow-level targets can be added later.
+type EvalRunBlockTarget struct {
+	Type    *string `json:"type,omitempty"`
+	BlockID string  `json:"block_id"`
+}
+
+// EvalRunFreshness represents an eval run freshness.
+type EvalRunFreshness struct {
+	Status              *EvalRunFreshnessStatus   `json:"status,omitempty"`
+	Reasons             []EvalRunFreshnessReasons `json:"reasons,omitempty"`
+	ValidityFingerprint *string                   `json:"validity_fingerprint"`
+	InputFingerprint    *string                   `json:"input_fingerprint"`
+	BaselineRunID       *string                   `json:"baseline_run_id"`
+}
+
+// EvalRunTrigger represents an eval run trigger.
+type EvalRunTrigger struct {
+	Type EvalRunTriggerType `json:"type"`
+}
 
 // ExistCondition represents an exist condition.
 type ExistCondition struct {
@@ -1073,7 +1110,7 @@ type ExperimentVotesMetricsResponse struct {
 
 // ExplicitExperimentDocumentRequest represents an explicit experiment document request.
 type ExplicitExperimentDocumentRequest struct {
-	HandleInputs map[string]HandleInput        `json:"handle_inputs"`
+	HandleInputs map[string]HandleInputType    `json:"handle_inputs"`
 	Provenance   *ExperimentDocumentProvenance `json:"provenance,omitempty"`
 }
 
@@ -1089,8 +1126,6 @@ type Extraction struct {
 	JSONSchema map[string]interface{} `json:"json_schema"`
 	// NConsensus is number of consensus votes used
 	NConsensus int `json:"n_consensus,omitempty"`
-	// ImageResolutionDpi is legacy stored DPI value, retained only for compatibility.
-	ImageResolutionDpi *int `json:"image_resolution_dpi,omitempty"`
 	// Instructions is free-form instructions supplied with the extraction request.
 	Instructions *string `json:"instructions,omitempty"`
 	// Output is the extracted structured data
@@ -1156,8 +1191,6 @@ type ExtractionWorkflowArtifact struct {
 	JSONSchema map[string]interface{} `json:"json_schema"`
 	// NConsensus is number of consensus votes used
 	NConsensus int `json:"n_consensus,omitempty"`
-	// ImageResolutionDpi is legacy stored DPI value, retained only for compatibility.
-	ImageResolutionDpi *int `json:"image_resolution_dpi,omitempty"`
 	// Instructions is free-form instructions supplied with the extraction request.
 	Instructions *string `json:"instructions,omitempty"`
 	// Output is the extracted structured data
@@ -1226,8 +1259,8 @@ type FileBlueprint struct {
 
 // FileHandleInput file reference for a handle input.
 type FileHandleInput struct {
-	Type     *string `json:"type,omitempty"`
-	Document FileRef `json:"document"`
+	Type     *string       `json:"type,omitempty"`
+	Document ResultFileRef `json:"document"`
 }
 
 // FileLink a short-lived signed link to download a file, with its `filename` and expiry.
@@ -1287,15 +1320,15 @@ type JSONSchemaValidCondition struct {
 	Schema map[string]interface{} `json:"schema,omitempty"`
 }
 
-// LatestBlockTestRunSummary summary of the most recent block-test run.
+// LatestBlockEvalRunSummary summary of the most recent block-eval run.
 // Execution status and verdict outcome are exposed as separate fields.
 // The summary is written on terminal-state transitions, so in practice
 // `status` is one of `completed | error | cancelled` and `outcome` is
 // populated when `status == "completed"`.
-type LatestBlockTestRunSummary struct {
+type LatestBlockEvalRunSummary struct {
 	RunRecordID              string                            `json:"run_record_id"`
-	Status                   LatestBlockTestRunSummaryStatus   `json:"status"`
-	Outcome                  *LatestBlockTestRunSummaryOutcome `json:"outcome,omitempty"`
+	Status                   LatestBlockEvalRunSummaryStatus   `json:"status"`
+	Outcome                  *LatestBlockEvalRunSummaryOutcome `json:"outcome,omitempty"`
 	StartedAt                time.Time                         `json:"started_at"`
 	CompletedAt              *time.Time                        `json:"completed_at,omitempty"`
 	DurationMs               *int                              `json:"duration_ms,omitempty"`
@@ -1329,8 +1362,8 @@ type LlmNotJudgedAsCondition struct {
 	ExpectedLabel *string `json:"expected_label,omitempty"`
 }
 
-// ManualWorkflowTestSource represents a manual workflow test source.
-type ManualWorkflowTestSource struct {
+// ManualWorkflowEvalSource represents a manual workflow eval source.
+type ManualWorkflowEvalSource struct {
 	Type         *string                `json:"type,omitempty"`
 	HandleInputs map[string]HandleInput `json:"handle_inputs,omitempty"`
 }
@@ -1379,7 +1412,7 @@ type ObjectContainsCondition struct {
 	Expected map[string]interface{} `json:"expected"`
 }
 
-// OutputTarget structured block-test assertion target.
+// OutputTarget structured block-eval assertion target.
 type OutputTarget struct {
 	OutputHandleID string  `json:"output_handle_id"`
 	Path           *string `json:"path,omitempty"`
@@ -1395,8 +1428,6 @@ type Parse struct {
 	Model string `json:"model"`
 	// TableParsingFormat is format used to render tables extracted from the document
 	TableParsingFormat TableParsingFormat `json:"table_parsing_format"`
-	// ImageResolutionDpi is legacy stored DPI value, retained only for compatibility.
-	ImageResolutionDpi int `json:"image_resolution_dpi"`
 	// Instructions is free-form instructions supplied with the parse request.
 	Instructions *string `json:"instructions,omitempty"`
 	// Output is the parsed document content
@@ -1428,8 +1459,6 @@ type ParseWorkflowArtifact struct {
 	Model string `json:"model"`
 	// TableParsingFormat is format used to render tables extracted from the document
 	TableParsingFormat ParseWorkflowArtifactTableParsingFormat `json:"table_parsing_format"`
-	// ImageResolutionDpi is legacy stored DPI value, retained only for compatibility.
-	ImageResolutionDpi int `json:"image_resolution_dpi"`
 	// Instructions is free-form instructions supplied with the parse request.
 	Instructions *string `json:"instructions,omitempty"`
 	// Output is the parsed document content
@@ -1560,9 +1589,9 @@ type PendingBlockExecutionLifecycle struct {
 type (
 	PendingRun                      = PendingBlockExecutionLifecycle
 	PendingStepLifecycle            = PendingBlockExecutionLifecycle
+	PendingWorkflowEvalRun          = PendingBlockExecutionLifecycle
 	PendingWorkflowExperimentResult = PendingBlockExecutionLifecycle
 	PendingWorkflowExperimentRun    = PendingBlockExecutionLifecycle
-	PendingWorkflowTestRun          = PendingBlockExecutionLifecycle
 )
 
 // PrimitiveError represents a primitive error.
@@ -1620,14 +1649,17 @@ type QueuedBlockExecutionLifecycle struct {
 // QueuedStepLifecycle is an alias for QueuedBlockExecutionLifecycle.
 type QueuedStepLifecycle = QueuedBlockExecutionLifecycle
 
+// QueuedWorkflowEvalRun is an alias for QueuedBlockExecutionLifecycle.
+type QueuedWorkflowEvalRun = QueuedBlockExecutionLifecycle
+
 // QueuedWorkflowExperimentResult is an alias for QueuedBlockExecutionLifecycle.
 type QueuedWorkflowExperimentResult = QueuedBlockExecutionLifecycle
 
 // QueuedWorkflowExperimentRun is an alias for QueuedBlockExecutionLifecycle.
 type QueuedWorkflowExperimentRun = QueuedBlockExecutionLifecycle
 
-// QueuedWorkflowTestRun is an alias for QueuedBlockExecutionLifecycle.
-type QueuedWorkflowTestRun = QueuedBlockExecutionLifecycle
+// ResultFileRef is an alias for BlockExecFileRef.
+type ResultFileRef = BlockExecFileRef
 
 // RetabUsage usage information for document processing.
 type RetabUsage struct {
@@ -1761,8 +1793,8 @@ type RunInputs struct {
 	JSONData map[string]interface{} `json:"json_data,omitempty"`
 }
 
-// RunStepWorkflowTestSource represents a run step workflow test source.
-type RunStepWorkflowTestSource struct {
+// RunStepWorkflowEvalSource represents a run step workflow eval source.
+type RunStepWorkflowEvalSource struct {
 	Type   *string `json:"type,omitempty"`
 	RunID  string  `json:"run_id"`
 	StepID *string `json:"step_id,omitempty"`
@@ -1790,9 +1822,9 @@ type RunningBlockExecutionLifecycle struct {
 type (
 	RunningRun                      = RunningBlockExecutionLifecycle
 	RunningStepLifecycle            = RunningBlockExecutionLifecycle
+	RunningWorkflowEvalRun          = RunningBlockExecutionLifecycle
 	RunningWorkflowExperimentResult = RunningBlockExecutionLifecycle
 	RunningWorkflowExperimentRun    = RunningBlockExecutionLifecycle
-	RunningWorkflowTestRun          = RunningBlockExecutionLifecycle
 )
 
 // SchemaGeneration public generated schema response.
@@ -2319,6 +2351,103 @@ type WorkflowEdgeVersionDiff struct {
 	Changes           []*WorkflowVersionFieldDiff `json:"changes,omitempty"`
 }
 
+// WorkflowEval a saved workflow eval: a target block, an input `source`, and the `assertion` evaluated against its output.
+type WorkflowEval struct {
+	ID                      string                     `json:"id"`
+	WorkflowID              string                     `json:"workflow_id"`
+	Target                  WorkflowEvalBlockTarget    `json:"target"`
+	Source                  WorkflowEvalSource         `json:"source"`
+	Name                    *string                    `json:"name,omitempty"`
+	Assertion               *AssertionSpec             `json:"assertion,omitempty"`
+	AssertionSchemaDep      *AssertionSchemaDep        `json:"assertion_schema_dep,omitempty"`
+	AssertionDriftStatus    *AssertionDriftStatus      `json:"assertion_drift_status,omitempty"`
+	SchemaDrift             *WorkflowEvalSchemaDrift   `json:"schema_drift,omitempty"`
+	SchemaDriftDetail       *string                    `json:"schema_drift_detail,omitempty"`
+	Freshness               *ArtifactFreshness         `json:"freshness,omitempty"`
+	Drift                   *ArtifactDrift             `json:"drift,omitempty"`
+	ValidationStatus        string                     `json:"validation_status,omitempty"`
+	ValidationIssues        []string                   `json:"validation_issues,omitempty"`
+	LatestRunSummary        *LatestBlockEvalRunSummary `json:"latest_run_summary,omitempty"`
+	LatestPassingRunSummary *LatestBlockEvalRunSummary `json:"latest_passing_run_summary,omitempty"`
+	LatestFailingRunSummary *LatestBlockEvalRunSummary `json:"latest_failing_run_summary,omitempty"`
+	// CreatedAt is when the workflow eval was created
+	CreatedAt *time.Time `json:"created_at,omitempty"`
+	// UpdatedAt is when the workflow eval was last updated
+	UpdatedAt *time.Time `json:"updated_at,omitempty"`
+}
+
+// UnmarshalJSON applies spec-declared defaults to optional fields the
+// server may omit, so callers can read them directly without
+// nil-checks or zero-value second-guessing.
+func (r *WorkflowEval) UnmarshalJSON(data []byte) error {
+	r.ValidationStatus = "valid"
+	type alias WorkflowEval
+	return json.Unmarshal(data, (*alias)(r))
+}
+
+// WorkflowEvalBlockTarget is an alias for EvalRunBlockTarget.
+type WorkflowEvalBlockTarget = EvalRunBlockTarget
+
+// WorkflowEvalResult the outcome of one eval within an eval run: its `lifecycle`, `timing`, and `verdict`.
+type WorkflowEvalResult struct {
+	ID                string                 `json:"id"`
+	WorkflowEvalRunID *string                `json:"workflow_eval_run_id,omitempty"`
+	EvalID            string                 `json:"eval_id"`
+	Lifecycle         *WorkflowEvalRunStatus `json:"lifecycle,omitempty"`
+	Timing            *WorkflowEvalRunTiming `json:"timing,omitempty"`
+	// Verdict is verdict label populated only when the underlying eval reaches a terminal lifecycle state and the verdict could be determined. Execution-error details flow through `lifecycle`, not through this enum.
+	Verdict                  *WorkflowEvalResultVerdict `json:"verdict,omitempty"`
+	WorkflowID               string                     `json:"workflow_id"`
+	BlockID                  string                     `json:"block_id"`
+	BlockType                string                     `json:"block_type"`
+	ExecutionFingerprint     *string                    `json:"execution_fingerprint,omitempty"`
+	HandleInputsFingerprint  *string                    `json:"handle_inputs_fingerprint,omitempty"`
+	WorkflowDraftFingerprint *string                    `json:"workflow_draft_fingerprint,omitempty"`
+	BlockConfigFingerprint   *string                    `json:"block_config_fingerprint,omitempty"`
+	Artifact                 *StepArtifactRef           `json:"artifact,omitempty"`
+	HandleInputs             map[string]HandleInputType `json:"handle_inputs,omitempty"`
+	HandleOutputs            map[string]HandleInputType `json:"handle_outputs,omitempty"`
+	RoutingDecisions         []string                   `json:"routing_decisions,omitempty"`
+	Warnings                 []string                   `json:"warnings,omitempty"`
+	AssertionResult          *AssertionResult           `json:"assertion_result,omitempty"`
+	VerdictSummary           *VerdictSummary            `json:"verdict_summary,omitempty"`
+}
+
+// WorkflowEvalRun a batch execution of a workflow's evals, with overall `lifecycle`, `timing`, and pass/fail `counts`.
+type WorkflowEvalRun struct {
+	ID                string                         `json:"id"`
+	WorkflowID        string                         `json:"workflow_id"`
+	WorkflowVersionID string                         `json:"workflow_version_id"`
+	Trigger           EvalRunTrigger                 `json:"trigger"`
+	Lifecycle         WorkflowEvalRunStatus          `json:"lifecycle"`
+	Timing            WorkflowEvalRunTiming          `json:"timing"`
+	Target            *EvalRunBlockTarget            `json:"target,omitempty"`
+	EvalID            *string                        `json:"eval_id,omitempty"`
+	TotalEvals        int                            `json:"total_evals"`
+	Counts            *BlockEvalBatchExecutionCounts `json:"counts,omitempty"`
+	Freshness         *EvalRunFreshness              `json:"freshness,omitempty"`
+}
+
+// WorkflowEvalRunBlockScope run every workflow eval for one block in the workflow.
+type WorkflowEvalRunBlockScope struct {
+	Type    string `json:"type"`
+	BlockID string `json:"block_id"`
+}
+
+// WorkflowEvalRunSingleScope run one saved workflow eval in the workflow.
+type WorkflowEvalRunSingleScope struct {
+	Type   string `json:"type"`
+	EvalID string `json:"eval_id"`
+}
+
+// WorkflowEvalRunTiming is an alias for ExperimentRunTiming.
+type WorkflowEvalRunTiming = ExperimentRunTiming
+
+// WorkflowEvalRunWorkflowScope run every saved eval in the workflow.
+type WorkflowEvalRunWorkflowScope struct {
+	Type string `json:"type"`
+}
+
 // WorkflowExperiment an experiment that evaluates a workflow block against a set of documents, with its latest run status and score.
 type WorkflowExperiment struct {
 	ID            string          `json:"id"`
@@ -2344,17 +2473,17 @@ type WorkflowExperiment struct {
 
 // ExperimentResult one experiment block execution for a single document, addressed by `experiment_run_id` and `document_id`.
 type ExperimentResult struct {
-	ID              string                    `json:"id"`
-	ExperimentRunID string                    `json:"experiment_run_id"`
-	ExperimentID    string                    `json:"experiment_id"`
-	DocumentID      string                    `json:"document_id"`
-	Lifecycle       WorkflowExperimentResult  `json:"lifecycle"`
-	Timing          ExperimentResultTiming    `json:"timing"`
-	BlockType       ExperimentResultBlockType `json:"block_type"`
-	HandleInputs    map[string]HandleInput    `json:"handle_inputs,omitempty"`
-	HandleOutputs   map[string]HandleInput    `json:"handle_outputs,omitempty"`
-	Artifact        *StepArtifactRef          `json:"artifact,omitempty"`
-	Attempt         *int                      `json:"attempt,omitempty"`
+	ID              string                     `json:"id"`
+	ExperimentRunID string                     `json:"experiment_run_id"`
+	ExperimentID    string                     `json:"experiment_id"`
+	DocumentID      string                     `json:"document_id"`
+	Lifecycle       WorkflowExperimentResult   `json:"lifecycle"`
+	Timing          ExperimentResultTiming     `json:"timing"`
+	BlockType       ExperimentResultBlockType  `json:"block_type"`
+	HandleInputs    map[string]HandleInputType `json:"handle_inputs,omitempty"`
+	HandleOutputs   map[string]HandleInputType `json:"handle_outputs,omitempty"`
+	Artifact        *StepArtifactRef           `json:"artifact,omitempty"`
+	Attempt         *int                       `json:"attempt,omitempty"`
 }
 
 // ExperimentRun a single execution of an experiment, identified by `id`.
@@ -2680,108 +2809,6 @@ type WorkflowTableValidationResponse struct {
 	HasErrors   *bool                                `json:"has_errors,omitempty"`
 }
 
-// WorkflowTest a saved workflow test: a target block, an input `source`, and the `assertion` evaluated against its output.
-type WorkflowTest struct {
-	ID                      string                     `json:"id"`
-	WorkflowID              string                     `json:"workflow_id"`
-	Target                  WorkflowTestBlockTarget    `json:"target"`
-	Source                  WorkflowTestSource         `json:"source"`
-	Name                    *string                    `json:"name,omitempty"`
-	Assertion               *AssertionSpec             `json:"assertion,omitempty"`
-	AssertionSchemaDep      *AssertionSchemaDep        `json:"assertion_schema_dep,omitempty"`
-	AssertionDriftStatus    *AssertionDriftStatus      `json:"assertion_drift_status,omitempty"`
-	SchemaDrift             *WorkflowTestSchemaDrift   `json:"schema_drift,omitempty"`
-	SchemaDriftDetail       *string                    `json:"schema_drift_detail,omitempty"`
-	Freshness               *ArtifactFreshness         `json:"freshness,omitempty"`
-	Drift                   *ArtifactDrift             `json:"drift,omitempty"`
-	ValidationStatus        string                     `json:"validation_status,omitempty"`
-	ValidationIssues        []string                   `json:"validation_issues,omitempty"`
-	LatestRunSummary        *LatestBlockTestRunSummary `json:"latest_run_summary,omitempty"`
-	LatestPassingRunSummary *LatestBlockTestRunSummary `json:"latest_passing_run_summary,omitempty"`
-	LatestFailingRunSummary *LatestBlockTestRunSummary `json:"latest_failing_run_summary,omitempty"`
-	// CreatedAt is when the workflow test was created
-	CreatedAt *time.Time `json:"created_at,omitempty"`
-	// UpdatedAt is when the workflow test was last updated
-	UpdatedAt *time.Time `json:"updated_at,omitempty"`
-}
-
-// UnmarshalJSON applies spec-declared defaults to optional fields the
-// server may omit, so callers can read them directly without
-// nil-checks or zero-value second-guessing.
-func (r *WorkflowTest) UnmarshalJSON(data []byte) error {
-	r.ValidationStatus = "valid"
-	type alias WorkflowTest
-	return json.Unmarshal(data, (*alias)(r))
-}
-
-// WorkflowTestBlockTarget public workflow-test target.
-// The storage layer remains block-scoped today, but the API shape names the
-// tested entity explicitly so workflow-level targets can be added later.
-type WorkflowTestBlockTarget struct {
-	Type    *string `json:"type,omitempty"`
-	BlockID string  `json:"block_id"`
-}
-
-// WorkflowTestResult the outcome of one test within a test run: its `lifecycle`, `timing`, and `verdict`.
-type WorkflowTestResult struct {
-	ID                string                 `json:"id"`
-	WorkflowTestRunID *string                `json:"workflow_test_run_id,omitempty"`
-	TestID            string                 `json:"test_id"`
-	Lifecycle         *WorkflowTestRunStatus `json:"lifecycle,omitempty"`
-	Timing            *WorkflowTestRunTiming `json:"timing,omitempty"`
-	// Verdict is verdict label populated only when the underlying test reaches a terminal lifecycle state and the verdict could be determined. Execution-error details flow through `lifecycle`, not through this enum.
-	Verdict                  *WorkflowTestResultVerdict `json:"verdict,omitempty"`
-	WorkflowID               string                     `json:"workflow_id"`
-	BlockID                  string                     `json:"block_id"`
-	BlockType                string                     `json:"block_type"`
-	ExecutionFingerprint     *string                    `json:"execution_fingerprint,omitempty"`
-	HandleInputsFingerprint  *string                    `json:"handle_inputs_fingerprint,omitempty"`
-	WorkflowDraftFingerprint *string                    `json:"workflow_draft_fingerprint,omitempty"`
-	BlockConfigFingerprint   *string                    `json:"block_config_fingerprint,omitempty"`
-	Artifact                 *StepArtifactRef           `json:"artifact,omitempty"`
-	HandleInputs             map[string]HandleInput     `json:"handle_inputs,omitempty"`
-	HandleOutputs            map[string]HandleInput     `json:"handle_outputs,omitempty"`
-	RoutingDecisions         []string                   `json:"routing_decisions,omitempty"`
-	Warnings                 []string                   `json:"warnings,omitempty"`
-	AssertionResult          *AssertionResult           `json:"assertion_result,omitempty"`
-	VerdictSummary           *VerdictSummary            `json:"verdict_summary,omitempty"`
-}
-
-// WorkflowTestRun a batch execution of a workflow's tests, with overall `lifecycle`, `timing`, and pass/fail `counts`.
-type WorkflowTestRun struct {
-	ID                string                         `json:"id"`
-	WorkflowID        string                         `json:"workflow_id"`
-	WorkflowVersionID string                         `json:"workflow_version_id"`
-	Trigger           TriggerInfo                    `json:"trigger"`
-	Lifecycle         WorkflowTestRunStatus          `json:"lifecycle"`
-	Timing            WorkflowTestRunTiming          `json:"timing"`
-	Target            *WorkflowTestBlockTarget       `json:"target,omitempty"`
-	TestID            *string                        `json:"test_id,omitempty"`
-	TotalTests        int                            `json:"total_tests"`
-	Counts            *BlockTestBatchExecutionCounts `json:"counts,omitempty"`
-	Freshness         *ArtifactFreshness             `json:"freshness,omitempty"`
-}
-
-// WorkflowTestRunBlockScope run every workflow test for one block in the workflow.
-type WorkflowTestRunBlockScope struct {
-	Type    string `json:"type"`
-	BlockID string `json:"block_id"`
-}
-
-// WorkflowTestRunSingleScope run one saved workflow test in the workflow.
-type WorkflowTestRunSingleScope struct {
-	Type   string `json:"type"`
-	TestID string `json:"test_id"`
-}
-
-// WorkflowTestRunTiming is an alias for ExperimentRunTiming.
-type WorkflowTestRunTiming = ExperimentRunTiming
-
-// WorkflowTestRunWorkflowScope run every saved test in the workflow.
-type WorkflowTestRunWorkflowScope struct {
-	Type string `json:"type"`
-}
-
 // WorkflowVersionFieldDiff one changed field between two immutable version resources.
 type WorkflowVersionFieldDiff struct {
 	Field     string       `json:"field"`
@@ -2789,12 +2816,12 @@ type WorkflowVersionFieldDiff struct {
 	ToValue   *interface{} `json:"to_value,omitempty"`
 }
 
-// WorkflowTestRunScope execution scope for a workflow-test run. Omit scope to run every saved test in the workflow.
-type WorkflowTestRunScope struct {
-	// Type is single runs one saved test, workflow runs every saved test, and block runs every saved test for one block.
-	Type WorkflowTestRunScopeType `json:"type"`
-	// TestID is saved test id. Required when type is single.
-	TestID *string `json:"test_id,omitempty"`
+// WorkflowEvalRunScope execution scope for a workflow-eval run. Omit scope to run every saved eval in the workflow.
+type WorkflowEvalRunScope struct {
+	// Type is single runs one saved eval, workflow runs every saved eval, and block runs every saved eval for one block.
+	Type WorkflowEvalRunScopeType `json:"type"`
+	// EvalID is saved eval id. Required when type is single.
+	EvalID *string `json:"eval_id,omitempty"`
 	// BlockID is workflow block id. Required when type is block.
 	BlockID *string `json:"block_id,omitempty"`
 }
@@ -3588,7 +3615,7 @@ func ExperimentFromExperimentVotesMetricsResponse(v ExperimentVotesMetricsRespon
 // HandleInput is a discriminated union keyed by the "type" field.
 // It stores the exact wire payload so round-trips never drop variant fields;
 // inspect it with Type()/As*() and build one with HandleInputFrom*().
-// Variants: FileHandleInput, JSONHandleInput.
+// Variants: EvalFileHandleInput, EvalJSONHandleInput.
 type HandleInput struct {
 	raw json.RawMessage
 }
@@ -3617,8 +3644,78 @@ func (u HandleInput) Type() string {
 	return unionDiscriminator(u.raw, "type")
 }
 
+// AsEvalFileHandleInput decodes the union payload as EvalFileHandleInput.
+func (u HandleInput) AsEvalFileHandleInput() (*EvalFileHandleInput, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v EvalFileHandleInput
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// HandleInputFromEvalFileHandleInput builds a HandleInput from a EvalFileHandleInput.
+func HandleInputFromEvalFileHandleInput(v EvalFileHandleInput) HandleInput {
+	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "type", "file")
+	return HandleInput{raw: data}
+}
+
+// AsEvalJSONHandleInput decodes the union payload as EvalJSONHandleInput.
+func (u HandleInput) AsEvalJSONHandleInput() (*EvalJSONHandleInput, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v EvalJSONHandleInput
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// HandleInputFromEvalJSONHandleInput builds a HandleInput from a EvalJSONHandleInput.
+func HandleInputFromEvalJSONHandleInput(v EvalJSONHandleInput) HandleInput {
+	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "type", "json")
+	return HandleInput{raw: data}
+}
+
+// HandleInputType is a discriminated union keyed by the "type" field.
+// It stores the exact wire payload so round-trips never drop variant fields;
+// inspect it with Type()/As*() and build one with HandleInputTypeFrom*().
+// Variants: FileHandleInput, JSONHandleInput.
+type HandleInputType struct {
+	raw json.RawMessage
+}
+
+// MarshalJSON returns the stored payload verbatim (null when unset).
+func (u HandleInputType) MarshalJSON() ([]byte, error) {
+	if len(u.raw) == 0 {
+		return []byte("null"), nil
+	}
+	return u.raw, nil
+}
+
+// UnmarshalJSON captures the raw payload for lossless re-encoding.
+func (u *HandleInputType) UnmarshalJSON(data []byte) error {
+	u.raw = append(u.raw[:0], data...)
+	return nil
+}
+
+// Raw returns the underlying JSON payload of the union.
+func (u HandleInputType) Raw() json.RawMessage {
+	return u.raw
+}
+
+// Type returns the discriminator value, or "" when the union is unset.
+func (u HandleInputType) Type() string {
+	return unionDiscriminator(u.raw, "type")
+}
+
 // AsFileHandleInput decodes the union payload as FileHandleInput.
-func (u HandleInput) AsFileHandleInput() (*FileHandleInput, error) {
+func (u HandleInputType) AsFileHandleInput() (*FileHandleInput, error) {
 	if len(u.raw) == 0 {
 		return nil, nil
 	}
@@ -3629,15 +3726,15 @@ func (u HandleInput) AsFileHandleInput() (*FileHandleInput, error) {
 	return &v, nil
 }
 
-// HandleInputFromFileHandleInput builds a HandleInput from a FileHandleInput.
-func HandleInputFromFileHandleInput(v FileHandleInput) HandleInput {
+// HandleInputTypeFromFileHandleInput builds a HandleInputType from a FileHandleInput.
+func HandleInputTypeFromFileHandleInput(v FileHandleInput) HandleInputType {
 	data, _ := json.Marshal(v)
 	data = withUnionDiscriminator(data, "type", "file")
-	return HandleInput{raw: data}
+	return HandleInputType{raw: data}
 }
 
 // AsJSONHandleInput decodes the union payload as JSONHandleInput.
-func (u HandleInput) AsJSONHandleInput() (*JSONHandleInput, error) {
+func (u HandleInputType) AsJSONHandleInput() (*JSONHandleInput, error) {
 	if len(u.raw) == 0 {
 		return nil, nil
 	}
@@ -3648,11 +3745,11 @@ func (u HandleInput) AsJSONHandleInput() (*JSONHandleInput, error) {
 	return &v, nil
 }
 
-// HandleInputFromJSONHandleInput builds a HandleInput from a JSONHandleInput.
-func HandleInputFromJSONHandleInput(v JSONHandleInput) HandleInput {
+// HandleInputTypeFromJSONHandleInput builds a HandleInputType from a JSONHandleInput.
+func HandleInputTypeFromJSONHandleInput(v JSONHandleInput) HandleInputType {
 	data, _ := json.Marshal(v)
 	data = withUnionDiscriminator(data, "type", "json")
-	return HandleInput{raw: data}
+	return HandleInputType{raw: data}
 }
 
 // ReviewKind is a discriminated union keyed by the "kind" field.
@@ -4137,6 +4234,222 @@ func StepLifecycleFromSkippedStepLifecycle(v SkippedStepLifecycle) StepLifecycle
 	return StepLifecycle{raw: data}
 }
 
+// WorkflowEvalRunStatus is a discriminated union keyed by the "status" field.
+// It stores the exact wire payload so round-trips never drop variant fields;
+// inspect it with Status()/As*() and build one with WorkflowEvalRunStatusFrom*().
+// Variants: CancelledWorkflowEvalRun, CompletedWorkflowEvalRun, ErrorWorkflowEvalRun, PendingWorkflowEvalRun, QueuedWorkflowEvalRun, RunningWorkflowEvalRun.
+type WorkflowEvalRunStatus struct {
+	raw json.RawMessage
+}
+
+// MarshalJSON returns the stored payload verbatim (null when unset).
+func (u WorkflowEvalRunStatus) MarshalJSON() ([]byte, error) {
+	if len(u.raw) == 0 {
+		return []byte("null"), nil
+	}
+	return u.raw, nil
+}
+
+// UnmarshalJSON captures the raw payload for lossless re-encoding.
+func (u *WorkflowEvalRunStatus) UnmarshalJSON(data []byte) error {
+	u.raw = append(u.raw[:0], data...)
+	return nil
+}
+
+// Raw returns the underlying JSON payload of the union.
+func (u WorkflowEvalRunStatus) Raw() json.RawMessage {
+	return u.raw
+}
+
+// Status returns the discriminator value, or "" when the union is unset.
+func (u WorkflowEvalRunStatus) Status() string {
+	return unionDiscriminator(u.raw, "status")
+}
+
+// AsCancelledWorkflowEvalRun decodes the union payload as CancelledWorkflowEvalRun.
+func (u WorkflowEvalRunStatus) AsCancelledWorkflowEvalRun() (*CancelledWorkflowEvalRun, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v CancelledWorkflowEvalRun
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// WorkflowEvalRunStatusFromCancelledWorkflowEvalRun builds a WorkflowEvalRunStatus from a CancelledWorkflowEvalRun.
+func WorkflowEvalRunStatusFromCancelledWorkflowEvalRun(v CancelledWorkflowEvalRun) WorkflowEvalRunStatus {
+	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "cancelled")
+	return WorkflowEvalRunStatus{raw: data}
+}
+
+// AsCompletedWorkflowEvalRun decodes the union payload as CompletedWorkflowEvalRun.
+func (u WorkflowEvalRunStatus) AsCompletedWorkflowEvalRun() (*CompletedWorkflowEvalRun, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v CompletedWorkflowEvalRun
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// WorkflowEvalRunStatusFromCompletedWorkflowEvalRun builds a WorkflowEvalRunStatus from a CompletedWorkflowEvalRun.
+func WorkflowEvalRunStatusFromCompletedWorkflowEvalRun(v CompletedWorkflowEvalRun) WorkflowEvalRunStatus {
+	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "completed")
+	return WorkflowEvalRunStatus{raw: data}
+}
+
+// AsErrorWorkflowEvalRun decodes the union payload as ErrorWorkflowEvalRun.
+func (u WorkflowEvalRunStatus) AsErrorWorkflowEvalRun() (*ErrorWorkflowEvalRun, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v ErrorWorkflowEvalRun
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// WorkflowEvalRunStatusFromErrorWorkflowEvalRun builds a WorkflowEvalRunStatus from a ErrorWorkflowEvalRun.
+func WorkflowEvalRunStatusFromErrorWorkflowEvalRun(v ErrorWorkflowEvalRun) WorkflowEvalRunStatus {
+	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "error")
+	return WorkflowEvalRunStatus{raw: data}
+}
+
+// AsPendingWorkflowEvalRun decodes the union payload as PendingWorkflowEvalRun.
+func (u WorkflowEvalRunStatus) AsPendingWorkflowEvalRun() (*PendingWorkflowEvalRun, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v PendingWorkflowEvalRun
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// WorkflowEvalRunStatusFromPendingWorkflowEvalRun builds a WorkflowEvalRunStatus from a PendingWorkflowEvalRun.
+func WorkflowEvalRunStatusFromPendingWorkflowEvalRun(v PendingWorkflowEvalRun) WorkflowEvalRunStatus {
+	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "pending")
+	return WorkflowEvalRunStatus{raw: data}
+}
+
+// AsQueuedWorkflowEvalRun decodes the union payload as QueuedWorkflowEvalRun.
+func (u WorkflowEvalRunStatus) AsQueuedWorkflowEvalRun() (*QueuedWorkflowEvalRun, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v QueuedWorkflowEvalRun
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// WorkflowEvalRunStatusFromQueuedWorkflowEvalRun builds a WorkflowEvalRunStatus from a QueuedWorkflowEvalRun.
+func WorkflowEvalRunStatusFromQueuedWorkflowEvalRun(v QueuedWorkflowEvalRun) WorkflowEvalRunStatus {
+	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "queued")
+	return WorkflowEvalRunStatus{raw: data}
+}
+
+// AsRunningWorkflowEvalRun decodes the union payload as RunningWorkflowEvalRun.
+func (u WorkflowEvalRunStatus) AsRunningWorkflowEvalRun() (*RunningWorkflowEvalRun, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v RunningWorkflowEvalRun
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// WorkflowEvalRunStatusFromRunningWorkflowEvalRun builds a WorkflowEvalRunStatus from a RunningWorkflowEvalRun.
+func WorkflowEvalRunStatusFromRunningWorkflowEvalRun(v RunningWorkflowEvalRun) WorkflowEvalRunStatus {
+	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "status", "running")
+	return WorkflowEvalRunStatus{raw: data}
+}
+
+// WorkflowEvalSource is a discriminated union keyed by the "type" field.
+// It stores the exact wire payload so round-trips never drop variant fields;
+// inspect it with Type()/As*() and build one with WorkflowEvalSourceFrom*().
+// Variants: ManualWorkflowEvalSource, RunStepWorkflowEvalSource.
+type WorkflowEvalSource struct {
+	raw json.RawMessage
+}
+
+// MarshalJSON returns the stored payload verbatim (null when unset).
+func (u WorkflowEvalSource) MarshalJSON() ([]byte, error) {
+	if len(u.raw) == 0 {
+		return []byte("null"), nil
+	}
+	return u.raw, nil
+}
+
+// UnmarshalJSON captures the raw payload for lossless re-encoding.
+func (u *WorkflowEvalSource) UnmarshalJSON(data []byte) error {
+	u.raw = append(u.raw[:0], data...)
+	return nil
+}
+
+// Raw returns the underlying JSON payload of the union.
+func (u WorkflowEvalSource) Raw() json.RawMessage {
+	return u.raw
+}
+
+// Type returns the discriminator value, or "" when the union is unset.
+func (u WorkflowEvalSource) Type() string {
+	return unionDiscriminator(u.raw, "type")
+}
+
+// AsManualWorkflowEvalSource decodes the union payload as ManualWorkflowEvalSource.
+func (u WorkflowEvalSource) AsManualWorkflowEvalSource() (*ManualWorkflowEvalSource, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v ManualWorkflowEvalSource
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// WorkflowEvalSourceFromManualWorkflowEvalSource builds a WorkflowEvalSource from a ManualWorkflowEvalSource.
+func WorkflowEvalSourceFromManualWorkflowEvalSource(v ManualWorkflowEvalSource) WorkflowEvalSource {
+	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "type", "manual")
+	return WorkflowEvalSource{raw: data}
+}
+
+// AsRunStepWorkflowEvalSource decodes the union payload as RunStepWorkflowEvalSource.
+func (u WorkflowEvalSource) AsRunStepWorkflowEvalSource() (*RunStepWorkflowEvalSource, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v RunStepWorkflowEvalSource
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// WorkflowEvalSourceFromRunStepWorkflowEvalSource builds a WorkflowEvalSource from a RunStepWorkflowEvalSource.
+func WorkflowEvalSourceFromRunStepWorkflowEvalSource(v RunStepWorkflowEvalSource) WorkflowEvalSource {
+	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "type", "run_step")
+	return WorkflowEvalSource{raw: data}
+}
+
 // WorkflowExperimentResult is a discriminated union keyed by the "status" field.
 // It stores the exact wire payload so round-trips never drop variant fields;
 // inspect it with Status()/As*() and build one with WorkflowExperimentResultFrom*().
@@ -4573,222 +4886,6 @@ func WorkflowRunLifecycleFromRunningRun(v RunningRun) WorkflowRunLifecycle {
 	data, _ := json.Marshal(v)
 	data = withUnionDiscriminator(data, "status", "running")
 	return WorkflowRunLifecycle{raw: data}
-}
-
-// WorkflowTestRunStatus is a discriminated union keyed by the "status" field.
-// It stores the exact wire payload so round-trips never drop variant fields;
-// inspect it with Status()/As*() and build one with WorkflowTestRunStatusFrom*().
-// Variants: CancelledWorkflowTestRun, CompletedWorkflowTestRun, ErrorWorkflowTestRun, PendingWorkflowTestRun, QueuedWorkflowTestRun, RunningWorkflowTestRun.
-type WorkflowTestRunStatus struct {
-	raw json.RawMessage
-}
-
-// MarshalJSON returns the stored payload verbatim (null when unset).
-func (u WorkflowTestRunStatus) MarshalJSON() ([]byte, error) {
-	if len(u.raw) == 0 {
-		return []byte("null"), nil
-	}
-	return u.raw, nil
-}
-
-// UnmarshalJSON captures the raw payload for lossless re-encoding.
-func (u *WorkflowTestRunStatus) UnmarshalJSON(data []byte) error {
-	u.raw = append(u.raw[:0], data...)
-	return nil
-}
-
-// Raw returns the underlying JSON payload of the union.
-func (u WorkflowTestRunStatus) Raw() json.RawMessage {
-	return u.raw
-}
-
-// Status returns the discriminator value, or "" when the union is unset.
-func (u WorkflowTestRunStatus) Status() string {
-	return unionDiscriminator(u.raw, "status")
-}
-
-// AsCancelledWorkflowTestRun decodes the union payload as CancelledWorkflowTestRun.
-func (u WorkflowTestRunStatus) AsCancelledWorkflowTestRun() (*CancelledWorkflowTestRun, error) {
-	if len(u.raw) == 0 {
-		return nil, nil
-	}
-	var v CancelledWorkflowTestRun
-	if err := json.Unmarshal(u.raw, &v); err != nil {
-		return nil, err
-	}
-	return &v, nil
-}
-
-// WorkflowTestRunStatusFromCancelledWorkflowTestRun builds a WorkflowTestRunStatus from a CancelledWorkflowTestRun.
-func WorkflowTestRunStatusFromCancelledWorkflowTestRun(v CancelledWorkflowTestRun) WorkflowTestRunStatus {
-	data, _ := json.Marshal(v)
-	data = withUnionDiscriminator(data, "status", "cancelled")
-	return WorkflowTestRunStatus{raw: data}
-}
-
-// AsCompletedWorkflowTestRun decodes the union payload as CompletedWorkflowTestRun.
-func (u WorkflowTestRunStatus) AsCompletedWorkflowTestRun() (*CompletedWorkflowTestRun, error) {
-	if len(u.raw) == 0 {
-		return nil, nil
-	}
-	var v CompletedWorkflowTestRun
-	if err := json.Unmarshal(u.raw, &v); err != nil {
-		return nil, err
-	}
-	return &v, nil
-}
-
-// WorkflowTestRunStatusFromCompletedWorkflowTestRun builds a WorkflowTestRunStatus from a CompletedWorkflowTestRun.
-func WorkflowTestRunStatusFromCompletedWorkflowTestRun(v CompletedWorkflowTestRun) WorkflowTestRunStatus {
-	data, _ := json.Marshal(v)
-	data = withUnionDiscriminator(data, "status", "completed")
-	return WorkflowTestRunStatus{raw: data}
-}
-
-// AsErrorWorkflowTestRun decodes the union payload as ErrorWorkflowTestRun.
-func (u WorkflowTestRunStatus) AsErrorWorkflowTestRun() (*ErrorWorkflowTestRun, error) {
-	if len(u.raw) == 0 {
-		return nil, nil
-	}
-	var v ErrorWorkflowTestRun
-	if err := json.Unmarshal(u.raw, &v); err != nil {
-		return nil, err
-	}
-	return &v, nil
-}
-
-// WorkflowTestRunStatusFromErrorWorkflowTestRun builds a WorkflowTestRunStatus from a ErrorWorkflowTestRun.
-func WorkflowTestRunStatusFromErrorWorkflowTestRun(v ErrorWorkflowTestRun) WorkflowTestRunStatus {
-	data, _ := json.Marshal(v)
-	data = withUnionDiscriminator(data, "status", "error")
-	return WorkflowTestRunStatus{raw: data}
-}
-
-// AsPendingWorkflowTestRun decodes the union payload as PendingWorkflowTestRun.
-func (u WorkflowTestRunStatus) AsPendingWorkflowTestRun() (*PendingWorkflowTestRun, error) {
-	if len(u.raw) == 0 {
-		return nil, nil
-	}
-	var v PendingWorkflowTestRun
-	if err := json.Unmarshal(u.raw, &v); err != nil {
-		return nil, err
-	}
-	return &v, nil
-}
-
-// WorkflowTestRunStatusFromPendingWorkflowTestRun builds a WorkflowTestRunStatus from a PendingWorkflowTestRun.
-func WorkflowTestRunStatusFromPendingWorkflowTestRun(v PendingWorkflowTestRun) WorkflowTestRunStatus {
-	data, _ := json.Marshal(v)
-	data = withUnionDiscriminator(data, "status", "pending")
-	return WorkflowTestRunStatus{raw: data}
-}
-
-// AsQueuedWorkflowTestRun decodes the union payload as QueuedWorkflowTestRun.
-func (u WorkflowTestRunStatus) AsQueuedWorkflowTestRun() (*QueuedWorkflowTestRun, error) {
-	if len(u.raw) == 0 {
-		return nil, nil
-	}
-	var v QueuedWorkflowTestRun
-	if err := json.Unmarshal(u.raw, &v); err != nil {
-		return nil, err
-	}
-	return &v, nil
-}
-
-// WorkflowTestRunStatusFromQueuedWorkflowTestRun builds a WorkflowTestRunStatus from a QueuedWorkflowTestRun.
-func WorkflowTestRunStatusFromQueuedWorkflowTestRun(v QueuedWorkflowTestRun) WorkflowTestRunStatus {
-	data, _ := json.Marshal(v)
-	data = withUnionDiscriminator(data, "status", "queued")
-	return WorkflowTestRunStatus{raw: data}
-}
-
-// AsRunningWorkflowTestRun decodes the union payload as RunningWorkflowTestRun.
-func (u WorkflowTestRunStatus) AsRunningWorkflowTestRun() (*RunningWorkflowTestRun, error) {
-	if len(u.raw) == 0 {
-		return nil, nil
-	}
-	var v RunningWorkflowTestRun
-	if err := json.Unmarshal(u.raw, &v); err != nil {
-		return nil, err
-	}
-	return &v, nil
-}
-
-// WorkflowTestRunStatusFromRunningWorkflowTestRun builds a WorkflowTestRunStatus from a RunningWorkflowTestRun.
-func WorkflowTestRunStatusFromRunningWorkflowTestRun(v RunningWorkflowTestRun) WorkflowTestRunStatus {
-	data, _ := json.Marshal(v)
-	data = withUnionDiscriminator(data, "status", "running")
-	return WorkflowTestRunStatus{raw: data}
-}
-
-// WorkflowTestSource is a discriminated union keyed by the "type" field.
-// It stores the exact wire payload so round-trips never drop variant fields;
-// inspect it with Type()/As*() and build one with WorkflowTestSourceFrom*().
-// Variants: ManualWorkflowTestSource, RunStepWorkflowTestSource.
-type WorkflowTestSource struct {
-	raw json.RawMessage
-}
-
-// MarshalJSON returns the stored payload verbatim (null when unset).
-func (u WorkflowTestSource) MarshalJSON() ([]byte, error) {
-	if len(u.raw) == 0 {
-		return []byte("null"), nil
-	}
-	return u.raw, nil
-}
-
-// UnmarshalJSON captures the raw payload for lossless re-encoding.
-func (u *WorkflowTestSource) UnmarshalJSON(data []byte) error {
-	u.raw = append(u.raw[:0], data...)
-	return nil
-}
-
-// Raw returns the underlying JSON payload of the union.
-func (u WorkflowTestSource) Raw() json.RawMessage {
-	return u.raw
-}
-
-// Type returns the discriminator value, or "" when the union is unset.
-func (u WorkflowTestSource) Type() string {
-	return unionDiscriminator(u.raw, "type")
-}
-
-// AsManualWorkflowTestSource decodes the union payload as ManualWorkflowTestSource.
-func (u WorkflowTestSource) AsManualWorkflowTestSource() (*ManualWorkflowTestSource, error) {
-	if len(u.raw) == 0 {
-		return nil, nil
-	}
-	var v ManualWorkflowTestSource
-	if err := json.Unmarshal(u.raw, &v); err != nil {
-		return nil, err
-	}
-	return &v, nil
-}
-
-// WorkflowTestSourceFromManualWorkflowTestSource builds a WorkflowTestSource from a ManualWorkflowTestSource.
-func WorkflowTestSourceFromManualWorkflowTestSource(v ManualWorkflowTestSource) WorkflowTestSource {
-	data, _ := json.Marshal(v)
-	data = withUnionDiscriminator(data, "type", "manual")
-	return WorkflowTestSource{raw: data}
-}
-
-// AsRunStepWorkflowTestSource decodes the union payload as RunStepWorkflowTestSource.
-func (u WorkflowTestSource) AsRunStepWorkflowTestSource() (*RunStepWorkflowTestSource, error) {
-	if len(u.raw) == 0 {
-		return nil, nil
-	}
-	var v RunStepWorkflowTestSource
-	if err := json.Unmarshal(u.raw, &v); err != nil {
-		return nil, err
-	}
-	return &v, nil
-}
-
-// WorkflowTestSourceFromRunStepWorkflowTestSource builds a WorkflowTestSource from a RunStepWorkflowTestSource.
-func WorkflowTestSourceFromRunStepWorkflowTestSource(v RunStepWorkflowTestSource) WorkflowTestSource {
-	data, _ := json.Marshal(v)
-	data = withUnionDiscriminator(data, "type", "run_step")
-	return WorkflowTestSource{raw: data}
 }
 
 // PaginationParams contains common pagination parameters for list operations.

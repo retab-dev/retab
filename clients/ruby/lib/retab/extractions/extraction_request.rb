@@ -16,8 +16,7 @@ module Retab
       bust_cache: :bust_cache,
       stream: :stream,
       background: :background,
-      chunking_keys: :chunking_keys,
-      image_resolution_dpi: :image_resolution_dpi
+      chunking_keys: :chunking_keys
     }.freeze
 
     attr_accessor(
@@ -31,8 +30,7 @@ module Retab
       :bust_cache,
       :stream,
       :background,
-      :chunking_keys,
-      :image_resolution_dpi
+      :chunking_keys
     )
 
     def initialize(json)
@@ -49,7 +47,6 @@ module Retab
       @stream = hash[:stream].nil? ? false : hash[:stream]
       @background = hash[:background].nil? ? false : hash[:background]
       @chunking_keys = hash[:chunking_keys] || {}
-      @image_resolution_dpi = hash[:image_resolution_dpi]
     end
   end
 end

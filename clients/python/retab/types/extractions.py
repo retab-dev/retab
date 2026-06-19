@@ -51,7 +51,6 @@ class ExtractionRequest(BaseModel):
         description="If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.",
     )
     chunking_keys: dict[str, str] | None = None
-    image_resolution_dpi: int | None = None
 
 
 class Extraction(BaseModel):
@@ -64,7 +63,6 @@ class Extraction(BaseModel):
     model: str = Field(..., description="Model used for the extraction")
     json_schema: dict[str, Any] = Field(..., description="JSON schema used for the extraction")
     n_consensus: int | None = Field(default=1, description="Number of consensus votes used")
-    image_resolution_dpi: int | None = Field(default=None, description="Legacy stored DPI value, retained only for compatibility.")
     instructions: str | None = Field(default=None, description="Free-form instructions supplied with the extraction request.")
     output: dict[str, Any] = Field(..., description="The extracted structured data")
     status: ExtractionStatus | None = Field(

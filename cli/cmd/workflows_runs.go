@@ -219,7 +219,7 @@ a block run awaiting review, then ` + "`reviews approve`" + ` or ` + "`reviews r
 to decide it. Use ` + "`reviews versions create`" + ` to create a corrected output before approving.
 
 For declarative regression testing of workflow outputs, see
-` + "`retab workflows tests --help`" + `.`,
+` + "`retab workflows evals --help`" + `.`,
 	Example: `  # Start a run by uploading a document into the start_document block
   retab workflows runs create wf_abc123 \
     --document start=./invoice.pdf

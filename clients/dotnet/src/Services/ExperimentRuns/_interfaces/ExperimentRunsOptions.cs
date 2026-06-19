@@ -14,9 +14,9 @@ namespace Retab
 
         public string? BlockId { get; set; }
 
-        public LatestBlockTestRunSummaryStatus? Status { get; set; }
+        public LatestBlockEvalRunSummaryStatus? Status { get; set; }
 
-        public LatestBlockTestRunSummaryStatus? ExcludeStatus { get; set; }
+        public LatestBlockEvalRunSummaryStatus? ExcludeStatus { get; set; }
 
         public string? TriggerType { get; set; }
 

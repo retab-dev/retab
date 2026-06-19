@@ -25,7 +25,6 @@ response = client.extractions.create(
     document="../../../assets/docs/invoice.jpeg",
     json_schema=json.load(open("../../../assets/code/invoice_schema.json")),
     model="retab-small",
-    image_resolution_dpi=192,
     n_consensus=1,
 )
 

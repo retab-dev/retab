@@ -47,7 +47,6 @@ readonly class ExtractionRequest implements \JsonSerializable
         public ?bool $background = null,
         /** @var array<string, string>|null */
         public ?array $chunkingKeys = null,
-        public ?int $imageResolutionDpi = null,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -73,7 +72,6 @@ readonly class ExtractionRequest implements \JsonSerializable
             stream: $data['stream'] ?? null,
             background: $data['background'] ?? null,
             chunkingKeys: $data['chunking_keys'] ?? null,
-            imageResolutionDpi: $data['image_resolution_dpi'] ?? null,
         );
     }
 
@@ -92,7 +90,6 @@ readonly class ExtractionRequest implements \JsonSerializable
             'stream' => $this->stream,
             'background' => $this->background,
             'chunking_keys' => $this->chunkingKeys,
-            'image_resolution_dpi' => $this->imageResolutionDpi,
         ];
     }
 }

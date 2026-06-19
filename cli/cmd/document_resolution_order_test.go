@@ -362,7 +362,7 @@ func TestParseCreateReadsDocumentBeforeCredentials(t *testing.T) {
 	addDocumentFlags(cmd)
 	cmd.Flags().String("model", "", "")
 	cmd.Flags().String("table-parsing-format", "", "")
-	cmd.Flags().Var(&boundedIntFlagValue{min: 96, max: 300}, "image-resolution-dpi", "")
+	cmd.Flags().String("image-resolution-dpi", "", "")
 	cmd.Flags().String("instructions", "", "")
 	cmd.Flags().Bool("bust-cache", false, "")
 

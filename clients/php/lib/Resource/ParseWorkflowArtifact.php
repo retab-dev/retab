@@ -20,8 +20,6 @@ readonly class ParseWorkflowArtifact implements \JsonSerializable
         public string $model,
         /** Format used to render tables extracted from the document */
         public TableParsingFormat $tableParsingFormat,
-        /** Legacy stored DPI value, retained only for compatibility. */
-        public int $imageResolutionDpi,
         /** The parsed document content */
         public ParseOutput $output,
         /** Timestamp when this artifact was created. */
@@ -46,7 +44,6 @@ readonly class ParseWorkflowArtifact implements \JsonSerializable
             'file',
             'model',
             'table_parsing_format',
-            'image_resolution_dpi',
             'output',
             'created_at',
         ] as $__required) {
@@ -59,7 +56,6 @@ readonly class ParseWorkflowArtifact implements \JsonSerializable
             file: FileRef::fromArray($data['file']),
             model: $data['model'],
             tableParsingFormat: TableParsingFormat::from($data['table_parsing_format']),
-            imageResolutionDpi: $data['image_resolution_dpi'],
             output: ParseOutput::fromArray($data['output']),
             createdAt: new \DateTimeImmutable($data['created_at']),
             instructions: $data['instructions'] ?? null,
@@ -78,7 +74,6 @@ readonly class ParseWorkflowArtifact implements \JsonSerializable
             'file' => $this->file->toArray(),
             'model' => $this->model,
             'table_parsing_format' => $this->tableParsingFormat->value,
-            'image_resolution_dpi' => $this->imageResolutionDpi,
             'output' => $this->output->toArray(),
             'created_at' => $this->createdAt->format(\DateTimeInterface::RFC3339_EXTENDED),
             'instructions' => $this->instructions,

@@ -10,7 +10,6 @@ module Retab
       file: :file,
       model: :model,
       table_parsing_format: :table_parsing_format,
-      image_resolution_dpi: :image_resolution_dpi,
       instructions: :instructions,
       output: :output,
       status: :status,
@@ -25,7 +24,6 @@ module Retab
       :file,
       :model,
       :table_parsing_format,
-      :image_resolution_dpi,
       :instructions,
       :output,
       :status,
@@ -42,7 +40,6 @@ module Retab
       @file = hash[:file] ? Retab::FileRef.new(hash[:file]) : nil
       @model = hash[:model]
       @table_parsing_format = hash[:table_parsing_format]
-      @image_resolution_dpi = hash[:image_resolution_dpi]
       @instructions = hash[:instructions]
       @output = hash[:output] ? Retab::ParseOutput.new(hash[:output]) : nil
       @status = hash[:status].nil? ? "pending" : hash[:status]

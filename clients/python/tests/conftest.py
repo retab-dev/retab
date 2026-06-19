@@ -100,7 +100,7 @@ def _strip_legacy_version_suffix(base_url: str) -> str:
 
     The SDK constructor will do the same stripping internally and emit a
     deprecation ``UserWarning`` — handling it here at test-setup time keeps
-    the warning out of every test run while still letting developer
+    the warning out of every eval run while still letting developer
     ``.env`` files lag behind the new convention.
     """
     return _BASE_URL_VERSION_SUFFIX_RE.sub("", base_url).rstrip("/")

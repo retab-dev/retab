@@ -73,7 +73,6 @@ impl CreateParams {
                 instructions: Default::default(),
                 bust_cache: Default::default(),
                 background: Default::default(),
-                image_resolution_dpi: Default::default(),
             },
         }
     }

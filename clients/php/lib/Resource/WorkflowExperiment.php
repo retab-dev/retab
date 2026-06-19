@@ -28,7 +28,7 @@ readonly class WorkflowExperiment implements \JsonSerializable
         public ?float $score = null,
         public ?bool $isStale = null,
         public ?ArtifactFreshness $freshness = null,
-        public ?WorkflowTestSchemaDrift $schemaDrift = null,
+        public ?WorkflowEvalSchemaDrift $schemaDrift = null,
         public ?string $schemaDriftDetail = null,
         public ?ArtifactDrift $drift = null,
     ) {}
@@ -63,7 +63,7 @@ readonly class WorkflowExperiment implements \JsonSerializable
             score: $data['score'] ?? null,
             isStale: $data['is_stale'] ?? null,
             freshness: isset($data['freshness']) ? ArtifactFreshness::fromArray($data['freshness']) : null,
-            schemaDrift: isset($data['schema_drift']) ? WorkflowTestSchemaDrift::from($data['schema_drift']) : null,
+            schemaDrift: isset($data['schema_drift']) ? WorkflowEvalSchemaDrift::from($data['schema_drift']) : null,
             schemaDriftDetail: $data['schema_drift_detail'] ?? null,
             drift: isset($data['drift']) ? ArtifactDrift::fromArray($data['drift']) : null,
         );

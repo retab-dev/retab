@@ -73,7 +73,6 @@ def _parse_item() -> dict[str, Any]:
         "file": _FILE_REF,
         "model": "retab-small",
         "table_parsing_format": "html",
-        "image_resolution_dpi": 192,
         "output": {"pages": ["page 1 text"], "text": "page 1 text"},
     }
 

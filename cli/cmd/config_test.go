@@ -8,7 +8,7 @@ import (
 )
 
 // writeRawConfig writes raw JSON bytes directly to ~/.retab/config.json,
-// bypassing saveConfig — so a test can simulate a config file produced by
+// bypassing saveConfig — so an test can simulate a config file produced by
 // an older CLI version.
 func writeRawConfig(t *testing.T, home, contents string) {
 	t.Helper()

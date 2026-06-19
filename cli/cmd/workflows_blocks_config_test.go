@@ -1378,7 +1378,7 @@ func TestWorkflowsBlocksPushConfigPreservesBackendSemanticError(t *testing.T) {
 		case http.MethodPatch:
 			w.WriteHeader(http.StatusBadRequest)
 			_ = json.NewEncoder(w).Encode(map[string]any{
-				"detail": "Invalid config fields for 'extract' block: prompt. Valid fields: image_resolution_dpi, inputs, json_schema, model, n_consensus, review.",
+				"detail": "Invalid config fields for 'extract' block: prompt. Valid fields: inputs, json_schema, model, n_consensus, review.",
 			})
 		default:
 			t.Fatalf("unexpected method %s", r.Method)

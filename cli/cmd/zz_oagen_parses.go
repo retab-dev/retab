@@ -173,7 +173,6 @@ func init() {
 	parsesCreateCmd.Flags().String("model", "", "model identifier (required)")
 	_ = parsesCreateCmd.MarkFlagRequired("model")
 	parsesCreateCmd.Flags().String("table-parsing-format", "", "table parsing format")
-	parsesCreateCmd.Flags().Var(&boundedIntFlagValue{min: 96, max: 300}, "image-resolution-dpi", "ignored legacy image resolution DPI")
 	parsesCreateCmd.Flags().String("instructions", "", "extra instructions")
 	parsesCreateCmd.Flags().Bool("bust-cache", false, "bypass server-side cache")
 	parsesCreateCmd.Flags().Bool("background", false, "If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.")

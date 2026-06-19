@@ -30,7 +30,6 @@ class GenerateSchemaRequest(BaseModel):
         default=False,
         description="If true, run asynchronously: returns immediately with status 'queued'. Poll GET /v1/schemas/generate/{schema_generation_id} until status is terminal.",
     )
-    image_resolution_dpi: int | None = None
 
 
 class SchemaGeneration(BaseModel):

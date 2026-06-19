@@ -1,0 +1,71 @@
+{
+  "id": "01234",
+  "workflow_eval_run_id": "workflow_eval_run_id_01234",
+  "eval_id": "eval_id_01234",
+  "lifecycle": {
+    "status": "pending"
+  },
+  "timing": {
+    "created_at": "2023-01-01T00:00:00.000Z",
+    "started_at": "2023-01-01T00:00:00.000Z",
+    "completed_at": "2023-01-01T00:00:00.000Z",
+    "duration_ms": 1
+  },
+  "verdict": "passed",
+  "workflow_id": "workflow_id_01234",
+  "block_id": "block_id_01234",
+  "block_type": "test_block_type",
+  "execution_fingerprint": "test_execution_fingerprint",
+  "handle_inputs_fingerprint": "test_handle_inputs_fingerprint",
+  "workflow_draft_fingerprint": "test_workflow_draft_fingerprint",
+  "block_config_fingerprint": "test_block_config_fingerprint",
+  "artifact": {
+    "operation": "extraction",
+    "id": "01234"
+  },
+  "handle_inputs": {
+    "key": {
+      "type": "json",
+      "data": {}
+    }
+  },
+  "handle_outputs": {
+    "key": {
+      "type": "json",
+      "data": {}
+    }
+  },
+  "routing_decisions": [
+    "test_routing_decisions"
+  ],
+  "warnings": [
+    "test_warnings"
+  ],
+  "assertion_result": {
+    "assertion_id": "assertion_id_01234",
+    "condition_kind": "test_condition_kind",
+    "outcome": "passed",
+    "actual_value": {},
+    "expected_value": {},
+    "score": 1,
+    "threshold": 1,
+    "metric_kind": "test_metric_kind",
+    "assertion_label": "test_assertion_label",
+    "failure": {
+      "code": "test_code",
+      "message": "test_message",
+      "details": {
+        "key": {}
+      }
+    }
+  },
+  "verdict_summary": {
+    "passed": true,
+    "assertions_passed": 1,
+    "assertions_failed": 1,
+    "blocked_assertions": 1,
+    "failed_assertion_ids": [
+      "failed_assertion_ids_01234"
+    ]
+  }
+}

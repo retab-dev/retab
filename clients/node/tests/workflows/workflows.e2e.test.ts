@@ -1,7 +1,7 @@
 // REAL end-to-end tests for the workflows resource against a live server.
 //
 // CREDITLESS: only workflow DEFINITION CRUD + list/get/pagination. No runs,
-// no experiments, no block-test runs, no LLM. The create->get->update->delete
+// no experiments, no block-eval runs, no LLM. The create->get->update->delete
 // cycle deletes only the workflow it created and never touches pre-existing
 // staging data.
 

@@ -11,7 +11,6 @@ module Retab
       model: :model,
       json_schema: :json_schema,
       n_consensus: :n_consensus,
-      image_resolution_dpi: :image_resolution_dpi,
       instructions: :instructions,
       output: :output,
       status: :status,
@@ -29,7 +28,6 @@ module Retab
       :model,
       :json_schema,
       :n_consensus,
-      :image_resolution_dpi,
       :instructions,
       :output,
       :status,
@@ -49,7 +47,6 @@ module Retab
       @model = hash[:model]
       @json_schema = hash[:json_schema] || {}
       @n_consensus = hash[:n_consensus]
-      @image_resolution_dpi = hash[:image_resolution_dpi]
       @instructions = hash[:instructions]
       @output = hash[:output] || {}
       @status = hash[:status].nil? ? "pending" : hash[:status]

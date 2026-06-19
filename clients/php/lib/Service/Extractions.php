@@ -96,7 +96,6 @@ class Extractions
      * @param bool|null $stream
      * @param bool|null $background If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
      * @param array<string, string>|null $chunkingKeys
-     * @param int|null $imageResolutionDpi
      * @return \Retab\Resource\Extraction
      * @throws \Retab\Exception\RetabException
      */
@@ -112,7 +111,6 @@ class Extractions
         ?bool $stream = null,
         ?bool $background = null,
         ?array $chunkingKeys = null,
-        ?int $imageResolutionDpi = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\Extraction {
         $document = \Retab\Resource\MimeDataCoerce::coerce($document, $this->client);
@@ -128,7 +126,6 @@ class Extractions
             'stream' => $stream,
             'background' => $background,
             'chunking_keys' => $chunkingKeys,
-            'image_resolution_dpi' => $imageResolutionDpi,
         ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',
@@ -154,7 +151,6 @@ class Extractions
      * @param bool|null $stream
      * @param bool|null $background If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
      * @param array<string, string>|null $chunkingKeys
-     * @param int|null $imageResolutionDpi
      * @return mixed
      * @throws \Retab\Exception\RetabException
      */
@@ -170,7 +166,6 @@ class Extractions
         ?bool $stream = null,
         ?bool $background = null,
         ?array $chunkingKeys = null,
-        ?int $imageResolutionDpi = null,
         ?\Retab\RequestOptions $options = null,
     ): mixed {
         $document = \Retab\Resource\MimeDataCoerce::coerce($document, $this->client);
@@ -186,7 +181,6 @@ class Extractions
             'stream' => $stream,
             'background' => $background,
             'chunking_keys' => $chunkingKeys,
-            'image_resolution_dpi' => $imageResolutionDpi,
         ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',

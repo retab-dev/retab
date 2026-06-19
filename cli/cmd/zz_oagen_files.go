@@ -233,6 +233,10 @@ var filesBlueprintsCreateCmd = &cobra.Command{
 		if v, _ := cmd.Flags().GetBool("background"); true {
 			params.Background = ptr(v)
 		}
+		if v, _ := cmd.Flags().GetString("mode"); v != "" {
+			typed := retab.CreateFileBlueprintRequestMode(v)
+			params.Mode = &typed
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
@@ -288,6 +292,7 @@ func init() {
 	filesCompleteUploadCmd.Flags().Var(&sha256FlagValue{}, "sha256", "sha256 hex digest (optional)")
 	filesBlueprintsCreateCmd.Flags().String("intent", "", "Optional user intent used to guide the blueprint analysis.")
 	filesBlueprintsCreateCmd.Flags().Bool("background", true, "If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.")
+	filesBlueprintsCreateCmd.Flags().String("mode", "", "mode value")
 
 	addPrimitiveWaitTuningFlags(filesBlueprintsWaitCmd, false)
 	filesBlueprintsCmd.AddCommand(filesBlueprintsCreateCmd, filesBlueprintsGetCmd, filesBlueprintsCancelCmd, filesBlueprintsWaitCmd)

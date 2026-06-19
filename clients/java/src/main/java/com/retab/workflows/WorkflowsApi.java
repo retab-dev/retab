@@ -22,7 +22,6 @@ import com.retab.workflowreviews.WorkflowReviewsApi;
 import com.retab.workflowruns.WorkflowRunsApi;
 import com.retab.workflowspec.WorkflowSpecApi;
 import com.retab.workflowsteps.WorkflowStepsApi;
-import com.retab.workflowtests.WorkflowTestsApi;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -74,10 +73,6 @@ public final class WorkflowsApi {
 
   public WorkflowStepsApi steps() {
     return new WorkflowStepsApi(client);
-  }
-
-  public WorkflowTestsApi tests() {
-    return new WorkflowTestsApi(client);
   }
 
   public List<Workflow> list() throws IOException, InterruptedException {

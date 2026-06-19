@@ -12,7 +12,7 @@ directly and constructs ``PaginatedList(...)`` by hand, the wire response still
 looks correct on the first page — but ``auto_paging_iter()`` silently stops
 after the first page because ``_fetch_next_page`` is ``None``. This is the
 exact silent failure mode the central helper exists to prevent, and the bug
-WILL NOT surface in any of the per-resource list tests (which only check the
+WILL NOT surface in any of the per-resource list evals (which only check the
 first page).
 
 This test catches that drift at CI time by walking every public resource via
@@ -98,12 +98,12 @@ RESOURCE_PATHS: tuple[str, ...] = (
     "workflows.artifacts",
     "workflows.blocks",
     "workflows.edges",
-    "workflows.tests",
+    "workflows.evals",
     "workflows.experiments",
     # Two-deep sub-resources
     "workflows.blocks.executions",
-    "workflows.tests.runs",
-    "workflows.tests.results",
+    "workflows.evals.runs",
+    "workflows.evals.results",
     "workflows.experiments.runs",
     "workflows.experiments.results",
 )

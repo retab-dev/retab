@@ -6,7 +6,7 @@ Builds a real ``Retab`` / ``AsyncRetab`` client whose transport
 network, no credentials. Use it to assert request *shape* (route, params, body)
 and response deserialization without a server.
 
-This replaces the per-test ``captured = {}`` + ``def fake_prepared_request`` +
+This replaces the per-eval ``captured = {}`` + ``def fake_prepared_request`` +
 ``monkeypatch.setattr(client, "_prepared_request", ...)`` boilerplate that the
 unit suites used to repeat dozens of times.
 

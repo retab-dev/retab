@@ -15,7 +15,7 @@ namespace Retab
         public string WorkflowVersionId { get; set; } = default!;
 
         /// <summary>What started this run</summary>
-        public TriggerInfo Trigger { get; set; } = default!;
+        public EvalRunTrigger Trigger { get; set; } = default!;
 
         /// <summary>Lifecycle state of the run.</summary>
         [Newtonsoft.Json.JsonConverter(typeof(PendingRunDiscriminatorConverter))]

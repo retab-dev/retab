@@ -19,7 +19,7 @@ func newExtractionRequestTestCmd(t *testing.T) *cobra.Command {
 	addDocumentFlags(cmd)
 	addSchemaFlags(cmd)
 	cmd.Flags().String("model", "", "")
-	cmd.Flags().Var(&boundedIntFlagValue{min: 96, max: 300}, "image-resolution-dpi", "")
+	cmd.Flags().String("image-resolution-dpi", "", "")
 	cmd.Flags().Var(&nonNegativeIntFlagValue{}, "n-consensus", "")
 	cmd.Flags().String("instructions", "", "")
 	cmd.Flags().Bool("bust-cache", false, "")

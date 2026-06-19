@@ -20,7 +20,6 @@ def test_parses_create_uses_new_resource_route() -> None:
             },
             "model": "retab-small",
             "table_parsing_format": "html",
-            "image_resolution_dpi": 192,
             "output": {
                 "pages": ["invoice"],
                 "text": "invoice",

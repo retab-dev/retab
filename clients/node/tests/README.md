@@ -46,7 +46,7 @@ NODE_ENV=staging npm test
 NODE_ENV=production npm test
 ```
 
-### Run all tests:
+### Run all evals:
 
 ```bash
 npm test

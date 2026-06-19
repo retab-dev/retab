@@ -142,6 +142,9 @@ func NewClient(apiKey string, opts ...Option) (*Client, error) {
 	workflowBlocks := &WorkflowBlockService{client: c}
 	workflowBlockExecutions := &WorkflowBlockExecutionService{client: c}
 	workflowEdges := &WorkflowEdgeService{client: c}
+	workflowEvals := &WorkflowEvalService{client: c}
+	workflowEvalRunResults := &WorkflowEvalRunResultService{client: c}
+	workflowEvalRuns := &WorkflowEvalRunService{client: c}
 	workflowExperiments := &WorkflowExperimentService{client: c}
 	experimentRunMetrics := &ExperimentRunMetricService{client: c}
 	experimentRunResults := &ExperimentRunResultService{client: c}
@@ -151,11 +154,10 @@ func NewClient(apiKey string, opts ...Option) (*Client, error) {
 	workflowRuns := &WorkflowRunService{client: c}
 	workflowSpec := &WorkflowSpecService{client: c}
 	workflowSteps := &WorkflowStepService{client: c}
-	workflowTests := &WorkflowTestService{client: c}
-	workflowTestRunResults := &WorkflowTestRunResultService{client: c}
-	workflowTestRuns := &WorkflowTestRunService{client: c}
 	c.Edits.Templates = editTemplates
 	workflowBlocks.Executions = workflowBlockExecutions
+	workflowEvals.Results = workflowEvalRunResults
+	workflowEvals.Runs = workflowEvalRuns
 	workflowExperiments.Metrics = experimentRunMetrics
 	workflowExperiments.Results = experimentRunResults
 	workflowExperiments.Runs = experimentRuns
@@ -163,13 +165,11 @@ func NewClient(apiKey string, opts ...Option) (*Client, error) {
 	c.Workflows.Artifacts = workflowArtifacts
 	c.Workflows.Blocks = workflowBlocks
 	c.Workflows.Edges = workflowEdges
+	c.Workflows.Evals = workflowEvals
 	c.Workflows.Experiments = workflowExperiments
 	c.Workflows.Reviews = workflowReviews
 	c.Workflows.Runs = workflowRuns
 	c.Workflows.Spec = workflowSpec
 	c.Workflows.Steps = workflowSteps
-	c.Workflows.Tests = workflowTests
-	workflowTests.Results = workflowTestRunResults
-	workflowTests.Runs = workflowTestRuns
 	return c, nil
 }

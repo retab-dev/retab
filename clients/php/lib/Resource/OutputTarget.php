@@ -6,7 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
-/** Structured block-test assertion target. */
+/** Structured block-eval assertion target. */
 readonly class OutputTarget implements \JsonSerializable
 {
     use JsonSerializableTrait;

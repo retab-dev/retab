@@ -1,4 +1,4 @@
-//go:build !retab_oagen_cli_workflows && !retab_oagen_cli_workflows_experiments && !retab_oagen_cli_workflows_tests
+//go:build !retab_oagen_cli_workflows && !retab_oagen_cli_workflows_experiments && !retab_oagen_cli_workflows_evals
 
 package cmd
 
@@ -16,7 +16,7 @@ import (
 )
 
 // Bug A (issue #3): the three workflow-family name validators
-// (validateWorkflowName, validateExperimentName, validateWorkflowTestName)
+// (validateWorkflowName, validateExperimentName, validateWorkflowEvalName)
 // previously only rejected fully-blank names but stored "  padded  "
 // verbatim. The contract has been tightened so the validators TRIM the
 // input and return the cleaned name. Pinned at unit and integration
@@ -28,7 +28,7 @@ func TestValidateWorkflowFamilyNamesTrimPaddedInput(t *testing.T) {
 	}{
 		{name: "workflow", validator: validateWorkflowName},
 		{name: "experiment", validator: validateExperimentName},
-		{name: "workflow test", validator: validateWorkflowTestName},
+		{name: "workflow eval", validator: validateWorkflowEvalName},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name+" trims surrounding whitespace", func(t *testing.T) {
@@ -244,9 +244,9 @@ func TestWorkflowsExperimentsUpdateTrimsNameInRequestBody(t *testing.T) {
 	}
 }
 
-// TestWorkflowsTestsCreateTrimsNameInRequestBody pins the trim contract
-// for workflows tests create.
-func TestWorkflowsTestsCreateTrimsNameInRequestBody(t *testing.T) {
+// TestWorkflowsEvalsCreateTrimsNameInRequestBody pins the trim contract
+// for workflows evals create.
+func TestWorkflowsEvalsCreateTrimsNameInRequestBody(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
 
@@ -266,7 +266,7 @@ func TestWorkflowsTestsCreateTrimsNameInRequestBody(t *testing.T) {
 
 	var body map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows/tests" {
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows/evals" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -281,7 +281,7 @@ func TestWorkflowsTestsCreateTrimsNameInRequestBody(t *testing.T) {
 	defer server.Close()
 	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
-	cmd := workflowsTestsCreateCmd
+	cmd := workflowsEvalsCreateCmd
 	t.Cleanup(func() {
 		for _, name := range []string{"name", "target-file", "source-file", "assertion-file"} {
 			_ = cmd.Flags().Set(name, "")
@@ -302,22 +302,22 @@ func TestWorkflowsTestsCreateTrimsNameInRequestBody(t *testing.T) {
 	}
 
 	if _, err := captureStdAndRun(t, func() error { return cmd.RunE(cmd, []string{"wf_123"}) }); err != nil {
-		t.Fatalf("tests create: %v", err)
+		t.Fatalf("evals create: %v", err)
 	}
 	if got, _ := body["name"].(string); got != "padded" {
 		t.Fatalf("server received name=%q, want %q", got, "padded")
 	}
 }
 
-// TestWorkflowsTestsUpdateTrimsNameInRequestBody pins the trim contract
-// on the tests update endpoint.
-func TestWorkflowsTestsUpdateTrimsNameInRequestBody(t *testing.T) {
+// TestWorkflowsEvalsUpdateTrimsNameInRequestBody pins the trim contract
+// on the evals update endpoint.
+func TestWorkflowsEvalsUpdateTrimsNameInRequestBody(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
 
 	var body map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPatch || r.URL.Path != "/v1/workflows/tests/tst_abc" {
+		if r.Method != http.MethodPatch || r.URL.Path != "/v1/workflows/evals/tst_abc" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -332,19 +332,23 @@ func TestWorkflowsTestsUpdateTrimsNameInRequestBody(t *testing.T) {
 	defer server.Close()
 	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
-	cmd := workflowsTestsUpdateCmd
-	t.Cleanup(func() {
-		_ = cmd.Flags().Set("name", "")
-		if f := cmd.Flags().Lookup("name"); f != nil {
-			f.Changed = false
+	cmd := workflowsEvalsUpdateCmd
+	resetFlags := func() {
+		for _, name := range []string{"name", "assertion-file", "source-file", "output-handle-id", "path", "equals", "run-id", "step-id"} {
+			_ = cmd.Flags().Set(name, "")
+			if f := cmd.Flags().Lookup(name); f != nil {
+				f.Changed = false
+			}
 		}
-	})
+	}
+	resetFlags()
+	t.Cleanup(resetFlags)
 	if err := cmd.Flags().Set("name", "  padded  "); err != nil {
 		t.Fatal(err)
 	}
 
 	if _, err := captureStdAndRun(t, func() error { return cmd.RunE(cmd, []string{"tst_abc"}) }); err != nil {
-		t.Fatalf("tests update: %v", err)
+		t.Fatalf("evals update: %v", err)
 	}
 	if got, _ := body["name"].(string); got != "padded" {
 		t.Fatalf("server received name=%q, want %q", got, "padded")

@@ -5,7 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
-/// Structured block-test assertion target.
+/// Structured block-eval assertion target.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OutputTarget {
     pub output_handle_id: String,

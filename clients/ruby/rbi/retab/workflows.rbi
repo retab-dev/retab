@@ -33,8 +33,8 @@ module Retab
     sig { returns(Retab::WorkflowSteps) }
     def steps; end
 
-    sig { returns(Retab::WorkflowTests) }
-    def tests; end
+    sig { returns(Retab::WorkflowEvals) }
+    def evals; end
 
     sig do
       params(
