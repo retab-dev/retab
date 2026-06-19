@@ -160,9 +160,9 @@ func TestRenderWorkflowASCIIViewSuppressesContainerRoutingHandles(t *testing.T) 
 	workflow := &workflowGraph{
 		Workflow: retab.Workflow{ID: "wf_container", Name: "Container routing"},
 		Blocks: []retab.WorkflowBlock{
-			{ID: "start", Type: "start", Label: ptr("Start"), PositionX: ptr(float64(0)), PositionY: ptr(float64(0))},
-			{ID: "fanout", Type: "for_each", Label: ptr("Fan Out"), PositionX: ptr(float64(300)), PositionY: ptr(float64(0))},
-			{ID: "score", Type: "function", Label: ptr("Score Item"), PositionX: ptr(float64(600)), PositionY: ptr(float64(0))},
+			{ID: "score", Type: "function", Label: ptr("Score Item"), PositionX: ptr(float64(0)), PositionY: ptr(float64(0))},
+			{ID: "start", Type: "start", Label: ptr("Start"), PositionX: ptr(float64(300)), PositionY: ptr(float64(0))},
+			{ID: "fanout", Type: "for_each", Label: ptr("Fan Out"), PositionX: ptr(float64(600)), PositionY: ptr(float64(0))},
 		},
 		Edges: []retab.WorkflowEdgeDoc{
 			{ID: "edge_start_fanout", SourceBlock: "start", TargetBlock: "fanout", SourceHandle: ptr("output-json-0"), TargetHandle: ptr("fe-left-in")},
@@ -177,7 +177,7 @@ func TestRenderWorkflowASCIIViewSuppressesContainerRoutingHandles(t *testing.T) 
 			t.Fatalf("container routing handle %q should not be rendered:\n%s", unexpected, out)
 		}
 	}
-	for _, want := range []string{"| Fan Out", "| Score Item"} {
+	for _, want := range []string{"| Fan Out", "| Score Item", "| start [start]"} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("expected %q in output:\n%s", want, out)
 		}
@@ -504,6 +504,77 @@ func TestWorkflowsViewCommandFetchesGraphPartsAndPrintsASCII(t *testing.T) {
 		if !strings.Contains(stdout, want) {
 			t.Fatalf("expected %q in stdout, got:\n%s", want, stdout)
 		}
+	}
+}
+
+func TestWorkflowsViewCommandHonorsExplicitOutputJSON(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			t.Fatalf("method = %s, want GET", r.Method)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/v1/workflows/wf_graph":
+			_ = json.NewEncoder(w).Encode(map[string]any{"id": "wf_graph", "name": "Invoice flow"})
+		case "/v1/workflows/blocks":
+			if r.URL.Query().Get("workflow_id") != "wf_graph" {
+				t.Fatalf("blocks workflow_id = %q", r.URL.Query().Get("workflow_id"))
+			}
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"data": []map[string]any{
+					{"id": "start", "type": "start_document", "label": "Start", "position_x": 0, "position_y": 0},
+					{"id": "extract", "type": "extract", "label": "Extract totals", "position_x": 300, "position_y": 0},
+				},
+				"list_metadata": map[string]any{"before": nil, "after": nil},
+			})
+		case "/v1/workflows/edges":
+			if r.URL.Query().Get("workflow_id") != "wf_graph" {
+				t.Fatalf("edges workflow_id = %q", r.URL.Query().Get("workflow_id"))
+			}
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"data": []map[string]any{
+					{"id": "edge_1", "source_block": "start", "target_block": "extract"},
+				},
+				"list_metadata": map[string]any{"before": nil, "after": nil},
+			})
+		default:
+			t.Fatalf("unexpected path = %s", r.URL.Path)
+		}
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+	if err := rootCmd.PersistentFlags().Set("output", "json"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = rootCmd.PersistentFlags().Set("output", "") })
+
+	stdout, stderr := captureStd(t, func() {
+		if err := workflowsViewCmd.RunE(workflowsViewCmd, []string{"wf_graph"}); err != nil {
+			t.Fatalf("workflows view: %v", err)
+		}
+	})
+	if stderr != "" {
+		t.Fatalf("unexpected stderr: %q", stderr)
+	}
+	if strings.Contains(stdout, "Workflow: Invoice flow") {
+		t.Fatalf("expected JSON output, got ASCII:\n%s", stdout)
+	}
+	var got struct {
+		Workflow retab.Workflow          `json:"workflow"`
+		Blocks   []retab.WorkflowBlock   `json:"blocks"`
+		Edges    []retab.WorkflowEdgeDoc `json:"edges"`
+	}
+	if err := json.Unmarshal([]byte(stdout), &got); err != nil {
+		t.Fatalf("decode workflows view JSON: %v\n%s", err, stdout)
+	}
+	if got.Workflow.ID != "wf_graph" || got.Workflow.Name != "Invoice flow" {
+		t.Fatalf("workflow = %#v", got.Workflow)
+	}
+	if len(got.Blocks) != 2 || len(got.Edges) != 1 {
+		t.Fatalf("blocks=%d edges=%d output=%s", len(got.Blocks), len(got.Edges), stdout)
 	}
 }
 

@@ -1035,14 +1035,14 @@ func functionRuntimeFiles(manifest blockConfigBundleManifest) []string {
 			"traces",
 		}
 	}
-	return []string{"input.py", "output.py", "run.py", ".retab/runtime.py", ".env.example", ".env.local", "samples", "outputs", "traces"}
+	return []string{"input.py", "output.py", "models.py", "run.py", ".retab/runtime.py", ".env.example", ".env.local", "samples", "outputs", "traces"}
 }
 
 func staleFunctionRuntimeFiles(manifest blockConfigBundleManifest) []string {
 	if functionManifestLanguage(manifest) == "typescript" {
 		return []string{"input.py", "output.py", "run.py", ".retab/runtime.py", "models.py", "input_models.py", "output_models.py", "retab_runtime.py", "mounts.local.json"}
 	}
-	return []string{"input_schema.json", "models.generated.ts", "schemas.generated.ts", "tsconfig.json", "run.mjs", ".retab/runtime.mjs", "models.py", "input_models.py", "output_models.py", "retab_runtime.py", "mounts.local.json"}
+	return []string{"input_schema.json", "models.generated.ts", "schemas.generated.ts", "tsconfig.json", "run.mjs", ".retab/runtime.mjs", "input_models.py", "output_models.py", "retab_runtime.py", "mounts.local.json"}
 }
 
 const localCheckOutputLimit = 8 * 1024

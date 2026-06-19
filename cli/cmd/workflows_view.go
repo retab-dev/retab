@@ -82,6 +82,13 @@ map. This is a human-oriented view for terminal inspection.`,
 			Blocks:   blocks.Data,
 			Edges:    edges.Data,
 		}
+		if workflowViewWantsJSON(cmd) {
+			return printJSON(workflowGraphJSON{
+				Workflow: graph.Workflow,
+				Blocks:   graph.Blocks,
+				Edges:    graph.Edges,
+			})
+		}
 		return renderWorkflowASCIIView(cmd.OutOrStdout(), graph)
 	}),
 }
@@ -90,6 +97,27 @@ type workflowGraph struct {
 	Workflow retab.Workflow
 	Blocks   []retab.WorkflowBlock
 	Edges    []retab.WorkflowEdgeDoc
+}
+
+type workflowGraphJSON struct {
+	Workflow retab.Workflow          `json:"workflow"`
+	Blocks   []retab.WorkflowBlock   `json:"blocks"`
+	Edges    []retab.WorkflowEdgeDoc `json:"edges"`
+}
+
+func workflowViewWantsJSON(cmd *cobra.Command) bool {
+	var raw string
+	if cmd != nil {
+		if f := cmd.Root().PersistentFlags().Lookup("output"); f != nil {
+			raw = f.Value.String()
+		}
+	}
+	if raw == "" && cmd != rootCmd {
+		if f := rootCmd.PersistentFlags().Lookup("output"); f != nil {
+			raw = f.Value.String()
+		}
+	}
+	return raw == string(OutputJSON)
 }
 
 func renderWorkflowASCIIView(w io.Writer, graph *workflowGraph) error {
@@ -109,20 +137,21 @@ func renderWorkflowASCIIView(w io.Writer, graph *workflowGraph) error {
 		return err
 	}
 
-	visibleBlocks, hiddenNotes := workflowASCIIVisibleBlocks(graph.Blocks, graph.Edges)
+	visibleEdges := workflowASCIIVisibleEdges(graph.Edges)
+	visibleBlocks, hiddenNotes := workflowASCIIVisibleBlocks(graph.Blocks, visibleEdges)
 	if len(visibleBlocks) == 0 {
 		_, err := fmt.Fprintln(w, "(only note blocks)")
 		return err
 	}
 
-	boxes := workflowASCIIBoxes(visibleBlocks, graph.Edges)
+	boxes := workflowASCIIBoxes(visibleBlocks, visibleEdges)
 	boxesByID := make(map[string]workflowASCIIBox, len(boxes))
 	for _, box := range boxes {
 		boxesByID[box.block.ID] = box
 	}
 
 	canvas := newWorkflowASCIICanvas(workflowASCIICanvasSize(boxes))
-	showEdgeLabels := workflowASCIIShouldShowEdgeLabels(len(graph.Edges), len(visibleBlocks))
+	showEdgeLabels := workflowASCIIShouldShowEdgeLabels(len(visibleEdges), len(visibleBlocks))
 	// Draw boxes FIRST, then edges. drawFloatingEdgeLabel's collision
 	// detection (skip if any target cell != ' ') only works against
 	// content that is already on the canvas. If edges drew first, a
@@ -136,7 +165,7 @@ func renderWorkflowASCIIView(w io.Writer, graph *workflowGraph) error {
 	for _, box := range boxes {
 		canvas.drawBox(box)
 	}
-	for _, edge := range workflowASCIISortedEdges(graph.Edges) {
+	for _, edge := range workflowASCIISortedEdges(visibleEdges) {
 		source, hasSource := boxesByID[edge.SourceBlock]
 		target, hasTarget := boxesByID[edge.TargetBlock]
 		if !hasSource || !hasTarget {
@@ -153,7 +182,7 @@ func renderWorkflowASCIIView(w io.Writer, graph *workflowGraph) error {
 			return err
 		}
 	}
-	isolatedBlocks := workflowASCIIIsolatedBlocks(visibleBlocks, graph.Edges)
+	isolatedBlocks := workflowASCIIIsolatedBlocks(visibleBlocks, visibleEdges)
 	// Suppress the "Disconnected" line for the freshly-`workflows create`'d
 	// shape: one block, which is the auto-added start_document placeholder,
 	// and zero edges. That block is "isolated" only in the trivial sense
@@ -165,7 +194,7 @@ func renderWorkflowASCIIView(w io.Writer, graph *workflowGraph) error {
 		}
 	}
 	if !showEdgeLabels {
-		_, err := fmt.Fprintf(w, "Edge labels: hidden for dense graph (%d edges).\n", len(graph.Edges))
+		_, err := fmt.Fprintf(w, "Edge labels: hidden for dense graph (%d edges).\n", len(visibleEdges))
 		return err
 	}
 	return nil
@@ -221,6 +250,17 @@ func workflowASCIIVisibleBlocks(blocks []retab.WorkflowBlock, edges []retab.Work
 		visible = append(visible, block)
 	}
 	return visible, hiddenNotes
+}
+
+func workflowASCIIVisibleEdges(edges []retab.WorkflowEdgeDoc) []retab.WorkflowEdgeDoc {
+	visible := make([]retab.WorkflowEdgeDoc, 0, len(edges))
+	for _, edge := range edges {
+		if workflowASCIIIsContainerFeedbackHandle(derefString(edge.TargetHandle)) {
+			continue
+		}
+		visible = append(visible, edge)
+	}
+	return visible
 }
 
 // isFreshScaffoldShape matches the canonical empty workflow: exactly one
@@ -518,6 +558,17 @@ func (c *workflowASCIICanvas) drawEdge(source workflowASCIIBox, target workflowA
 		startX := source.x + source.w
 		endX := max(target.x-1, startX)
 		if startY == endY {
+			if !c.horizontalClear(startX, endX, startY) {
+				laneY := c.edgeLaneY(source, target, startX, endX)
+				c.drawVertical(startX, startY, laneY)
+				c.drawHorizontal(startX, endX, laneY)
+				c.drawVertical(endX, laneY, endY)
+				c.put(endX, endY, '>')
+				if !c.drawEdgeLabel(startX, endX, laneY, label) {
+					c.drawFloatingEdgeLabel(endX, laneY, label, true)
+				}
+				return
+			}
 			c.drawHorizontal(startX, endX, startY)
 			c.put(endX, endY, '>')
 			if !c.drawEdgeLabel(startX, endX, startY, label) {
@@ -546,6 +597,17 @@ func (c *workflowASCIICanvas) drawEdge(source workflowASCIIBox, target workflowA
 		startX = endX
 	}
 	if startY == endY {
+		if !c.horizontalClear(endX, startX, startY) {
+			laneY := c.edgeLaneY(source, target, endX, startX)
+			c.drawVertical(startX, startY, laneY)
+			c.drawHorizontal(endX, startX, laneY)
+			c.drawVertical(endX, laneY, endY)
+			c.put(endX, endY, '<')
+			if !c.drawEdgeLabel(endX, startX, laneY, label) {
+				c.drawFloatingEdgeLabel(endX, laneY, label, false)
+			}
+			return
+		}
 		c.drawHorizontal(endX, startX, startY)
 		c.put(endX, endY, '<')
 		if !c.drawEdgeLabel(endX, startX, startY, label) {
@@ -572,6 +634,47 @@ func workflowASCIIShouldShowEdgeLabels(edgeCount int, blockCount int) bool {
 		return false
 	}
 	return edgeCount <= blockCount*2
+}
+
+func (c *workflowASCIICanvas) horizontalClear(x1 int, x2 int, y int) bool {
+	if y < 0 || y >= len(c.cells) {
+		return false
+	}
+	if x1 > x2 {
+		x1, x2 = x2, x1
+	}
+	for x := x1; x <= x2; x++ {
+		if x < 0 || x >= len(c.cells[y]) {
+			return false
+		}
+		if c.cells[y][x] != ' ' {
+			return false
+		}
+	}
+	return true
+}
+
+func (c *workflowASCIICanvas) edgeLaneY(source workflowASCIIBox, target workflowASCIIBox, x1 int, x2 int) int {
+	below := max(source.y+source.h, target.y+target.h)
+	above := min(source.y, target.y) - 1
+	candidates := []int{below, below + 1, above}
+	for _, y := range candidates {
+		if c.horizontalClear(x1, x2, y) {
+			return y
+		}
+	}
+	for y := range c.cells {
+		if c.horizontalClear(x1, x2, y) {
+			return y
+		}
+	}
+	if below >= len(c.cells) {
+		return len(c.cells) - 1
+	}
+	if below < 0 {
+		return 0
+	}
+	return below
 }
 
 func workflowASCIIBoxMiddleY(box workflowASCIIBox) int {
@@ -831,6 +934,15 @@ func workflowASCIIIsDefaultHandle(handle string) bool {
 	case "", "0", "json 0", "file 0", "data", "document",
 		"fe left in", "fe left out", "fe right in", "fe right out",
 		"loop left in", "loop left out", "loop right in", "loop right out", "loop termination":
+		return true
+	default:
+		return false
+	}
+}
+
+func workflowASCIIIsContainerFeedbackHandle(handle string) bool {
+	switch workflowASCIIHandleLabel(handle) {
+	case "fe right in", "loop right in", "loop termination":
 		return true
 	default:
 		return false

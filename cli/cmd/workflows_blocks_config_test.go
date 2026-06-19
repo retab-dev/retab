@@ -1563,6 +1563,15 @@ func TestWorkflowsBlocksDiffConfigReportsChangedPaths(t *testing.T) {
 	}
 }
 
+func TestWorkflowsBlocksDoctorConfigAcceptsPythonModelsCompatModule(t *testing.T) {
+	dir := writeTestPythonFunctionBundle(t)
+
+	result := diagnoseBlockConfigBundle(dir)
+	if ok, _ := result["ok"].(bool); !ok {
+		t.Fatalf("doctor should accept hydrated Python function bundle with models.py: %#v", result)
+	}
+}
+
 func writeTestBlockConfigBundle(t *testing.T, dir string, config map[string]any) {
 	t.Helper()
 	label := "Config"

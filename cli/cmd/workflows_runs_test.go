@@ -726,6 +726,72 @@ func TestWorkflowsRunsCreateResolvesStartAliasFromDocumentsFile(t *testing.T) {
 	}
 }
 
+func TestWorkflowsRunsCreateResolvesDeclarativeDocumentSourceIDFromDocumentsFile(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var postedDocuments map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/workflows/blocks" && r.URL.Query().Get("workflow_id") == "wf_123":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"data": []map[string]any{
+					{
+						"id":                          "block_generated_doc",
+						"type":                        "start_document",
+						"label":                       "Document",
+						"declarative_path":            "doc_start",
+						"declarative_source_block_id": "block_b_doc_start",
+					},
+				},
+				"list_metadata": map[string]any{},
+			})
+		case r.Method == http.MethodPost && r.URL.Path == "/v1/workflows/runs":
+			var body map[string]any
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+				t.Fatalf("decode request body: %v", err)
+			}
+			postedDocuments, _ = body["documents"].(map[string]any)
+			_ = json.NewEncoder(w).Encode(map[string]any{"id": "run_123"})
+		default:
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	docsPath := filepath.Join(t.TempDir(), "documents.json")
+	if err := os.WriteFile(
+		docsPath,
+		[]byte(`{"block_b_doc_start":{"filename":"invoice.pdf","url":"https://example.com/invoice.pdf"}}`),
+		0o600,
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	cmd := &cobra.Command{Use: "eval-run-create", RunE: workflowsRunsCreateCmd.RunE}
+	cmd.Flags().String("version", "", "")
+	cmd.Flags().String("documents-file", "", "")
+	cmd.Flags().StringArray("document", nil, "")
+	cmd.Flags().StringArray("document-file", nil, "")
+	cmd.Flags().StringArray("document-url", nil, "")
+	cmd.Flags().String("json-inputs-file", "", "")
+	if err := cmd.Flags().Set("documents-file", docsPath); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := cmd.RunE(cmd, []string{"wf_123"}); err != nil {
+		t.Fatalf("runs create: %v", err)
+	}
+	if _, ok := postedDocuments["block_generated_doc"]; !ok {
+		t.Fatalf("documents posted under keys %#v, want block_generated_doc", keysOfAnyMap(postedDocuments))
+	}
+	if _, ok := postedDocuments["block_b_doc_start"]; ok {
+		t.Fatalf("declarative source id leaked into request body: %#v", postedDocuments)
+	}
+}
+
 func TestWorkflowsRunsCreateResolvesStartJSONAliasFromJSONInputsFile(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
