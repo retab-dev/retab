@@ -1294,6 +1294,44 @@ func TestWorkflowsRunsCommandsRejectInvalidEnumFiltersBeforeRequest(t *testing.T
 	}
 }
 
+// Regression: the hand-maintained enum allowlists used to omit valid server-side
+// values (status: queued/failed, trigger-type: email), making the CLI's
+// client-side validator STRICTER than the API and rejecting a legitimate filter
+// before the request was ever sent. The allowlists must accept every value the
+// SDK enum (WorkflowExportPayloadRequestExcludeStatus / ...TriggerType) allows.
+func TestWorkflowsRunsCommandsAcceptAllSDKEnumFilters(t *testing.T) {
+	cases := []struct {
+		name  string
+		flag  string
+		value string
+	}{
+		{name: "status queued", flag: "status", value: "queued"},
+		{name: "status failed", flag: "status", value: "failed"},
+		{name: "exclude-status queued", flag: "exclude-status", value: "queued"},
+		{name: "exclude-status failed", flag: "exclude-status", value: "failed"},
+		{name: "trigger-type email", flag: "trigger-type", value: "email"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			for _, cmd := range []*cobra.Command{workflowsRunsListCmd, workflowsRunsExportCmd} {
+				if err := cmd.Flags().Set(tc.flag, tc.value); err != nil {
+					t.Fatal(err)
+				}
+			}
+			t.Cleanup(func() {
+				resetWorkflowRunsFlag(t, workflowsRunsListCmd, tc.flag)
+				resetWorkflowRunsFlag(t, workflowsRunsExportCmd, tc.flag)
+			})
+			if err := validateWorkflowRunsListFilters(workflowsRunsListCmd); err != nil {
+				t.Fatalf("list rejected valid --%s=%s: %v", tc.flag, tc.value, err)
+			}
+			if err := validateWorkflowRunsExportFilters(workflowsRunsExportCmd); err != nil {
+				t.Fatalf("export rejected valid --%s=%s: %v", tc.flag, tc.value, err)
+			}
+		})
+	}
+}
+
 func TestWorkflowsRunsRestartCreatesFreshRunFromSourceInputs(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())

@@ -125,6 +125,52 @@ func TestWorkflowsBlocksExecutionsListUsesCanonicalEndpoint(t *testing.T) {
 	}
 }
 
+// Regression: block-executions list reads --before/--after via collectListParams
+// (the endpoint is cursor-paginated per the SDK), but the flags were never
+// registered, so the command was stuck on the first page and `--after <cursor>`
+// failed with "unknown flag". Verify the cursor flag is registered and forwarded.
+func TestWorkflowsBlocksExecutionsListForwardsCursorFlags(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var sawAfter string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet || r.URL.Path != "/v1/workflows/blocks/executions" {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+		sawAfter = r.URL.Query().Get("after")
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"data":          []map[string]any{},
+			"list_metadata": map[string]any{"before": nil, "after": nil},
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := workflowsBlocksExecutionsListCmd.Flags().Set("block-id", "blk_extract"); err != nil {
+		t.Fatal(err)
+	}
+	if err := workflowsBlocksExecutionsListCmd.Flags().Set("after", "sim_cursor_42"); err != nil {
+		t.Fatalf("set --after (flag must be registered): %v", err)
+	}
+	t.Cleanup(func() {
+		resetWorkflowBlocksExecutionsFlag(t, workflowsBlocksExecutionsListCmd, "block-id")
+		resetWorkflowBlocksExecutionsFlag(t, workflowsBlocksExecutionsListCmd, "after")
+	})
+
+	var err error
+	captureStd(t, func() {
+		err = workflowsBlocksExecutionsListCmd.RunE(workflowsBlocksExecutionsListCmd, []string{"run_123"})
+	})
+	if err != nil {
+		t.Fatalf("block executions list: %v", err)
+	}
+	if sawAfter != "sim_cursor_42" {
+		t.Fatalf("after query = %q, want %q", sawAfter, "sim_cursor_42")
+	}
+}
+
 func TestWorkflowsBlocksExecutionsCreateRejectsEmptyRunIDBeforeRequest(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())

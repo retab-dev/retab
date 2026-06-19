@@ -178,6 +178,12 @@ func init() {
 	_ = workflowsBlocksExecutionsCreateCmd.MarkFlagRequired("block-id")
 
 	workflowsBlocksExecutionsListCmd.Flags().String("block-id", "", "block id to list block executions for (required)")
+	// collectListParams reads --before/--after for cursor pagination; without
+	// registering them this endpoint (which the SDK documents as cursor-paginated)
+	// is stuck on the first page. Mirror the sibling list commands.
+	workflowsBlocksExecutionsListCmd.Flags().String("before", "", "execution id: return the page before this id (mutually exclusive with --after)")
+	workflowsBlocksExecutionsListCmd.Flags().String("after", "", "execution id: return the page after this id (mutually exclusive with --before)")
+	workflowsBlocksExecutionsListCmd.MarkFlagsMutuallyExclusive("before", "after")
 	workflowsBlocksExecutionsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items to return (1-100)")
 	_ = workflowsBlocksExecutionsListCmd.MarkFlagRequired("block-id")
 
