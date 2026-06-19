@@ -103,6 +103,63 @@ func TestParseCSVFile(t *testing.T) {
 	}
 }
 
+// Regression: a .txt/.md/.json authored on Windows carries a UTF-8 BOM
+// (PowerShell `Out-File -Encoding utf8`) or is UTF-16 LE (default `>` redirect).
+// parseTextFile read raw bytes and skipped the normalization that readJSON and
+// readTextFileOrStdin already apply, so `files parse`/`grep`/`inspect` surfaced
+// the first line with a stray U+FEFF (or fully garbled for UTF-16).
+func TestParseTextFile_NormalizesBOMAndUTF16(t *testing.T) {
+	dir := t.TempDir()
+
+	utf8BOM := filepath.Join(dir, "utf8bom.txt")
+	if err := os.WriteFile(utf8BOM, append([]byte{0xEF, 0xBB, 0xBF}, []byte("hello\nworld\n")...), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	res, err := loadParse(context.Background(), utf8BOM, kindText, "", defaultParseOptions(), false)
+	if err != nil {
+		t.Fatalf("loadParse: %v", err)
+	}
+	if res.Pages[0].Text != "hello\nworld\n" {
+		t.Fatalf("utf-8 BOM text = %q, want clean", res.Pages[0].Text)
+	}
+
+	utf16LE := filepath.Join(dir, "utf16le.txt")
+	raw := []byte{0xFF, 0xFE}
+	for _, r := range "hello\nworld\n" {
+		raw = append(raw, byte(r), 0x00)
+	}
+	if err := os.WriteFile(utf16LE, raw, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	res, err = loadParse(context.Background(), utf16LE, kindText, "", defaultParseOptions(), false)
+	if err != nil {
+		t.Fatalf("loadParse: %v", err)
+	}
+	if res.Pages[0].Text != "hello\nworld\n" {
+		t.Fatalf("utf-16 LE text = %q, want decoded", res.Pages[0].Text)
+	}
+}
+
+// Regression: a Windows-authored CSV with a UTF-8 BOM used to glue the BOM onto
+// the first header cell (U+FEFF prefix on "name"), corrupting grep
+// matches and inspect --cells anchors against column A row 1.
+func TestParseCSVFile_NormalizesBOM(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "data.csv")
+	body := append([]byte{0xEF, 0xBB, 0xBF}, []byte("name,amount\nACME,42000\n")...)
+	if err := os.WriteFile(path, body, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	res, err := loadParse(context.Background(), path, kindCSV, "", defaultParseOptions(), false)
+	if err != nil {
+		t.Fatalf("loadParse: %v", err)
+	}
+	want := [][]string{{"name", "amount"}, {"ACME", "42000"}}
+	if !reflect.DeepEqual(res.Sheets[0].Rows, want) {
+		t.Fatalf("rows = %v, want %v (BOM should be stripped from first cell)", res.Sheets[0].Rows, want)
+	}
+}
+
 func TestParseXLSXFile(t *testing.T) {
 	path := writeTestXLSX(t)
 	res, err := loadParse(context.Background(), path, kindSpreadsheet, "", defaultParseOptions(), false)

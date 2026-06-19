@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"archive/zip"
+	"bytes"
 	"context"
 	"encoding/csv"
 	"encoding/xml"
@@ -169,7 +170,11 @@ func parseTextFile(path string) (*ParseResult, error) {
 	if err != nil {
 		return nil, fmt.Errorf("read %s: %w", path, err)
 	}
-	text := string(data)
+	// Strip a leading BOM / decode UTF-16, matching readJSON/readTextFileOrStdin.
+	// Windows tooling (PowerShell `Out-File -Encoding utf8`, default `>` redirect)
+	// produces these; without normalization a parsed .txt/.md/.json keeps a stray
+	// U+FEFF on its first line or is fully garbled.
+	text := string(normalizeInputBytes(data))
 	return &ParseResult{
 		TotalPages: 1,
 		Pages:      []ParsedPage{{Page: 1, Text: text}},
@@ -177,12 +182,13 @@ func parseTextFile(path string) (*ParseResult, error) {
 }
 
 func parseCSVFile(path string) (*ParseResult, error) {
-	f, err := os.Open(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("read %s: %w", path, err)
 	}
-	defer func() { _ = f.Close() }()
-	reader := csv.NewReader(f)
+	// Normalize BOM/UTF-16 before parsing so a Windows-authored CSV/TSV doesn't
+	// glue a stray BOM onto the first header cell (or arrive UTF-16-garbled).
+	reader := csv.NewReader(bytes.NewReader(normalizeInputBytes(data)))
 	reader.FieldsPerRecord = -1 // ragged rows are fine
 	reader.LazyQuotes = true
 	if strings.EqualFold(filepath.Ext(path), ".tsv") {
