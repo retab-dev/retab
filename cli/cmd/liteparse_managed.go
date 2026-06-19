@@ -72,12 +72,12 @@ type litBundle struct {
 // build-liteparse.yml publishes. windows/arm64 ships OCR-less (no Tessdata),
 // matching the build matrix.
 var litBundles = map[string]litBundle{
-	"linux/amd64":   {Asset: "lit-linux-amd64.tar.gz", SHA256: "", LitBin: "lit", Pdfium: "libpdfium.so", Tessdata: "Latin.traineddata"},
-	"linux/arm64":   {Asset: "lit-linux-arm64.tar.gz", SHA256: "", LitBin: "lit", Pdfium: "libpdfium.so", Tessdata: "Latin.traineddata"},
-	"darwin/amd64":  {Asset: "lit-darwin-amd64.tar.gz", SHA256: "", LitBin: "lit", Pdfium: "libpdfium.dylib", Tessdata: "Latin.traineddata"},
-	"darwin/arm64":  {Asset: "lit-darwin-arm64.tar.gz", SHA256: "", LitBin: "lit", Pdfium: "libpdfium.dylib", Tessdata: "Latin.traineddata"},
-	"windows/amd64": {Asset: "lit-windows-amd64.tar.gz", SHA256: "", LitBin: "lit.exe", Pdfium: "pdfium.dll", Tessdata: "Latin.traineddata"},
-	"windows/arm64": {Asset: "lit-windows-arm64.tar.gz", SHA256: "", LitBin: "lit.exe", Pdfium: "pdfium.dll", Tessdata: ""},
+	"linux/amd64":   {Asset: "lit-linux-amd64.tar.gz", SHA256: "3f89316605b3bc550fb58c3fd3d1de5362e486854e4eaa6955aa73acb603465b", LitBin: "lit", Pdfium: "libpdfium.so", Tessdata: "Latin.traineddata"},
+	"linux/arm64":   {Asset: "lit-linux-arm64.tar.gz", SHA256: "f55738886dbbfe9c0829c296c040d36ce094186e294f04915dc7ecbe9313d244", LitBin: "lit", Pdfium: "libpdfium.so", Tessdata: "Latin.traineddata"},
+	"darwin/amd64":  {Asset: "lit-darwin-amd64.tar.gz", SHA256: "155636a80a246520b745c87adfa0a8a7ed93847c77479c4bfa8fb77fbe3652e5", LitBin: "lit", Pdfium: "libpdfium.dylib", Tessdata: "Latin.traineddata"},
+	"darwin/arm64":  {Asset: "lit-darwin-arm64.tar.gz", SHA256: "b4eaab56fa09fa08fc3bcbfd25013c79e38dfb77947f9c8983065350df6bd3f5", LitBin: "lit", Pdfium: "libpdfium.dylib", Tessdata: "Latin.traineddata"},
+	"windows/amd64": {Asset: "lit-windows-amd64.tar.gz", SHA256: "38ba9f10a33ff9a2172b5138182e4d1baba5ddd7232b21b633ad79bcb99b42eb", LitBin: "lit.exe", Pdfium: "pdfium.dll", Tessdata: "Latin.traineddata"},
+	"windows/arm64": {Asset: "lit-windows-arm64.tar.gz", SHA256: "546c3035ed6c30b3e4569432ea14eff07fd81d0748973ba4d6b8860752c32511", LitBin: "lit.exe", Pdfium: "pdfium.dll", Tessdata: ""},
 }
 
 func currentBundle() (litBundle, bool) {
