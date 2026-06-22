@@ -3,6 +3,7 @@ package cmd
 import (
 	"bytes"
 	"compress/zlib"
+	"encoding/binary"
 	"fmt"
 	"image"
 	"os"
@@ -39,17 +40,123 @@ import (
 // embedding it. The page is sized so that rendering at renderDPI reproduces the
 // image at its native pixel resolution (best OCR fidelity).
 func imageToSinglePagePDF(imgPath string, renderDPI int) ([]byte, error) {
-	f, err := os.Open(imgPath)
+	data, err := os.ReadFile(imgPath)
 	if err != nil {
 		return nil, fmt.Errorf("open image %s: %w", filepath.Base(imgPath), err)
 	}
-	defer func() { _ = f.Close() }()
 
-	img, _, err := image.Decode(f)
+	img, _, err := image.Decode(bytes.NewReader(data))
 	if err != nil {
 		return nil, fmt.Errorf("decode image %s: %w", filepath.Base(imgPath), err)
 	}
+	img = applyImageOrientation(img, imageOrientation(data))
 	return encodeImagePDF(img, renderDPI)
+}
+
+func imageOrientation(data []byte) int {
+	if orientation := jpegEXIFOrientation(data); orientation != 0 {
+		return orientation
+	}
+	if orientation := tiffOrientation(data); orientation != 0 {
+		return orientation
+	}
+	return 1
+}
+
+func jpegEXIFOrientation(data []byte) int {
+	if len(data) < 4 || data[0] != 0xff || data[1] != 0xd8 {
+		return 0
+	}
+	for pos := 2; pos+4 <= len(data); {
+		if data[pos] != 0xff {
+			return 0
+		}
+		for pos < len(data) && data[pos] == 0xff {
+			pos++
+		}
+		if pos >= len(data) {
+			return 0
+		}
+		marker := data[pos]
+		pos++
+		if marker == 0xd9 || marker == 0xda {
+			return 0
+		}
+		if pos+2 > len(data) {
+			return 0
+		}
+		segLen := int(binary.BigEndian.Uint16(data[pos : pos+2]))
+		pos += 2
+		if segLen < 2 || pos+segLen-2 > len(data) {
+			return 0
+		}
+		seg := data[pos : pos+segLen-2]
+		if marker == 0xe1 && bytes.HasPrefix(seg, []byte("Exif\x00\x00")) {
+			return tiffOrientation(seg[6:])
+		}
+		pos += segLen - 2
+	}
+	return 0
+}
+
+func tiffOrientation(data []byte) int {
+	if len(data) < 8 {
+		return 0
+	}
+	var order binary.ByteOrder
+	switch {
+	case data[0] == 'I' && data[1] == 'I':
+		order = binary.LittleEndian
+	case data[0] == 'M' && data[1] == 'M':
+		order = binary.BigEndian
+	default:
+		return 0
+	}
+	if order.Uint16(data[2:4]) != 42 {
+		return 0
+	}
+	ifdOffset := int(order.Uint32(data[4:8]))
+	if ifdOffset < 0 || ifdOffset+2 > len(data) {
+		return 0
+	}
+	count := int(order.Uint16(data[ifdOffset : ifdOffset+2]))
+	pos := ifdOffset + 2
+	for i := 0; i < count && pos+12 <= len(data); i++ {
+		entry := data[pos : pos+12]
+		tag := order.Uint16(entry[0:2])
+		typ := order.Uint16(entry[2:4])
+		n := order.Uint32(entry[4:8])
+		if tag == 274 && typ == 3 && n >= 1 {
+			orientation := int(order.Uint16(entry[8:10]))
+			if orientation >= 1 && orientation <= 8 {
+				return orientation
+			}
+			return 0
+		}
+		pos += 12
+	}
+	return 0
+}
+
+func applyImageOrientation(img image.Image, orientation int) image.Image {
+	switch orientation {
+	case 2:
+		return flipImageHorizontal(img)
+	case 3:
+		return rotateImage180(img)
+	case 4:
+		return flipImageVertical(img)
+	case 5:
+		return transposeImage(img)
+	case 6:
+		return rotateImage90CW(img)
+	case 7:
+		return transverseImage(img)
+	case 8:
+		return rotateImage270CW(img)
+	default:
+		return img
+	}
 }
 
 // flattenImageToRGB returns img as packed 8-bit DeviceRGB samples (top row
@@ -73,6 +180,90 @@ func flattenImageToRGB(img image.Image) []byte {
 		}
 	}
 	return rgb
+}
+
+func rotateImage90CW(img image.Image) image.Image {
+	b := img.Bounds()
+	w, h := b.Dx(), b.Dy()
+	out := image.NewRGBA(image.Rect(0, 0, h, w))
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			out.Set(h-1-y, x, img.At(b.Min.X+x, b.Min.Y+y))
+		}
+	}
+	return out
+}
+
+func rotateImage180(img image.Image) image.Image {
+	b := img.Bounds()
+	w, h := b.Dx(), b.Dy()
+	out := image.NewRGBA(image.Rect(0, 0, w, h))
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			out.Set(w-1-x, h-1-y, img.At(b.Min.X+x, b.Min.Y+y))
+		}
+	}
+	return out
+}
+
+func rotateImage270CW(img image.Image) image.Image {
+	b := img.Bounds()
+	w, h := b.Dx(), b.Dy()
+	out := image.NewRGBA(image.Rect(0, 0, h, w))
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			out.Set(y, w-1-x, img.At(b.Min.X+x, b.Min.Y+y))
+		}
+	}
+	return out
+}
+
+func flipImageHorizontal(img image.Image) image.Image {
+	b := img.Bounds()
+	w, h := b.Dx(), b.Dy()
+	out := image.NewRGBA(image.Rect(0, 0, w, h))
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			out.Set(w-1-x, y, img.At(b.Min.X+x, b.Min.Y+y))
+		}
+	}
+	return out
+}
+
+func flipImageVertical(img image.Image) image.Image {
+	b := img.Bounds()
+	w, h := b.Dx(), b.Dy()
+	out := image.NewRGBA(image.Rect(0, 0, w, h))
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			out.Set(x, h-1-y, img.At(b.Min.X+x, b.Min.Y+y))
+		}
+	}
+	return out
+}
+
+func transposeImage(img image.Image) image.Image {
+	b := img.Bounds()
+	w, h := b.Dx(), b.Dy()
+	out := image.NewRGBA(image.Rect(0, 0, h, w))
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			out.Set(y, x, img.At(b.Min.X+x, b.Min.Y+y))
+		}
+	}
+	return out
+}
+
+func transverseImage(img image.Image) image.Image {
+	b := img.Bounds()
+	w, h := b.Dx(), b.Dy()
+	out := image.NewRGBA(image.Rect(0, 0, h, w))
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			out.Set(h-1-y, w-1-x, img.At(b.Min.X+x, b.Min.Y+y))
+		}
+	}
+	return out
 }
 
 // encodeImagePDF builds a single-page PDF that draws img full-bleed. The image
