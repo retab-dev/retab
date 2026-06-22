@@ -2,8 +2,10 @@ package cmd
 
 import (
 	"bytes"
+	"encoding/binary"
 	"image"
 	"image/color"
+	"image/jpeg"
 	"image/png"
 	"os"
 	"path/filepath"
@@ -69,6 +71,40 @@ func TestEncodeImagePDFZeroDimension(t *testing.T) {
 	}
 }
 
+func TestImageToSinglePagePDFAppliesEXIFOrientation(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "oriented.jpg")
+	var img bytes.Buffer
+	src := image.NewRGBA(image.Rect(0, 0, 4, 3))
+	if err := jpeg.Encode(&img, src, nil); err != nil {
+		t.Fatalf("encode jpeg: %v", err)
+	}
+	data := append([]byte{}, img.Bytes()[:2]...)
+	data = append(data, exifOrientationSegment(6)...)
+	data = append(data, img.Bytes()[2:]...)
+	if err := os.WriteFile(path, data, 0o644); err != nil {
+		t.Fatalf("write jpeg: %v", err)
+	}
+
+	pdf, err := imageToSinglePagePDF(path, 72)
+	if err != nil {
+		t.Fatalf("imageToSinglePagePDF: %v", err)
+	}
+	s := string(pdf)
+	for _, want := range []string{"/Width 3", "/Height 4", "/MediaBox [0 0 3.0000 4.0000]"} {
+		if !strings.Contains(s, want) {
+			t.Errorf("PDF did not apply EXIF orientation, missing %q:\n%s", want, s)
+		}
+	}
+}
+
+func TestTIFFOrientation(t *testing.T) {
+	data := tiffOrientationPayload(binary.BigEndian, 8)
+	if got := tiffOrientation(data); got != 8 {
+		t.Fatalf("tiffOrientation = %d, want 8", got)
+	}
+}
+
 func TestLitInputPathWrapsImage(t *testing.T) {
 	dir := t.TempDir()
 	pngPath := writeTestPNG(t, dir, 8, 6)
@@ -116,4 +152,29 @@ func TestLitInputPathPassesThroughPDF(t *testing.T) {
 	if !fileExists(pdfPath) {
 		t.Error("cleanup must not remove a passed-through PDF")
 	}
+}
+
+func exifOrientationSegment(orientation uint16) []byte {
+	payload := append([]byte("Exif\x00\x00"), tiffOrientationPayload(binary.BigEndian, orientation)...)
+	seg := []byte{0xff, 0xe1, 0, 0}
+	binary.BigEndian.PutUint16(seg[2:4], uint16(len(payload)+2))
+	return append(seg, payload...)
+}
+
+func tiffOrientationPayload(order binary.ByteOrder, orientation uint16) []byte {
+	data := make([]byte, 8+2+12+4)
+	if order == binary.LittleEndian {
+		data[0], data[1] = 'I', 'I'
+	} else {
+		data[0], data[1] = 'M', 'M'
+	}
+	order.PutUint16(data[2:4], 42)
+	order.PutUint32(data[4:8], 8)
+	order.PutUint16(data[8:10], 1)
+	entry := data[10:22]
+	order.PutUint16(entry[0:2], 274)
+	order.PutUint16(entry[2:4], 3)
+	order.PutUint32(entry[4:8], 1)
+	order.PutUint16(entry[8:10], orientation)
+	return data
 }
