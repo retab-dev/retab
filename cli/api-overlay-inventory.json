@@ -39,15 +39,9 @@
     "create_workflow",
     "create_workflow_run",
     "delete_block",
-    "delete_classification",
     "delete_edge",
-    "delete_edit",
     "delete_experiment",
-    "delete_extraction",
-    "delete_parse",
-    "delete_partition",
     "delete_secret",
-    "delete_split",
     "delete_table",
     "delete_template",
     "delete_workflow_eval",
@@ -221,42 +215,6 @@
       "command": "retab workflows create",
       "source_files": [
         "open-source/sdk/cli/cmd/zz_oagen_workflows.go"
-      ]
-    },
-    "delete_classification": {
-      "command": "retab classifications delete",
-      "source_files": [
-        "open-source/sdk/cli/cmd/zz_oagen_classifications.go"
-      ]
-    },
-    "delete_edit": {
-      "command": "retab edits delete",
-      "source_files": [
-        "open-source/sdk/cli/cmd/zz_oagen_edits.go"
-      ]
-    },
-    "delete_extraction": {
-      "command": "retab extractions delete",
-      "source_files": [
-        "open-source/sdk/cli/cmd/extractions.go"
-      ]
-    },
-    "delete_parse": {
-      "command": "retab parses delete",
-      "source_files": [
-        "open-source/sdk/cli/cmd/zz_oagen_parses.go"
-      ]
-    },
-    "delete_partition": {
-      "command": "retab partitions delete",
-      "source_files": [
-        "open-source/sdk/cli/cmd/zz_oagen_partitions.go"
-      ]
-    },
-    "delete_split": {
-      "command": "retab splits delete",
-      "source_files": [
-        "open-source/sdk/cli/cmd/zz_oagen_splits.go"
       ]
     },
     "delete_template": {
