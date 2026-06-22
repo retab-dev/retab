@@ -1636,6 +1636,26 @@ func resolveDocument(cmd *cobra.Command) (any, error) {
 	return nil, fmt.Errorf("unreachable")
 }
 
+func validateDocumentFlagSelection(cmd *cobra.Command) error {
+	file, _ := cmd.Flags().GetString("file")
+	urlStr, _ := cmd.Flags().GetString("url")
+	fileID, _ := cmd.Flags().GetString("file-id")
+	docFile, _ := cmd.Flags().GetString("document-file")
+	count := 0
+	for _, v := range []string{file, urlStr, fileID, docFile} {
+		if v != "" {
+			count++
+		}
+	}
+	if count == 0 {
+		return fmt.Errorf("one of --file, --url, --file-id, or --document-file is required")
+	}
+	if count > 1 {
+		return fmt.Errorf("--file, --url, --file-id, and --document-file are mutually exclusive")
+	}
+	return nil
+}
+
 // filenameFromURL returns the basename of a URL path, or "document" when
 // the path is empty / root. Used to satisfy the server's `filename`
 // requirement on document descriptors when only a `--url` was given.
@@ -1679,6 +1699,30 @@ func resolveFileIDToMIMEData(cmd *cobra.Command, fileID string) (retab.MIMEData,
 		return *link.MIMEData, nil
 	}
 	filename := link.Filename
+	if filename == "" {
+		filename = "document"
+	}
+	return retab.MIMEData{Filename: filename, URL: link.DownloadURL}, nil
+}
+
+func resolveFileIDToSignedDownloadMIMEData(cmd *cobra.Command, fileID string) (retab.MIMEData, error) {
+	client, err := newClient(cmd)
+	if err != nil {
+		return retab.MIMEData{}, err
+	}
+	ctx, cancel := ctxFor(cmd)
+	defer cancel()
+	link, err := client.Files.GetDownloadLink(ctx, fileID)
+	if err != nil {
+		return retab.MIMEData{}, fmt.Errorf("resolving --file-id %s: %w", fileID, err)
+	}
+	if link.DownloadURL == "" {
+		return retab.MIMEData{}, fmt.Errorf("--file-id %s: server returned no download URL", fileID)
+	}
+	filename := link.Filename
+	if filename == "" && link.MIMEData != nil {
+		filename = link.MIMEData.Filename
+	}
 	if filename == "" {
 		filename = "document"
 	}

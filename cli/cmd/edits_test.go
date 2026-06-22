@@ -174,6 +174,109 @@ func TestEditTemplatesCreateValidatesFormFieldsBeforeRequest(t *testing.T) {
 	}
 }
 
+func TestEditTemplatesCreateFileIDUsesSignedDownloadURLForInlineDocument(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var server *httptest.Server
+	var downloadLinkHits atomic.Int32
+	var signedDownloadHits atomic.Int32
+	var createHits atomic.Int32
+	var gotDocument map[string]any
+
+	server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/v1/files/file_123/download-link":
+			downloadLinkHits.Add(1)
+			_, _ = w.Write([]byte(`{
+				"download_url": "` + server.URL + `/signed.pdf",
+				"filename": "template.pdf",
+				"mime_data": {
+					"filename": "template.pdf",
+					"url": "https://storage.retab.com/org_1/file_123.pdf"
+				}
+			}`))
+		case "/signed.pdf":
+			signedDownloadHits.Add(1)
+			w.Header().Set("Content-Type", "application/pdf")
+			_, _ = w.Write([]byte("%PDF-1.4\n%%EOF\n"))
+		case "/v1/edits/templates":
+			createHits.Add(1)
+			var body map[string]any
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+				t.Fatalf("decode request: %v", err)
+			}
+			var ok bool
+			gotDocument, ok = body["document"].(map[string]any)
+			if !ok {
+				t.Fatalf("document = %#v", body["document"])
+			}
+			_, _ = w.Write([]byte(`{
+				"id": "edittplt_123",
+				"name": "file-id-template",
+				"file": {"id": "file_123", "filename": "template.pdf", "mime_type": "application/pdf"},
+				"form_fields": [],
+				"field_count": 0
+			}`))
+		default:
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	fieldsPath := filepath.Join(t.TempDir(), "fields.json")
+	if err := os.WriteFile(fieldsPath, []byte(`[{
+		"key": "name",
+		"description": "Name",
+		"type": "text",
+		"bbox": {"left": 0.1, "top": 0.2, "width": 0.3, "height": 0.04, "page": 1}
+	}]`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := editsTemplatesCreateCmd.Flags().Set("name", "file-id-template"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = editsTemplatesCreateCmd.Flags().Set("name", "") })
+	if err := editsTemplatesCreateCmd.Flags().Set("file-id", "file_123"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = editsTemplatesCreateCmd.Flags().Set("file-id", "") })
+	if err := editsTemplatesCreateCmd.Flags().Set("form-fields-file", fieldsPath); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = editsTemplatesCreateCmd.Flags().Set("form-fields-file", "") })
+
+	var err error
+	_, _ = captureStd(t, func() {
+		err = editsTemplatesCreateCmd.RunE(editsTemplatesCreateCmd, nil)
+	})
+	if err != nil {
+		t.Fatalf("RunE: %v", err)
+	}
+	if downloadLinkHits.Load() != 1 {
+		t.Fatalf("download-link hits = %d, want 1", downloadLinkHits.Load())
+	}
+	if signedDownloadHits.Load() != 1 {
+		t.Fatalf("signed download hits = %d, want 1", signedDownloadHits.Load())
+	}
+	if createHits.Load() != 1 {
+		t.Fatalf("create hits = %d, want 1", createHits.Load())
+	}
+	if gotDocument["filename"] != "template.pdf" {
+		t.Fatalf("document filename = %#v", gotDocument["filename"])
+	}
+	url, _ := gotDocument["url"].(string)
+	if !strings.HasPrefix(url, "data:application/pdf;base64,") {
+		t.Fatalf("document url = %q, want inline PDF data URI", url)
+	}
+	if strings.Contains(url, "storage.retab.com") {
+		t.Fatalf("durable storage URL leaked into inline template request: %q", url)
+	}
+}
+
 func TestEditTemplatesUpdateRejectsNoFieldsBeforeRequest(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())

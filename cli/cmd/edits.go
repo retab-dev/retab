@@ -302,19 +302,31 @@ to ` + "`retab edits create`" + `.`,
 		if err != nil {
 			return fmt.Errorf("--form-fields-file: %w", err)
 		}
-		doc, err := resolveDocument(cmd)
-		if err != nil {
-			return err
-		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		document, err := mimeDataFromDocument(doc)
-		if err != nil {
-			return err
+		fileID, _ := cmd.Flags().GetString("file-id")
+		var document retab.MIMEData
+		if fileID != "" {
+			if err := validateDocumentFlagSelection(cmd); err != nil {
+				return err
+			}
+			document, err = resolveFileIDToSignedDownloadMIMEData(cmd, fileID)
+			if err != nil {
+				return err
+			}
+		} else {
+			doc, err := resolveDocument(cmd)
+			if err != nil {
+				return err
+			}
+			document, err = mimeDataFromDocument(doc)
+			if err != nil {
+				return err
+			}
 		}
 		// The template document is persisted server-side via the inline-only
 		// persist seam, which cannot dereference a remote URL. --file is already
