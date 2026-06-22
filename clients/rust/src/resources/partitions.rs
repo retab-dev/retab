@@ -182,31 +182,6 @@ impl<'a> PartitionsApi<'a> {
             .await
     }
 
-    /// Delete Partition
-    ///
-    /// Delete a partition.
-    ///
-    /// Permanently deletes the partition identified by `partition_id` in the authenticated
-    /// environment. Returns `204` with no body on success, or `404` if the partition does not
-    /// exist.
-    pub async fn delete(&self, partition_id: &str) -> Result<(), Error> {
-        self.delete_with_options(partition_id, None).await
-    }
-
-    /// Variant of [`Self::delete`] that accepts per-request [`crate::RequestOptions`].
-    pub async fn delete_with_options(
-        &self,
-        partition_id: &str,
-        options: Option<&crate::RequestOptions>,
-    ) -> Result<(), Error> {
-        let partition_id = crate::client::path_segment(partition_id);
-        let path = format!("/v1/partitions/{partition_id}");
-        let method = http::Method::DELETE;
-        self.client
-            .request_with_query_opts_empty(method, &path, &(), options)
-            .await
-    }
-
     /// Cancel Partition
     pub async fn create_partition_cancel(&self, partition_id: &str) -> Result<Partition, Error> {
         self.create_partition_cancel_with_options(partition_id, None)

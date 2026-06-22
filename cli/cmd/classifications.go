@@ -211,41 +211,6 @@ ascending and descending.`,
 	}),
 }
 
-var classificationsDeleteCmd = &cobra.Command{
-	Use:   "delete <classification-id>",
-	Short: "Delete a classification",
-	Long: `Permanently delete a classification.
-
-Destructive and irreversible. The source document is not affected. Take a
-backup with ` + "`retab classifications get`" + ` first if you may need it.
-
-Pass ` + "`--yes`" + ` to skip the confirmation prompt in scripts and CI —
-otherwise the command refuses to delete when stdin is not a terminal.`,
-	Example: `  # Back up, then delete (interactive)
-  retab classifications get clas_xyz789 > backup.json
-  retab classifications delete clas_xyz789
-
-  # Delete in a script
-  retab classifications delete clas_xyz789 --yes`,
-	Args: cobra.ExactArgs(1),
-	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		if err := confirmDestructive(cmd, "classification", args[0]); err != nil {
-			return err
-		}
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		if err := client.Classifications.Delete(ctx, args[0]); err != nil {
-			return err
-		}
-		confirmDeleted("classification", args[0])
-		return nil
-	}),
-}
-
 var classificationsCancelCmd = &cobra.Command{
 	Use:   "cancel <classification-id>",
 	Short: "Cancel a classification",
@@ -284,11 +249,9 @@ func init() {
 
 	addListFlags(classificationsListCmd, false)
 
-	classificationsDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
-
 	classificationsWaitCmd := primitiveWaitCommand(classificationWaitSpec)
 	addPrimitiveWaitTuningFlags(classificationsWaitCmd, false)
 
-	classificationsCmd.AddCommand(classificationsCreateCmd, classificationsGetCmd, classificationsListCmd, classificationsCancelCmd, classificationsDeleteCmd, classificationsWaitCmd)
+	classificationsCmd.AddCommand(classificationsCreateCmd, classificationsGetCmd, classificationsListCmd, classificationsCancelCmd, classificationsWaitCmd)
 	rootCmd.AddCommand(classificationsCmd)
 }

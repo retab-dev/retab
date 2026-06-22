@@ -133,18 +133,6 @@ func (s *ClassificationService) Get(ctx context.Context, classificationID string
 	return &result, nil
 }
 
-// Delete classification
-// Delete a classification.
-// Permanently deletes the classification identified by `classification_id`.
-// Responds with 204 on success, or 404 if no such classification exists.
-func (s *ClassificationService) Delete(ctx context.Context, classificationID string, opts ...RequestOption) error {
-	if classificationID == "" {
-		return fmt.Errorf("retab: classification_id is required")
-	}
-	_, err := s.client.request(ctx, "DELETE", fmt.Sprintf("/v1/classifications/%s", url.PathEscape(classificationID)), nil, nil, nil, opts)
-	return err
-}
-
 // CreateCancel cancel Classification
 func (s *ClassificationService) CreateCancel(ctx context.Context, classificationID string, opts ...RequestOption) (*Classification, error) {
 	if classificationID == "" {

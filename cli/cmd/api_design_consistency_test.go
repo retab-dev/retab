@@ -262,7 +262,7 @@ func readCLISource(t *testing.T) string {
 	var builder strings.Builder
 	for _, entry := range entries {
 		name := entry.Name()
-		if entry.IsDir() || !strings.HasSuffix(name, ".go") || strings.HasSuffix(name, "_test.go") {
+		if entry.IsDir() || !strings.HasSuffix(name, ".go") || strings.HasSuffix(name, "_test.go") || strings.HasPrefix(name, "zz_oagen_") {
 			continue
 		}
 		data, err := os.ReadFile(name)

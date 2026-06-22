@@ -177,31 +177,6 @@ impl<'a> SplitsApi<'a> {
             .await
     }
 
-    /// Delete Split
-    ///
-    /// Delete a split.
-    ///
-    /// Permanently deletes the split identified by `split_id` in the authenticated
-    /// environment. Returns `204` with no body on success, or `404` if the split does not
-    /// exist.
-    pub async fn delete(&self, split_id: &str) -> Result<(), Error> {
-        self.delete_with_options(split_id, None).await
-    }
-
-    /// Variant of [`Self::delete`] that accepts per-request [`crate::RequestOptions`].
-    pub async fn delete_with_options(
-        &self,
-        split_id: &str,
-        options: Option<&crate::RequestOptions>,
-    ) -> Result<(), Error> {
-        let split_id = crate::client::path_segment(split_id);
-        let path = format!("/v1/splits/{split_id}");
-        let method = http::Method::DELETE;
-        self.client
-            .request_with_query_opts_empty(method, &path, &(), options)
-            .await
-    }
-
     /// Cancel Split
     pub async fn create_split_cancel(&self, split_id: &str) -> Result<Split, Error> {
         self.create_split_cancel_with_options(split_id, None).await

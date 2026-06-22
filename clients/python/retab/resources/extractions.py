@@ -192,15 +192,6 @@ class ExtractionsMixin:
         data = None
         return PreparedRequest(method="GET", url=f"/v1/extractions/{extraction_id}", params=params or None, data=data)
 
-    def prepare_delete(self, extraction_id: str, **extra_params: Any) -> PreparedRequest:
-        """Delete Extraction Delete an extraction"""
-        params: dict[str, Any] = {}
-        if extra_params:
-            params.update(extra_params)
-        params = {k: v for k, v in params.items() if v is not None}
-        data = None
-        return PreparedRequest(method="DELETE", url=f"/v1/extractions/{extraction_id}", params=params or None, data=data)
-
     def prepare_create_extraction_cancel(self, extraction_id: str, **extra_params: Any) -> PreparedRequest:
         """Cancel Extraction"""
         params: dict[str, Any] = {}
@@ -335,12 +326,6 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
         response = self._client._prepared_request(prepared_request)
         return Extraction.model_validate(response)
 
-    def delete(self, extraction_id: str, **extra_params: Any) -> None:
-        """Delete Extraction Delete an extraction"""
-        prepared_request = self.prepare_delete(extraction_id, **extra_params)
-        self._client._prepared_request(prepared_request)
-        return None
-
     def create_extraction_cancel(self, extraction_id: str, **extra_params: Any) -> Extraction:
         """Cancel Extraction"""
         prepared_request = self.prepare_create_extraction_cancel(extraction_id, **extra_params)
@@ -468,12 +453,6 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
         prepared_request = self.prepare_get(extraction_id, include_output=include_output, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return Extraction.model_validate(response)
-
-    async def delete(self, extraction_id: str, **extra_params: Any) -> None:
-        """Delete Extraction Delete an extraction"""
-        prepared_request = self.prepare_delete(extraction_id, **extra_params)
-        await self._client._prepared_request(prepared_request)
-        return None
 
     async def create_extraction_cancel(self, extraction_id: str, **extra_params: Any) -> Extraction:
         """Cancel Extraction"""

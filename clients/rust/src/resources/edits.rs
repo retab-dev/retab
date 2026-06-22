@@ -189,30 +189,6 @@ impl<'a> EditsApi<'a> {
             .await
     }
 
-    /// Delete Edit
-    ///
-    /// Delete an edit.
-    ///
-    /// Permanently deletes the edit identified by `edit_id`. Returns `204` on
-    /// success, or `404` if no edit with that id exists.
-    pub async fn delete(&self, edit_id: &str) -> Result<(), Error> {
-        self.delete_with_options(edit_id, None).await
-    }
-
-    /// Variant of [`Self::delete`] that accepts per-request [`crate::RequestOptions`].
-    pub async fn delete_with_options(
-        &self,
-        edit_id: &str,
-        options: Option<&crate::RequestOptions>,
-    ) -> Result<(), Error> {
-        let edit_id = crate::client::path_segment(edit_id);
-        let path = format!("/v1/edits/{edit_id}");
-        let method = http::Method::DELETE;
-        self.client
-            .request_with_query_opts_empty(method, &path, &(), options)
-            .await
-    }
-
     /// Cancel Edit
     pub async fn create_edit_cancel(&self, edit_id: &str) -> Result<Edit, Error> {
         self.create_edit_cancel_with_options(edit_id, None).await

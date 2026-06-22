@@ -55,14 +55,6 @@ module Retab
       params(
         edit_id: String,
         request_options: T::Hash[Symbol, T.untyped]
-      ).returns(NilClass)
-    end
-    def delete(edit_id:, request_options:); end
-
-    sig do
-      params(
-        edit_id: String,
-        request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::Edit)
     end
     def create_edit_cancel(edit_id:, request_options:); end

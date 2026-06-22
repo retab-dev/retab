@@ -112,24 +112,6 @@ namespace Retab
             return this.GetAsync(extractionId, options, requestOptions, cancellationToken);
         }
 
-        /// <summary>Delete Extraction</summary>
-        /// <remarks>
-        /// Delete an extraction
-        /// </remarks>
-        /// <param name="extractionId">The extraction id.</param>
-        /// <param name="requestOptions">Per-request configuration overrides.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        public virtual async Task DeleteAsync(string extractionId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
-        {
-            await this.DeleteAsync($"/v1/extractions/{Uri.EscapeDataString(extractionId)}", null, requestOptions, cancellationToken);
-        }
-
-        /// <summary>Compatibility wrapper for <see cref="DeleteAsync"/>.</summary>
-        public virtual Task Delete(string extractionId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
-        {
-            return this.DeleteAsync(extractionId, requestOptions, cancellationToken);
-        }
-
         /// <summary>Cancel Extraction</summary>
         /// <param name="extractionId">The extraction id.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>

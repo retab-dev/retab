@@ -256,27 +256,6 @@ impl<'a> ExtractionsApi<'a> {
             .await
     }
 
-    /// Delete Extraction
-    ///
-    /// Delete an extraction
-    pub async fn delete(&self, extraction_id: &str) -> Result<(), Error> {
-        self.delete_with_options(extraction_id, None).await
-    }
-
-    /// Variant of [`Self::delete`] that accepts per-request [`crate::RequestOptions`].
-    pub async fn delete_with_options(
-        &self,
-        extraction_id: &str,
-        options: Option<&crate::RequestOptions>,
-    ) -> Result<(), Error> {
-        let extraction_id = crate::client::path_segment(extraction_id);
-        let path = format!("/v1/extractions/{extraction_id}");
-        let method = http::Method::DELETE;
-        self.client
-            .request_with_query_opts_empty(method, &path, &(), options)
-            .await
-    }
-
     /// Cancel Extraction
     pub async fn create_extraction_cancel(&self, extraction_id: &str) -> Result<Extraction, Error> {
         self.create_extraction_cancel_with_options(extraction_id, None)

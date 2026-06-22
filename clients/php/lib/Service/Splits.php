@@ -143,29 +143,6 @@ class Splits
     }
 
     /**
-     * Delete Split
-     *
-     * Delete a split.
-     *
-     * Permanently deletes the split identified by `split_id` in the authenticated
-     * environment. Returns `204` with no body on success, or `404` if the split does not
-     * exist.
-     * @param string $splitId
-     * @return void
-     * @throws \Retab\Exception\RetabException
-     */
-    public function delete(
-        string $splitId,
-        ?\Retab\RequestOptions $options = null,
-    ): void {
-        $this->client->request(
-            method: 'DELETE',
-            path: 'v1/splits/' . rawurlencode($splitId),
-            options: $options,
-        );
-    }
-
-    /**
      * Cancel Split
      * @param string $splitId
      * @return \Retab\Resource\Split

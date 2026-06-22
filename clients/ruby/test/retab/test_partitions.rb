@@ -38,13 +38,6 @@ class PartitionsTest < Minitest::Test
     refute_nil(result)
   end
 
-  def test_delete_returns_expected_result
-    stub_request(:delete, %r{\Ahttps://api\.retab\.com/v1/partitions/stub(\?|\z)})
-      .to_return(body: "{}", status: 200)
-    result = @client.partitions.delete(partition_id: "stub")
-    assert_nil(result)
-  end
-
   def test_create_partition_cancel_returns_expected_result
     stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/partitions/stub/cancel(\?|\z)})
       .to_return(body: "{}", status: 200)
@@ -66,12 +59,6 @@ class PartitionsTest < Minitest::Test
       }
     },
     {name: :get, verb: :get, url: %r{\Ahttps://api\.retab\.com/v1/partitions/stub(\?|\z)}, args: {partition_id: "stub"}},
-    {
-      name: :delete,
-      verb: :delete,
-      url: %r{\Ahttps://api\.retab\.com/v1/partitions/stub(\?|\z)},
-      args: {partition_id: "stub"}
-    },
     {
       name: :create_partition_cancel,
       verb: :post,

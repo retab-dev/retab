@@ -281,43 +281,6 @@ content actually backed an extracted value.`,
 	}),
 }
 
-var extractionsDeleteCmd = &cobra.Command{
-	Use:   "delete <extraction-id>",
-	Short: "Delete an extraction",
-	Long: `Permanently delete an extraction.
-
-This is destructive and cannot be undone. The extraction's JSON output,
-sources, and metadata are removed from the server. The underlying source
-document (if uploaded as a file) is not affected. Take a local backup with
-` + "`retab extractions get`" + ` first if you may need the result later.
-
-Pass ` + "`--yes`" + ` to skip the confirmation prompt in scripts and CI —
-otherwise the command refuses to delete when stdin is not a terminal.`,
-	Example: `  # Back up, then delete (interactive)
-  retab extractions get extr_xyz789 > backup.json
-  retab extractions delete extr_xyz789
-
-  # Delete in a script
-  retab extractions delete extr_xyz789 --yes`,
-	Args: cobra.ExactArgs(1),
-	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		if err := confirmDestructive(cmd, "extraction", args[0]); err != nil {
-			return err
-		}
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		if err := client.Extractions.Delete(ctx, args[0]); err != nil {
-			return err
-		}
-		confirmDeleted("extraction", args[0])
-		return nil
-	}),
-}
-
 var extractionsCancelCmd = &cobra.Command{
 	Use:   "cancel <extraction-id>",
 	Short: "Cancel an extraction",
@@ -364,15 +327,13 @@ func init() {
 	addListFlags(extractionsListCmd, false)
 	extractionsListCmd.Flags().StringArray("metadata", nil, "metadata key=value filter (repeatable)")
 
-	extractionsDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
-
 	extractionsWaitCmd := primitiveWaitCommand(extractionWaitSpec)
 	addPrimitiveWaitTuningFlags(extractionsWaitCmd, false)
 
 	// Lead with the canonical lifecycle order shared by every primitive
-	// (create, get, list, cancel, delete, wait) so `--help` reads the same
+	// (create, get, list, cancel, wait) so `--help` reads the same
 	// across extractions/parses/splits/…; the extraction-only verbs slot in
 	// next to their kin — stream beside create, sources beside get.
-	extractionsCmd.AddCommand(extractionsCreateCmd, extractionsStreamCmd, extractionsGetCmd, extractionsSourcesCmd, extractionsListCmd, extractionsCancelCmd, extractionsDeleteCmd, extractionsWaitCmd)
+	extractionsCmd.AddCommand(extractionsCreateCmd, extractionsStreamCmd, extractionsGetCmd, extractionsSourcesCmd, extractionsListCmd, extractionsCancelCmd, extractionsWaitCmd)
 	rootCmd.AddCommand(extractionsCmd)
 }

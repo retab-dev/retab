@@ -96,27 +96,6 @@ namespace Retab
             return this.GetAsync(parseId, options, requestOptions, cancellationToken);
         }
 
-        /// <summary>Delete Parse</summary>
-        /// <remarks>
-        /// Delete a parse.
-        /// Permanently deletes the parse identified by `parse_id` in the authenticated
-        /// environment. Returns `204` with no body on success, or `404` if the parse does not
-        /// exist.
-        /// </remarks>
-        /// <param name="parseId">The parse id.</param>
-        /// <param name="requestOptions">Per-request configuration overrides.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        public virtual async Task DeleteAsync(string parseId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
-        {
-            await this.DeleteAsync($"/v1/parses/{Uri.EscapeDataString(parseId)}", null, requestOptions, cancellationToken);
-        }
-
-        /// <summary>Compatibility wrapper for <see cref="DeleteAsync"/>.</summary>
-        public virtual Task Delete(string parseId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
-        {
-            return this.DeleteAsync(parseId, requestOptions, cancellationToken);
-        }
-
         /// <summary>Cancel Parse</summary>
         /// <param name="parseId">The parse id.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>

@@ -75,15 +75,6 @@ class ExtractionsTest extends TestCase
         $this->assertArrayHasKey('include_output', $query);
     }
 
-    public function testDelete(): void
-    {
-        $client = $this->createMockClient([['status' => 204]]);
-        $client->extractions()->delete('test_extraction_id');
-        $request = $this->getLastRequest();
-        $this->assertSame('DELETE', $request->getMethod());
-        $this->assertStringEndsWith('v1/extractions/test_extraction_id', $request->getUri()->getPath());
-    }
-
     public function testCreateExtractionCancel(): void
     {
         $fixture = $this->loadFixture('extraction');

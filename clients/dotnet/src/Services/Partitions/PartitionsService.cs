@@ -96,27 +96,6 @@ namespace Retab
             return this.GetAsync(partitionId, options, requestOptions, cancellationToken);
         }
 
-        /// <summary>Delete Partition</summary>
-        /// <remarks>
-        /// Delete a partition.
-        /// Permanently deletes the partition identified by `partition_id` in the authenticated
-        /// environment. Returns `204` with no body on success, or `404` if the partition does not
-        /// exist.
-        /// </remarks>
-        /// <param name="partitionId">The partition id.</param>
-        /// <param name="requestOptions">Per-request configuration overrides.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        public virtual async Task DeleteAsync(string partitionId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
-        {
-            await this.DeleteAsync($"/v1/partitions/{Uri.EscapeDataString(partitionId)}", null, requestOptions, cancellationToken);
-        }
-
-        /// <summary>Compatibility wrapper for <see cref="DeleteAsync"/>.</summary>
-        public virtual Task Delete(string partitionId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
-        {
-            return this.DeleteAsync(partitionId, requestOptions, cancellationToken);
-        }
-
         /// <summary>Cancel Partition</summary>
         /// <param name="partitionId">The partition id.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>

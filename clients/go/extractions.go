@@ -215,16 +215,6 @@ func (s *ExtractionService) Get(ctx context.Context, extractionID string, params
 	return &result, nil
 }
 
-// Delete extraction
-// Delete an extraction
-func (s *ExtractionService) Delete(ctx context.Context, extractionID string, opts ...RequestOption) error {
-	if extractionID == "" {
-		return fmt.Errorf("retab: extraction_id is required")
-	}
-	_, err := s.client.request(ctx, "DELETE", fmt.Sprintf("/v1/extractions/%s", url.PathEscape(extractionID)), nil, nil, nil, opts)
-	return err
-}
-
 // CreateCancel cancel Extraction
 func (s *ExtractionService) CreateCancel(ctx context.Context, extractionID string, opts ...RequestOption) (*Extraction, error) {
 	if extractionID == "" {

@@ -51,14 +51,6 @@ module Retab
       params(
         split_id: String,
         request_options: T::Hash[Symbol, T.untyped]
-      ).returns(NilClass)
-    end
-    def delete(split_id:, request_options:); end
-
-    sig do
-      params(
-        split_id: String,
-        request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::Split)
     end
     def create_split_cancel(split_id:, request_options:); end

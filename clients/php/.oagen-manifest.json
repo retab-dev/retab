@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "php",
-  "generatedAt": "2026-06-19T13:01:00.140Z",
+  "generatedAt": "2026-06-22T22:44:57.796Z",
   "files": [
     "composer.json",
     "lib/Client.php",
@@ -744,10 +744,6 @@
       "sdkMethod": "get",
       "service": "classifications"
     },
-    "DELETE /v1/classifications/{classification_id}": {
-      "sdkMethod": "delete",
-      "service": "classifications"
-    },
     "POST /v1/classifications/{classification_id}/cancel": {
       "sdkMethod": "createClassificationCancel",
       "service": "classifications"
@@ -762,10 +758,6 @@
     },
     "GET /v1/edits/{edit_id}": {
       "sdkMethod": "get",
-      "service": "edits"
-    },
-    "DELETE /v1/edits/{edit_id}": {
-      "sdkMethod": "delete",
       "service": "edits"
     },
     "POST /v1/edits/{edit_id}/cancel": {
@@ -806,10 +798,6 @@
     },
     "GET /v1/extractions/{extraction_id}": {
       "sdkMethod": "get",
-      "service": "extractions"
-    },
-    "DELETE /v1/extractions/{extraction_id}": {
-      "sdkMethod": "delete",
       "service": "extractions"
     },
     "POST /v1/extractions/{extraction_id}/cancel": {
@@ -864,10 +852,6 @@
       "sdkMethod": "get",
       "service": "parses"
     },
-    "DELETE /v1/parses/{parse_id}": {
-      "sdkMethod": "delete",
-      "service": "parses"
-    },
     "POST /v1/parses/{parse_id}/cancel": {
       "sdkMethod": "cancel",
       "service": "parses"
@@ -882,10 +866,6 @@
     },
     "GET /v1/partitions/{partition_id}": {
       "sdkMethod": "get",
-      "service": "partitions"
-    },
-    "DELETE /v1/partitions/{partition_id}": {
-      "sdkMethod": "delete",
       "service": "partitions"
     },
     "POST /v1/partitions/{partition_id}/cancel": {
@@ -930,10 +910,6 @@
     },
     "GET /v1/splits/{split_id}": {
       "sdkMethod": "get",
-      "service": "splits"
-    },
-    "DELETE /v1/splits/{split_id}": {
-      "sdkMethod": "delete",
       "service": "splits"
     },
     "POST /v1/splits/{split_id}/cancel": {

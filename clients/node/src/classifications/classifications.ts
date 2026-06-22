@@ -92,16 +92,6 @@ export class Classifications {
     return deserializeClassification(__wire);
   }
 
-  /** Delete Classification */
-  async delete(classificationId: string): Promise<void> {
-    await this.client.request<unknown>({
-      method: 'DELETE',
-      path: `/v1/classifications/${classificationId}`,
-      query: undefined,
-      body: undefined,
-    });
-  }
-
   /** Cancel Classification */
   async create_classification_cancel(classificationId: string): Promise<Classification> {
     const __wire = await this.client.request<ClassificationResponse>({

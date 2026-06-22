@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "java",
-  "generatedAt": "1970-01-01T00:00:00.000Z",
+  "generatedAt": "2026-06-22T22:42:32.012Z",
   "files": [
     "build.gradle.kts",
     "checkstyle.xml",
@@ -460,10 +460,6 @@
       "sdkMethod": "get",
       "service": "classifications"
     },
-    "DELETE /v1/classifications/{classification_id}": {
-      "sdkMethod": "delete",
-      "service": "classifications"
-    },
     "POST /v1/classifications/{classification_id}/cancel": {
       "sdkMethod": "createCancel",
       "service": "classifications"
@@ -478,10 +474,6 @@
     },
     "GET /v1/edits/{edit_id}": {
       "sdkMethod": "get",
-      "service": "edits"
-    },
-    "DELETE /v1/edits/{edit_id}": {
-      "sdkMethod": "delete",
       "service": "edits"
     },
     "POST /v1/edits/{edit_id}/cancel": {
@@ -522,10 +514,6 @@
     },
     "GET /v1/extractions/{extraction_id}": {
       "sdkMethod": "get",
-      "service": "extractions"
-    },
-    "DELETE /v1/extractions/{extraction_id}": {
-      "sdkMethod": "delete",
       "service": "extractions"
     },
     "POST /v1/extractions/{extraction_id}/cancel": {
@@ -580,10 +568,6 @@
       "sdkMethod": "get",
       "service": "parses"
     },
-    "DELETE /v1/parses/{parse_id}": {
-      "sdkMethod": "delete",
-      "service": "parses"
-    },
     "POST /v1/parses/{parse_id}/cancel": {
       "sdkMethod": "cancel",
       "service": "parses"
@@ -598,10 +582,6 @@
     },
     "GET /v1/partitions/{partition_id}": {
       "sdkMethod": "get",
-      "service": "partitions"
-    },
-    "DELETE /v1/partitions/{partition_id}": {
-      "sdkMethod": "delete",
       "service": "partitions"
     },
     "POST /v1/partitions/{partition_id}/cancel": {
@@ -646,10 +626,6 @@
     },
     "GET /v1/splits/{split_id}": {
       "sdkMethod": "get",
-      "service": "splits"
-    },
-    "DELETE /v1/splits/{split_id}": {
-      "sdkMethod": "delete",
       "service": "splits"
     },
     "POST /v1/splits/{split_id}/cancel": {
@@ -842,47 +818,47 @@
     },
     "GET /v1/workflows/evals": {
       "sdkMethod": "list",
-      "service": "workflows.evals"
+      "service": "workflowEvals"
     },
     "POST /v1/workflows/evals": {
       "sdkMethod": "create",
-      "service": "workflows.evals"
+      "service": "workflowEvals"
     },
     "GET /v1/workflows/evals/{eval_id}": {
       "sdkMethod": "get",
-      "service": "workflows.evals"
+      "service": "workflowEvals"
     },
     "PATCH /v1/workflows/evals/{eval_id}": {
       "sdkMethod": "update",
-      "service": "workflows.evals"
+      "service": "workflowEvals"
     },
     "DELETE /v1/workflows/evals/{eval_id}": {
       "sdkMethod": "delete",
-      "service": "workflows.evals"
+      "service": "workflowEvals"
     },
     "GET /v1/workflows/evals/results": {
       "sdkMethod": "list",
-      "service": "workflows.evals.results"
+      "service": "workflowEvalRunResults"
     },
     "GET /v1/workflows/evals/results/{result_id}": {
       "sdkMethod": "get",
-      "service": "workflows.evals.results"
+      "service": "workflowEvalRunResults"
     },
     "GET /v1/workflows/evals/runs": {
       "sdkMethod": "list",
-      "service": "workflows.evals.runs"
+      "service": "workflowEvalRuns"
     },
     "POST /v1/workflows/evals/runs": {
       "sdkMethod": "create",
-      "service": "workflows.evals.runs"
+      "service": "workflowEvalRuns"
     },
     "GET /v1/workflows/evals/runs/{run_id}": {
       "sdkMethod": "get",
-      "service": "workflows.evals.runs"
+      "service": "workflowEvalRuns"
     },
     "POST /v1/workflows/evals/runs/{run_id}/cancel": {
       "sdkMethod": "cancel",
-      "service": "workflows.evals.runs"
+      "service": "workflowEvalRuns"
     },
     "GET /v1/workflows/experiments": {
       "sdkMethod": "list",

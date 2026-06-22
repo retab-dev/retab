@@ -145,23 +145,6 @@ module Retab
       result
     end
 
-    # Delete Parse
-    # @param parse_id [String]
-    # @param request_options [Hash] (see Retab::Types::RequestOptions)
-    # @return [void]
-    def delete(
-      parse_id:,
-      request_options: {}
-    )
-      @client.request(
-        method: :delete,
-        path: "/v1/parses/#{Retab::Util.encode_path(parse_id)}",
-        auth: true,
-        request_options: request_options
-      )
-      nil
-    end
-
     # Cancel Parse
     # @param parse_id [String]
     # @param request_options [Hash] (see Retab::Types::RequestOptions)

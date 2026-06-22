@@ -145,28 +145,6 @@ class Classifications
     }
 
     /**
-     * Delete Classification
-     *
-     * Delete a classification.
-     *
-     * Permanently deletes the classification identified by `classification_id`.
-     * Responds with 204 on success, or 404 if no such classification exists.
-     * @param string $classificationId
-     * @return void
-     * @throws \Retab\Exception\RetabException
-     */
-    public function delete(
-        string $classificationId,
-        ?\Retab\RequestOptions $options = null,
-    ): void {
-        $this->client->request(
-            method: 'DELETE',
-            path: 'v1/classifications/' . rawurlencode($classificationId),
-            options: $options,
-        );
-    }
-
-    /**
      * Cancel Classification
      * @param string $classificationId
      * @return \Retab\Resource\Classification

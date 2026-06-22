@@ -32,13 +32,6 @@ class EditsTest < Minitest::Test
     refute_nil(result)
   end
 
-  def test_delete_returns_expected_result
-    stub_request(:delete, %r{\Ahttps://api\.retab\.com/v1/edits/stub(\?|\z)})
-      .to_return(body: "{}", status: 200)
-    result = @client.edits.delete(edit_id: "stub")
-    assert_nil(result)
-  end
-
   def test_create_edit_cancel_returns_expected_result
     stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/edits/stub/cancel(\?|\z)})
       .to_return(body: "{}", status: 200)
@@ -51,7 +44,6 @@ class EditsTest < Minitest::Test
     {name: :list, verb: :get, url: %r{\Ahttps://api\.retab\.com/v1/edits(\?|\z)}},
     {name: :create, verb: :post, url: %r{\Ahttps://api\.retab\.com/v1/edits(\?|\z)}, args: {instructions: "stub"}},
     {name: :get, verb: :get, url: %r{\Ahttps://api\.retab\.com/v1/edits/stub(\?|\z)}, args: {edit_id: "stub"}},
-    {name: :delete, verb: :delete, url: %r{\Ahttps://api\.retab\.com/v1/edits/stub(\?|\z)}, args: {edit_id: "stub"}},
     {
       name: :create_edit_cancel,
       verb: :post,

@@ -52,14 +52,6 @@ module Retab
       params(
         classification_id: String,
         request_options: T::Hash[Symbol, T.untyped]
-      ).returns(NilClass)
-    end
-    def delete(classification_id:, request_options:); end
-
-    sig do
-      params(
-        classification_id: String,
-        request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::Classification)
     end
     def create_classification_cancel(classification_id:, request_options:); end

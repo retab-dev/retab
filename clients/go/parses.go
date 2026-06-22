@@ -122,19 +122,6 @@ func (s *ParseService) Get(ctx context.Context, parseID string, params *ParsesGe
 	return &result, nil
 }
 
-// Delete parse
-// Delete a parse.
-// Permanently deletes the parse identified by `parse_id` in the authenticated
-// environment. Returns `204` with no body on success, or `404` if the parse does not
-// exist.
-func (s *ParseService) Delete(ctx context.Context, parseID string, opts ...RequestOption) error {
-	if parseID == "" {
-		return fmt.Errorf("retab: parse_id is required")
-	}
-	_, err := s.client.request(ctx, "DELETE", fmt.Sprintf("/v1/parses/%s", url.PathEscape(parseID)), nil, nil, nil, opts)
-	return err
-}
-
 // Cancel parse
 func (s *ParseService) Cancel(ctx context.Context, parseID string, opts ...RequestOption) (*Parse, error) {
 	if parseID == "" {

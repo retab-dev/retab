@@ -237,23 +237,6 @@ module Retab
       result
     end
 
-    # Delete Extraction
-    # @param extraction_id [String]
-    # @param request_options [Hash] (see Retab::Types::RequestOptions)
-    # @return [void]
-    def delete(
-      extraction_id:,
-      request_options: {}
-    )
-      @client.request(
-        method: :delete,
-        path: "/v1/extractions/#{Retab::Util.encode_path(extraction_id)}",
-        auth: true,
-        request_options: request_options
-      )
-      nil
-    end
-
     # Cancel Extraction
     # @param extraction_id [String]
     # @param request_options [Hash] (see Retab::Types::RequestOptions)

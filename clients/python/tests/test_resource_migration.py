@@ -54,15 +54,16 @@ def _request_params(request: PreparedRequest) -> dict[str, object]:
     return cast(dict[str, object], request.params)
 
 
-def test_extractions_delete_uses_new_resource_route() -> None:
+def test_extractions_get_uses_new_resource_route() -> None:
     def fake_prepared_request(request: object) -> dict[str, object]:
-        return {}
+        return {"id": "extr_123", "status": "completed"}
 
     client, rec = mock_retab(fake_prepared_request)
     with client:
-        client.extractions.delete("extr_123")
+        client.extractions.get("extr_123")
 
     assert getattr(rec.request, "url") == "/v1/extractions/extr_123"
+    assert getattr(rec.request, "method") == "GET"
 
 
 def test_extractions_create_exposes_stream_argument() -> None:
@@ -451,26 +452,21 @@ def test_resource_list_builders_include_filename_filters() -> None:
         assert _request_params(client.extractions.prepare_list(filename="invoice.pdf"))["filename"] == "invoice.pdf"
 
 
-def test_partitions_list_and_delete_use_resource_routes() -> None:
+def test_partitions_list_uses_resource_route() -> None:
     def fake_prepared_request(request: object) -> dict[str, object]:
-        if getattr(request, "method") == "GET":
-            return {"data": [], "list_metadata": {"before": None, "after": None}}
-        return {}
+        return {"data": [], "list_metadata": {"before": None, "after": None}}
 
     client, rec = mock_retab(fake_prepared_request)
     with client:
         page = client.partitions.list(limit=5, filename="invoice.pdf")
-        client.partitions.delete("prtn_123")
 
     assert len(page.data) == 0
-    assert getattr(rec.requests[0], "url") == "/v1/partitions"
-    assert getattr(rec.requests[0], "params") == {
+    assert getattr(rec.request, "url") == "/v1/partitions"
+    assert getattr(rec.request, "params") == {
         "limit": 5,
         "order": "desc",
         "filename": "invoice.pdf",
     }
-    assert getattr(rec.requests[1], "url") == "/v1/partitions/prtn_123"
-    assert getattr(rec.requests[1], "method") == "DELETE"
 
 
 def test_splits_create_uses_new_resource_route() -> None:

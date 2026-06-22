@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "dotnet",
-  "generatedAt": "2026-06-19T13:00:31.509Z",
+  "generatedAt": "2026-06-22T22:42:07.423Z",
   "files": [
     "README.md",
     "Retab.csproj",
@@ -376,10 +376,6 @@
       "sdkMethod": "GetAsync",
       "service": "classifications"
     },
-    "DELETE /v1/classifications/{classification_id}": {
-      "sdkMethod": "DeleteAsync",
-      "service": "classifications"
-    },
     "POST /v1/classifications/{classification_id}/cancel": {
       "sdkMethod": "CreateCancelAsync",
       "service": "classifications"
@@ -394,10 +390,6 @@
     },
     "GET /v1/edits/{edit_id}": {
       "sdkMethod": "GetAsync",
-      "service": "edits"
-    },
-    "DELETE /v1/edits/{edit_id}": {
-      "sdkMethod": "DeleteAsync",
       "service": "edits"
     },
     "POST /v1/edits/{edit_id}/cancel": {
@@ -438,10 +430,6 @@
     },
     "GET /v1/extractions/{extraction_id}": {
       "sdkMethod": "GetAsync",
-      "service": "extractions"
-    },
-    "DELETE /v1/extractions/{extraction_id}": {
-      "sdkMethod": "DeleteAsync",
       "service": "extractions"
     },
     "POST /v1/extractions/{extraction_id}/cancel": {
@@ -496,10 +484,6 @@
       "sdkMethod": "GetAsync",
       "service": "parses"
     },
-    "DELETE /v1/parses/{parse_id}": {
-      "sdkMethod": "DeleteAsync",
-      "service": "parses"
-    },
     "POST /v1/parses/{parse_id}/cancel": {
       "sdkMethod": "CancelAsync",
       "service": "parses"
@@ -514,10 +498,6 @@
     },
     "GET /v1/partitions/{partition_id}": {
       "sdkMethod": "GetAsync",
-      "service": "partitions"
-    },
-    "DELETE /v1/partitions/{partition_id}": {
-      "sdkMethod": "DeleteAsync",
       "service": "partitions"
     },
     "POST /v1/partitions/{partition_id}/cancel": {
@@ -562,10 +542,6 @@
     },
     "GET /v1/splits/{split_id}": {
       "sdkMethod": "GetAsync",
-      "service": "splits"
-    },
-    "DELETE /v1/splits/{split_id}": {
-      "sdkMethod": "DeleteAsync",
       "service": "splits"
     },
     "POST /v1/splits/{split_id}/cancel": {

@@ -95,26 +95,6 @@ namespace Retab
             return this.GetAsync(classificationId, options, requestOptions, cancellationToken);
         }
 
-        /// <summary>Delete Classification</summary>
-        /// <remarks>
-        /// Delete a classification.
-        /// Permanently deletes the classification identified by `classification_id`.
-        /// Responds with 204 on success, or 404 if no such classification exists.
-        /// </remarks>
-        /// <param name="classificationId">The classification id.</param>
-        /// <param name="requestOptions">Per-request configuration overrides.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        public virtual async Task DeleteAsync(string classificationId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
-        {
-            await this.DeleteAsync($"/v1/classifications/{Uri.EscapeDataString(classificationId)}", null, requestOptions, cancellationToken);
-        }
-
-        /// <summary>Compatibility wrapper for <see cref="DeleteAsync"/>.</summary>
-        public virtual Task Delete(string classificationId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
-        {
-            return this.DeleteAsync(classificationId, requestOptions, cancellationToken);
-        }
-
         /// <summary>Cancel Classification</summary>
         /// <param name="classificationId">The classification id.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>

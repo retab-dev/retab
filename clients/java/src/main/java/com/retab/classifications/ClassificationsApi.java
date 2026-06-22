@@ -175,27 +175,6 @@ public final class ClassificationsApi {
     return client.getObjectMapper().readValue(response.body(), Classification.class);
   }
 
-  public Object delete(String classificationId) throws IOException, InterruptedException {
-    String path = "/v1/classifications/" + encodePathSegment(classificationId);
-    StringBuilder query = new StringBuilder();
-    URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
-    HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
-    HttpRequest.Builder requestBuilder =
-        HttpRequest.newBuilder(uri)
-            .header("Accept", "application/json")
-            .header("Authorization", "Bearer " + client.getApiKey());
-    HttpRequest httpRequest = requestBuilder.method("DELETE", publisher).build();
-    HttpResponse<String> response =
-        client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
-    if (response.statusCode() < 200 || response.statusCode() >= 300) {
-      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
-    }
-    if (response.body() == null || response.body().isBlank()) {
-      return null;
-    }
-    return client.getObjectMapper().readValue(response.body(), Object.class);
-  }
-
   public Classification createCancel(String classificationId)
       throws IOException, InterruptedException {
     String path = "/v1/classifications/" + encodePathSegment(classificationId) + "/cancel";

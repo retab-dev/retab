@@ -171,43 +171,6 @@ from a specific template. Page by edit id with ` + "`--before`" + ` /
 	}),
 }
 
-var editsDeleteCmd = &cobra.Command{
-	Use:   "delete <edit-id>",
-	Short: "Delete an edit",
-	Long: `Permanently delete an edit.
-
-Destructive and irreversible. The source document and any referenced
-template are not affected. Take a backup with ` + "`retab edits get`" + ` first
-if you may need it.
-
-This is destructive. Pass ` + "`--yes`" + ` to skip the confirmation prompt
-in scripts and CI — otherwise the command refuses to delete when stdin
-is not a terminal.`,
-	Example: `  # Back up, then delete
-  retab edits get edit_xyz789 > backup.json
-  retab edits delete edit_xyz789
-
-  # Skip the prompt in scripts
-  retab edits delete edit_xyz789 --yes`,
-	Args: cobra.ExactArgs(1),
-	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		if err := confirmDestructive(cmd, "edit", args[0]); err != nil {
-			return err
-		}
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		if err := client.Edits.Delete(ctx, args[0]); err != nil {
-			return err
-		}
-		confirmDeleted("edit", args[0])
-		return nil
-	}),
-}
-
 var editsCancelCmd = &cobra.Command{
 	Use:   "cancel <edit-id>",
 	Short: "Cancel an edit",
@@ -578,13 +541,12 @@ func init() {
 	editsTemplatesUpdateCmd.Flags().String("name", "", "update template name")
 	editsTemplatesUpdateCmd.Flags().String("form-fields-file", "", "JSON array of form_fields with key, description, type, and bbox (or - for stdin)")
 
-	editsDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
 	editsTemplatesDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
 
 	editsTemplatesCmd.AddCommand(editsTemplatesCreateCmd, editsTemplatesGetCmd, editsTemplatesListCmd, editsTemplatesUpdateCmd, editsTemplatesDeleteCmd)
 	editsWaitCmd := primitiveWaitCommand(editWaitSpec)
 	addPrimitiveWaitTuningFlags(editsWaitCmd, false)
 
-	editsCmd.AddCommand(editsCreateCmd, editsGetCmd, editsListCmd, editsCancelCmd, editsDeleteCmd, editsWaitCmd, editsTemplatesCmd)
+	editsCmd.AddCommand(editsCreateCmd, editsGetCmd, editsListCmd, editsCancelCmd, editsWaitCmd, editsTemplatesCmd)
 	rootCmd.AddCommand(editsCmd)
 }

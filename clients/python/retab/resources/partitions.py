@@ -139,15 +139,6 @@ class PartitionsMixin:
         data = None
         return PreparedRequest(method="GET", url=f"/v1/partitions/{partition_id}", params=params or None, data=data)
 
-    def prepare_delete(self, partition_id: str, **extra_params: Any) -> PreparedRequest:
-        """Delete Partition Delete a partition. Permanently deletes the partition identified by `partition_id` in the authenticated environment. Returns `204` with no body on success, or `404` if the partition does not exist."""
-        params: dict[str, Any] = {}
-        if extra_params:
-            params.update(extra_params)
-        params = {k: v for k, v in params.items() if v is not None}
-        data = None
-        return PreparedRequest(method="DELETE", url=f"/v1/partitions/{partition_id}", params=params or None, data=data)
-
     def prepare_create_partition_cancel(self, partition_id: str, **extra_params: Any) -> PreparedRequest:
         """Cancel Partition"""
         params: dict[str, Any] = {}
@@ -215,12 +206,6 @@ class Partitions(SyncAPIResource, PartitionsMixin):
         response = self._client._prepared_request(prepared_request)
         return Partition.model_validate(response)
 
-    def delete(self, partition_id: str, **extra_params: Any) -> None:
-        """Delete Partition Delete a partition. Permanently deletes the partition identified by `partition_id` in the authenticated environment. Returns `204` with no body on success, or `404` if the partition does not exist."""
-        prepared_request = self.prepare_delete(partition_id, **extra_params)
-        self._client._prepared_request(prepared_request)
-        return None
-
     def create_partition_cancel(self, partition_id: str, **extra_params: Any) -> Partition:
         """Cancel Partition"""
         prepared_request = self.prepare_create_partition_cancel(partition_id, **extra_params)
@@ -284,12 +269,6 @@ class AsyncPartitions(AsyncAPIResource, PartitionsMixin):
         prepared_request = self.prepare_get(partition_id, include_output=include_output, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return Partition.model_validate(response)
-
-    async def delete(self, partition_id: str, **extra_params: Any) -> None:
-        """Delete Partition Delete a partition. Permanently deletes the partition identified by `partition_id` in the authenticated environment. Returns `204` with no body on success, or `404` if the partition does not exist."""
-        prepared_request = self.prepare_delete(partition_id, **extra_params)
-        await self._client._prepared_request(prepared_request)
-        return None
 
     async def create_partition_cancel(self, partition_id: str, **extra_params: Any) -> Partition:
         """Cancel Partition"""

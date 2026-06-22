@@ -1,7 +1,6 @@
 # pyright: reportArgumentType=false, reportCallIssue=false
 from __future__ import annotations
 
-import contextlib
 import datetime
 import os
 import time
@@ -13,7 +12,7 @@ import pytest
 from pydantic import ValidationError as PydanticValidationError
 
 from retab import AsyncRetab, Retab
-from retab.exceptions import InternalServerError, NotFoundError, ValidationError as RetabValidationError
+from retab.exceptions import InternalServerError, ValidationError as RetabValidationError
 from retab.types.classifications import Classification
 from retab.types.edits import Edit
 from retab.types.extractions import Extraction, SourcesResponse
@@ -96,23 +95,6 @@ def _wait_for_list_contains(
         time.sleep(poll_interval_seconds)
 
 
-def _assert_deleted(
-    getter: Callable[[str], object],
-    resource_id: str,
-    timeout_seconds: float = 15.0,
-    poll_interval_seconds: float = 0.5,
-) -> None:
-    deadline = time.monotonic() + timeout_seconds
-    while True:
-        try:
-            getter(resource_id)
-        except NotFoundError:
-            return
-        if time.monotonic() >= deadline:
-            raise AssertionError(f"Timed out waiting for resource deletion: {resource_id}")
-        time.sleep(poll_interval_seconds)
-
-
 def _assert_list_contains(page: PaginatedList | AsyncPaginatedList, target_id: str) -> None:
     assert any(_item_id(item) == target_id for item in page.data), f"{target_id} not found in list response"
 
@@ -143,8 +125,6 @@ def created_parse(api_keys, booking_confirmation_file_path_1: str) -> Iterable[P
     try:
         yield parse
     finally:
-        with contextlib.suppress(Exception):
-            client.parses.delete(parse.id)
         client.close()
 
 
@@ -166,8 +146,6 @@ def created_extraction(
     try:
         yield extraction
     finally:
-        with contextlib.suppress(Exception):
-            client.extractions.delete(extraction.id)
         client.close()
 
 
@@ -185,8 +163,6 @@ def created_split(api_keys) -> Iterable[Split]:
     try:
         yield split
     finally:
-        with contextlib.suppress(Exception):
-            client.splits.delete(split.id)
         client.close()
 
 
@@ -204,8 +180,6 @@ def created_classification(api_keys) -> Iterable[Classification]:
     try:
         yield classification
     finally:
-        with contextlib.suppress(Exception):
-            client.classifications.delete(classification.id)
         client.close()
 
 
@@ -223,8 +197,6 @@ def created_edit(api_keys) -> Iterable[Edit]:
     try:
         yield edit
     finally:
-        with contextlib.suppress(Exception):
-            client.edits.delete(edit.id)
         client.close()
 
 
@@ -241,14 +213,6 @@ def test_parses_resource_crud(sync_client: Retab, created_parse: Parse, booking_
             created_parse.id,
         )
         _assert_list_contains(page, created_parse.id)
-
-        temp = client.parses.create(
-            document=booking_confirmation_file_path_1,
-            model="retab-micro",
-            table_parsing_format="html",
-        )
-        client.parses.delete(temp.id)
-        _assert_deleted(client.parses.get, temp.id)
 
 
 @pytest.mark.asyncio
@@ -278,13 +242,6 @@ def test_extractions_resource_crud(
             created_extraction.id,
         )
         _assert_list_contains(page, created_extraction.id)
-
-        temp = client.extractions.create(
-            document=booking_confirmation_file_path_2,
-            json_schema=booking_confirmation_json_schema,
-            model="retab-micro",
-        )
-        client.extractions.delete(temp.id)
 
 
 def test_extractions_sources_returns_provenance(sync_client: Retab, created_extraction: Extraction) -> None:
@@ -321,17 +278,6 @@ def test_splits_resource_crud(sync_client: Retab, created_split: Split) -> None:
             created_split.id,
         )
         _assert_list_contains(page, created_split.id)
-
-        temp = client.splits.create(
-            document=_fidelity_form_path(),
-            model="retab-micro",
-            subdocuments=_split_subdocuments(),
-        )
-        try:
-            client.splits.delete(temp.id)
-        except Exception as exc:
-            pytest.skip(f"/v1/splits/{{id}} delete unavailable in local stack: {exc}")
-        _assert_deleted(client.splits.get, temp.id)
 
 
 @pytest.mark.asyncio
@@ -407,14 +353,6 @@ def test_edits_resource_crud(sync_client: Retab, created_edit: Edit) -> None:
             created_edit.id,
         )
         _assert_list_contains(page, created_edit.id)
-
-        temp = client.edits.create(
-            document=_fidelity_form_path(),
-            instructions=_fidelity_instructions(),
-            model="retab-micro",
-        )
-        client.edits.delete(temp.id)
-        _assert_deleted(client.edits.get, temp.id)
 
 
 @pytest.mark.asyncio

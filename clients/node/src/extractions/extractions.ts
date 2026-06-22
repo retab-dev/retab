@@ -146,16 +146,6 @@ export class Extractions {
     return deserializeExtraction(__wire);
   }
 
-  /** Delete Extraction */
-  async delete(extractionId: string): Promise<void> {
-    await this.client.request<unknown>({
-      method: 'DELETE',
-      path: `/v1/extractions/${extractionId}`,
-      query: undefined,
-      body: undefined,
-    });
-  }
-
   /** Cancel Extraction */
   async create_extraction_cancel(extractionId: string): Promise<Extraction> {
     const __wire = await this.client.request<ExtractionResponse>({

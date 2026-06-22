@@ -80,16 +80,6 @@ export class Splits {
     return deserializeSplit(__wire);
   }
 
-  /** Delete Split */
-  async delete(splitId: string): Promise<void> {
-    await this.client.request<unknown>({
-      method: 'DELETE',
-      path: `/v1/splits/${splitId}`,
-      query: undefined,
-      body: undefined,
-    });
-  }
-
   /** Cancel Split */
   async create_split_cancel(splitId: string): Promise<Split> {
     const __wire = await this.client.request<SplitResponse>({
