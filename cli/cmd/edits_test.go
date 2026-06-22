@@ -266,6 +266,14 @@ func TestEditTemplatesUpdateReadsFormFieldsBeforeCredentials(t *testing.T) {
 	}
 }
 
+func TestEditTemplatesListDoesNotExposeUnsupportedFileDateFilters(t *testing.T) {
+	for _, name := range []string{"filename", "from-date", "to-date"} {
+		if editsTemplatesListCmd.Flags().Lookup(name) != nil {
+			t.Fatalf("edits templates list should not expose --%s", name)
+		}
+	}
+}
+
 // TestEditsCreateOmitsEmptyOptionalFields pins that unset optional fields are
 // omitted from the request, not sent as empty strings. A non-nil *string("")
 // survives omitempty, so template_id:"" on a document-only edit could trip the

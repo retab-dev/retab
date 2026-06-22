@@ -149,6 +149,9 @@ from a specific template. Page by edit id with ` + "`--before`" + ` /
   # Only edits made against a specific template
   retab edits list --template-id tmpl_abc123 --limit 50`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		if err := validateBeforeAfterMutex(cmd); err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
@@ -156,6 +159,7 @@ from a specific template. Page by edit id with ` + "`--before`" + ` /
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
 		params := retab.EditsListParams{PaginationParams: collectListParams(cmd)}
+		params.Filename, params.FromDate, params.ToDate = collectFileDateListFilters(cmd)
 		if templateID, _ := cmd.Flags().GetString("template-id"); templateID != "" {
 			params.TemplateID = ptr(templateID)
 		}
@@ -556,7 +560,7 @@ func init() {
 	_ = editsTemplatesCreateCmd.MarkFlagRequired("name")
 	_ = editsTemplatesCreateCmd.MarkFlagRequired("form-fields-file")
 
-	addListFlags(editsTemplatesListCmd, false)
+	addListFlags(editsTemplatesListCmd, true)
 	editsTemplatesListCmd.Flags().String("name", "", "filter by template name")
 
 	editsTemplatesUpdateCmd.Flags().String("name", "", "update template name")

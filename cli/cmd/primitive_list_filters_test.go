@@ -17,6 +17,7 @@ func TestPrimitiveListCommandsForwardFilterFlags(t *testing.T) {
 		path string
 	}{
 		{name: "parses", cmd: parsesListCmd, path: "/v1/parses"},
+		{name: "edits", cmd: editsListCmd, path: "/v1/edits"},
 		{name: "classifications", cmd: classificationsListCmd, path: "/v1/classifications"},
 		{name: "splits", cmd: splitsListCmd, path: "/v1/splits"},
 	}
