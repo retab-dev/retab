@@ -688,6 +688,80 @@ func TestReviewsApproveSendsVersionID(t *testing.T) {
 	}
 }
 
+// TestReviewsApproveResolvesLatestVersionAcrossPages guards the auto-resolve
+// path (no --version-id): the latest-by-created_at version must be found even
+// when it lives on a page after the first. The server returns the older
+// version on page 1 (with an `after` cursor) and the newer version on page 2;
+// a first-page-only scan would approve the stale older version.
+func TestReviewsApproveResolvesLatestVersionAcrossPages(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	const olderVersionID = "rvr_AAAAAAAAAAAAAAAAAAAAAAAAAA"
+	const newerVersionID = "rvr_BBBBBBBBBBBBBBBBBBBBBBBBBB"
+
+	olderVersion := map[string]any{
+		"id": olderVersionID, "review_id": "rev_1", "parent_id": nil,
+		"author":     map[string]any{"kind": "model", "id": "m", "display_name": "Model"},
+		"snapshot":   map[string]any{"output": map[string]any{"v": 1}},
+		"note":       nil,
+		"created_at": "2026-05-18T09:00:00Z",
+	}
+	newerVersion := map[string]any{
+		"id": newerVersionID, "review_id": "rev_1", "parent_id": olderVersionID,
+		"author":     map[string]any{"kind": "model", "id": "m", "display_name": "Model"},
+		"snapshot":   map[string]any{"output": map[string]any{"v": 2}},
+		"note":       nil,
+		"created_at": "2026-05-18T10:00:00Z",
+	}
+
+	var approveBody map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case r.URL.Path == "/v1/workflows/reviews/versions":
+			if r.URL.Query().Get("after") == "" {
+				_ = json.NewEncoder(w).Encode(map[string]any{
+					"data":          []any{olderVersion},
+					"list_metadata": map[string]any{"before": nil, "after": "cursor1"},
+				})
+				return
+			}
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"data":          []any{newerVersion},
+				"list_metadata": map[string]any{"before": nil, "after": nil},
+			})
+		case r.URL.Path == "/v1/workflows/reviews/rev_1/approve":
+			raw, _ := io.ReadAll(r.Body)
+			_ = json.Unmarshal(raw, &approveBody)
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"submission_status": "accepted",
+				"review":            reviewOverlayBody(reviewDecisionBody("approved", newerVersionID)),
+			})
+		default:
+			http.Error(w, "unexpected path "+r.URL.Path, http.StatusNotFound)
+		}
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	cmd := newApproveTestCmd()
+	stdout, stderr := captureStd(t, func() {
+		if err := cmd.RunE(cmd, []string{"rev_1"}); err != nil {
+			t.Fatalf("reviews approve: %v", err)
+		}
+	})
+	if stderr != "" {
+		t.Fatalf("stderr = %s", stderr)
+	}
+	if approveBody["version_id"] != newerVersionID {
+		t.Fatalf("approve must use the latest version across pages; body = %#v", approveBody)
+	}
+	if !strings.Contains(stdout, "accepted") {
+		t.Fatalf("stdout = %s", stdout)
+	}
+}
+
 func TestReviewsApproveTableRendersConciseDecisionResponse(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
