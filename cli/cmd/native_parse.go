@@ -372,15 +372,27 @@ func parseSheetRows(f *zip.File, shared *xlsxSharedStrings) ([][]string, error) 
 	for _, row := range sx.Rows {
 		// Place cells by their column ref so gaps stay aligned.
 		maxCol := 0
+		// implicitCol tracks the last placed column so a cell whose `r`
+		// attribute is omitted lands in the next column, mirroring the
+		// implicit-row handling below. The OOXML spec makes the cell `r`
+		// optional (an absent ref means "the column after the previous
+		// cell"); some writers omit it entirely. Without this, every such
+		// cell resolved to column 0 and was dropped, so a sheet written
+		// without cell refs parsed as completely empty.
+		implicitCol := 0
 		cells := map[int]string{}
 		for _, c := range row.Cells {
 			col := 0
 			if m := cellRefPattern.FindStringSubmatch(c.R); m != nil {
 				col = colIndex(m[1])
 			}
-			if col == 0 || col > maxExcelColumns {
+			if col <= 0 {
+				col = implicitCol + 1
+			}
+			if col > maxExcelColumns {
 				continue
 			}
+			implicitCol = col
 			value := c.V
 			switch c.T {
 			case "s":

@@ -227,6 +227,32 @@ func TestParseXLSXFileHonorsSparseRowNumbers(t *testing.T) {
 	}
 }
 
+// The OOXML cell `r` attribute is optional: an absent ref means "the column
+// after the previous cell". Some writers omit it entirely. Before the fix
+// every such cell resolved to column 0 and was dropped, so a sheet written
+// without cell refs parsed as completely empty. The parser must place
+// ref-less cells in document order, mirroring the implicit-row handling.
+func TestParseXLSXFileHonorsImplicitCellRefs(t *testing.T) {
+	path := writeImplicitRefTestXLSX(t)
+	res, err := loadParse(context.Background(), path, kindSpreadsheet, "", defaultParseOptions(), false)
+	if err != nil {
+		t.Fatalf("loadParse: %v", err)
+	}
+	if len(res.Sheets) != 1 {
+		t.Fatalf("want 1 sheet, got %d", len(res.Sheets))
+	}
+	rows := res.Sheets[0].Rows
+	if len(rows) != 2 {
+		t.Fatalf("want 2 rows, got %d: %v", len(rows), rows)
+	}
+	if len(rows[0]) < 2 || rows[0][0] != "Item" || rows[0][1] != "Cost" {
+		t.Fatalf("row 1 = %v, want [Item Cost]", rows[0])
+	}
+	if len(rows[1]) < 2 || rows[1][0] != "Rent" || rows[1][1] != "1200" {
+		t.Fatalf("row 2 = %v, want [Rent 1200]", rows[1])
+	}
+}
+
 func TestParseDocxFile(t *testing.T) {
 	path := writeTestDOCX(t)
 	res, err := loadParse(context.Background(), path, kindDocx, "", defaultParseOptions(), false)
@@ -874,6 +900,53 @@ func writeSparseTestXLSX(t *testing.T) string {
   <sheetData>
     <row r="1"><c r="A1" t="s"><v>0</v></c><c r="B1" t="s"><v>1</v></c></row>
     <row r="4"><c r="A4" t="s"><v>2</v></c><c r="B4"><v>1200</v></c></row>
+  </sheetData>
+</worksheet>`)
+	if err := zw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, buf.Bytes(), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	return path
+}
+
+// writeImplicitRefTestXLSX builds a sheet whose cells omit the optional `r`
+// attribute (only the rows carry `r`). Column position is then implied by
+// document order: first <c> = column A, next = column B, etc.
+func writeImplicitRefTestXLSX(t *testing.T) string {
+	t.Helper()
+	dir := t.TempDir()
+	path := filepath.Join(dir, "implicit.xlsx")
+	var buf bytes.Buffer
+	zw := zip.NewWriter(&buf)
+	add := func(name, content string) {
+		w, err := zw.Create(name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := w.Write([]byte(content)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	add("xl/workbook.xml", `<?xml version="1.0"?>
+<workbook xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <sheets><sheet name="Budget" sheetId="1" r:id="rId1"/></sheets>
+</workbook>`)
+	add("xl/_rels/workbook.xml.rels", `<?xml version="1.0"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Target="worksheets/sheet1.xml"/>
+</Relationships>`)
+	add("xl/sharedStrings.xml", `<?xml version="1.0"?>
+<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <si><t>Item</t></si><si><t>Cost</t></si><si><t>Rent</t></si>
+</sst>`)
+	// Cells carry no r attribute; column is implied by order.
+	add("xl/worksheets/sheet1.xml", `<?xml version="1.0"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <sheetData>
+    <row r="1"><c t="s"><v>0</v></c><c t="s"><v>1</v></c></row>
+    <row r="2"><c t="s"><v>2</v></c><c><v>1200</v></c></row>
   </sheetData>
 </worksheet>`)
 	if err := zw.Close(); err != nil {
