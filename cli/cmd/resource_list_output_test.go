@@ -20,6 +20,8 @@ func TestDocumentResourceListCommandsHonorOutputTable(t *testing.T) {
 		path string
 		id   string
 	}{
+		{name: "parses", cmd: parsesListCmd, path: "/v1/parses", id: "prs_123"},
+		{name: "extractions", cmd: extractionsListCmd, path: "/v1/extractions", id: "extr_123"},
 		{name: "classifications", cmd: classificationsListCmd, path: "/v1/classifications", id: "clas_123"},
 		{name: "splits", cmd: splitsListCmd, path: "/v1/splits", id: "splt_123"},
 		{name: "partitions", cmd: partitionsListCmd, path: "/v1/partitions", id: "part_123"},
@@ -43,6 +45,7 @@ func TestDocumentResourceListCommandsHonorOutputTable(t *testing.T) {
 					"data": []map[string]any{
 						{
 							"id":         tc.id,
+							"status":     "completed",
 							"model":      "retab-small",
 							"created_at": "2026-05-15T11:30:00Z",
 						},
@@ -76,10 +79,13 @@ func TestDocumentResourceListCommandsHonorOutputTable(t *testing.T) {
 			if strings.HasPrefix(strings.TrimSpace(stdout), "{") {
 				t.Fatalf("expected table output, got JSON:\n%s", stdout)
 			}
-			for _, want := range []string{"ID", "MODEL", "CREATED_AT", tc.id, "retab-small"} {
+			for _, want := range []string{"ID", "STATUS", "MODEL", "CREATED_AT", tc.id, "completed", "retab-small"} {
 				if !strings.Contains(stdout, want) {
 					t.Fatalf("expected %q in table output:\n%s", want, stdout)
 				}
+			}
+			if strings.Contains(stdout, "TYPE") {
+				t.Fatalf("primitive list table should render STATUS, not TYPE:\n%s", stdout)
 			}
 		})
 	}

@@ -427,6 +427,30 @@ func TestLitCLIParseArgs(t *testing.T) {
 	}
 }
 
+func TestLitCLIParseSurfacesOCRFailureOnSuccessfulExit(t *testing.T) {
+	dir := t.TempDir()
+	fakeLit := filepath.Join(dir, "lit")
+	script := `#!/bin/sh
+printf '{"pages":[{"page":1,"width":612,"height":792,"text":"","textItems":[]}]}'
+printf 'Error opening data file /tmp/home/tessdata/eng.traineddata\n' >&2
+printf 'Failed loading language '\''eng'\''\n' >&2
+printf '[ocr] failed for page 1: Failed to initialize Tesseract\n' >&2
+exit 0
+`
+	if err := os.WriteFile(fakeLit, []byte(script), 0o755); err != nil {
+		t.Fatalf("write fake lit: %v", err)
+	}
+
+	c := &litCLI{bin: fakeLit}
+	_, err := c.Parse(context.Background(), filepath.Join(dir, "doc.pdf"), ParseOptions{OCR: true, OCRLanguage: "eng", DPI: 150})
+	if err == nil {
+		t.Fatal("expected OCR stderr diagnostic to fail parse")
+	}
+	if got := err.Error(); !strings.Contains(got, "liteparse OCR failed") || !strings.Contains(got, "Failed to initialize Tesseract") {
+		t.Fatalf("error did not surface OCR diagnostic:\n%s", got)
+	}
+}
+
 // --- fake LiteParser end-to-end (pdf grep + inspect render) ----------------
 
 type fakeLiteParser struct {

@@ -149,7 +149,7 @@ Page by partition id with ` + "`--before`" + ` / ` + "`--after`" + `, cap page s
 		if err != nil {
 			return err
 		}
-		return printResult(cmd, result)
+		return printPrimitiveListResult(cmd, result)
 	}),
 }
 

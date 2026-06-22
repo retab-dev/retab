@@ -207,7 +207,7 @@ ascending and descending.`,
 		if err != nil {
 			return err
 		}
-		return printResult(cmd, result)
+		return printPrimitiveListResult(cmd, result)
 	}),
 }
 

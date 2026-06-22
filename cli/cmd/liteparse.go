@@ -243,18 +243,60 @@ func (c *litCLI) Parse(ctx context.Context, path string, opt ParseOptions) (*Par
 	var stderr strings.Builder
 	cmd.Stderr = &stderr
 	out, err := cmd.Output()
+	stderrText := stderr.String()
 	if err != nil {
-		msg := strings.TrimSpace(stderr.String())
+		msg := strings.TrimSpace(stderrText)
 		if msg == "" {
 			msg = err.Error()
 		}
 		return nil, fmt.Errorf("liteparse parse failed: %s", msg)
+	}
+	if msg := liteParseOCRFailure(stderrText); msg != "" {
+		return nil, fmt.Errorf("liteparse OCR failed: %s", msg)
 	}
 	var raw liteParseJSON
 	if err := json.Unmarshal(out, &raw); err != nil {
 		return nil, fmt.Errorf("decode liteparse json: %w", err)
 	}
 	return convertLiteParse(&raw), nil
+}
+
+func liteParseOCRFailure(stderrText string) string {
+	trimmed := strings.TrimSpace(stderrText)
+	if trimmed == "" {
+		return ""
+	}
+	lower := strings.ToLower(trimmed)
+	for _, marker := range []string{
+		"failed to initialize tesseract",
+		"tesseract couldn't load any languages",
+		"failed loading language",
+		"error opening data file",
+		"[ocr] failed",
+	} {
+		if strings.Contains(lower, marker) {
+			return firstDiagnosticLines(trimmed, 4)
+		}
+	}
+	return ""
+}
+
+func firstDiagnosticLines(text string, maxLines int) string {
+	if maxLines <= 0 {
+		maxLines = 1
+	}
+	var lines []string
+	for _, line := range strings.Split(text, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		lines = append(lines, line)
+		if len(lines) >= maxLines {
+			break
+		}
+	}
+	return strings.Join(lines, "\n")
 }
 
 // convertLiteParse maps the `lit` JSON into a ParseResult. document_type and

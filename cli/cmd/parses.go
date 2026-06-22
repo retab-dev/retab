@@ -146,7 +146,7 @@ Page by parse id with ` + "`--before`" + ` / ` + "`--after`" + `, cap page size 
 		if err != nil {
 			return err
 		}
-		return printResult(cmd, result)
+		return printPrimitiveListResult(cmd, result)
 	}),
 }
 

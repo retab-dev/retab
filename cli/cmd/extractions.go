@@ -216,7 +216,7 @@ to walk backwards. Filter by arbitrary tags set at create time with
 		if err != nil {
 			return err
 		}
-		return printResult(cmd, result)
+		return printPrimitiveListResult(cmd, result)
 	}),
 }
 
