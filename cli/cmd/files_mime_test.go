@@ -119,6 +119,14 @@ func TestFilesUploadAlwaysEmitsMIMEType(t *testing.T) {
 			bytes:    []byte{0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 'J', 'F', 'I', 'F', 0x00},
 			wantMIME: "image/jpeg",
 		},
+		{
+			name:     "tiff extension beats octet-stream sniff",
+			filename: "scan.tif",
+			// Deliberately not enough magic for http.DetectContentType to
+			// identify TIFF; extension inference is what should reach the server.
+			bytes:    []byte("not enough tiff magic"),
+			wantMIME: "image/tiff",
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -131,10 +139,17 @@ func TestFilesUploadAlwaysEmitsMIMEType(t *testing.T) {
 				t.Fatalf("seed upload file: %v", err)
 			}
 
+			var seenCreateContentType string
+			var seenPutContentType string
 			var server *httptest.Server
 			server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				switch {
 				case r.Method == http.MethodPost && r.URL.Path == "/v1/files/upload":
+					var body map[string]any
+					if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+						t.Fatalf("decode create-upload body: %v", err)
+					}
+					seenCreateContentType, _ = body["content_type"].(string)
 					// create-upload: hand back a signed PUT URL pointing back
 					// at this same server, plus the reserved file id.
 					w.Header().Set("Content-Type", "application/json")
@@ -151,6 +166,7 @@ func TestFilesUploadAlwaysEmitsMIMEType(t *testing.T) {
 					})
 				case r.Method == http.MethodPut && strings.HasPrefix(r.URL.Path, "/signed-put/"):
 					// direct upload PUT: accept the bytes.
+					seenPutContentType = r.Header.Get("Content-Type")
 					w.WriteHeader(http.StatusOK)
 				case r.Method == http.MethodPost && r.URL.Path == "/v1/files/upload/file_mime_e2e/complete":
 					// complete-upload: reproduce the reported bug — the server
@@ -192,6 +208,12 @@ func TestFilesUploadAlwaysEmitsMIMEType(t *testing.T) {
 			}
 			if mt != tc.wantMIME {
 				t.Fatalf("mime_type = %q, want %q; raw:\n%s", mt, tc.wantMIME, stdout)
+			}
+			if seenCreateContentType != tc.wantMIME {
+				t.Fatalf("create-upload content_type = %q, want %q", seenCreateContentType, tc.wantMIME)
+			}
+			if seenPutContentType != tc.wantMIME {
+				t.Fatalf("PUT Content-Type = %q, want %q", seenPutContentType, tc.wantMIME)
 			}
 		})
 	}

@@ -99,7 +99,7 @@ func uploadFile(ctx context.Context, client *retab.Client, uploadPath string) (*
 		return nil, "", err
 	}
 	filename := filepath.Base(uploadPath)
-	contentType := http.DetectContentType(data)
+	contentType := detectUploadContentType(uploadPath, data)
 	sum := sha256.Sum256(data)
 	sha256Hash := hex.EncodeToString(sum[:])
 	prepared, err := client.Files.CreateUpload(ctx, &retab.FilesCreateUploadParams{
@@ -249,6 +249,20 @@ func resolveUploadMIMEType(serverMIMEType, uploadPath, detectedContentType strin
 		}
 	}
 	return detectedContentType
+}
+
+func detectUploadContentType(uploadPath string, data []byte) string {
+	if ext := filepath.Ext(uploadPath); ext != "" {
+		if byExt := mime.TypeByExtension(ext); byExt != "" {
+			if i := strings.IndexByte(byExt, ';'); i >= 0 {
+				byExt = strings.TrimSpace(byExt[:i])
+			}
+			if byExt != "" {
+				return byExt
+			}
+		}
+	}
+	return http.DetectContentType(data)
 }
 
 // uploadResponse is an ordered-key JSON object so that `id` is the first
