@@ -326,8 +326,19 @@ func validateWorkflowEvalSource(source map[string]any) error {
 	switch sourceType {
 	case "manual":
 		if handleInputs, ok := source["handle_inputs"]; ok {
-			if _, ok := handleInputs.(map[string]any); !ok {
+			inputs, ok := handleInputs.(map[string]any)
+			if !ok {
 				return fmt.Errorf("source.handle_inputs must be an object")
+			}
+			for handleID, value := range inputs {
+				payload, ok := value.(map[string]any)
+				if !ok {
+					return fmt.Errorf("source.handle_inputs.%s must be an object with a type field", handleID)
+				}
+				payloadType, _ := payload["type"].(string)
+				if strings.TrimSpace(payloadType) == "" {
+					return fmt.Errorf("source.handle_inputs.%s.type is required", handleID)
+				}
 			}
 		}
 		return nil
@@ -384,8 +395,10 @@ You'll typically capture the three files from a successful past run:
   ` + "`--source-file`" + `     — the input the target block will see.
   Two accepted shapes (discriminated by ` + "`type`" + `):
 
-    1. ` + `{"type": "manual", "handle_inputs": {...}}` + ` — a
-       fully-specified input payload, keyed by handle id. Use this
+    1. ` + `{"type": "manual", "handle_inputs": {"input-json-0": {"type": "json", "data": {...}}}}` + ` — a
+       fully-specified input payload, keyed by handle id. Each value is
+       the same typed handle payload shape returned by ` + "`workflows steps get`" + `
+       (` + `{"type":"json","data":...}` + ` for JSON handles). Use this
        to feed literal values that don't come from a previous run.
        ` + "`handle_inputs`" + ` defaults to ` + `{}` + ` when omitted.
 
@@ -1297,7 +1310,7 @@ func init() {
 	workflowsEvalsCreateCmd.Flags().String("workflow-id", "", "workflow id (deprecated; pass as positional)")
 	workflowsEvalsCreateCmd.Flags().String("name", "", "eval name")
 	workflowsEvalsCreateCmd.Flags().String("target-file", "", "JSON file with the target object (or - for stdin). Alternative to --block-id.")
-	workflowsEvalsCreateCmd.Flags().String("source-file", "", "JSON file with the source object (or - for stdin). Two accepted shapes: {\"type\":\"manual\",\"handle_inputs\":{...}} or {\"type\":\"run_step\",\"run_id\":\"run_xxx\",\"step_id\":\"...\"} (step_id optional). Alternative to --run-id. See 'evals create --help' for the full schema.")
+	workflowsEvalsCreateCmd.Flags().String("source-file", "", "JSON file with the source object (or - for stdin). Two accepted shapes: {\"type\":\"manual\",\"handle_inputs\":{\"input-json-0\":{\"type\":\"json\",\"data\":{...}}}} or {\"type\":\"run_step\",\"run_id\":\"run_xxx\",\"step_id\":\"...\"} (step_id optional). Alternative to --run-id. See 'evals create --help' for the full schema.")
 	workflowsEvalsCreateCmd.Flags().String("assertion-file", "", "JSON file with the assertion object (or - for stdin). Alternative to --path/--equals.")
 	// Inline alternative to the three JSON files for the common
 	// "assert block X's field Y equals Z from run R" case.

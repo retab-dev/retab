@@ -1347,7 +1347,7 @@ func TestWorkflowsRunsRestartCreatesFreshRunFromSourceInputs(t *testing.T) {
 				"id":                  "run_456",
 				"workflow_id":         "wf_123",
 				"workflow_version_id": "ver_123",
-				"trigger":             map[string]any{"type": "api"},
+				"trigger":             map[string]any{"type": "restart"},
 				"lifecycle":           map[string]any{"status": "running"},
 				"timing":              map[string]any{"created_at": "2026-05-15T00:00:00Z"},
 				"inputs": map[string]any{
@@ -1380,6 +1380,9 @@ func TestWorkflowsRunsRestartCreatesFreshRunFromSourceInputs(t *testing.T) {
 	}
 	if body["workflow_id"] != "wf_123" || body["version"] != "production" {
 		t.Fatalf("create body = %#v", body)
+	}
+	if body["trigger_type"] != "restart" || body["parent_run_id"] != "run_123" {
+		t.Fatalf("restart metadata missing from create body: %#v", body)
 	}
 	if _, ok := body["restart_of"]; ok {
 		t.Fatalf("restart_of leaked into composed create body: %#v", body)
@@ -1445,7 +1448,7 @@ func TestWorkflowsRunsRestartMapsDraftConfigSourceToDraftVersion(t *testing.T) {
 				"id":                  "run_456",
 				"workflow_id":         "wf_123",
 				"workflow_version_id": "ver_draft",
-				"trigger":             map[string]any{"type": "api"},
+				"trigger":             map[string]any{"type": "restart"},
 				"lifecycle":           map[string]any{"status": "running"},
 			})
 		default:
@@ -1470,6 +1473,9 @@ func TestWorkflowsRunsRestartMapsDraftConfigSourceToDraftVersion(t *testing.T) {
 	}
 	if body["version"] != "draft" {
 		t.Fatalf("create body = %#v", body)
+	}
+	if body["trigger_type"] != "restart" || body["parent_run_id"] != "run_123" {
+		t.Fatalf("restart metadata missing from draft create body: %#v", body)
 	}
 }
 

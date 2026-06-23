@@ -433,6 +433,48 @@ func TestWorkflowsGetExampleUsesPublishedObjectShape(t *testing.T) {
 	}
 }
 
+func TestWorkflowsPublishRejectsMalformedSuccessResponse(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows/wf_123/publish" {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"workflow": map[string]any{
+				"id":   "wf_123",
+				"name": "Wrapped Workflow",
+			},
+			"baseline": map[string]any{"workflow_id": "wf_123"},
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	cmd := &cobra.Command{Use: "publish", RunE: workflowsPublishCmd.RunE}
+	cmd.Flags().String("description", "", "")
+	cmd.Flags().Bool("force", false, "")
+	if err := cmd.Flags().Set("force", "true"); err != nil {
+		t.Fatal(err)
+	}
+
+	var err error
+	stdout, stderr := captureStd(t, func() {
+		err = cmd.RunE(cmd, []string{"wf_123"})
+	})
+	if err == nil {
+		t.Fatal("expected malformed publish response to fail")
+	}
+	if stdout != "" {
+		t.Fatalf("malformed publish response should not print stdout, got:\n%s", stdout)
+	}
+	if !strings.Contains(stderr, "publish response did not include workflow id") {
+		t.Fatalf("stderr = %q, want missing workflow id message", stderr)
+	}
+}
+
 // TestWarnIfEmptyWorkflowOnPublish_StartOnly mocks Blocks.List against a
 // fake HTTP server returning a single `start_document` block, then asserts the
 // warning text — and only that text — lands on the provided writer.

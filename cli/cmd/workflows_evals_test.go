@@ -1652,7 +1652,7 @@ func TestWorkflowsEvalsUpdateReadsLocalFilesBeforeCredentials(t *testing.T) {
 // The server-side discriminated union (services/v1/workflows/evals/
 // models.py:343-354) is:
 //
-//   - {"type": "manual", "handle_inputs": {...}}
+//   - {"type": "manual", "handle_inputs": {"input-json-0": {"type": "json", "data": {...}}}}
 //   - {"type": "run_step", "run_id": "run_..."}
 //
 // so the help must show both shapes.
@@ -1661,11 +1661,67 @@ func TestWorkflowsEvalsCreateHelpDocumentsSourceFileShape(t *testing.T) {
 	if !strings.Contains(long, `"type": "manual"`) {
 		t.Fatalf(`workflows evals create help must show the manual source shape ({"type": "manual", ...}), got:\n%s`, long)
 	}
+	if !strings.Contains(long, `"input-json-0"`) || !strings.Contains(long, `"type": "json"`) || !strings.Contains(long, `"data"`) {
+		t.Fatalf("workflows evals create help must show typed manual handle inputs, got:\n%s", long)
+	}
 	if !strings.Contains(long, `"type": "run_step"`) {
 		t.Fatalf(`workflows evals create help must show the run_step source shape ({"type": "run_step", "run_id": "run_..."}), got:\n%s`, long)
 	}
 	if !strings.Contains(long, `"run_id"`) {
 		t.Fatalf("workflows evals create help must document run_id as the run_step disambiguator, got:\n%s", long)
+	}
+}
+
+func TestWorkflowsEvalsCreateRejectsUntypedManualHandleInputsBeforeRequest(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		hits.Add(1)
+		http.Error(w, "server should not be reached", http.StatusInternalServerError)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	dir := t.TempDir()
+	targetPath := filepath.Join(dir, "target.json")
+	sourcePath := filepath.Join(dir, "source.json")
+	assertionPath := filepath.Join(dir, "assertion.json")
+	for path, body := range map[string]string{
+		targetPath:    `{"type":"block","block_id":"block_123"}`,
+		sourcePath:    `{"type":"manual","handle_inputs":{"input-json-0":{"customer":"ManualCo","amount":40}}}`,
+		assertionPath: `{"target":{"output_handle_id":"output-json-0","path":"message"},"condition":{"kind":"equals","expected":"ManualCo"}}`,
+	} {
+		if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	for flag, value := range map[string]string{
+		"name":           "manual source",
+		"target-file":    targetPath,
+		"source-file":    sourcePath,
+		"assertion-file": assertionPath,
+	} {
+		if err := workflowsEvalsCreateCmd.Flags().Set(flag, value); err != nil {
+			t.Fatal(err)
+		}
+	}
+	t.Cleanup(func() { resetEvalsCreateInlineFlags(t) })
+
+	var err error
+	_, stderr := captureStd(t, func() {
+		err = workflowsEvalsCreateCmd.RunE(workflowsEvalsCreateCmd, []string{"wf_123"})
+	})
+	if err == nil {
+		t.Fatal("expected manual handle input validation error")
+	}
+	if !strings.Contains(stderr, "--source-file: source.handle_inputs.input-json-0.type is required") {
+		t.Fatalf("stderr %q does not mention typed manual handle input requirement", stderr)
+	}
+	if got := hits.Load(); got != 0 {
+		t.Fatalf("server was hit %d time(s), want no requests", got)
 	}
 }
 

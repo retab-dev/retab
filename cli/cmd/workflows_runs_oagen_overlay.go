@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"strings"
 
@@ -163,10 +164,12 @@ func validateEnumFlag(cmd *cobra.Command, flagName string, allowed map[string]bo
 }
 
 type workflowRunCreateParams struct {
-	WorkflowID string
-	Documents  map[string]any
-	JSONInputs map[string]any
-	Version    string
+	WorkflowID  string
+	Documents   map[string]any
+	JSONInputs  map[string]any
+	Version     string
+	TriggerType string
+	ParentRunID string
 }
 
 func workflowRunCreateRequestBody(request workflowRunCreateParams) (map[string]any, error) {
@@ -188,6 +191,12 @@ func workflowRunCreateRequestBody(request workflowRunCreateParams) (map[string]a
 		body["version"] = "production"
 	} else {
 		body["version"] = request.Version
+	}
+	if request.TriggerType != "" {
+		body["trigger_type"] = request.TriggerType
+	}
+	if request.ParentRunID != "" {
+		body["parent_run_id"] = request.ParentRunID
 	}
 	return body, nil
 }
@@ -399,9 +408,11 @@ config. Use ` + "`--config-source draft`" + ` after tweaking draft block config.
 		if configSource == "draft" {
 			version = "draft"
 		}
-		params := &retab.WorkflowRunsCreateParams{
-			WorkflowID: sourceRun.WorkflowID,
-			Version:    ptr(version),
+		params := workflowRunCreateParams{
+			WorkflowID:  sourceRun.WorkflowID,
+			Version:     version,
+			TriggerType: "restart",
+			ParentRunID: args[0],
 		}
 		if params.WorkflowID == "" {
 			return fmt.Errorf("source run %s does not include workflow_id", args[0])
@@ -412,13 +423,22 @@ config. Use ` + "`--config-source draft`" + ` after tweaking draft block config.
 				for key, value := range sourceRun.Inputs.Documents {
 					documents[key] = value
 				}
-				params.Documents = &documents
+				params.Documents = documents
 			}
 			if sourceRun.Inputs.JSONData != nil {
-				params.JSONInputs = &sourceRun.Inputs.JSONData
+				params.JSONInputs = sourceRun.Inputs.JSONData
 			}
 		}
-		result, err := client.Workflows.Runs.Create(ctx, params)
+		if params.Documents != nil {
+			if err := resolveWorkflowRunDocumentReferences(cmd, params.Documents); err != nil {
+				return err
+			}
+		}
+		body, err := workflowRunCreateRequestBody(params)
+		if err != nil {
+			return err
+		}
+		result, err := cliJSONRequest(cmd, http.MethodPost, "/v1/workflows/runs", nil, body)
 		if err != nil {
 			return err
 		}

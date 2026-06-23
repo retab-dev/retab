@@ -395,6 +395,9 @@ Before publishing, the CLI warns when the draft appears empty (a draft with only
 		if err != nil {
 			return err
 		}
+		if result == nil || strings.TrimSpace(result.ID) == "" {
+			return fmt.Errorf("publish response did not include workflow id")
+		}
 		return printResult(cmd, result)
 	}),
 }
