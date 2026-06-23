@@ -193,14 +193,14 @@ func resolveWorkflowEdgeAliases(ctx context.Context, client *retab.Client, workf
 	if !needsBlockLookup {
 		return nil
 	}
-	blocks, err := client.Workflows.Blocks.List(ctx, &retab.WorkflowBlocksListParams{WorkflowID: workflowID})
+	blocks, err := listAllWorkflowBlocks(ctx, client, workflowID)
 	if err != nil {
 		return err
 	}
-	if err := resolveWorkflowEdgeStartAliasesFromBlocks(blocks.Data, req); err != nil {
+	if err := resolveWorkflowEdgeStartAliasesFromBlocks(blocks, req); err != nil {
 		return err
 	}
-	resolveWorkflowEdgeTargetHandleAliasFromBlocks(blocks.Data, req)
+	resolveWorkflowEdgeTargetHandleAliasFromBlocks(blocks, req)
 	return nil
 }
 

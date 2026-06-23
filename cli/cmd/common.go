@@ -31,6 +31,28 @@ import (
 	"golang.org/x/term"
 )
 
+// listAllWorkflowBlocks returns every block for a workflow, walking all pages
+// via AutoPaging. Block-resolution callers (start/alias/target-handle
+// resolution) must see the full set: Blocks.List returns a single page and the
+// server's default ordering / page size are not guaranteed, so a block on a
+// later page would otherwise be invisible — producing wrong alias resolution,
+// false "no/ambiguous start_document block" errors, or unresolved handles. Same
+// failure mode as the review-version resolver, which already auto-pages.
+func listAllWorkflowBlocks(ctx context.Context, client *retab.Client, workflowID string) ([]retab.WorkflowBlock, error) {
+	page, err := client.Workflows.Blocks.List(ctx, &retab.WorkflowBlocksListParams{WorkflowID: workflowID})
+	if err != nil {
+		return nil, err
+	}
+	var blocks []retab.WorkflowBlock
+	if err := page.AutoPaging(ctx, func(b retab.WorkflowBlock) error {
+		blocks = append(blocks, b)
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+	return blocks, nil
+}
+
 // runE wraps a command body so APIErrors render as concise user-facing
 // messages by default and as full HTTP diagnostics with --debug. Other errors
 // render as a single line. Returned sentinel errors keep the process exit

@@ -850,13 +850,13 @@ func resolveWorkflowRunDocumentAliases(
 	if !shouldResolveWorkflowRunDocumentAliases(documents) {
 		return documents, nil
 	}
-	blocks, err := client.Workflows.Blocks.List(ctx, &retab.WorkflowBlocksListParams{WorkflowID: workflowID})
+	blocks, err := listAllWorkflowBlocks(ctx, client, workflowID)
 	if err != nil {
 		return nil, fmt.Errorf("resolve workflow run document aliases: %w", err)
 	}
 	blockIDs := map[string]bool{}
 	var startDocumentBlocks []retab.WorkflowBlock
-	for _, block := range blocks.Data {
+	for _, block := range blocks {
 		blockIDs[block.ID] = true
 		if isStartDocumentBlock(block) {
 			startDocumentBlocks = append(startDocumentBlocks, block)
@@ -921,13 +921,13 @@ func resolveWorkflowRunJSONInputAliases(
 	if len(inputs) == 0 {
 		return inputs, nil
 	}
-	blocks, err := client.Workflows.Blocks.List(ctx, &retab.WorkflowBlocksListParams{WorkflowID: workflowID})
+	blocks, err := listAllWorkflowBlocks(ctx, client, workflowID)
 	if err != nil {
 		return nil, fmt.Errorf("resolve --json-inputs-file aliases: %w", err)
 	}
 	blockIDs := map[string]bool{}
 	var startJSONBlocks []retab.WorkflowBlock
-	for _, block := range blocks.Data {
+	for _, block := range blocks {
 		blockIDs[block.ID] = true
 		if block.Type == "start_json" {
 			startJSONBlocks = append(startJSONBlocks, block)
