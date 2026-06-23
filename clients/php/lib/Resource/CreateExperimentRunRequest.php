@@ -21,6 +21,8 @@ readonly class CreateExperimentRunRequest implements \JsonSerializable
         public string $experimentId,
         /** Optional. When omitted, the workflow is derived from the experiment record. When supplied, must match the experiment's workflow_id (404 otherwise). */
         public ?string $workflowId = null,
+        /** Optional short-lived token returned by the run-plan preview. When supplied, run creation rejects if the current plan no longer matches the preview. */
+        public ?string $planToken = null,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -36,6 +38,7 @@ readonly class CreateExperimentRunRequest implements \JsonSerializable
         return new self(
             experimentId: $data['experiment_id'],
             workflowId: $data['workflow_id'] ?? null,
+            planToken: $data['plan_token'] ?? null,
         );
     }
 
@@ -45,6 +48,7 @@ readonly class CreateExperimentRunRequest implements \JsonSerializable
         return [
             'experiment_id' => $this->experimentId,
             'workflow_id' => $this->workflowId,
+            'plan_token' => $this->planToken,
         ];
     }
 }

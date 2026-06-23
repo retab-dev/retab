@@ -15,6 +15,9 @@ pub struct CreateExperimentRunRequest {
     /// Optional. When omitted, the workflow is derived from the experiment record. When supplied, must match the experiment's workflow_id (404 otherwise).
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub workflow_id: Option<String>,
+    /// Optional short-lived token returned by the run-plan preview. When supplied, run creation rejects if the current plan no longer matches the preview.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub plan_token: Option<crate::SecretString>,
 }
 impl CreateExperimentRunRequest {
     /// Construct a new `CreateExperimentRunRequest` with the required fields set.
@@ -23,6 +26,7 @@ impl CreateExperimentRunRequest {
         Self {
             experiment_id: experiment_id.into(),
             workflow_id: Default::default(),
+            plan_token: Default::default(),
         }
     }
 }

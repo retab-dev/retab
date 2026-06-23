@@ -33,10 +33,11 @@ module Retab
       params(
         experiment_id: String,
         workflow_id: T.nilable(String),
+        plan_token: T.nilable(String),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::ExperimentRun)
     end
-    def create(experiment_id:, workflow_id:, request_options:); end
+    def create(experiment_id:, workflow_id:, plan_token:, request_options:); end
 
     sig do
       params(

@@ -1,4 +1,5 @@
 {
   "experiment_id": "experiment_id_01234",
-  "workflow_id": "workflow_id_01234"
+  "workflow_id": "workflow_id_01234",
+  "plan_token": "test_plan_token"
 }

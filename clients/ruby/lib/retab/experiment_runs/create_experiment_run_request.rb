@@ -7,12 +7,14 @@ module Retab
 
     HASH_ATTRS = {
       experiment_id: :experiment_id,
-      workflow_id: :workflow_id
+      workflow_id: :workflow_id,
+      plan_token: :plan_token
     }.freeze
 
     attr_accessor(
       :experiment_id,
-      :workflow_id
+      :workflow_id,
+      :plan_token
     )
 
     def initialize(json)
@@ -20,6 +22,7 @@ module Retab
       hash = self.class.normalize(json)
       @experiment_id = hash[:experiment_id]
       @workflow_id = hash[:workflow_id]
+      @plan_token = hash[:plan_token]
     end
   end
 end

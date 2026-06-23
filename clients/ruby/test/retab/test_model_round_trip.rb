@@ -815,7 +815,8 @@ class ModelRoundTripTest < Minitest::Test
   def test_create_experiment_run_request_round_trip
     fixture = {
       "experiment_id" => "stub",
-      "workflow_id" => nil
+      "workflow_id" => nil,
+      "plan_token" => nil
     }
     model = Retab::CreateExperimentRunRequest.new(fixture.to_json)
     json = model.to_h

@@ -37,5 +37,8 @@ namespace Retab
         /// <summary>Optional. When omitted, the workflow is derived from the experiment record. When supplied, must match the experiment's workflow_id (404 otherwise).</summary>
         public string? WorkflowId { get; set; }
 
+        /// <summary>Optional short-lived token returned by the run-plan preview. When supplied, run creation rejects if the current plan no longer matches the preview.</summary>
+        public string? PlanToken { get; set; }
+
     }
 }

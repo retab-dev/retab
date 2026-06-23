@@ -90,17 +90,20 @@ class ExperimentRuns
      * supplied, it must match that workflow or the request is rejected with 404.
      * @param string $experimentId The experiment to create a run for.
      * @param string|null $workflowId Optional. When omitted, the workflow is derived from the experiment record. When supplied, must match the experiment's workflow_id (404 otherwise).
+     * @param string|null $planToken Optional short-lived token returned by the run-plan preview. When supplied, run creation rejects if the current plan no longer matches the preview.
      * @return \Retab\Resource\ExperimentRun
      * @throws \Retab\Exception\RetabException
      */
     public function create(
         string $experimentId,
         ?string $workflowId = null,
+        ?string $planToken = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\ExperimentRun {
         $body = array_filter([
             'experiment_id' => $experimentId,
             'workflow_id' => $workflowId,
+            'plan_token' => $planToken,
         ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',

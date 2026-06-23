@@ -106,16 +106,19 @@ module Retab
     # Create Experiment Run Flat
     # @param experiment_id [String] The experiment to create a run for.
     # @param workflow_id [String, nil] Optional. When omitted, the workflow is derived from the experiment record. When supplied, must match the experiment's workflow_id (404 otherwise).
+    # @param plan_token [String, nil] Optional short-lived token returned by the run-plan preview. When supplied, run creation rejects if the current plan no longer matches the preview.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::ExperimentRun]
     def create(
       experiment_id:,
       workflow_id: nil,
+      plan_token: nil,
       request_options: {}
     )
       body = {
         "experiment_id" => experiment_id,
-        "workflow_id" => workflow_id
+        "workflow_id" => workflow_id,
+        "plan_token" => plan_token
       }.compact
       response = @client.request(
         method: :post,

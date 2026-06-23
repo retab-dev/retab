@@ -21,6 +21,12 @@ module Retab
     sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
     def workflow_id=(value); end
 
+    sig { returns(T.nilable(String)) }
+    def plan_token; end
+
+    sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
+    def plan_token=(value); end
+
     sig { returns(T::Hash[Symbol, T.untyped]) }
     def to_h; end
 
