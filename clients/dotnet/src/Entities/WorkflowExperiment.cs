@@ -31,7 +31,7 @@ namespace Retab
         public bool? IsStale { get; set; } = false;
         public ArtifactFreshness? Freshness { get; set; }
         public ArtifactFreshnessStatus? FreshnessState { get; set; }
-        public List<string>? FreshnessReasons { get; set; }
+        public List<string> FreshnessReasons { get; set; } = default!;
         public WorkflowExperimentRunPlanMode? RunPlanMode { get; set; }
         public long? RerunnableDocumentCount { get; set; }
         public ExperimentSchemaDriftStatus? SchemaDrift { get; set; }

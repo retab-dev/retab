@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "php",
-  "generatedAt": "2026-06-23T04:33:02.359Z",
+  "generatedAt": "2026-06-23T07:02:13.729Z",
   "files": [
     "composer.json",
     "lib/Client.php",

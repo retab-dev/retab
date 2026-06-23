@@ -121,7 +121,7 @@ class WorkflowExperiment(BaseModel):
     is_stale: bool | None = Field(default=False)
     freshness: ArtifactFreshness | None = None
     freshness_state: WorkflowExperimentFreshnessState | None = Field(default=cast(WorkflowExperimentFreshnessState, "unknown"), validate_default=True)
-    freshness_reasons: list[str] | None = Field(default=[])
+    freshness_reasons: list[str] = Field(default=[])
     run_plan_mode: WorkflowExperimentRunPlanMode | None = Field(default=cast(WorkflowExperimentRunPlanMode, "unknown"), validate_default=True)
     rerunnable_document_count: int | None = Field(default=0)
     schema_drift: ExperimentSchemaDriftStatus | None = Field(default=cast(ExperimentSchemaDriftStatus, "unknown"), validate_default=True)

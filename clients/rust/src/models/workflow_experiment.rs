@@ -39,8 +39,7 @@ pub struct WorkflowExperiment {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub freshness_state: Option<WorkflowExperimentFreshnessState>,
     /// Defaults to `[]`.
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub freshness_reasons: Option<Vec<String>>,
+    pub freshness_reasons: Vec<String>,
     /// Defaults to `unknown`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub run_plan_mode: Option<WorkflowExperimentRunPlanMode>,
@@ -65,6 +64,7 @@ impl WorkflowExperiment {
         n_consensus: NConsensusValue,
         name: impl Into<String>,
         block_type: ExperimentBlockType,
+        freshness_reasons: Vec<String>,
     ) -> Self {
         Self {
             id: id.into(),
@@ -82,7 +82,7 @@ impl WorkflowExperiment {
             is_stale: Default::default(),
             freshness: Default::default(),
             freshness_state: Default::default(),
-            freshness_reasons: Default::default(),
+            freshness_reasons,
             run_plan_mode: Default::default(),
             rerunnable_document_count: Default::default(),
             schema_drift: Default::default(),

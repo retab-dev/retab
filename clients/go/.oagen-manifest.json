@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "go",
-  "generatedAt": "2026-06-23T04:30:10.761Z",
+  "generatedAt": "2026-06-23T07:01:36.675Z",
   "files": [
     "classifications.go",
     "compat.go",

@@ -56,7 +56,7 @@ export interface WorkflowExperiment {
   /** @default "unknown" */
   freshnessState?: WorkflowExperimentFreshnessState;
   /** @default [] */
-  freshnessReasons?: string[];
+  freshnessReasons: string[];
   /** @default "unknown" */
   runPlanMode?: WorkflowExperimentRunPlanMode;
   /** @default 0 */
@@ -83,7 +83,7 @@ export interface WorkflowExperimentResponse {
   is_stale?: boolean;
   freshness?: ArtifactFreshnessResponse;
   freshness_state?: WorkflowExperimentFreshnessState;
-  freshness_reasons?: string[];
+  freshness_reasons: string[];
   run_plan_mode?: WorkflowExperimentRunPlanMode;
   rerunnable_document_count?: number;
   schema_drift?: ExperimentSchemaDriftStatus;
@@ -107,7 +107,7 @@ export const ZWorkflowExperiment = z.object({
   isStale: z.boolean().optional(),
   freshness: ZArtifactFreshness.optional(),
   freshnessState: ZWorkflowExperimentFreshnessState.optional(),
-  freshnessReasons: z.string().array().optional(),
+  freshnessReasons: z.string().array(),
   runPlanMode: ZWorkflowExperimentRunPlanMode.optional(),
   rerunnableDocumentCount: z.number().int().optional(),
   schemaDrift: ZExperimentSchemaDriftStatus.optional(),

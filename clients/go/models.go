@@ -2467,7 +2467,7 @@ type WorkflowExperiment struct {
 	IsStale                 *bool                             `json:"is_stale,omitempty"`
 	Freshness               *ArtifactFreshness                `json:"freshness,omitempty"`
 	FreshnessState          *WorkflowExperimentFreshnessState `json:"freshness_state,omitempty"`
-	FreshnessReasons        []string                          `json:"freshness_reasons,omitempty"`
+	FreshnessReasons        []string                          `json:"freshness_reasons"`
 	RunPlanMode             *WorkflowExperimentRunPlanMode    `json:"run_plan_mode,omitempty"`
 	RerunnableDocumentCount *int                              `json:"rerunnable_document_count,omitempty"`
 	SchemaDrift             *ExperimentSchemaDriftStatus      `json:"schema_drift,omitempty"`
