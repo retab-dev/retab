@@ -31,6 +31,24 @@ SDK_CLIENT_INPUT_EXCLUDES = [
     "clients/*/vendor/**",
 ]
 
+filegroup(
+    name = "workflow_fingerprint_contract_sources",
+    srcs = glob(
+        [
+            "clients/**/*.cs",
+            "clients/**/*.go",
+            "clients/**/*.java",
+            "clients/**/*.json",
+            "clients/**/*.php",
+            "clients/**/*.py",
+            "clients/**/*.rb",
+            "clients/**/*.rs",
+            "clients/**/*.ts",
+        ],
+        exclude = SDK_CLIENT_INPUT_EXCLUDES,
+    ),
+)
+
 SDK_LANGUAGE_SPECS = [
     {
         "language": "python",
