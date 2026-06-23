@@ -14,9 +14,6 @@ import com.retab.schemas.SchemasApi;
 import com.retab.secrets.SecretsApi;
 import com.retab.splits.SplitsApi;
 import com.retab.tables.TablesApi;
-import com.retab.workflowevalrunresults.WorkflowEvalRunResultsApi;
-import com.retab.workflowevalruns.WorkflowEvalRunsApi;
-import com.retab.workflowevals.WorkflowEvalsApi;
 import com.retab.workflows.WorkflowsApi;
 import java.net.http.HttpClient;
 
@@ -37,9 +34,6 @@ public final class RetabClient {
   private final SecretsApi secrets;
   private final SplitsApi splits;
   private final TablesApi tables;
-  private final WorkflowEvalRunResultsApi workflowEvalRunResults;
-  private final WorkflowEvalRunsApi workflowEvalRuns;
-  private final WorkflowEvalsApi workflowEvals;
   private final WorkflowsApi workflows;
 
   public RetabClient(String apiKey) {
@@ -66,9 +60,6 @@ public final class RetabClient {
     this.secrets = new SecretsApi(this);
     this.splits = new SplitsApi(this);
     this.tables = new TablesApi(this);
-    this.workflowEvalRunResults = new WorkflowEvalRunResultsApi(this);
-    this.workflowEvalRuns = new WorkflowEvalRunsApi(this);
-    this.workflowEvals = new WorkflowEvalsApi(this);
     this.workflows = new WorkflowsApi(this);
   }
 
@@ -126,18 +117,6 @@ public final class RetabClient {
 
   public TablesApi tables() {
     return tables;
-  }
-
-  public WorkflowEvalRunResultsApi workflowEvalRunResults() {
-    return workflowEvalRunResults;
-  }
-
-  public WorkflowEvalRunsApi workflowEvalRuns() {
-    return workflowEvalRuns;
-  }
-
-  public WorkflowEvalsApi workflowEvals() {
-    return workflowEvals;
   }
 
   public WorkflowsApi workflows() {
