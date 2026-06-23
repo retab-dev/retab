@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "java",
-  "generatedAt": "2026-06-23T05:11:57.067Z",
+  "generatedAt": "1970-01-01T00:00:00.000Z",
   "files": [
     "build.gradle.kts",
     "checkstyle.xml",
@@ -844,47 +844,47 @@
     },
     "GET /v1/workflows/evals": {
       "sdkMethod": "list",
-      "service": "workflowEvals"
+      "service": "workflows.evals"
     },
     "POST /v1/workflows/evals": {
       "sdkMethod": "create",
-      "service": "workflowEvals"
+      "service": "workflows.evals"
     },
     "GET /v1/workflows/evals/{eval_id}": {
       "sdkMethod": "get",
-      "service": "workflowEvals"
+      "service": "workflows.evals"
     },
     "PATCH /v1/workflows/evals/{eval_id}": {
       "sdkMethod": "update",
-      "service": "workflowEvals"
+      "service": "workflows.evals"
     },
     "DELETE /v1/workflows/evals/{eval_id}": {
       "sdkMethod": "delete",
-      "service": "workflowEvals"
+      "service": "workflows.evals"
     },
     "GET /v1/workflows/evals/results": {
       "sdkMethod": "list",
-      "service": "workflowEvalRunResults"
+      "service": "workflows.evals.results"
     },
     "GET /v1/workflows/evals/results/{result_id}": {
       "sdkMethod": "get",
-      "service": "workflowEvalRunResults"
+      "service": "workflows.evals.results"
     },
     "GET /v1/workflows/evals/runs": {
       "sdkMethod": "list",
-      "service": "workflowEvalRuns"
+      "service": "workflows.evals.runs"
     },
     "POST /v1/workflows/evals/runs": {
       "sdkMethod": "create",
-      "service": "workflowEvalRuns"
+      "service": "workflows.evals.runs"
     },
     "GET /v1/workflows/evals/runs/{run_id}": {
       "sdkMethod": "get",
-      "service": "workflowEvalRuns"
+      "service": "workflows.evals.runs"
     },
     "POST /v1/workflows/evals/runs/{run_id}/cancel": {
       "sdkMethod": "cancel",
-      "service": "workflowEvalRuns"
+      "service": "workflows.evals.runs"
     },
     "GET /v1/workflows/experiments": {
       "sdkMethod": "list",
