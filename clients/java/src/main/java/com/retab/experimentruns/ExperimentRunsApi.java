@@ -96,10 +96,11 @@ public final class ExperimentRunsApi {
       throws IOException, InterruptedException {
     return create(
         request == null ? null : request.getExperimentId(),
-        request == null ? null : request.getWorkflowId());
+        request == null ? null : request.getWorkflowId(),
+        request == null ? null : request.getPlanToken());
   }
 
-  public ExperimentRun create(String experimentId, String workflowId)
+  public ExperimentRun create(String experimentId, String workflowId, String planToken)
       throws IOException, InterruptedException {
     String path = "/v1/workflows/experiments/runs";
     StringBuilder query = new StringBuilder();
@@ -108,6 +109,9 @@ public final class ExperimentRunsApi {
     body.put("experiment_id", experimentId);
     if (workflowId != null) {
       body.put("workflow_id", workflowId);
+    }
+    if (planToken != null) {
+      body.put("plan_token", planToken);
     }
     String requestBody = client.getObjectMapper().writeValueAsString(body);
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);

@@ -10,13 +10,16 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public final class CreateExperimentRunRequest {
   private final String experimentId;
   private final String workflowId;
+  private final String planToken;
 
   @JsonCreator
   public CreateExperimentRunRequest(
       @JsonProperty(value = "experiment_id", required = true) String experimentId,
-      @JsonProperty(value = "workflow_id", required = false) String workflowId) {
+      @JsonProperty(value = "workflow_id", required = false) String workflowId,
+      @JsonProperty(value = "plan_token", required = false) String planToken) {
     this.experimentId = experimentId;
     this.workflowId = workflowId;
+    this.planToken = planToken;
   }
 
   @JsonProperty("experiment_id")
@@ -27,5 +30,10 @@ public final class CreateExperimentRunRequest {
   @JsonProperty("workflow_id")
   public String getWorkflowId() {
     return workflowId;
+  }
+
+  @JsonProperty("plan_token")
+  public String getPlanToken() {
+    return planToken;
   }
 }
