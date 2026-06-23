@@ -67,6 +67,7 @@
 
 # Bundler local installs
 **/.bundle/
+clients/ruby/Gemfile.lock
 
 # Rust
 **/target/
