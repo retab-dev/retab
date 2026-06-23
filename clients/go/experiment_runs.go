@@ -44,6 +44,8 @@ type ExperimentRunsCreateParams struct {
 	ExperimentID string `json:"experiment_id" url:"-"`
 	// WorkflowID is optional. When omitted, the workflow is derived from the experiment record. When supplied, must match the experiment's workflow_id (404 otherwise).
 	WorkflowID *string `json:"workflow_id,omitempty" url:"-"`
+	// PlanToken is optional short-lived token returned by the run-plan preview. When supplied, run creation rejects if the current plan no longer matches the preview.
+	PlanToken *string `json:"plan_token,omitempty" url:"-"`
 }
 
 // Create experiment Run Flat

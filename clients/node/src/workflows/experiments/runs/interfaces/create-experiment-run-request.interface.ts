@@ -7,16 +7,20 @@ export interface CreateExperimentRunRequest {
   experimentId: string;
   /** Optional. When omitted, the workflow is derived from the experiment record. When supplied, must match the experiment's workflow_id (404 otherwise). */
   workflowId?: string | null;
+  /** Optional short-lived token returned by the run-plan preview. When supplied, run creation rejects if the current plan no longer matches the preview. */
+  planToken?: string | null;
 }
 
 export interface CreateExperimentRunRequestResponse {
   experiment_id: string;
   workflow_id?: string | null;
+  plan_token?: string | null;
 }
 
 export const ZCreateExperimentRunRequest = z.object({
   experimentId: z.string(),
   workflowId: z.string().nullable().optional(),
+  planToken: z.string().nullable().optional(),
 }) as z.ZodType<CreateExperimentRunRequest>;
 
 export function deserializeCreateExperimentRunRequest(
@@ -25,6 +29,7 @@ export function deserializeCreateExperimentRunRequest(
   return {
     experimentId: wire['experiment_id'],
     workflowId: wire['workflow_id'],
+    planToken: wire['plan_token'],
   };
 }
 
@@ -34,5 +39,6 @@ export function serializeCreateExperimentRunRequest(
   return {
     experiment_id: domain['experimentId'],
     workflow_id: domain['workflowId'],
+    plan_token: domain['planToken'],
   };
 }

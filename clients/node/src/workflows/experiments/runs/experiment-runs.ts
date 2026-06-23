@@ -59,10 +59,15 @@ export class ExperimentRuns {
   }
 
   /** Create Experiment Run Flat */
-  async create(experimentId: string, workflowId?: string | null): Promise<ExperimentRun> {
+  async create(
+    experimentId: string,
+    workflowId?: string | null,
+    planToken?: string | null
+  ): Promise<ExperimentRun> {
     const body = {
       experiment_id: experimentId,
       workflow_id: workflowId,
+      plan_token: planToken,
     };
     const __wire = await this.client.request<ExperimentRunResponse>({
       method: 'POST',

@@ -67,6 +67,10 @@ class CreateExperimentRunRequest(BaseModel):
         default=None,
         description="Optional. When omitted, the workflow is derived from the experiment record. When supplied, must match the experiment's workflow_id (404 otherwise).",
     )
+    plan_token: str | None = Field(
+        default=None,
+        description="Optional short-lived token returned by the run-plan preview. When supplied, run creation rejects if the current plan no longer matches the preview.",
+    )
 
 
 class ErrorWorkflowExperimentRun(BaseModel):
