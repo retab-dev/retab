@@ -26,6 +26,7 @@ pub struct ExperimentRun {
     pub metrics_validity_fingerprint: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub metrics_validity_fingerprint_version: Option<i64>,
+    pub block_execution_fingerprint: String,
     pub definition_fingerprint: String,
     pub documents_fingerprint: String,
     #[serde(skip_serializing_if = "Option::is_none", default)]
@@ -57,6 +58,7 @@ impl ExperimentRun {
         n_consensus: ExperimentRunNConsensus,
         lifecycle: CancelWorkflowExperimentRunResponseLifecycleOneOf,
         timing: ExperimentRunTiming,
+        block_execution_fingerprint: impl Into<String>,
         definition_fingerprint: impl Into<String>,
         documents_fingerprint: impl Into<String>,
     ) -> Self {
@@ -75,6 +77,7 @@ impl ExperimentRun {
             block_version_id: Default::default(),
             metrics_validity_fingerprint: Default::default(),
             metrics_validity_fingerprint_version: Default::default(),
+            block_execution_fingerprint: block_execution_fingerprint.into(),
             definition_fingerprint: definition_fingerprint.into(),
             documents_fingerprint: documents_fingerprint.into(),
             score: Default::default(),

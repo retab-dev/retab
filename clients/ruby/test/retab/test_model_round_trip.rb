@@ -343,7 +343,7 @@ class ModelRoundTripTest < Minitest::Test
       "completed_at" => "stub",
       "handle_inputs_fingerprint" => "stub",
       "workflow_draft_fingerprint" => "stub",
-      "block_config_fingerprint" => "stub",
+      "block_execution_fingerprint" => "stub",
       "execution_fingerprint" => "stub",
       "block_config" => nil,
       "source_step_id" => nil,
@@ -1696,7 +1696,7 @@ class ModelRoundTripTest < Minitest::Test
       "experiment_id" => "stub",
       "stale_reasons" => [],
       "last_run" => {},
-      "current_config_fingerprint" => nil,
+      "current_block_execution_fingerprint" => nil,
       "message" => "stub"
     }
     model = Retab::ExperimentMetricsStaleError.new(fixture.to_json)
@@ -1764,7 +1764,7 @@ class ModelRoundTripTest < Minitest::Test
       "run_id" => "stub",
       "kind" => "summary",
       "view" => "summary",
-      "definition_fingerprint" => nil,
+      "block_execution_fingerprint" => nil,
       "block_type" => "stub",
       "score" => nil,
       "prior_score" => nil,
@@ -2098,7 +2098,7 @@ class ModelRoundTripTest < Minitest::Test
       "completed_at" => nil,
       "duration_ms" => nil,
       "workflow_draft_fingerprint" => nil,
-      "block_config_fingerprint" => nil,
+      "block_execution_fingerprint" => nil,
       "validity_fingerprint" => nil,
       "handle_inputs_fingerprint" => nil,
       "assertions_passed" => 1,
@@ -2191,7 +2191,7 @@ class ModelRoundTripTest < Minitest::Test
   def test_metrics_stale_error_last_run_round_trip
     fixture = {
       "run_id" => "stub",
-      "definition_fingerprint" => nil,
+      "block_execution_fingerprint" => nil,
       "score" => nil,
       "created_at" => nil
     }
@@ -3631,7 +3631,7 @@ class ModelRoundTripTest < Minitest::Test
       "execution_fingerprint" => nil,
       "handle_inputs_fingerprint" => nil,
       "workflow_draft_fingerprint" => nil,
-      "block_config_fingerprint" => nil,
+      "block_execution_fingerprint" => nil,
       "artifact" => nil,
       "handle_inputs" => {},
       "handle_outputs" => nil,
@@ -3738,6 +3738,10 @@ class ModelRoundTripTest < Minitest::Test
       "score" => nil,
       "is_stale" => true,
       "freshness" => {},
+      "freshness_state" => "stub",
+      "freshness_reasons" => [],
+      "run_plan_mode" => "stub",
+      "rerunnable_document_count" => 1,
       "schema_drift" => "stub",
       "schema_drift_detail" => nil,
       "drift" => {}
@@ -3792,6 +3796,7 @@ class ModelRoundTripTest < Minitest::Test
       "block_version_id" => nil,
       "metrics_validity_fingerprint" => nil,
       "metrics_validity_fingerprint_version" => nil,
+      "block_execution_fingerprint" => "stub",
       "definition_fingerprint" => "stub",
       "documents_fingerprint" => "stub",
       "score" => nil,
@@ -3808,6 +3813,7 @@ class ModelRoundTripTest < Minitest::Test
     assert_equal(fixture["workflow_version_id"], json[:workflow_version_id])
     assert_equal(fixture["experiment_id"], json[:experiment_id])
     assert_equal(fixture["block_id"], json[:block_id])
+    assert_equal(fixture["block_execution_fingerprint"], json[:block_execution_fingerprint])
     assert_equal(fixture["definition_fingerprint"], json[:definition_fingerprint])
     assert_equal(fixture["documents_fingerprint"], json[:documents_fingerprint])
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }

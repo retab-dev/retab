@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "rust",
-  "generatedAt": "2026-06-22T22:45:50.032Z",
+  "generatedAt": "2026-06-23T00:27:36.468Z",
   "files": [
     "Cargo.toml",
     "LICENSE-MIT",
@@ -108,6 +108,8 @@
     "src/enums/workflow_eval_runs_order.rs",
     "src/enums/workflow_eval_schema_drift.rs",
     "src/enums/workflow_evals_order.rs",
+    "src/enums/workflow_experiment_freshness_state.rs",
+    "src/enums/workflow_experiment_run_plan_mode.rs",
     "src/enums/workflow_experiments_exclude_status.rs",
     "src/enums/workflow_experiments_order.rs",
     "src/enums/workflow_experiments_status.rs",

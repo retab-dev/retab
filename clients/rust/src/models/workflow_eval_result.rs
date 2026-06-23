@@ -29,7 +29,7 @@ pub struct WorkflowEvalResult {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub workflow_draft_fingerprint: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub block_config_fingerprint: Option<String>,
+    pub block_execution_fingerprint: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub artifact: Option<StepArtifactRef>,
     /// Defaults to `{}`.
@@ -74,7 +74,7 @@ impl WorkflowEvalResult {
             execution_fingerprint: Default::default(),
             handle_inputs_fingerprint: Default::default(),
             workflow_draft_fingerprint: Default::default(),
-            block_config_fingerprint: Default::default(),
+            block_execution_fingerprint: Default::default(),
             artifact: Default::default(),
             handle_inputs: Default::default(),
             handle_outputs: Default::default(),

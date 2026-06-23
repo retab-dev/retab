@@ -112,10 +112,10 @@ module Retab
     def workflow_draft_fingerprint=(value); end
 
     sig { returns(T.nilable(String)) }
-    def block_config_fingerprint; end
+    def block_execution_fingerprint; end
 
     sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
-    def block_config_fingerprint=(value); end
+    def block_execution_fingerprint=(value); end
 
     sig { returns(T.nilable(String)) }
     def execution_fingerprint; end

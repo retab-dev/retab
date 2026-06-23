@@ -94,6 +94,30 @@ module Retab
     def freshness=(value); end
 
     sig { returns(T.nilable(String)) }
+    def freshness_state; end
+
+    sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
+    def freshness_state=(value); end
+
+    sig { returns(T.nilable(T::Array[String])) }
+    def freshness_reasons; end
+
+    sig { params(value: T.nilable(T::Array[String])).returns(T.nilable(T::Array[String])) }
+    def freshness_reasons=(value); end
+
+    sig { returns(T.nilable(String)) }
+    def run_plan_mode; end
+
+    sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
+    def run_plan_mode=(value); end
+
+    sig { returns(T.nilable(Integer)) }
+    def rerunnable_document_count; end
+
+    sig { params(value: T.nilable(Integer)).returns(T.nilable(Integer)) }
+    def rerunnable_document_count=(value); end
+
+    sig { returns(T.nilable(String)) }
     def schema_drift; end
 
     sig { params(value: T.nilable(String)).returns(T.nilable(String)) }

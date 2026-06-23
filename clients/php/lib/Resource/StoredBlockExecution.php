@@ -57,7 +57,7 @@ readonly class StoredBlockExecution implements \JsonSerializable
         public ?\DateTimeImmutable $completedAt = null,
         public ?string $handleInputsFingerprint = null,
         public ?string $workflowDraftFingerprint = null,
-        public ?string $blockConfigFingerprint = null,
+        public ?string $blockExecutionFingerprint = null,
         public ?string $executionFingerprint = null,
         /**
          * The draft block config used for this block execution
@@ -108,7 +108,7 @@ readonly class StoredBlockExecution implements \JsonSerializable
             completedAt: isset($data['completed_at']) ? new \DateTimeImmutable($data['completed_at']) : null,
             handleInputsFingerprint: $data['handle_inputs_fingerprint'] ?? null,
             workflowDraftFingerprint: $data['workflow_draft_fingerprint'] ?? null,
-            blockConfigFingerprint: $data['block_config_fingerprint'] ?? null,
+            blockExecutionFingerprint: $data['block_execution_fingerprint'] ?? null,
             executionFingerprint: $data['execution_fingerprint'] ?? null,
             blockConfig: $data['block_config'] ?? null,
             sourceStepId: $data['source_step_id'] ?? null,
@@ -137,7 +137,7 @@ readonly class StoredBlockExecution implements \JsonSerializable
             'completed_at' => $this->completedAt?->format(\DateTimeInterface::RFC3339_EXTENDED),
             'handle_inputs_fingerprint' => $this->handleInputsFingerprint,
             'workflow_draft_fingerprint' => $this->workflowDraftFingerprint,
-            'block_config_fingerprint' => $this->blockConfigFingerprint,
+            'block_execution_fingerprint' => $this->blockExecutionFingerprint,
             'execution_fingerprint' => $this->executionFingerprint,
             'block_config' => $this->blockConfig,
             'source_step_id' => $this->sourceStepId,

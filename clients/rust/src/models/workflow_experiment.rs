@@ -37,6 +37,18 @@ pub struct WorkflowExperiment {
     pub freshness: Option<ArtifactFreshness>,
     /// Defaults to `unknown`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub freshness_state: Option<WorkflowExperimentFreshnessState>,
+    /// Defaults to `[]`.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub freshness_reasons: Option<Vec<String>>,
+    /// Defaults to `unknown`.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub run_plan_mode: Option<WorkflowExperimentRunPlanMode>,
+    /// Defaults to `0`.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub rerunnable_document_count: Option<i64>,
+    /// Defaults to `unknown`.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub schema_drift: Option<ExperimentSchemaDriftStatus>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub schema_drift_detail: Option<String>,
@@ -69,6 +81,10 @@ impl WorkflowExperiment {
             score: Default::default(),
             is_stale: Default::default(),
             freshness: Default::default(),
+            freshness_state: Default::default(),
+            freshness_reasons: Default::default(),
+            run_plan_mode: Default::default(),
+            rerunnable_document_count: Default::default(),
             schema_drift: Default::default(),
             schema_drift_detail: Default::default(),
             drift: Default::default(),

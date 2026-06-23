@@ -20,7 +20,7 @@
       "execution_fingerprint": "test_execution_fingerprint",
       "handle_inputs_fingerprint": "test_handle_inputs_fingerprint",
       "workflow_draft_fingerprint": "test_workflow_draft_fingerprint",
-      "block_config_fingerprint": "test_block_config_fingerprint",
+      "block_execution_fingerprint": "test_block_execution_fingerprint",
       "artifact": {
         "operation": "extraction",
         "id": "01234"

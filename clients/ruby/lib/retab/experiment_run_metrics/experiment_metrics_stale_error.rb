@@ -11,7 +11,7 @@ module Retab
       experiment_id: :experiment_id,
       stale_reasons: :stale_reasons,
       last_run: :last_run,
-      current_config_fingerprint: :current_config_fingerprint,
+      current_block_execution_fingerprint: :current_block_execution_fingerprint,
       message: :message
     }.freeze
 
@@ -21,7 +21,7 @@ module Retab
       :experiment_id,
       :stale_reasons,
       :last_run,
-      :current_config_fingerprint,
+      :current_block_execution_fingerprint,
       :message
     )
 
@@ -33,7 +33,7 @@ module Retab
       @experiment_id = hash[:experiment_id]
       @stale_reasons = (hash[:stale_reasons] || [])
       @last_run = hash[:last_run] ? Retab::MetricsStaleErrorLastRun.new(hash[:last_run]) : nil
-      @current_config_fingerprint = hash[:current_config_fingerprint]
+      @current_block_execution_fingerprint = hash[:current_block_execution_fingerprint]
       @message = hash[:message]
     end
   end

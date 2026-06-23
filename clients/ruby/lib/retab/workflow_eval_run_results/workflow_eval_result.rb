@@ -18,7 +18,7 @@ module Retab
       execution_fingerprint: :execution_fingerprint,
       handle_inputs_fingerprint: :handle_inputs_fingerprint,
       workflow_draft_fingerprint: :workflow_draft_fingerprint,
-      block_config_fingerprint: :block_config_fingerprint,
+      block_execution_fingerprint: :block_execution_fingerprint,
       artifact: :artifact,
       handle_inputs: :handle_inputs,
       handle_outputs: :handle_outputs,
@@ -41,7 +41,7 @@ module Retab
       :execution_fingerprint,
       :handle_inputs_fingerprint,
       :workflow_draft_fingerprint,
-      :block_config_fingerprint,
+      :block_execution_fingerprint,
       :artifact,
       :handle_inputs,
       :handle_outputs,
@@ -83,7 +83,7 @@ module Retab
       @execution_fingerprint = hash[:execution_fingerprint]
       @handle_inputs_fingerprint = hash[:handle_inputs_fingerprint]
       @workflow_draft_fingerprint = hash[:workflow_draft_fingerprint]
-      @block_config_fingerprint = hash[:block_config_fingerprint]
+      @block_execution_fingerprint = hash[:block_execution_fingerprint]
       @artifact = hash[:artifact] ? Retab::StepArtifactRef.new(hash[:artifact]) : nil
       @handle_inputs = hash[:handle_inputs] || {}
       @handle_outputs = hash[:handle_outputs] || {}

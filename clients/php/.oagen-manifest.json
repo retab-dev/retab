@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "php",
-  "generatedAt": "2026-06-22T22:44:57.796Z",
+  "generatedAt": "2026-06-23T00:27:31.246Z",
   "files": [
     "composer.json",
     "lib/Client.php",
@@ -317,6 +317,7 @@
     "lib/Resource/WorkflowEvalRunWorkflowScope.php",
     "lib/Resource/WorkflowEvalSchemaDrift.php",
     "lib/Resource/WorkflowExperiment.php",
+    "lib/Resource/WorkflowExperimentRunPlanMode.php",
     "lib/Resource/WorkflowExperimentsStatus.php",
     "lib/Resource/WorkflowExportPayloadRequest.php",
     "lib/Resource/WorkflowExportPayloadRequestExportSource.php",

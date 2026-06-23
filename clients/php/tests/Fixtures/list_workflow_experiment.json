@@ -27,6 +27,12 @@
         "input_fingerprint": "test_input_fingerprint",
         "baseline_run_id": "baseline_run_id_01234"
       },
+      "freshness_state": "fresh",
+      "freshness_reasons": [
+        "test_freshness_reasons"
+      ],
+      "run_plan_mode": "run",
+      "rerunnable_document_count": 1,
       "schema_drift": "none",
       "schema_drift_detail": "test_schema_drift_detail",
       "drift": {

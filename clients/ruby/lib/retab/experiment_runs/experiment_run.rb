@@ -20,6 +20,7 @@ module Retab
       block_version_id: :block_version_id,
       metrics_validity_fingerprint: :metrics_validity_fingerprint,
       metrics_validity_fingerprint_version: :metrics_validity_fingerprint_version,
+      block_execution_fingerprint: :block_execution_fingerprint,
       definition_fingerprint: :definition_fingerprint,
       documents_fingerprint: :documents_fingerprint,
       score: :score,
@@ -44,6 +45,7 @@ module Retab
       :block_version_id,
       :metrics_validity_fingerprint,
       :metrics_validity_fingerprint_version,
+      :block_execution_fingerprint,
       :definition_fingerprint,
       :documents_fingerprint,
       :score,
@@ -87,6 +89,7 @@ module Retab
       @block_version_id = hash[:block_version_id]
       @metrics_validity_fingerprint = hash[:metrics_validity_fingerprint]
       @metrics_validity_fingerprint_version = hash[:metrics_validity_fingerprint_version]
+      @block_execution_fingerprint = hash[:block_execution_fingerprint]
       @definition_fingerprint = hash[:definition_fingerprint]
       @documents_fingerprint = hash[:documents_fingerprint]
       @score = hash[:score]

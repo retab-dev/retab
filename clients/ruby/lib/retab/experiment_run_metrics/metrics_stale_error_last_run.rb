@@ -7,14 +7,14 @@ module Retab
 
     HASH_ATTRS = {
       run_id: :run_id,
-      definition_fingerprint: :definition_fingerprint,
+      block_execution_fingerprint: :block_execution_fingerprint,
       score: :score,
       created_at: :created_at
     }.freeze
 
     attr_accessor(
       :run_id,
-      :definition_fingerprint,
+      :block_execution_fingerprint,
       :score,
       :created_at
     )
@@ -23,7 +23,7 @@ module Retab
       super()
       hash = self.class.normalize(json)
       @run_id = hash[:run_id]
-      @definition_fingerprint = hash[:definition_fingerprint]
+      @block_execution_fingerprint = hash[:block_execution_fingerprint]
       @score = hash[:score]
       @created_at = hash[:created_at]
     end

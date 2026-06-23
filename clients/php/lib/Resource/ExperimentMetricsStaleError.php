@@ -21,7 +21,7 @@ readonly class ExperimentMetricsStaleError implements \JsonSerializable
         public string $message,
         /** @var array<string>|null */
         public ?array $staleReasons = null,
-        public ?string $currentConfigFingerprint = null,
+        public ?string $currentBlockExecutionFingerprint = null,
         public string $kind = 'stale_metrics',
         public string $error = 'stale_metrics',
     ) {}
@@ -43,7 +43,7 @@ readonly class ExperimentMetricsStaleError implements \JsonSerializable
             lastRun: MetricsStaleErrorLastRun::fromArray($data['last_run']),
             message: $data['message'],
             staleReasons: $data['stale_reasons'] ?? null,
-            currentConfigFingerprint: $data['current_config_fingerprint'] ?? null,
+            currentBlockExecutionFingerprint: $data['current_block_execution_fingerprint'] ?? null,
             kind: $data['kind'] ?? 'stale_metrics',
             error: $data['error'] ?? 'stale_metrics',
         );
@@ -57,7 +57,7 @@ readonly class ExperimentMetricsStaleError implements \JsonSerializable
             'last_run' => $this->lastRun->toArray(),
             'message' => $this->message,
             'stale_reasons' => $this->staleReasons,
-            'current_config_fingerprint' => $this->currentConfigFingerprint,
+            'current_block_execution_fingerprint' => $this->currentBlockExecutionFingerprint,
             'kind' => $this->kind,
             'error' => $this->error,
         ];

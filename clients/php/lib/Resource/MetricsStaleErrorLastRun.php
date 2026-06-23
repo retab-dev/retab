@@ -12,7 +12,7 @@ readonly class MetricsStaleErrorLastRun implements \JsonSerializable
 
     public function __construct(
         public string $runId,
-        public ?string $definitionFingerprint = null,
+        public ?string $blockExecutionFingerprint = null,
         public ?float $score = null,
         public ?\DateTimeImmutable $createdAt = null,
     ) {}
@@ -29,7 +29,7 @@ readonly class MetricsStaleErrorLastRun implements \JsonSerializable
         }
         return new self(
             runId: $data['run_id'],
-            definitionFingerprint: $data['definition_fingerprint'] ?? null,
+            blockExecutionFingerprint: $data['block_execution_fingerprint'] ?? null,
             score: $data['score'] ?? null,
             createdAt: isset($data['created_at']) ? new \DateTimeImmutable($data['created_at']) : null,
         );
@@ -40,7 +40,7 @@ readonly class MetricsStaleErrorLastRun implements \JsonSerializable
     {
         return [
             'run_id' => $this->runId,
-            'definition_fingerprint' => $this->definitionFingerprint,
+            'block_execution_fingerprint' => $this->blockExecutionFingerprint,
             'score' => $this->score,
             'created_at' => $this->createdAt?->format(\DateTimeInterface::RFC3339_EXTENDED),
         ];

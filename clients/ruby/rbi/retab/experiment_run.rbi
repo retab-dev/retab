@@ -94,6 +94,12 @@ module Retab
     def metrics_validity_fingerprint_version=(value); end
 
     sig { returns(String) }
+    def block_execution_fingerprint; end
+
+    sig { params(value: String).returns(String) }
+    def block_execution_fingerprint=(value); end
+
+    sig { returns(String) }
     def definition_fingerprint; end
 
     sig { params(value: String).returns(String) }

@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "ruby",
-  "generatedAt": "2026-06-22T22:45:31.053Z",
+  "generatedAt": "2026-06-23T00:27:34.250Z",
   "files": [
     "Gemfile",
     "lib/retab.rb",
@@ -246,6 +246,8 @@
     "lib/retab/types/workflow_eval_runs_order.rb",
     "lib/retab/types/workflow_eval_schema_drift.rb",
     "lib/retab/types/workflow_evals_order.rb",
+    "lib/retab/types/workflow_experiment_freshness_state.rb",
+    "lib/retab/types/workflow_experiment_run_plan_mode.rb",
     "lib/retab/types/workflow_experiments_exclude_status.rb",
     "lib/retab/types/workflow_experiments_order.rb",
     "lib/retab/types/workflow_experiments_status.rb",

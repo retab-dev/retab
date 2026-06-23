@@ -22,7 +22,7 @@ pub struct ExperimentMetricsStaleError {
     pub stale_reasons: Option<Vec<String>>,
     pub last_run: MetricsStaleErrorLastRun,
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub current_config_fingerprint: Option<String>,
+    pub current_block_execution_fingerprint: Option<String>,
     pub message: String,
 }
 impl ExperimentMetricsStaleError {
@@ -39,7 +39,7 @@ impl ExperimentMetricsStaleError {
             experiment_id: experiment_id.into(),
             stale_reasons: Default::default(),
             last_run,
-            current_config_fingerprint: Default::default(),
+            current_block_execution_fingerprint: Default::default(),
             message: message.into(),
         }
     }

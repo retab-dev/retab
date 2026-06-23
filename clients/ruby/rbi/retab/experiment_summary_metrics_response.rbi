@@ -34,10 +34,10 @@ module Retab
     def view=(value); end
 
     sig { returns(T.nilable(String)) }
-    def definition_fingerprint; end
+    def block_execution_fingerprint; end
 
     sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
-    def definition_fingerprint=(value); end
+    def block_execution_fingerprint=(value); end
 
     sig { returns(String) }
     def block_type; end

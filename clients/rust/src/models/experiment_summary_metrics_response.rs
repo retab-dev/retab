@@ -19,7 +19,7 @@ pub struct ExperimentSummaryMetricsResponse {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub view: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub definition_fingerprint: Option<String>,
+    pub block_execution_fingerprint: Option<String>,
     pub block_type: ExperimentSummaryMetricsResponseBlockType,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub score: Option<f64>,
@@ -46,7 +46,7 @@ impl ExperimentSummaryMetricsResponse {
             run_id: run_id.into(),
             kind: Default::default(),
             view: Default::default(),
-            definition_fingerprint: Default::default(),
+            block_execution_fingerprint: Default::default(),
             block_type,
             score: Default::default(),
             prior_score: Default::default(),

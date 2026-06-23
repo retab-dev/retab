@@ -13,7 +13,7 @@ module Retab
       completed_at: :completed_at,
       duration_ms: :duration_ms,
       workflow_draft_fingerprint: :workflow_draft_fingerprint,
-      block_config_fingerprint: :block_config_fingerprint,
+      block_execution_fingerprint: :block_execution_fingerprint,
       validity_fingerprint: :validity_fingerprint,
       handle_inputs_fingerprint: :handle_inputs_fingerprint,
       assertions_passed: :assertions_passed,
@@ -29,7 +29,7 @@ module Retab
       :completed_at,
       :duration_ms,
       :workflow_draft_fingerprint,
-      :block_config_fingerprint,
+      :block_execution_fingerprint,
       :validity_fingerprint,
       :handle_inputs_fingerprint,
       :assertions_passed,
@@ -47,7 +47,7 @@ module Retab
       @completed_at = hash[:completed_at]
       @duration_ms = hash[:duration_ms]
       @workflow_draft_fingerprint = hash[:workflow_draft_fingerprint]
-      @block_config_fingerprint = hash[:block_config_fingerprint]
+      @block_execution_fingerprint = hash[:block_execution_fingerprint]
       @validity_fingerprint = hash[:validity_fingerprint]
       @handle_inputs_fingerprint = hash[:handle_inputs_fingerprint]
       @assertions_passed = hash[:assertions_passed]

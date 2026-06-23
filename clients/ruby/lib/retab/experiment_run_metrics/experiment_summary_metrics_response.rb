@@ -10,7 +10,7 @@ module Retab
       run_id: :run_id,
       kind: :kind,
       view: :view,
-      definition_fingerprint: :definition_fingerprint,
+      block_execution_fingerprint: :block_execution_fingerprint,
       block_type: :block_type,
       score: :score,
       prior_score: :prior_score,
@@ -24,7 +24,7 @@ module Retab
       :run_id,
       :kind,
       :view,
-      :definition_fingerprint,
+      :block_execution_fingerprint,
       :block_type,
       :score,
       :prior_score,
@@ -40,7 +40,7 @@ module Retab
       @run_id = hash[:run_id]
       @kind = hash[:kind].nil? ? "summary" : hash[:kind]
       @view = hash[:view].nil? ? "summary" : hash[:view]
-      @definition_fingerprint = hash[:definition_fingerprint]
+      @block_execution_fingerprint = hash[:block_execution_fingerprint]
       @block_type = hash[:block_type]
       @score = hash[:score]
       @prior_score = hash[:prior_score]

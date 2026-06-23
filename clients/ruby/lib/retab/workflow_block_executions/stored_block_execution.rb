@@ -23,7 +23,7 @@ module Retab
       completed_at: :completed_at,
       handle_inputs_fingerprint: :handle_inputs_fingerprint,
       workflow_draft_fingerprint: :workflow_draft_fingerprint,
-      block_config_fingerprint: :block_config_fingerprint,
+      block_execution_fingerprint: :block_execution_fingerprint,
       execution_fingerprint: :execution_fingerprint,
       block_config: :block_config,
       source_step_id: :source_step_id,
@@ -48,7 +48,7 @@ module Retab
       :completed_at,
       :handle_inputs_fingerprint,
       :workflow_draft_fingerprint,
-      :block_config_fingerprint,
+      :block_execution_fingerprint,
       :execution_fingerprint,
       :block_config,
       :source_step_id,
@@ -94,7 +94,7 @@ module Retab
       @completed_at = hash[:completed_at]
       @handle_inputs_fingerprint = hash[:handle_inputs_fingerprint]
       @workflow_draft_fingerprint = hash[:workflow_draft_fingerprint]
-      @block_config_fingerprint = hash[:block_config_fingerprint]
+      @block_execution_fingerprint = hash[:block_execution_fingerprint]
       @execution_fingerprint = hash[:execution_fingerprint]
       @block_config = hash[:block_config] || {}
       @source_step_id = hash[:source_step_id]

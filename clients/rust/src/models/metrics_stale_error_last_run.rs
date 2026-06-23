@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 pub struct MetricsStaleErrorLastRun {
     pub run_id: String,
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub definition_fingerprint: Option<String>,
+    pub block_execution_fingerprint: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub score: Option<f64>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
@@ -21,7 +21,7 @@ impl MetricsStaleErrorLastRun {
     pub fn new(run_id: impl Into<String>) -> Self {
         Self {
             run_id: run_id.into(),
-            definition_fingerprint: Default::default(),
+            block_execution_fingerprint: Default::default(),
             score: Default::default(),
             created_at: Default::default(),
         }

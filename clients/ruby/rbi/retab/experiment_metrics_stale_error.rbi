@@ -40,10 +40,10 @@ module Retab
     def last_run=(value); end
 
     sig { returns(T.nilable(String)) }
-    def current_config_fingerprint; end
+    def current_block_execution_fingerprint; end
 
     sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
-    def current_config_fingerprint=(value); end
+    def current_block_execution_fingerprint=(value); end
 
     sig { returns(String) }
     def message; end

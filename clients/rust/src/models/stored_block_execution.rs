@@ -55,7 +55,7 @@ pub struct StoredBlockExecution {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub workflow_draft_fingerprint: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub block_config_fingerprint: Option<String>,
+    pub block_execution_fingerprint: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub execution_fingerprint: Option<String>,
     /// The draft block config used for this block execution
@@ -97,7 +97,7 @@ impl StoredBlockExecution {
             completed_at: Default::default(),
             handle_inputs_fingerprint: Default::default(),
             workflow_draft_fingerprint: Default::default(),
-            block_config_fingerprint: Default::default(),
+            block_execution_fingerprint: Default::default(),
             execution_fingerprint: Default::default(),
             block_config: Default::default(),
             source_step_id: Default::default(),

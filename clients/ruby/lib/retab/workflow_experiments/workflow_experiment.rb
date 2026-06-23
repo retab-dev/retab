@@ -20,6 +20,10 @@ module Retab
       score: :score,
       is_stale: :is_stale,
       freshness: :freshness,
+      freshness_state: :freshness_state,
+      freshness_reasons: :freshness_reasons,
+      run_plan_mode: :run_plan_mode,
+      rerunnable_document_count: :rerunnable_document_count,
       schema_drift: :schema_drift,
       schema_drift_detail: :schema_drift_detail,
       drift: :drift
@@ -40,6 +44,10 @@ module Retab
       :score,
       :is_stale,
       :freshness,
+      :freshness_state,
+      :freshness_reasons,
+      :run_plan_mode,
+      :rerunnable_document_count,
       :schema_drift,
       :schema_drift_detail,
       :drift
@@ -62,6 +70,10 @@ module Retab
       @score = hash[:score]
       @is_stale = hash[:is_stale].nil? ? false : hash[:is_stale]
       @freshness = hash[:freshness] ? Retab::ArtifactFreshness.new(hash[:freshness]) : nil
+      @freshness_state = hash[:freshness_state].nil? ? "unknown" : hash[:freshness_state]
+      @freshness_reasons = (hash[:freshness_reasons] || [])
+      @run_plan_mode = hash[:run_plan_mode].nil? ? "unknown" : hash[:run_plan_mode]
+      @rerunnable_document_count = hash[:rerunnable_document_count]
       @schema_drift = hash[:schema_drift].nil? ? "unknown" : hash[:schema_drift]
       @schema_drift_detail = hash[:schema_drift_detail]
       @drift = hash[:drift] ? Retab::ArtifactDrift.new(hash[:drift]) : nil
