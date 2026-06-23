@@ -215,6 +215,18 @@ func (s *ExtractionService) Get(ctx context.Context, extractionID string, params
 	return &result, nil
 }
 
+// Delete extraction
+// Delete an extraction.
+// Permanently deletes the extraction identified by `extraction_id`. Returns
+// `204` on success, or `404` if no extraction with that id exists.
+func (s *ExtractionService) Delete(ctx context.Context, extractionID string, opts ...RequestOption) error {
+	if extractionID == "" {
+		return fmt.Errorf("retab: extraction_id is required")
+	}
+	_, err := s.client.request(ctx, "DELETE", fmt.Sprintf("/v1/extractions/%s", url.PathEscape(extractionID)), nil, nil, nil, opts)
+	return err
+}
+
 // CreateCancel cancel Extraction
 func (s *ExtractionService) CreateCancel(ctx context.Context, extractionID string, opts ...RequestOption) (*Extraction, error) {
 	if extractionID == "" {

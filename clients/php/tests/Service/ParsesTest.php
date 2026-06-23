@@ -62,6 +62,15 @@ class ParsesTest extends TestCase
         $this->assertArrayHasKey('include_output', $query);
     }
 
+    public function testDelete(): void
+    {
+        $client = $this->createMockClient([['status' => 204]]);
+        $client->parses()->delete('test_parse_id');
+        $request = $this->getLastRequest();
+        $this->assertSame('DELETE', $request->getMethod());
+        $this->assertStringEndsWith('v1/parses/test_parse_id', $request->getUri()->getPath());
+    }
+
     public function testCancel(): void
     {
         $fixture = $this->loadFixture('parse');

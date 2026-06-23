@@ -79,6 +79,16 @@ export class Parses {
     return deserializeParse(__wire);
   }
 
+  /** Delete Parse */
+  async delete(parseId: string): Promise<void> {
+    await this.client.request<unknown>({
+      method: 'DELETE',
+      path: `/v1/parses/${parseId}`,
+      query: undefined,
+      body: undefined,
+    });
+  }
+
   /** Cancel Parse */
   async cancel(parseId: string): Promise<Parse> {
     const __wire = await this.client.request<ParseResponse>({

@@ -137,6 +137,15 @@ class SplitsMixin:
         data = None
         return PreparedRequest(method="GET", url=f"/v1/splits/{split_id}", params=params or None, data=data)
 
+    def prepare_delete(self, split_id: str, **extra_params: Any) -> PreparedRequest:
+        """Delete Split Delete a split. Permanently deletes the split identified by `split_id`. Returns `204` on success, or `404` if no split with that id exists."""
+        params: dict[str, Any] = {}
+        if extra_params:
+            params.update(extra_params)
+        params = {k: v for k, v in params.items() if v is not None}
+        data = None
+        return PreparedRequest(method="DELETE", url=f"/v1/splits/{split_id}", params=params or None, data=data)
+
     def prepare_create_split_cancel(self, split_id: str, **extra_params: Any) -> PreparedRequest:
         """Cancel Split"""
         params: dict[str, Any] = {}
@@ -202,6 +211,12 @@ class Splits(SyncAPIResource, SplitsMixin):
         response = self._client._prepared_request(prepared_request)
         return Split.model_validate(response)
 
+    def delete(self, split_id: str, **extra_params: Any) -> None:
+        """Delete Split Delete a split. Permanently deletes the split identified by `split_id`. Returns `204` on success, or `404` if no split with that id exists."""
+        prepared_request = self.prepare_delete(split_id, **extra_params)
+        self._client._prepared_request(prepared_request)
+        return None
+
     def create_split_cancel(self, split_id: str, **extra_params: Any) -> Split:
         """Cancel Split"""
         prepared_request = self.prepare_create_split_cancel(split_id, **extra_params)
@@ -263,6 +278,12 @@ class AsyncSplits(AsyncAPIResource, SplitsMixin):
         prepared_request = self.prepare_get(split_id, include_output=include_output, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return Split.model_validate(response)
+
+    async def delete(self, split_id: str, **extra_params: Any) -> None:
+        """Delete Split Delete a split. Permanently deletes the split identified by `split_id`. Returns `204` on success, or `404` if no split with that id exists."""
+        prepared_request = self.prepare_delete(split_id, **extra_params)
+        await self._client._prepared_request(prepared_request)
+        return None
 
     async def create_split_cancel(self, split_id: str, **extra_params: Any) -> Split:
         """Cancel Split"""

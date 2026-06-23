@@ -34,6 +34,13 @@ class SplitsTest < Minitest::Test
     refute_nil(result)
   end
 
+  def test_delete_returns_expected_result
+    stub_request(:delete, %r{\Ahttps://api\.retab\.com/v1/splits/stub(\?|\z)})
+      .to_return(body: "{}", status: 200)
+    result = @client.splits.delete(split_id: "stub")
+    assert_nil(result)
+  end
+
   def test_create_split_cancel_returns_expected_result
     stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/splits/stub/cancel(\?|\z)})
       .to_return(body: "{}", status: 200)
@@ -51,6 +58,7 @@ class SplitsTest < Minitest::Test
       args: {document: {filename: "stub.pdf", url: "data:application/pdf;base64,c3R1Yg=="}, subdocuments: [{}]}
     },
     {name: :get, verb: :get, url: %r{\Ahttps://api\.retab\.com/v1/splits/stub(\?|\z)}, args: {split_id: "stub"}},
+    {name: :delete, verb: :delete, url: %r{\Ahttps://api\.retab\.com/v1/splits/stub(\?|\z)}, args: {split_id: "stub"}},
     {
       name: :create_split_cancel,
       verb: :post,

@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "go",
-  "generatedAt": "2026-06-23T00:44:34.562Z",
+  "generatedAt": "2026-06-23T01:24:40.279Z",
   "files": [
     "classifications.go",
     "compat.go",
@@ -56,6 +56,10 @@
       "sdkMethod": "Get",
       "service": "classifications"
     },
+    "DELETE /v1/classifications/{classification_id}": {
+      "sdkMethod": "Delete",
+      "service": "classifications"
+    },
     "POST /v1/classifications/{classification_id}/cancel": {
       "sdkMethod": "CreateCancel",
       "service": "classifications"
@@ -70,6 +74,10 @@
     },
     "GET /v1/edits/{edit_id}": {
       "sdkMethod": "Get",
+      "service": "edits"
+    },
+    "DELETE /v1/edits/{edit_id}": {
+      "sdkMethod": "Delete",
       "service": "edits"
     },
     "POST /v1/edits/{edit_id}/cancel": {
@@ -110,6 +118,10 @@
     },
     "GET /v1/extractions/{extraction_id}": {
       "sdkMethod": "Get",
+      "service": "extractions"
+    },
+    "DELETE /v1/extractions/{extraction_id}": {
+      "sdkMethod": "Delete",
       "service": "extractions"
     },
     "POST /v1/extractions/{extraction_id}/cancel": {
@@ -164,6 +176,10 @@
       "sdkMethod": "Get",
       "service": "parses"
     },
+    "DELETE /v1/parses/{parse_id}": {
+      "sdkMethod": "Delete",
+      "service": "parses"
+    },
     "POST /v1/parses/{parse_id}/cancel": {
       "sdkMethod": "Cancel",
       "service": "parses"
@@ -178,6 +194,10 @@
     },
     "GET /v1/partitions/{partition_id}": {
       "sdkMethod": "Get",
+      "service": "partitions"
+    },
+    "DELETE /v1/partitions/{partition_id}": {
+      "sdkMethod": "Delete",
       "service": "partitions"
     },
     "POST /v1/partitions/{partition_id}/cancel": {
@@ -222,6 +242,10 @@
     },
     "GET /v1/splits/{split_id}": {
       "sdkMethod": "Get",
+      "service": "splits"
+    },
+    "DELETE /v1/splits/{split_id}": {
+      "sdkMethod": "Delete",
       "service": "splits"
     },
     "POST /v1/splits/{split_id}/cancel": {

@@ -127,6 +127,18 @@ func (s *EditService) Get(ctx context.Context, editID string, params *EditsGetPa
 	return &result, nil
 }
 
+// Delete edit
+// Delete an edit.
+// Permanently deletes the edit identified by `edit_id`. Returns `204` on
+// success, or `404` if no edit with that id exists.
+func (s *EditService) Delete(ctx context.Context, editID string, opts ...RequestOption) error {
+	if editID == "" {
+		return fmt.Errorf("retab: edit_id is required")
+	}
+	_, err := s.client.request(ctx, "DELETE", fmt.Sprintf("/v1/edits/%s", url.PathEscape(editID)), nil, nil, nil, opts)
+	return err
+}
+
 // CreateCancel cancel Edit
 func (s *EditService) CreateCancel(ctx context.Context, editID string, opts ...RequestOption) (*Edit, error) {
 	if editID == "" {

@@ -222,6 +222,28 @@ class Extractions
     }
 
     /**
+     * Delete Extraction
+     *
+     * Delete an extraction.
+     *
+     * Permanently deletes the extraction identified by `extraction_id`. Returns
+     * `204` on success, or `404` if no extraction with that id exists.
+     * @param string $extractionId
+     * @return void
+     * @throws \Retab\Exception\RetabException
+     */
+    public function delete(
+        string $extractionId,
+        ?\Retab\RequestOptions $options = null,
+    ): void {
+        $this->client->request(
+            method: 'DELETE',
+            path: 'v1/extractions/' . rawurlencode($extractionId),
+            options: $options,
+        );
+    }
+
+    /**
      * Cancel Extraction
      * @param string $extractionId
      * @return \Retab\Resource\Extraction

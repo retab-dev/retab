@@ -66,6 +66,15 @@ class PartitionsTest extends TestCase
         $this->assertArrayHasKey('include_output', $query);
     }
 
+    public function testDelete(): void
+    {
+        $client = $this->createMockClient([['status' => 204]]);
+        $client->partitions()->delete('test_partition_id');
+        $request = $this->getLastRequest();
+        $this->assertSame('DELETE', $request->getMethod());
+        $this->assertStringEndsWith('v1/partitions/test_partition_id', $request->getUri()->getPath());
+    }
+
     public function testCreatePartitionCancel(): void
     {
         $fixture = $this->loadFixture('partition');

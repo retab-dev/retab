@@ -88,6 +88,16 @@ export class Edits {
     return deserializeEdit(__wire);
   }
 
+  /** Delete Edit */
+  async delete(editId: string): Promise<void> {
+    await this.client.request<unknown>({
+      method: 'DELETE',
+      path: `/v1/edits/${editId}`,
+      query: undefined,
+      body: undefined,
+    });
+  }
+
   /** Cancel Edit */
   async create_edit_cancel(editId: string): Promise<Edit> {
     const __wire = await this.client.request<EditResponse>({

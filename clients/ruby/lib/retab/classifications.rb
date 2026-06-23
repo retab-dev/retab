@@ -156,6 +156,23 @@ module Retab
       result
     end
 
+    # Delete Classification
+    # @param classification_id [String]
+    # @param request_options [Hash] (see Retab::Types::RequestOptions)
+    # @return [void]
+    def delete(
+      classification_id:,
+      request_options: {}
+    )
+      @client.request(
+        method: :delete,
+        path: "/v1/classifications/#{Retab::Util.encode_path(classification_id)}",
+        auth: true,
+        request_options: request_options
+      )
+      nil
+    end
+
     # Cancel Classification
     # @param classification_id [String]
     # @param request_options [Hash] (see Retab::Types::RequestOptions)

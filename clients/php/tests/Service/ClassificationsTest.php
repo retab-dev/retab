@@ -63,6 +63,15 @@ class ClassificationsTest extends TestCase
         $this->assertArrayHasKey('include_output', $query);
     }
 
+    public function testDelete(): void
+    {
+        $client = $this->createMockClient([['status' => 204]]);
+        $client->classifications()->delete('test_classification_id');
+        $request = $this->getLastRequest();
+        $this->assertSame('DELETE', $request->getMethod());
+        $this->assertStringEndsWith('v1/classifications/test_classification_id', $request->getUri()->getPath());
+    }
+
     public function testCreateClassificationCancel(): void
     {
         $fixture = $this->loadFixture('classification');

@@ -52,6 +52,14 @@ module Retab
       params(
         partition_id: String,
         request_options: T::Hash[Symbol, T.untyped]
+      ).returns(NilClass)
+    end
+    def delete(partition_id:, request_options:); end
+
+    sig do
+      params(
+        partition_id: String,
+        request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::Partition)
     end
     def create_partition_cancel(partition_id:, request_options:); end

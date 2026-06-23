@@ -156,6 +156,28 @@ class Edits
     }
 
     /**
+     * Delete Edit
+     *
+     * Delete an edit.
+     *
+     * Permanently deletes the edit identified by `edit_id`. Returns `204` on
+     * success, or `404` if no edit with that id exists.
+     * @param string $editId
+     * @return void
+     * @throws \Retab\Exception\RetabException
+     */
+    public function delete(
+        string $editId,
+        ?\Retab\RequestOptions $options = null,
+    ): void {
+        $this->client->request(
+            method: 'DELETE',
+            path: 'v1/edits/' . rawurlencode($editId),
+            options: $options,
+        );
+    }
+
+    /**
      * Cancel Edit
      * @param string $editId
      * @return \Retab\Resource\Edit

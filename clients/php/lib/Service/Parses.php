@@ -137,6 +137,28 @@ class Parses
     }
 
     /**
+     * Delete Parse
+     *
+     * Delete a parse.
+     *
+     * Permanently deletes the parse identified by `parse_id`. Returns `204` on
+     * success, or `404` if no parse with that id exists.
+     * @param string $parseId
+     * @return void
+     * @throws \Retab\Exception\RetabException
+     */
+    public function delete(
+        string $parseId,
+        ?\Retab\RequestOptions $options = null,
+    ): void {
+        $this->client->request(
+            method: 'DELETE',
+            path: 'v1/parses/' . rawurlencode($parseId),
+            options: $options,
+        );
+    }
+
+    /**
      * Cancel Parse
      * @param string $parseId
      * @return \Retab\Resource\Parse

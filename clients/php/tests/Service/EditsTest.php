@@ -66,6 +66,15 @@ class EditsTest extends TestCase
         $this->assertArrayHasKey('include_output', $query);
     }
 
+    public function testDelete(): void
+    {
+        $client = $this->createMockClient([['status' => 204]]);
+        $client->edits()->delete('test_edit_id');
+        $request = $this->getLastRequest();
+        $this->assertSame('DELETE', $request->getMethod());
+        $this->assertStringEndsWith('v1/edits/test_edit_id', $request->getUri()->getPath());
+    }
+
     public function testCreateEditCancel(): void
     {
         $fixture = $this->loadFixture('edit');

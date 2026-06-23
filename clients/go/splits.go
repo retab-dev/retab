@@ -127,6 +127,18 @@ func (s *SplitService) Get(ctx context.Context, splitID string, params *SplitsGe
 	return &result, nil
 }
 
+// Delete split
+// Delete a split.
+// Permanently deletes the split identified by `split_id`. Returns `204` on
+// success, or `404` if no split with that id exists.
+func (s *SplitService) Delete(ctx context.Context, splitID string, opts ...RequestOption) error {
+	if splitID == "" {
+		return fmt.Errorf("retab: split_id is required")
+	}
+	_, err := s.client.request(ctx, "DELETE", fmt.Sprintf("/v1/splits/%s", url.PathEscape(splitID)), nil, nil, nil, opts)
+	return err
+}
+
 // CreateCancel cancel Split
 func (s *SplitService) CreateCancel(ctx context.Context, splitID string, opts ...RequestOption) (*Split, error) {
 	if splitID == "" {

@@ -173,6 +173,30 @@ impl<'a> ParsesApi<'a> {
             .await
     }
 
+    /// Delete Parse
+    ///
+    /// Delete a parse.
+    ///
+    /// Permanently deletes the parse identified by `parse_id`. Returns `204` on
+    /// success, or `404` if no parse with that id exists.
+    pub async fn delete(&self, parse_id: &str) -> Result<(), Error> {
+        self.delete_with_options(parse_id, None).await
+    }
+
+    /// Variant of [`Self::delete`] that accepts per-request [`crate::RequestOptions`].
+    pub async fn delete_with_options(
+        &self,
+        parse_id: &str,
+        options: Option<&crate::RequestOptions>,
+    ) -> Result<(), Error> {
+        let parse_id = crate::client::path_segment(parse_id);
+        let path = format!("/v1/parses/{parse_id}");
+        let method = http::Method::DELETE;
+        self.client
+            .request_with_query_opts_empty(method, &path, &(), options)
+            .await
+    }
+
     /// Cancel Parse
     pub async fn cancel(&self, parse_id: &str) -> Result<Parse, Error> {
         self.cancel_with_options(parse_id, None).await

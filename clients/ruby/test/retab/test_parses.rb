@@ -32,6 +32,13 @@ class ParsesTest < Minitest::Test
     refute_nil(result)
   end
 
+  def test_delete_returns_expected_result
+    stub_request(:delete, %r{\Ahttps://api\.retab\.com/v1/parses/stub(\?|\z)})
+      .to_return(body: "{}", status: 200)
+    result = @client.parses.delete(parse_id: "stub")
+    assert_nil(result)
+  end
+
   def test_cancel_returns_expected_result
     stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/parses/stub/cancel(\?|\z)})
       .to_return(body: "{}", status: 200)
@@ -49,6 +56,7 @@ class ParsesTest < Minitest::Test
       args: {document: {filename: "stub.pdf", url: "data:application/pdf;base64,c3R1Yg=="}}
     },
     {name: :get, verb: :get, url: %r{\Ahttps://api\.retab\.com/v1/parses/stub(\?|\z)}, args: {parse_id: "stub"}},
+    {name: :delete, verb: :delete, url: %r{\Ahttps://api\.retab\.com/v1/parses/stub(\?|\z)}, args: {parse_id: "stub"}},
     {
       name: :cancel,
       verb: :post,

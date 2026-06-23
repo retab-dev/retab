@@ -138,6 +138,15 @@ class ClassificationsMixin:
         data = None
         return PreparedRequest(method="GET", url=f"/v1/classifications/{classification_id}", params=params or None, data=data)
 
+    def prepare_delete(self, classification_id: str, **extra_params: Any) -> PreparedRequest:
+        """Delete Classification Delete a classification. Permanently deletes the classification identified by `classification_id`. Returns `204` on success, or `404` if no classification with that id exists."""
+        params: dict[str, Any] = {}
+        if extra_params:
+            params.update(extra_params)
+        params = {k: v for k, v in params.items() if v is not None}
+        data = None
+        return PreparedRequest(method="DELETE", url=f"/v1/classifications/{classification_id}", params=params or None, data=data)
+
     def prepare_create_classification_cancel(self, classification_id: str, **extra_params: Any) -> PreparedRequest:
         """Cancel Classification"""
         params: dict[str, Any] = {}
@@ -205,6 +214,12 @@ class Classifications(SyncAPIResource, ClassificationsMixin):
         response = self._client._prepared_request(prepared_request)
         return Classification.model_validate(response)
 
+    def delete(self, classification_id: str, **extra_params: Any) -> None:
+        """Delete Classification Delete a classification. Permanently deletes the classification identified by `classification_id`. Returns `204` on success, or `404` if no classification with that id exists."""
+        prepared_request = self.prepare_delete(classification_id, **extra_params)
+        self._client._prepared_request(prepared_request)
+        return None
+
     def create_classification_cancel(self, classification_id: str, **extra_params: Any) -> Classification:
         """Cancel Classification"""
         prepared_request = self.prepare_create_classification_cancel(classification_id, **extra_params)
@@ -268,6 +283,12 @@ class AsyncClassifications(AsyncAPIResource, ClassificationsMixin):
         prepared_request = self.prepare_get(classification_id, include_output=include_output, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return Classification.model_validate(response)
+
+    async def delete(self, classification_id: str, **extra_params: Any) -> None:
+        """Delete Classification Delete a classification. Permanently deletes the classification identified by `classification_id`. Returns `204` on success, or `404` if no classification with that id exists."""
+        prepared_request = self.prepare_delete(classification_id, **extra_params)
+        await self._client._prepared_request(prepared_request)
+        return None
 
     async def create_classification_cancel(self, classification_id: str, **extra_params: Any) -> Classification:
         """Cancel Classification"""

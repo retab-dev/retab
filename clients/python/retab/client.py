@@ -90,6 +90,7 @@ class BaseRetab:
 
         if base_url is None:
             base_url = os.environ.get("RETAB_API_BASE_URL", "https://api.retab.com")
+        assert base_url is not None
 
         truststore.inject_into_ssl()
         self.api_key = api_key

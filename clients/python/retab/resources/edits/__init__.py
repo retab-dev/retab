@@ -142,6 +142,15 @@ class EditsMixin:
         data = None
         return PreparedRequest(method="GET", url=f"/v1/edits/{edit_id}", params=params or None, data=data)
 
+    def prepare_delete(self, edit_id: str, **extra_params: Any) -> PreparedRequest:
+        """Delete Edit Delete an edit. Permanently deletes the edit identified by `edit_id`. Returns `204` on success, or `404` if no edit with that id exists."""
+        params: dict[str, Any] = {}
+        if extra_params:
+            params.update(extra_params)
+        params = {k: v for k, v in params.items() if v is not None}
+        data = None
+        return PreparedRequest(method="DELETE", url=f"/v1/edits/{edit_id}", params=params or None, data=data)
+
     def prepare_create_edit_cancel(self, edit_id: str, **extra_params: Any) -> PreparedRequest:
         """Cancel Edit"""
         params: dict[str, Any] = {}
@@ -205,6 +214,12 @@ class Edits(SyncAPIResource, EditsMixin):
         response = self._client._prepared_request(prepared_request)
         return Edit.model_validate(response)
 
+    def delete(self, edit_id: str, **extra_params: Any) -> None:
+        """Delete Edit Delete an edit. Permanently deletes the edit identified by `edit_id`. Returns `204` on success, or `404` if no edit with that id exists."""
+        prepared_request = self.prepare_delete(edit_id, **extra_params)
+        self._client._prepared_request(prepared_request)
+        return None
+
     def create_edit_cancel(self, edit_id: str, **extra_params: Any) -> Edit:
         """Cancel Edit"""
         prepared_request = self.prepare_create_edit_cancel(edit_id, **extra_params)
@@ -264,6 +279,12 @@ class AsyncEdits(AsyncAPIResource, EditsMixin):
         prepared_request = self.prepare_get(edit_id, include_output=include_output, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return Edit.model_validate(response)
+
+    async def delete(self, edit_id: str, **extra_params: Any) -> None:
+        """Delete Edit Delete an edit. Permanently deletes the edit identified by `edit_id`. Returns `204` on success, or `404` if no edit with that id exists."""
+        prepared_request = self.prepare_delete(edit_id, **extra_params)
+        await self._client._prepared_request(prepared_request)
+        return None
 
     async def create_edit_cancel(self, edit_id: str, **extra_params: Any) -> Edit:
         """Cancel Edit"""

@@ -49,6 +49,14 @@ module Retab
       params(
         parse_id: String,
         request_options: T::Hash[Symbol, T.untyped]
+      ).returns(NilClass)
+    end
+    def delete(parse_id:, request_options:); end
+
+    sig do
+      params(
+        parse_id: String,
+        request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::Parse)
     end
     def cancel(parse_id:, request_options:); end

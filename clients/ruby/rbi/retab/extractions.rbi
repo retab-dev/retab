@@ -77,6 +77,14 @@ module Retab
       params(
         extraction_id: String,
         request_options: T::Hash[Symbol, T.untyped]
+      ).returns(NilClass)
+    end
+    def delete(extraction_id:, request_options:); end
+
+    sig do
+      params(
+        extraction_id: String,
+        request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::Extraction)
     end
     def create_extraction_cancel(extraction_id:, request_options:); end

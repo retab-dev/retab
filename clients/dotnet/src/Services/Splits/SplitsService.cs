@@ -96,6 +96,26 @@ namespace Retab
             return this.GetAsync(splitId, options, requestOptions, cancellationToken);
         }
 
+        /// <summary>Delete Split</summary>
+        /// <remarks>
+        /// Delete a split.
+        /// Permanently deletes the split identified by `split_id`. Returns `204` on
+        /// success, or `404` if no split with that id exists.
+        /// </remarks>
+        /// <param name="splitId">The split id.</param>
+        /// <param name="requestOptions">Per-request configuration overrides.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        public virtual async Task DeleteAsync(string splitId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            await this.DeleteAsync($"/v1/splits/{Uri.EscapeDataString(splitId)}", null, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Compatibility wrapper for <see cref="DeleteAsync"/>.</summary>
+        public virtual Task Delete(string splitId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return this.DeleteAsync(splitId, requestOptions, cancellationToken);
+        }
+
         /// <summary>Cancel Split</summary>
         /// <param name="splitId">The split id.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>

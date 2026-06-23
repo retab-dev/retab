@@ -181,6 +181,30 @@ impl<'a> ClassificationsApi<'a> {
             .await
     }
 
+    /// Delete Classification
+    ///
+    /// Delete a classification.
+    ///
+    /// Permanently deletes the classification identified by `classification_id`.
+    /// Returns `204` on success, or `404` if no classification with that id exists.
+    pub async fn delete(&self, classification_id: &str) -> Result<(), Error> {
+        self.delete_with_options(classification_id, None).await
+    }
+
+    /// Variant of [`Self::delete`] that accepts per-request [`crate::RequestOptions`].
+    pub async fn delete_with_options(
+        &self,
+        classification_id: &str,
+        options: Option<&crate::RequestOptions>,
+    ) -> Result<(), Error> {
+        let classification_id = crate::client::path_segment(classification_id);
+        let path = format!("/v1/classifications/{classification_id}");
+        let method = http::Method::DELETE;
+        self.client
+            .request_with_query_opts_empty(method, &path, &(), options)
+            .await
+    }
+
     /// Cancel Classification
     pub async fn create_classification_cancel(
         &self,

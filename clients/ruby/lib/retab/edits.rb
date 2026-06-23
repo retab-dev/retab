@@ -162,6 +162,23 @@ module Retab
       result
     end
 
+    # Delete Edit
+    # @param edit_id [String]
+    # @param request_options [Hash] (see Retab::Types::RequestOptions)
+    # @return [void]
+    def delete(
+      edit_id:,
+      request_options: {}
+    )
+      @client.request(
+        method: :delete,
+        path: "/v1/edits/#{Retab::Util.encode_path(edit_id)}",
+        auth: true,
+        request_options: request_options
+      )
+      nil
+    end
+
     # Cancel Edit
     # @param edit_id [String]
     # @param request_options [Hash] (see Retab::Types::RequestOptions)

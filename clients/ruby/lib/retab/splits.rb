@@ -153,6 +153,23 @@ module Retab
       result
     end
 
+    # Delete Split
+    # @param split_id [String]
+    # @param request_options [Hash] (see Retab::Types::RequestOptions)
+    # @return [void]
+    def delete(
+      split_id:,
+      request_options: {}
+    )
+      @client.request(
+        method: :delete,
+        path: "/v1/splits/#{Retab::Util.encode_path(split_id)}",
+        auth: true,
+        request_options: request_options
+      )
+      nil
+    end
+
     # Cancel Split
     # @param split_id [String]
     # @param request_options [Hash] (see Retab::Types::RequestOptions)

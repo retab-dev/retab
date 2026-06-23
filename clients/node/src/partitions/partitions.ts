@@ -85,6 +85,16 @@ export class Partitions {
     return deserializePartition(__wire);
   }
 
+  /** Delete Partition */
+  async delete(partitionId: string): Promise<void> {
+    await this.client.request<unknown>({
+      method: 'DELETE',
+      path: `/v1/partitions/${partitionId}`,
+      query: undefined,
+      body: undefined,
+    });
+  }
+
   /** Cancel Partition */
   async create_partition_cancel(partitionId: string): Promise<Partition> {
     const __wire = await this.client.request<PartitionResponse>({

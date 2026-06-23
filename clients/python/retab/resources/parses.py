@@ -132,6 +132,15 @@ class ParsesMixin:
         data = None
         return PreparedRequest(method="GET", url=f"/v1/parses/{parse_id}", params=params or None, data=data)
 
+    def prepare_delete(self, parse_id: str, **extra_params: Any) -> PreparedRequest:
+        """Delete Parse Delete a parse. Permanently deletes the parse identified by `parse_id`. Returns `204` on success, or `404` if no parse with that id exists."""
+        params: dict[str, Any] = {}
+        if extra_params:
+            params.update(extra_params)
+        params = {k: v for k, v in params.items() if v is not None}
+        data = None
+        return PreparedRequest(method="DELETE", url=f"/v1/parses/{parse_id}", params=params or None, data=data)
+
     def prepare_cancel(self, parse_id: str, **extra_params: Any) -> PreparedRequest:
         """Cancel Parse"""
         params: dict[str, Any] = {}
@@ -192,6 +201,12 @@ class Parses(SyncAPIResource, ParsesMixin):
         response = self._client._prepared_request(prepared_request)
         return Parse.model_validate(response)
 
+    def delete(self, parse_id: str, **extra_params: Any) -> None:
+        """Delete Parse Delete a parse. Permanently deletes the parse identified by `parse_id`. Returns `204` on success, or `404` if no parse with that id exists."""
+        prepared_request = self.prepare_delete(parse_id, **extra_params)
+        self._client._prepared_request(prepared_request)
+        return None
+
     def cancel(self, parse_id: str, **extra_params: Any) -> Parse:
         """Cancel Parse"""
         prepared_request = self.prepare_cancel(parse_id, **extra_params)
@@ -248,6 +263,12 @@ class AsyncParses(AsyncAPIResource, ParsesMixin):
         prepared_request = self.prepare_get(parse_id, include_output=include_output, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return Parse.model_validate(response)
+
+    async def delete(self, parse_id: str, **extra_params: Any) -> None:
+        """Delete Parse Delete a parse. Permanently deletes the parse identified by `parse_id`. Returns `204` on success, or `404` if no parse with that id exists."""
+        prepared_request = self.prepare_delete(parse_id, **extra_params)
+        await self._client._prepared_request(prepared_request)
+        return None
 
     async def cancel(self, parse_id: str, **extra_params: Any) -> Parse:
         """Cancel Parse"""

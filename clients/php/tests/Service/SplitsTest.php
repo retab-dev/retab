@@ -63,6 +63,15 @@ class SplitsTest extends TestCase
         $this->assertArrayHasKey('include_output', $query);
     }
 
+    public function testDelete(): void
+    {
+        $client = $this->createMockClient([['status' => 204]]);
+        $client->splits()->delete('test_split_id');
+        $request = $this->getLastRequest();
+        $this->assertSame('DELETE', $request->getMethod());
+        $this->assertStringEndsWith('v1/splits/test_split_id', $request->getUri()->getPath());
+    }
+
     public function testCreateSplitCancel(): void
     {
         $fixture = $this->loadFixture('split');

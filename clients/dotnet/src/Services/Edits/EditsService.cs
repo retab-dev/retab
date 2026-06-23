@@ -100,6 +100,26 @@ namespace Retab
             return this.GetAsync(editId, options, requestOptions, cancellationToken);
         }
 
+        /// <summary>Delete Edit</summary>
+        /// <remarks>
+        /// Delete an edit.
+        /// Permanently deletes the edit identified by `edit_id`. Returns `204` on
+        /// success, or `404` if no edit with that id exists.
+        /// </remarks>
+        /// <param name="editId">The edit id.</param>
+        /// <param name="requestOptions">Per-request configuration overrides.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        public virtual async Task DeleteAsync(string editId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            await this.DeleteAsync($"/v1/edits/{Uri.EscapeDataString(editId)}", null, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Compatibility wrapper for <see cref="DeleteAsync"/>.</summary>
+        public virtual Task Delete(string editId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return this.DeleteAsync(editId, requestOptions, cancellationToken);
+        }
+
         /// <summary>Cancel Edit</summary>
         /// <param name="editId">The edit id.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>

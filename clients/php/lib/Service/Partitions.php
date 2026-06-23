@@ -146,6 +146,28 @@ class Partitions
     }
 
     /**
+     * Delete Partition
+     *
+     * Delete a partition.
+     *
+     * Permanently deletes the partition identified by `partition_id`. Returns
+     * `204` on success, or `404` if no partition with that id exists.
+     * @param string $partitionId
+     * @return void
+     * @throws \Retab\Exception\RetabException
+     */
+    public function delete(
+        string $partitionId,
+        ?\Retab\RequestOptions $options = null,
+    ): void {
+        $this->client->request(
+            method: 'DELETE',
+            path: 'v1/partitions/' . rawurlencode($partitionId),
+            options: $options,
+        );
+    }
+
+    /**
      * Cancel Partition
      * @param string $partitionId
      * @return \Retab\Resource\Partition

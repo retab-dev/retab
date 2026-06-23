@@ -134,6 +134,18 @@ func (s *PartitionService) Get(ctx context.Context, partitionID string, params *
 	return &result, nil
 }
 
+// Delete partition
+// Delete a partition.
+// Permanently deletes the partition identified by `partition_id`. Returns
+// `204` on success, or `404` if no partition with that id exists.
+func (s *PartitionService) Delete(ctx context.Context, partitionID string, opts ...RequestOption) error {
+	if partitionID == "" {
+		return fmt.Errorf("retab: partition_id is required")
+	}
+	_, err := s.client.request(ctx, "DELETE", fmt.Sprintf("/v1/partitions/%s", url.PathEscape(partitionID)), nil, nil, nil, opts)
+	return err
+}
+
 // CreateCancel cancel Partition
 func (s *PartitionService) CreateCancel(ctx context.Context, partitionID string, opts ...RequestOption) (*Partition, error) {
 	if partitionID == "" {
