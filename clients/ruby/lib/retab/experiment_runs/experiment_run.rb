@@ -21,7 +21,6 @@ module Retab
       metrics_validity_fingerprint: :metrics_validity_fingerprint,
       metrics_validity_fingerprint_version: :metrics_validity_fingerprint_version,
       block_execution_fingerprint: :block_execution_fingerprint,
-      definition_fingerprint: :definition_fingerprint,
       documents_fingerprint: :documents_fingerprint,
       score: :score,
       total_document_count: :total_document_count,
@@ -46,7 +45,6 @@ module Retab
       :metrics_validity_fingerprint,
       :metrics_validity_fingerprint_version,
       :block_execution_fingerprint,
-      :definition_fingerprint,
       :documents_fingerprint,
       :score,
       :total_document_count,
@@ -90,7 +88,6 @@ module Retab
       @metrics_validity_fingerprint = hash[:metrics_validity_fingerprint]
       @metrics_validity_fingerprint_version = hash[:metrics_validity_fingerprint_version]
       @block_execution_fingerprint = hash[:block_execution_fingerprint]
-      @definition_fingerprint = hash[:definition_fingerprint]
       @documents_fingerprint = hash[:documents_fingerprint]
       @score = hash[:score]
       @total_document_count = hash[:total_document_count]

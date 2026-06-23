@@ -1,6 +1,7 @@
 namespace Retab
 {
     using System;
+    using System.Collections.Generic;
     using Newtonsoft.Json;
     using STJS = System.Text.Json.Serialization;
 
@@ -29,6 +30,10 @@ namespace Retab
         public double? Score { get; set; }
         public bool? IsStale { get; set; } = false;
         public ArtifactFreshness? Freshness { get; set; }
+        public ArtifactFreshnessStatus? FreshnessState { get; set; }
+        public List<string>? FreshnessReasons { get; set; }
+        public WorkflowExperimentRunPlanMode? RunPlanMode { get; set; }
+        public long? RerunnableDocumentCount { get; set; }
         public ExperimentSchemaDriftStatus? SchemaDrift { get; set; }
         public string? SchemaDriftDetail { get; set; }
         public ArtifactDrift? Drift { get; set; }

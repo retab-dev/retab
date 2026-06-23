@@ -269,7 +269,7 @@ def _experiment_run_response(**overrides: object) -> dict:
         "block_id": "block_extract",
         "block_type": "extract",
         "n_consensus": 5,
-        "definition_fingerprint": "deadbeef",
+        "block_execution_fingerprint": "deadbeef",
         "documents_fingerprint": "docbeef",
         "document_count": 3,
         "total_document_count": 3,
@@ -509,7 +509,7 @@ def test_experiments_runs_metrics_summary_view_default() -> None:
         "run_id": "exprun_1",
         "kind": "summary",
         "view": "summary",
-        "definition_fingerprint": "deadbeef",
+        "block_execution_fingerprint": "deadbeef",
         "block_type": "extract",
         "score": 0.83,
         "documents": [],
@@ -597,11 +597,11 @@ def test_experiments_runs_metrics_returns_stale_error_envelope() -> None:
         "stale_reasons": ["config_changed"],
         "last_run": {
             "run_id": "exprun_1",
-            "definition_fingerprint": "old",
+            "block_execution_fingerprint": "old",
             "score": 0.5,
             "created_at": _NOW,
         },
-        "current_config_fingerprint": "new",
+        "current_block_execution_fingerprint": "new",
         "message": "Metrics are stale; rerun the experiment.",
     }
 

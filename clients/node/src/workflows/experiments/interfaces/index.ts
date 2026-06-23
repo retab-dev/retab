@@ -12,3 +12,5 @@ export * from './n-consensus-value.interface.js';
 export * from './update-experiment-request.interface.js';
 export * from './update-experiment-request-n-consensus.interface.js';
 export * from './workflow-experiment.interface.js';
+export * from './workflow-experiment-freshness-state.interface.js';
+export * from './workflow-experiment-run-plan-mode.interface.js';

@@ -28,7 +28,7 @@ public final class StoredBlockExecution {
   private final OffsetDateTime completedAt;
   private final String handleInputsFingerprint;
   private final String workflowDraftFingerprint;
-  private final String blockConfigFingerprint;
+  private final String blockExecutionFingerprint;
   private final String executionFingerprint;
   private final Map<String, Object> blockConfig;
   private final String sourceStepId;
@@ -55,8 +55,8 @@ public final class StoredBlockExecution {
           String handleInputsFingerprint,
       @JsonProperty(value = "workflow_draft_fingerprint", required = false)
           String workflowDraftFingerprint,
-      @JsonProperty(value = "block_config_fingerprint", required = false)
-          String blockConfigFingerprint,
+      @JsonProperty(value = "block_execution_fingerprint", required = false)
+          String blockExecutionFingerprint,
       @JsonProperty(value = "execution_fingerprint", required = false) String executionFingerprint,
       @JsonProperty(value = "block_config", required = false) Map<String, Object> blockConfig,
       @JsonProperty(value = "source_step_id", required = false) String sourceStepId,
@@ -79,7 +79,7 @@ public final class StoredBlockExecution {
     this.completedAt = completedAt;
     this.handleInputsFingerprint = handleInputsFingerprint;
     this.workflowDraftFingerprint = workflowDraftFingerprint;
-    this.blockConfigFingerprint = blockConfigFingerprint;
+    this.blockExecutionFingerprint = blockExecutionFingerprint;
     this.executionFingerprint = executionFingerprint;
     this.blockConfig = blockConfig;
     this.sourceStepId = sourceStepId;
@@ -171,9 +171,9 @@ public final class StoredBlockExecution {
     return workflowDraftFingerprint;
   }
 
-  @JsonProperty("block_config_fingerprint")
-  public String getBlockConfigFingerprint() {
-    return blockConfigFingerprint;
+  @JsonProperty("block_execution_fingerprint")
+  public String getBlockExecutionFingerprint() {
+    return blockExecutionFingerprint;
   }
 
   @JsonProperty("execution_fingerprint")

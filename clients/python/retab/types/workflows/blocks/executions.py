@@ -79,7 +79,7 @@ class StoredBlockExecution(BaseModel):
     completed_at: datetime.datetime | None = Field(default=None, description="When the block execution completed")
     handle_inputs_fingerprint: str | None = None
     workflow_draft_fingerprint: str | None = None
-    block_config_fingerprint: str | None = None
+    block_execution_fingerprint: str | None = None
     execution_fingerprint: str | None = None
     block_config: dict[str, Any] | None = Field(default=None, description="The draft block config used for this block execution")
     source_step_id: str | None = Field(default=None, description="The step ID that was used for inputs (includes iteration prefix if applicable)")

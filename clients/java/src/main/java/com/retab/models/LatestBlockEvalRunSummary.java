@@ -18,7 +18,7 @@ public final class LatestBlockEvalRunSummary {
   private final OffsetDateTime completedAt;
   private final Long durationMs;
   private final String workflowDraftFingerprint;
-  private final String blockConfigFingerprint;
+  private final String blockExecutionFingerprint;
   private final String validityFingerprint;
   private final String handleInputsFingerprint;
   private final Long assertionsPassed;
@@ -35,8 +35,8 @@ public final class LatestBlockEvalRunSummary {
       @JsonProperty(value = "duration_ms", required = false) Long durationMs,
       @JsonProperty(value = "workflow_draft_fingerprint", required = false)
           String workflowDraftFingerprint,
-      @JsonProperty(value = "block_config_fingerprint", required = false)
-          String blockConfigFingerprint,
+      @JsonProperty(value = "block_execution_fingerprint", required = false)
+          String blockExecutionFingerprint,
       @JsonProperty(value = "validity_fingerprint", required = false) String validityFingerprint,
       @JsonProperty(value = "handle_inputs_fingerprint", required = false)
           String handleInputsFingerprint,
@@ -50,7 +50,7 @@ public final class LatestBlockEvalRunSummary {
     this.completedAt = completedAt;
     this.durationMs = durationMs;
     this.workflowDraftFingerprint = workflowDraftFingerprint;
-    this.blockConfigFingerprint = blockConfigFingerprint;
+    this.blockExecutionFingerprint = blockExecutionFingerprint;
     this.validityFingerprint = validityFingerprint;
     this.handleInputsFingerprint = handleInputsFingerprint;
     this.assertionsPassed = assertionsPassed;
@@ -93,9 +93,9 @@ public final class LatestBlockEvalRunSummary {
     return workflowDraftFingerprint;
   }
 
-  @JsonProperty("block_config_fingerprint")
-  public String getBlockConfigFingerprint() {
-    return blockConfigFingerprint;
+  @JsonProperty("block_execution_fingerprint")
+  public String getBlockExecutionFingerprint() {
+    return blockExecutionFingerprint;
   }
 
   @JsonProperty("validity_fingerprint")

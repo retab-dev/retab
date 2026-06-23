@@ -9,7 +9,10 @@ import com.retab.types.ExperimentBlockType;
 import com.retab.types.ExperimentPublicStatus;
 import com.retab.types.ExperimentSchemaDriftStatus;
 import com.retab.types.NConsensusValue;
+import com.retab.types.WorkflowExperimentFreshnessState;
+import com.retab.types.WorkflowExperimentRunPlanMode;
 import java.time.OffsetDateTime;
+import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class WorkflowExperiment {
@@ -27,6 +30,10 @@ public final class WorkflowExperiment {
   private final Double score;
   private final Boolean isStale;
   private final ArtifactFreshness freshness;
+  private final WorkflowExperimentFreshnessState freshnessState;
+  private final List<String> freshnessReasons;
+  private final WorkflowExperimentRunPlanMode runPlanMode;
+  private final Long rerunnableDocumentCount;
   private final ExperimentSchemaDriftStatus schemaDrift;
   private final String schemaDriftDetail;
   private final ArtifactDrift drift;
@@ -47,6 +54,13 @@ public final class WorkflowExperiment {
       @JsonProperty(value = "score", required = false) Double score,
       @JsonProperty(value = "is_stale", required = false) Boolean isStale,
       @JsonProperty(value = "freshness", required = false) ArtifactFreshness freshness,
+      @JsonProperty(value = "freshness_state", required = false)
+          WorkflowExperimentFreshnessState freshnessState,
+      @JsonProperty(value = "freshness_reasons", required = false) List<String> freshnessReasons,
+      @JsonProperty(value = "run_plan_mode", required = false)
+          WorkflowExperimentRunPlanMode runPlanMode,
+      @JsonProperty(value = "rerunnable_document_count", required = false)
+          Long rerunnableDocumentCount,
       @JsonProperty(value = "schema_drift", required = false)
           ExperimentSchemaDriftStatus schemaDrift,
       @JsonProperty(value = "schema_drift_detail", required = false) String schemaDriftDetail,
@@ -65,6 +79,10 @@ public final class WorkflowExperiment {
     this.score = score;
     this.isStale = isStale != null ? isStale : false;
     this.freshness = freshness;
+    this.freshnessState = freshnessState;
+    this.freshnessReasons = freshnessReasons;
+    this.runPlanMode = runPlanMode;
+    this.rerunnableDocumentCount = rerunnableDocumentCount;
     this.schemaDrift = schemaDrift;
     this.schemaDriftDetail = schemaDriftDetail;
     this.drift = drift;
@@ -138,6 +156,26 @@ public final class WorkflowExperiment {
   @JsonProperty("freshness")
   public ArtifactFreshness getFreshness() {
     return freshness;
+  }
+
+  @JsonProperty("freshness_state")
+  public WorkflowExperimentFreshnessState getFreshnessState() {
+    return freshnessState;
+  }
+
+  @JsonProperty("freshness_reasons")
+  public List<String> getFreshnessReasons() {
+    return freshnessReasons;
+  }
+
+  @JsonProperty("run_plan_mode")
+  public WorkflowExperimentRunPlanMode getRunPlanMode() {
+    return runPlanMode;
+  }
+
+  @JsonProperty("rerunnable_document_count")
+  public Long getRerunnableDocumentCount() {
+    return rerunnableDocumentCount;
   }
 
   @JsonProperty("schema_drift")

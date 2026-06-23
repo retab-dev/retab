@@ -24,7 +24,7 @@ public final class ExperimentRun {
   private final String blockVersionId;
   private final String metricsValidityFingerprint;
   private final Long metricsValidityFingerprintVersion;
-  private final String definitionFingerprint;
+  private final String blockExecutionFingerprint;
   private final String documentsFingerprint;
   private final Double score;
   private final Long totalDocumentCount;
@@ -50,7 +50,8 @@ public final class ExperimentRun {
           String metricsValidityFingerprint,
       @JsonProperty(value = "metrics_validity_fingerprint_version", required = false)
           Long metricsValidityFingerprintVersion,
-      @JsonProperty(value = "definition_fingerprint", required = true) String definitionFingerprint,
+      @JsonProperty(value = "block_execution_fingerprint", required = true)
+          String blockExecutionFingerprint,
       @JsonProperty(value = "documents_fingerprint", required = true) String documentsFingerprint,
       @JsonProperty(value = "score", required = false) Double score,
       @JsonProperty(value = "total_document_count", required = false) Long totalDocumentCount,
@@ -72,7 +73,7 @@ public final class ExperimentRun {
     this.blockVersionId = blockVersionId;
     this.metricsValidityFingerprint = metricsValidityFingerprint;
     this.metricsValidityFingerprintVersion = metricsValidityFingerprintVersion;
-    this.definitionFingerprint = definitionFingerprint;
+    this.blockExecutionFingerprint = blockExecutionFingerprint;
     this.documentsFingerprint = documentsFingerprint;
     this.score = score;
     this.totalDocumentCount = totalDocumentCount;
@@ -151,9 +152,9 @@ public final class ExperimentRun {
     return metricsValidityFingerprintVersion;
   }
 
-  @JsonProperty("definition_fingerprint")
-  public String getDefinitionFingerprint() {
-    return definitionFingerprint;
+  @JsonProperty("block_execution_fingerprint")
+  public String getBlockExecutionFingerprint() {
+    return blockExecutionFingerprint;
   }
 
   @JsonProperty("documents_fingerprint")

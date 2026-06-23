@@ -548,6 +548,19 @@ const (
 	ExperimentBlockTypeForEach    ExperimentBlockType = "for_each"
 )
 
+// WorkflowExperimentFreshnessState is an alias for ArtifactFreshnessStatus.
+type WorkflowExperimentFreshnessState = ArtifactFreshnessStatus
+
+// WorkflowExperimentRunPlanMode represents workflow experiment run plan mode values.
+type WorkflowExperimentRunPlanMode string
+
+const (
+	WorkflowExperimentRunPlanModeRun      WorkflowExperimentRunPlanMode = "run"
+	WorkflowExperimentRunPlanModeNoop     WorkflowExperimentRunPlanMode = "noop"
+	WorkflowExperimentRunPlanModeConflict WorkflowExperimentRunPlanMode = "conflict"
+	WorkflowExperimentRunPlanModeUnknown  WorkflowExperimentRunPlanMode = "unknown"
+)
+
 // ExperimentSchemaDriftStatus represents experiment schema drift status values.
 type ExperimentSchemaDriftStatus string
 

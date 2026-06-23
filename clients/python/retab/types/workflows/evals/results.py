@@ -162,7 +162,7 @@ class WorkflowEvalResult(BaseModel):
     execution_fingerprint: str | None = None
     handle_inputs_fingerprint: str | None = None
     workflow_draft_fingerprint: str | None = None
-    block_config_fingerprint: str | None = None
+    block_execution_fingerprint: str | None = None
     artifact: StepArtifactRef | None = None
     handle_inputs: dict[str, JsonHandleInput | FileHandleInput] | None = Field(default={})
     handle_outputs: dict[str, JsonHandleInput | FileHandleInput] | None = None

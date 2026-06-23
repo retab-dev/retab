@@ -3797,7 +3797,6 @@ class ModelRoundTripTest < Minitest::Test
       "metrics_validity_fingerprint" => nil,
       "metrics_validity_fingerprint_version" => nil,
       "block_execution_fingerprint" => "stub",
-      "definition_fingerprint" => "stub",
       "documents_fingerprint" => "stub",
       "score" => nil,
       "total_document_count" => 1,
@@ -3814,7 +3813,6 @@ class ModelRoundTripTest < Minitest::Test
     assert_equal(fixture["experiment_id"], json[:experiment_id])
     assert_equal(fixture["block_id"], json[:block_id])
     assert_equal(fixture["block_execution_fingerprint"], json[:block_execution_fingerprint])
-    assert_equal(fixture["definition_fingerprint"], json[:definition_fingerprint])
     assert_equal(fixture["documents_fingerprint"], json[:documents_fingerprint])
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end

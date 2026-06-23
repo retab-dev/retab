@@ -3,21 +3,21 @@
 import { z } from 'zod';
 export interface _MetricsStaleErrorLastRun {
   runId: string;
-  definitionFingerprint?: string | null;
+  blockExecutionFingerprint?: string | null;
   score?: number | null;
   createdAt?: Date | null;
 }
 
 export interface _MetricsStaleErrorLastRunResponse {
   run_id: string;
-  definition_fingerprint?: string | null;
+  block_execution_fingerprint?: string | null;
   score?: number | null;
   created_at?: string | null;
 }
 
 export const Z_MetricsStaleErrorLastRun = z.object({
   runId: z.string(),
-  definitionFingerprint: z.string().nullable().optional(),
+  blockExecutionFingerprint: z.string().nullable().optional(),
   score: z.number().nullable().optional(),
   createdAt: z.coerce.date().nullable().optional(),
 }) as z.ZodType<_MetricsStaleErrorLastRun>;
@@ -27,7 +27,7 @@ export function deserialize_MetricsStaleErrorLastRun(
 ): _MetricsStaleErrorLastRun {
   return {
     runId: wire['run_id'],
-    definitionFingerprint: wire['definition_fingerprint'],
+    blockExecutionFingerprint: wire['block_execution_fingerprint'],
     score: wire['score'],
     createdAt:
       wire['created_at'] == null
@@ -43,7 +43,7 @@ export function serialize_MetricsStaleErrorLastRun(
 ): _MetricsStaleErrorLastRunResponse {
   return {
     run_id: domain['runId'],
-    definition_fingerprint: domain['definitionFingerprint'],
+    block_execution_fingerprint: domain['blockExecutionFingerprint'],
     score: domain['score'],
     created_at:
       domain['createdAt'] == null

@@ -27,6 +27,10 @@ import type { ExperimentSchemaDriftStatus } from './experiment-schema-drift-stat
 import { ZExperimentSchemaDriftStatus } from './experiment-schema-drift-status.interface.js';
 import type { NConsensusValue } from './n-consensus-value.interface.js';
 import { ZNConsensusValue } from './n-consensus-value.interface.js';
+import type { WorkflowExperimentFreshnessState } from './workflow-experiment-freshness-state.interface.js';
+import { ZWorkflowExperimentFreshnessState } from './workflow-experiment-freshness-state.interface.js';
+import type { WorkflowExperimentRunPlanMode } from './workflow-experiment-run-plan-mode.interface.js';
+import { ZWorkflowExperimentRunPlanMode } from './workflow-experiment-run-plan-mode.interface.js';
 
 /** An experiment that evaluates a workflow block against a set of documents, with its latest run status and score. */
 export interface WorkflowExperiment {
@@ -50,6 +54,14 @@ export interface WorkflowExperiment {
   isStale?: boolean;
   freshness?: ArtifactFreshness;
   /** @default "unknown" */
+  freshnessState?: WorkflowExperimentFreshnessState;
+  /** @default [] */
+  freshnessReasons?: string[];
+  /** @default "unknown" */
+  runPlanMode?: WorkflowExperimentRunPlanMode;
+  /** @default 0 */
+  rerunnableDocumentCount?: number;
+  /** @default "unknown" */
   schemaDrift?: ExperimentSchemaDriftStatus;
   schemaDriftDetail?: string | null;
   drift?: ArtifactDrift;
@@ -70,6 +82,10 @@ export interface WorkflowExperimentResponse {
   score?: number | null;
   is_stale?: boolean;
   freshness?: ArtifactFreshnessResponse;
+  freshness_state?: WorkflowExperimentFreshnessState;
+  freshness_reasons?: string[];
+  run_plan_mode?: WorkflowExperimentRunPlanMode;
+  rerunnable_document_count?: number;
   schema_drift?: ExperimentSchemaDriftStatus;
   schema_drift_detail?: string | null;
   drift?: ArtifactDriftResponse;
@@ -90,6 +106,10 @@ export const ZWorkflowExperiment = z.object({
   score: z.number().nullable().optional(),
   isStale: z.boolean().optional(),
   freshness: ZArtifactFreshness.optional(),
+  freshnessState: ZWorkflowExperimentFreshnessState.optional(),
+  freshnessReasons: z.string().array().optional(),
+  runPlanMode: ZWorkflowExperimentRunPlanMode.optional(),
+  rerunnableDocumentCount: z.number().int().optional(),
   schemaDrift: ZExperimentSchemaDriftStatus.optional(),
   schemaDriftDetail: z.string().nullable().optional(),
   drift: ZArtifactDrift.optional(),
@@ -118,6 +138,10 @@ export function deserializeWorkflowExperiment(
       wire['freshness'] == null
         ? (wire['freshness'] as undefined)
         : deserializeArtifactFreshness(wire['freshness']),
+    freshnessState: wire['freshness_state'],
+    freshnessReasons: wire['freshness_reasons'],
+    runPlanMode: wire['run_plan_mode'],
+    rerunnableDocumentCount: wire['rerunnable_document_count'],
     schemaDrift: wire['schema_drift'],
     schemaDriftDetail: wire['schema_drift_detail'],
     drift:
@@ -154,6 +178,10 @@ export function serializeWorkflowExperiment(
       domain['freshness'] == null
         ? (domain['freshness'] as undefined)
         : serializeArtifactFreshness(domain['freshness']),
+    freshness_state: domain['freshnessState'],
+    freshness_reasons: domain['freshnessReasons'],
+    run_plan_mode: domain['runPlanMode'],
+    rerunnable_document_count: domain['rerunnableDocumentCount'],
     schema_drift: domain['schemaDrift'],
     schema_drift_detail: domain['schemaDriftDetail'],
     drift:

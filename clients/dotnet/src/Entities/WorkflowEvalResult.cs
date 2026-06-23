@@ -20,7 +20,7 @@ namespace Retab
         public string? ExecutionFingerprint { get; set; }
         public string? HandleInputsFingerprint { get; set; }
         public string? WorkflowDraftFingerprint { get; set; }
-        public string? BlockConfigFingerprint { get; set; }
+        public string? BlockExecutionFingerprint { get; set; }
         public StepArtifactRef? Artifact { get; set; }
         public Dictionary<string, object>? HandleInputs { get; set; }
         public Dictionary<string, object>? HandleOutputs { get; set; }

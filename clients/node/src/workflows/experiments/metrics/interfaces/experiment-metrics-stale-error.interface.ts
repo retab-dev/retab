@@ -21,7 +21,7 @@ export interface ExperimentMetricsStaleError {
   /** @default [] */
   staleReasons?: string[];
   lastRun: _MetricsStaleErrorLastRun;
-  currentConfigFingerprint?: string | null;
+  currentBlockExecutionFingerprint?: string | null;
   message: string;
 }
 
@@ -31,7 +31,7 @@ export interface ExperimentMetricsStaleErrorResponse {
   experiment_id: string;
   stale_reasons?: string[];
   last_run: _MetricsStaleErrorLastRunResponse;
-  current_config_fingerprint?: string | null;
+  current_block_execution_fingerprint?: string | null;
   message: string;
 }
 
@@ -41,7 +41,7 @@ export const ZExperimentMetricsStaleError = z.object({
   experimentId: z.string(),
   staleReasons: z.string().array().optional(),
   lastRun: Z_MetricsStaleErrorLastRun,
-  currentConfigFingerprint: z.string().nullable().optional(),
+  currentBlockExecutionFingerprint: z.string().nullable().optional(),
   message: z.string(),
 }) as z.ZodType<ExperimentMetricsStaleError>;
 
@@ -54,7 +54,7 @@ export function deserializeExperimentMetricsStaleError(
     experimentId: wire['experiment_id'],
     staleReasons: wire['stale_reasons'],
     lastRun: deserialize_MetricsStaleErrorLastRun(wire['last_run']),
-    currentConfigFingerprint: wire['current_config_fingerprint'],
+    currentBlockExecutionFingerprint: wire['current_block_execution_fingerprint'],
     message: wire['message'],
   };
 }
@@ -68,7 +68,7 @@ export function serializeExperimentMetricsStaleError(
     experiment_id: domain['experimentId'],
     stale_reasons: domain['staleReasons'],
     last_run: serialize_MetricsStaleErrorLastRun(domain['lastRun']),
-    current_config_fingerprint: domain['currentConfigFingerprint'],
+    current_block_execution_fingerprint: domain['currentBlockExecutionFingerprint'],
     message: domain['message'],
   };
 }

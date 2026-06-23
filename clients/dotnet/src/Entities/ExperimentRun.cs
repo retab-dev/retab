@@ -25,7 +25,7 @@ namespace Retab
         public string? BlockVersionId { get; set; }
         public string? MetricsValidityFingerprint { get; set; }
         public long? MetricsValidityFingerprintVersion { get; set; }
-        public string DefinitionFingerprint { get; set; } = default!;
+        public string BlockExecutionFingerprint { get; set; } = default!;
         public string DocumentsFingerprint { get; set; } = default!;
         public double? Score { get; set; }
         public long? TotalDocumentCount { get; set; }

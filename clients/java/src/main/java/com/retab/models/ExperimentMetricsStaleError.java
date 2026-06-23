@@ -14,7 +14,7 @@ public final class ExperimentMetricsStaleError implements Experiment {
   private final String experimentId;
   private final List<String> staleReasons;
   private final MetricsStaleErrorLastRun lastRun;
-  private final String currentConfigFingerprint;
+  private final String currentBlockExecutionFingerprint;
   private final String message;
 
   @JsonCreator
@@ -24,15 +24,15 @@ public final class ExperimentMetricsStaleError implements Experiment {
       @JsonProperty(value = "experiment_id", required = true) String experimentId,
       @JsonProperty(value = "stale_reasons", required = false) List<String> staleReasons,
       @JsonProperty(value = "last_run", required = true) MetricsStaleErrorLastRun lastRun,
-      @JsonProperty(value = "current_config_fingerprint", required = false)
-          String currentConfigFingerprint,
+      @JsonProperty(value = "current_block_execution_fingerprint", required = false)
+          String currentBlockExecutionFingerprint,
       @JsonProperty(value = "message", required = true) String message) {
     this.kind = kind != null ? kind : "stale_metrics";
     this.error = error != null ? error : "stale_metrics";
     this.experimentId = experimentId;
     this.staleReasons = staleReasons;
     this.lastRun = lastRun;
-    this.currentConfigFingerprint = currentConfigFingerprint;
+    this.currentBlockExecutionFingerprint = currentBlockExecutionFingerprint;
     this.message = message;
   }
 
@@ -61,9 +61,9 @@ public final class ExperimentMetricsStaleError implements Experiment {
     return lastRun;
   }
 
-  @JsonProperty("current_config_fingerprint")
-  public String getCurrentConfigFingerprint() {
-    return currentConfigFingerprint;
+  @JsonProperty("current_block_execution_fingerprint")
+  public String getCurrentBlockExecutionFingerprint() {
+    return currentBlockExecutionFingerprint;
   }
 
   @JsonProperty("message")

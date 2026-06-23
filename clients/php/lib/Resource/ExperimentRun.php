@@ -23,7 +23,6 @@ readonly class ExperimentRun implements \JsonSerializable
         public PendingWorkflowExperimentRun|QueuedWorkflowExperimentRun|RunningWorkflowExperimentRun|CompletedWorkflowExperimentRun|ErrorWorkflowExperimentRun|CancelledWorkflowExperimentRun $lifecycle,
         public ExperimentRunTiming $timing,
         public string $blockExecutionFingerprint,
-        public string $definitionFingerprint,
         public string $documentsFingerprint,
         public ?string $parentRunId = null,
         public ?string $blockVersionId = null,
@@ -51,7 +50,6 @@ readonly class ExperimentRun implements \JsonSerializable
             'lifecycle',
             'timing',
             'block_execution_fingerprint',
-            'definition_fingerprint',
             'documents_fingerprint',
         ] as $__required) {
             if (!array_key_exists($__required, $data)) {
@@ -72,7 +70,6 @@ readonly class ExperimentRun implements \JsonSerializable
             },
             timing: ExperimentRunTiming::fromArray($data['timing']),
             blockExecutionFingerprint: $data['block_execution_fingerprint'],
-            definitionFingerprint: $data['definition_fingerprint'],
             documentsFingerprint: $data['documents_fingerprint'],
             parentRunId: $data['parent_run_id'] ?? null,
             blockVersionId: $data['block_version_id'] ?? null,
@@ -101,7 +98,6 @@ readonly class ExperimentRun implements \JsonSerializable
             'lifecycle' => $this->lifecycle->toArray(),
             'timing' => $this->timing->toArray(),
             'block_execution_fingerprint' => $this->blockExecutionFingerprint,
-            'definition_fingerprint' => $this->definitionFingerprint,
             'documents_fingerprint' => $this->documentsFingerprint,
             'parent_run_id' => $this->parentRunId,
             'block_version_id' => $this->blockVersionId,

@@ -297,7 +297,7 @@ class LatestBlockEvalRunSummary(BaseModel):
     completed_at: datetime.datetime | None = None
     duration_ms: int | None = None
     workflow_draft_fingerprint: str | None = None
-    block_config_fingerprint: str | None = None
+    block_execution_fingerprint: str | None = None
     validity_fingerprint: str | None = None
     handle_inputs_fingerprint: str | None = None
     assertions_passed: int | None = Field(default=0)

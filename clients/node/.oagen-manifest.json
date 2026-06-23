@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "node",
-  "generatedAt": "2026-06-22T23:28:14.972Z",
+  "generatedAt": "2026-06-23T00:44:35.778Z",
   "files": [
     "src/_pagination.ts",
     "src/classifications/classifications.ts",
@@ -323,6 +323,8 @@
     "src/workflows/experiments/interfaces/n-consensus-value.interface.ts",
     "src/workflows/experiments/interfaces/update-experiment-request-n-consensus.interface.ts",
     "src/workflows/experiments/interfaces/update-experiment-request.interface.ts",
+    "src/workflows/experiments/interfaces/workflow-experiment-freshness-state.interface.ts",
+    "src/workflows/experiments/interfaces/workflow-experiment-run-plan-mode.interface.ts",
     "src/workflows/experiments/interfaces/workflow-experiment.interface.ts",
     "src/workflows/experiments/metrics/experiment-run-metrics.ts",
     "src/workflows/experiments/metrics/interfaces/experiment-by-document-metrics-response.interface.ts",

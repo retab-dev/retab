@@ -100,7 +100,7 @@ export interface ExperimentRun {
   blockVersionId?: string | null;
   metricsValidityFingerprint?: string | null;
   metricsValidityFingerprintVersion?: number | null;
-  definitionFingerprint: string;
+  blockExecutionFingerprint: string;
   documentsFingerprint: string;
   score?: number | null;
   /** @default 0 */
@@ -134,7 +134,7 @@ export interface ExperimentRunResponse {
   block_version_id?: string | null;
   metrics_validity_fingerprint?: string | null;
   metrics_validity_fingerprint_version?: number | null;
-  definition_fingerprint: string;
+  block_execution_fingerprint: string;
   documents_fingerprint: string;
   score?: number | null;
   total_document_count?: number;
@@ -165,7 +165,7 @@ export const ZExperimentRun = z.object({
   blockVersionId: z.string().nullable().optional(),
   metricsValidityFingerprint: z.string().nullable().optional(),
   metricsValidityFingerprintVersion: z.number().int().nullable().optional(),
-  definitionFingerprint: z.string(),
+  blockExecutionFingerprint: z.string(),
   documentsFingerprint: z.string(),
   score: z.number().nullable().optional(),
   totalDocumentCount: z.number().int().optional(),
@@ -234,7 +234,7 @@ export function deserializeExperimentRun(wire: ExperimentRunResponse): Experimen
     blockVersionId: wire['block_version_id'],
     metricsValidityFingerprint: wire['metrics_validity_fingerprint'],
     metricsValidityFingerprintVersion: wire['metrics_validity_fingerprint_version'],
-    definitionFingerprint: wire['definition_fingerprint'],
+    blockExecutionFingerprint: wire['block_execution_fingerprint'],
     documentsFingerprint: wire['documents_fingerprint'],
     score: wire['score'],
     totalDocumentCount: wire['total_document_count'],
@@ -302,7 +302,7 @@ export function serializeExperimentRun(domain: ExperimentRun): ExperimentRunResp
     block_version_id: domain['blockVersionId'],
     metrics_validity_fingerprint: domain['metricsValidityFingerprint'],
     metrics_validity_fingerprint_version: domain['metricsValidityFingerprintVersion'],
-    definition_fingerprint: domain['definitionFingerprint'],
+    block_execution_fingerprint: domain['blockExecutionFingerprint'],
     documents_fingerprint: domain['documentsFingerprint'],
     score: domain['score'],
     total_document_count: domain['totalDocumentCount'],

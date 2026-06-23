@@ -600,12 +600,12 @@ func TestWorkflowExperimentRunRequestsSendCanonicalBodies(t *testing.T) {
 				t.Fatal(err)
 			}
 			_ = json.NewEncoder(w).Encode(map[string]any{
-				"id":                     "exprun_123",
-				"experiment_id":          "exp_123",
-				"lifecycle":              map[string]any{"status": "queued"},
-				"definition_fingerprint": "fp",
-				"document_count":         1,
-				"n_consensus":            5,
+				"id":                          "exprun_123",
+				"experiment_id":               "exp_123",
+				"lifecycle":                   map[string]any{"status": "queued"},
+				"block_execution_fingerprint": "fp",
+				"document_count":              1,
+				"n_consensus":                 5,
 			})
 		default:
 			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)

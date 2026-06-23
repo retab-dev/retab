@@ -593,6 +593,8 @@ __all__ = [
     "WorkflowEvalRunWorkflowScope",
     "WorkflowEvalSchemaDrift",
     "WorkflowExperiment",
+    "WorkflowExperimentFreshnessState",
+    "WorkflowExperimentRunPlanMode",
     "WorkflowExportPayloadRequest",
     "WorkflowExportPayloadRequestExcludeStatus",
     "WorkflowExportPayloadRequestExportSource",

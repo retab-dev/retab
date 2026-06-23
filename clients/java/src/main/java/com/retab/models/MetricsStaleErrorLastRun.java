@@ -10,19 +10,19 @@ import java.time.OffsetDateTime;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class MetricsStaleErrorLastRun {
   private final String runId;
-  private final String definitionFingerprint;
+  private final String blockExecutionFingerprint;
   private final Double score;
   private final OffsetDateTime createdAt;
 
   @JsonCreator
   public MetricsStaleErrorLastRun(
       @JsonProperty(value = "run_id", required = true) String runId,
-      @JsonProperty(value = "definition_fingerprint", required = false)
-          String definitionFingerprint,
+      @JsonProperty(value = "block_execution_fingerprint", required = false)
+          String blockExecutionFingerprint,
       @JsonProperty(value = "score", required = false) Double score,
       @JsonProperty(value = "created_at", required = false) OffsetDateTime createdAt) {
     this.runId = runId;
-    this.definitionFingerprint = definitionFingerprint;
+    this.blockExecutionFingerprint = blockExecutionFingerprint;
     this.score = score;
     this.createdAt = createdAt;
   }
@@ -32,9 +32,9 @@ public final class MetricsStaleErrorLastRun {
     return runId;
   }
 
-  @JsonProperty("definition_fingerprint")
-  public String getDefinitionFingerprint() {
-    return definitionFingerprint;
+  @JsonProperty("block_execution_fingerprint")
+  public String getBlockExecutionFingerprint() {
+    return blockExecutionFingerprint;
   }
 
   @JsonProperty("score")

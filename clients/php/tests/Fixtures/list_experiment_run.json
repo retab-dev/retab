@@ -25,7 +25,6 @@
       "metrics_validity_fingerprint": "metrics_validity_fingerprint_01234",
       "metrics_validity_fingerprint_version": 1,
       "block_execution_fingerprint": "test_block_execution_fingerprint",
-      "definition_fingerprint": "test_definition_fingerprint",
       "documents_fingerprint": "test_documents_fingerprint",
       "score": 1,
       "total_document_count": 1,

@@ -31,7 +31,7 @@ export interface ExperimentSummaryMetricsResponse {
   kind: 'summary';
   /** @default "summary" */
   view: 'summary';
-  definitionFingerprint?: string | null;
+  blockExecutionFingerprint?: string | null;
   blockType: ExperimentSummaryMetricsResponseBlockType;
   score?: number | null;
   priorScore?: number | null;
@@ -46,7 +46,7 @@ export interface ExperimentSummaryMetricsResponseResponse {
   run_id: string;
   kind: 'summary';
   view: 'summary';
-  definition_fingerprint?: string | null;
+  block_execution_fingerprint?: string | null;
   block_type: ExperimentSummaryMetricsResponseBlockType;
   score?: number | null;
   prior_score?: number | null;
@@ -62,7 +62,7 @@ export const ZExperimentSummaryMetricsResponse = z.object({
   runId: z.string(),
   kind: z.literal('summary'),
   view: z.literal('summary'),
-  definitionFingerprint: z.string().nullable().optional(),
+  blockExecutionFingerprint: z.string().nullable().optional(),
   blockType: ZExperimentSummaryMetricsResponseBlockType,
   score: z.number().nullable().optional(),
   priorScore: z.number().nullable().optional(),
@@ -82,7 +82,7 @@ export function deserializeExperimentSummaryMetricsResponse(
     runId: wire['run_id'],
     kind: wire['kind'],
     view: wire['view'],
-    definitionFingerprint: wire['definition_fingerprint'],
+    blockExecutionFingerprint: wire['block_execution_fingerprint'],
     blockType: wire['block_type'],
     score: wire['score'],
     priorScore: wire['prior_score'],
@@ -110,7 +110,7 @@ export function serializeExperimentSummaryMetricsResponse(
     run_id: domain['runId'],
     kind: domain['kind'],
     view: domain['view'],
-    definition_fingerprint: domain['definitionFingerprint'],
+    block_execution_fingerprint: domain['blockExecutionFingerprint'],
     block_type: domain['blockType'],
     score: domain['score'],
     prior_score: domain['priorScore'],

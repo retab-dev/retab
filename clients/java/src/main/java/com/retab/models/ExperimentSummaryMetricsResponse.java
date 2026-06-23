@@ -14,7 +14,7 @@ public final class ExperimentSummaryMetricsResponse implements Experiment {
   private final String runId;
   private final String kind;
   private final String view;
-  private final String definitionFingerprint;
+  private final String blockExecutionFingerprint;
   private final ExperimentSummaryMetricsResponseBlockType blockType;
   private final Double score;
   private final Double priorScore;
@@ -28,8 +28,8 @@ public final class ExperimentSummaryMetricsResponse implements Experiment {
       @JsonProperty(value = "run_id", required = true) String runId,
       @JsonProperty(value = "kind", required = false) String kind,
       @JsonProperty(value = "view", required = false) String view,
-      @JsonProperty(value = "definition_fingerprint", required = false)
-          String definitionFingerprint,
+      @JsonProperty(value = "block_execution_fingerprint", required = false)
+          String blockExecutionFingerprint,
       @JsonProperty(value = "block_type", required = true)
           ExperimentSummaryMetricsResponseBlockType blockType,
       @JsonProperty(value = "score", required = false) Double score,
@@ -42,7 +42,7 @@ public final class ExperimentSummaryMetricsResponse implements Experiment {
     this.runId = runId;
     this.kind = kind != null ? kind : "summary";
     this.view = view != null ? view : "summary";
-    this.definitionFingerprint = definitionFingerprint;
+    this.blockExecutionFingerprint = blockExecutionFingerprint;
     this.blockType = blockType;
     this.score = score;
     this.priorScore = priorScore;
@@ -71,9 +71,9 @@ public final class ExperimentSummaryMetricsResponse implements Experiment {
     return view;
   }
 
-  @JsonProperty("definition_fingerprint")
-  public String getDefinitionFingerprint() {
-    return definitionFingerprint;
+  @JsonProperty("block_execution_fingerprint")
+  public String getBlockExecutionFingerprint() {
+    return blockExecutionFingerprint;
   }
 
   @JsonProperty("block_type")

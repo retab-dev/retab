@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import datetime
+from enum import Enum
 from typing import Literal, TypeAlias, cast
 from pydantic import BaseModel, ConfigDict, Field
 from retab.types.workflows.evals import ArtifactDrift, ArtifactFreshness
@@ -19,6 +20,19 @@ ExperimentBlockType: TypeAlias = Literal["extract", "classifier", "split", "for_
 
 
 ExperimentSchemaDriftStatus: TypeAlias = Literal["none", "partial", "drifted", "unknown"]
+
+
+class WorkflowExperimentFreshnessState(str, Enum):
+    FRESH = "fresh"
+    STALE = "stale"
+    UNKNOWN = "unknown"
+
+
+class WorkflowExperimentRunPlanMode(str, Enum):
+    RUN = "run"
+    NOOP = "noop"
+    CONFLICT = "conflict"
+    UNKNOWN = "unknown"
 
 
 CreateExperimentRequestNConsensus = NConsensusValue
@@ -106,6 +120,10 @@ class WorkflowExperiment(BaseModel):
     score: float | None = None
     is_stale: bool | None = Field(default=False)
     freshness: ArtifactFreshness | None = None
+    freshness_state: WorkflowExperimentFreshnessState | None = Field(default=cast(WorkflowExperimentFreshnessState, "unknown"), validate_default=True)
+    freshness_reasons: list[str] | None = Field(default=[])
+    run_plan_mode: WorkflowExperimentRunPlanMode | None = Field(default=cast(WorkflowExperimentRunPlanMode, "unknown"), validate_default=True)
+    rerunnable_document_count: int | None = Field(default=0)
     schema_drift: ExperimentSchemaDriftStatus | None = Field(default=cast(ExperimentSchemaDriftStatus, "unknown"), validate_default=True)
     schema_drift_detail: str | None = None
     drift: ArtifactDrift | None = None
@@ -172,6 +190,8 @@ __all__ = [
     "UpdateExperimentRequest",
     "UpdateExperimentRequestNConsensus",
     "WorkflowExperiment",
+    "WorkflowExperimentFreshnessState",
+    "WorkflowExperimentRunPlanMode",
     "_MetricsStaleErrorLastRun",
 ]
 

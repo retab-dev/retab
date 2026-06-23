@@ -147,7 +147,7 @@ class ExperimentRun(BaseModel):
     block_version_id: str | None = None
     metrics_validity_fingerprint: str | None = None
     metrics_validity_fingerprint_version: int | None = None
-    definition_fingerprint: str
+    block_execution_fingerprint: str
     documents_fingerprint: str
     score: float | None = None
     total_document_count: int | None = Field(default=0)

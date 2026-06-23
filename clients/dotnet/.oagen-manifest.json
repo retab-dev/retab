@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "dotnet",
-  "generatedAt": "2026-06-22T22:42:07.423Z",
+  "generatedAt": "2026-06-23T00:44:40.377Z",
   "files": [
     "README.md",
     "Retab.csproj",
@@ -291,6 +291,7 @@
     "src/Enums/WorkflowBlockCreateRequestType.cs",
     "src/Enums/WorkflowBlockType.cs",
     "src/Enums/WorkflowCapabilities.cs",
+    "src/Enums/WorkflowExperimentRunPlanMode.cs",
     "src/Enums/WorkflowExportPayloadRequestExcludeStatus.cs",
     "src/Enums/WorkflowExportPayloadRequestExportSource.cs",
     "src/Enums/WorkflowExportPayloadRequestTriggerType.cs",

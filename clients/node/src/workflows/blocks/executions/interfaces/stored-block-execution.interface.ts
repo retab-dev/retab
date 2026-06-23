@@ -126,7 +126,7 @@ export interface StoredBlockExecution {
   completedAt?: Date;
   handleInputsFingerprint?: string;
   workflowDraftFingerprint?: string;
-  blockConfigFingerprint?: string;
+  blockExecutionFingerprint?: string;
   executionFingerprint?: string;
   /** The draft block config used for this block execution */
   blockConfig?: Record<string, unknown> | null;
@@ -165,7 +165,7 @@ export interface StoredBlockExecutionResponse {
   completed_at?: string;
   handle_inputs_fingerprint?: string;
   workflow_draft_fingerprint?: string;
-  block_config_fingerprint?: string;
+  block_execution_fingerprint?: string;
   execution_fingerprint?: string;
   block_config?: Record<string, unknown> | null;
   source_step_id?: string | null;
@@ -206,7 +206,7 @@ export const ZStoredBlockExecution = z.object({
   completedAt: z.coerce.date().optional(),
   handleInputsFingerprint: z.string().optional(),
   workflowDraftFingerprint: z.string().optional(),
-  blockConfigFingerprint: z.string().optional(),
+  blockExecutionFingerprint: z.string().optional(),
   executionFingerprint: z.string().optional(),
   blockConfig: z.record(z.string(), z.unknown()).nullable().optional(),
   sourceStepId: z.string().nullable().optional(),
@@ -318,7 +318,7 @@ export function deserializeStoredBlockExecution(
         : new Date(wire['completed_at']),
     handleInputsFingerprint: wire['handle_inputs_fingerprint'],
     workflowDraftFingerprint: wire['workflow_draft_fingerprint'],
-    blockConfigFingerprint: wire['block_config_fingerprint'],
+    blockExecutionFingerprint: wire['block_execution_fingerprint'],
     executionFingerprint: wire['execution_fingerprint'],
     blockConfig: wire['block_config'],
     sourceStepId: wire['source_step_id'],
@@ -439,7 +439,7 @@ export function serializeStoredBlockExecution(
         : domain['completedAt'].toISOString(),
     handle_inputs_fingerprint: domain['handleInputsFingerprint'],
     workflow_draft_fingerprint: domain['workflowDraftFingerprint'],
-    block_config_fingerprint: domain['blockConfigFingerprint'],
+    block_execution_fingerprint: domain['blockExecutionFingerprint'],
     execution_fingerprint: domain['executionFingerprint'],
     block_config: domain['blockConfig'],
     source_step_id: domain['sourceStepId'],

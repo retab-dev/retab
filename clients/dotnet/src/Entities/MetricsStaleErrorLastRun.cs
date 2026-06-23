@@ -6,7 +6,7 @@ namespace Retab
     public class MetricsStaleErrorLastRun
     {
         public string RunId { get; set; } = default!;
-        public string? DefinitionFingerprint { get; set; }
+        public string? BlockExecutionFingerprint { get; set; }
         public double? Score { get; set; }
         public DateTimeOffset? CreatedAt { get; set; }
 

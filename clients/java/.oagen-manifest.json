@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "java",
-  "generatedAt": "2026-06-22T22:42:32.012Z",
+  "generatedAt": "2026-06-23T00:44:42.482Z",
   "files": [
     "build.gradle.kts",
     "checkstyle.xml",
@@ -416,6 +416,8 @@
     "src/main/java/com/retab/types/WorkflowConfigBlockType.java",
     "src/main/java/com/retab/types/WorkflowEvalResultVerdict.java",
     "src/main/java/com/retab/types/WorkflowEvalSchemaDrift.java",
+    "src/main/java/com/retab/types/WorkflowExperimentFreshnessState.java",
+    "src/main/java/com/retab/types/WorkflowExperimentRunPlanMode.java",
     "src/main/java/com/retab/types/WorkflowExperimentsExcludeStatus.java",
     "src/main/java/com/retab/types/WorkflowExperimentsStatus.java",
     "src/main/java/com/retab/types/WorkflowExportPayloadRequestExcludeStatus.java",

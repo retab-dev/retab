@@ -22,7 +22,7 @@ namespace Retab
         public DateTimeOffset? CompletedAt { get; set; }
         public long? DurationMs { get; set; }
         public string? WorkflowDraftFingerprint { get; set; }
-        public string? BlockConfigFingerprint { get; set; }
+        public string? BlockExecutionFingerprint { get; set; }
         public string? ValidityFingerprint { get; set; }
         public string? HandleInputsFingerprint { get; set; }
         public long? AssertionsPassed { get; set; }

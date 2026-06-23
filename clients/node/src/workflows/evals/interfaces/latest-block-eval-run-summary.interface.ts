@@ -15,7 +15,7 @@ export interface LatestBlockEvalRunSummary {
   completedAt?: Date | null;
   durationMs?: number | null;
   workflowDraftFingerprint?: string | null;
-  blockConfigFingerprint?: string | null;
+  blockExecutionFingerprint?: string | null;
   validityFingerprint?: string | null;
   handleInputsFingerprint?: string | null;
   /** @default 0 */
@@ -34,7 +34,7 @@ export interface LatestBlockEvalRunSummaryResponse {
   completed_at?: string | null;
   duration_ms?: number | null;
   workflow_draft_fingerprint?: string | null;
-  block_config_fingerprint?: string | null;
+  block_execution_fingerprint?: string | null;
   validity_fingerprint?: string | null;
   handle_inputs_fingerprint?: string | null;
   assertions_passed?: number;
@@ -50,7 +50,7 @@ export const ZLatestBlockEvalRunSummary = z.object({
   completedAt: z.coerce.date().nullable().optional(),
   durationMs: z.number().int().nullable().optional(),
   workflowDraftFingerprint: z.string().nullable().optional(),
-  blockConfigFingerprint: z.string().nullable().optional(),
+  blockExecutionFingerprint: z.string().nullable().optional(),
   validityFingerprint: z.string().nullable().optional(),
   handleInputsFingerprint: z.string().nullable().optional(),
   assertionsPassed: z.number().int().optional(),
@@ -74,7 +74,7 @@ export function deserializeLatestBlockEvalRunSummary(
           : new Date(wire['completed_at']),
     durationMs: wire['duration_ms'],
     workflowDraftFingerprint: wire['workflow_draft_fingerprint'],
-    blockConfigFingerprint: wire['block_config_fingerprint'],
+    blockExecutionFingerprint: wire['block_execution_fingerprint'],
     validityFingerprint: wire['validity_fingerprint'],
     handleInputsFingerprint: wire['handle_inputs_fingerprint'],
     assertionsPassed: wire['assertions_passed'],
@@ -99,7 +99,7 @@ export function serializeLatestBlockEvalRunSummary(
           : domain['completedAt'].toISOString(),
     duration_ms: domain['durationMs'],
     workflow_draft_fingerprint: domain['workflowDraftFingerprint'],
-    block_config_fingerprint: domain['blockConfigFingerprint'],
+    block_execution_fingerprint: domain['blockExecutionFingerprint'],
     validity_fingerprint: domain['validityFingerprint'],
     handle_inputs_fingerprint: domain['handleInputsFingerprint'],
     assertions_passed: domain['assertionsPassed'],

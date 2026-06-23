@@ -82,12 +82,12 @@ func TestWorkflowExperimentRunsListUsesPaginatedEnvelope(t *testing.T) {
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"data": []map[string]any{
 				{
-					"id":                     "exprun_1",
-					"definition_fingerprint": "fp",
-					"documents_fingerprint":  "fp_doc",
-					"lifecycle":              map[string]any{"status": "completed"},
-					"block_kind":             "extract",
-					"n_consensus":            5,
+					"id":                          "exprun_1",
+					"block_execution_fingerprint": "fp",
+					"documents_fingerprint":       "fp_doc",
+					"lifecycle":                   map[string]any{"status": "completed"},
+					"block_kind":                  "extract",
+					"n_consensus":                 5,
 				},
 			},
 			"list_metadata": map[string]any{"before": nil, "after": nil},

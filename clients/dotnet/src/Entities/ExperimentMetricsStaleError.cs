@@ -14,7 +14,7 @@ namespace Retab
         public string ExperimentId { get; set; } = default!;
         public List<string>? StaleReasons { get; set; }
         public MetricsStaleErrorLastRun LastRun { get; set; } = default!;
-        public string? CurrentConfigFingerprint { get; set; }
+        public string? CurrentBlockExecutionFingerprint { get; set; }
         public string Message { get; set; } = default!;
 
         /// <summary>

@@ -15,7 +15,7 @@ namespace Retab
         public string RunId { get; set; } = default!;
         public string? Kind { get; set; } = "summary";
         public string? View { get; set; } = "summary";
-        public string? DefinitionFingerprint { get; set; }
+        public string? BlockExecutionFingerprint { get; set; }
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
         [STJS.JsonIgnore(Condition = STJS.JsonIgnoreCondition.WhenWritingDefault)]
         public ExperimentBlockType BlockType { get; set; }

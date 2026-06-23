@@ -23,7 +23,7 @@ public final class WorkflowEvalResult {
   private final String executionFingerprint;
   private final String handleInputsFingerprint;
   private final String workflowDraftFingerprint;
-  private final String blockConfigFingerprint;
+  private final String blockExecutionFingerprint;
   private final StepArtifactRef artifact;
   private final Map<String, HandleInputType> handleInputs;
   private final Map<String, HandleInputType> handleOutputs;
@@ -48,8 +48,8 @@ public final class WorkflowEvalResult {
           String handleInputsFingerprint,
       @JsonProperty(value = "workflow_draft_fingerprint", required = false)
           String workflowDraftFingerprint,
-      @JsonProperty(value = "block_config_fingerprint", required = false)
-          String blockConfigFingerprint,
+      @JsonProperty(value = "block_execution_fingerprint", required = false)
+          String blockExecutionFingerprint,
       @JsonProperty(value = "artifact", required = false) StepArtifactRef artifact,
       @JsonProperty(value = "handle_inputs", required = false)
           Map<String, HandleInputType> handleInputs,
@@ -71,7 +71,7 @@ public final class WorkflowEvalResult {
     this.executionFingerprint = executionFingerprint;
     this.handleInputsFingerprint = handleInputsFingerprint;
     this.workflowDraftFingerprint = workflowDraftFingerprint;
-    this.blockConfigFingerprint = blockConfigFingerprint;
+    this.blockExecutionFingerprint = blockExecutionFingerprint;
     this.artifact = artifact;
     this.handleInputs = handleInputs;
     this.handleOutputs = handleOutputs;
@@ -141,9 +141,9 @@ public final class WorkflowEvalResult {
     return workflowDraftFingerprint;
   }
 
-  @JsonProperty("block_config_fingerprint")
-  public String getBlockConfigFingerprint() {
-    return blockConfigFingerprint;
+  @JsonProperty("block_execution_fingerprint")
+  public String getBlockExecutionFingerprint() {
+    return blockExecutionFingerprint;
   }
 
   @JsonProperty("artifact")

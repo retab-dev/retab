@@ -124,7 +124,7 @@ export interface WorkflowEvalResult {
   executionFingerprint?: string | null;
   handleInputsFingerprint?: string | null;
   workflowDraftFingerprint?: string | null;
-  blockConfigFingerprint?: string | null;
+  blockExecutionFingerprint?: string | null;
   artifact?: StepArtifactRef | null;
   /** @default {} */
   handleInputs?: Record<string, JsonHandleInput | FileHandleInput>;
@@ -158,7 +158,7 @@ export interface WorkflowEvalResultResponse {
   execution_fingerprint?: string | null;
   handle_inputs_fingerprint?: string | null;
   workflow_draft_fingerprint?: string | null;
-  block_config_fingerprint?: string | null;
+  block_execution_fingerprint?: string | null;
   artifact?: StepArtifactRefResponse | null;
   handle_inputs?: Record<string, JsonHandleInputResponse | FileHandleInputResponse>;
   handle_outputs?: Record<string, JsonHandleInputResponse | FileHandleInputResponse> | null;
@@ -191,7 +191,7 @@ export const ZWorkflowEvalResult = z.object({
   executionFingerprint: z.string().nullable().optional(),
   handleInputsFingerprint: z.string().nullable().optional(),
   workflowDraftFingerprint: z.string().nullable().optional(),
-  blockConfigFingerprint: z.string().nullable().optional(),
+  blockExecutionFingerprint: z.string().nullable().optional(),
   artifact: ZStepArtifactRef.nullable().optional(),
   handleInputs: z.record(z.string(), z.union([ZJsonHandleInput, ZFileHandleInput])).optional(),
   handleOutputs: z
@@ -273,7 +273,7 @@ export function deserializeWorkflowEvalResult(
     executionFingerprint: wire['execution_fingerprint'],
     handleInputsFingerprint: wire['handle_inputs_fingerprint'],
     workflowDraftFingerprint: wire['workflow_draft_fingerprint'],
-    blockConfigFingerprint: wire['block_config_fingerprint'],
+    blockExecutionFingerprint: wire['block_execution_fingerprint'],
     artifact:
       wire['artifact'] == null
         ? (wire['artifact'] as undefined)
@@ -390,7 +390,7 @@ export function serializeWorkflowEvalResult(
     execution_fingerprint: domain['executionFingerprint'],
     handle_inputs_fingerprint: domain['handleInputsFingerprint'],
     workflow_draft_fingerprint: domain['workflowDraftFingerprint'],
-    block_config_fingerprint: domain['blockConfigFingerprint'],
+    block_execution_fingerprint: domain['blockExecutionFingerprint'],
     artifact:
       domain['artifact'] == null
         ? (domain['artifact'] as undefined)

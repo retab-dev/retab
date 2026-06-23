@@ -249,11 +249,11 @@ type StoredBlockExecution struct {
 	// StartedAt is when the block execution started
 	StartedAt *time.Time `json:"started_at,omitempty"`
 	// CompletedAt is when the block execution completed
-	CompletedAt              *time.Time `json:"completed_at,omitempty"`
-	HandleInputsFingerprint  *string    `json:"handle_inputs_fingerprint,omitempty"`
-	WorkflowDraftFingerprint *string    `json:"workflow_draft_fingerprint,omitempty"`
-	BlockConfigFingerprint   *string    `json:"block_config_fingerprint,omitempty"`
-	ExecutionFingerprint     *string    `json:"execution_fingerprint,omitempty"`
+	CompletedAt               *time.Time `json:"completed_at,omitempty"`
+	HandleInputsFingerprint   *string    `json:"handle_inputs_fingerprint,omitempty"`
+	WorkflowDraftFingerprint  *string    `json:"workflow_draft_fingerprint,omitempty"`
+	BlockExecutionFingerprint *string    `json:"block_execution_fingerprint,omitempty"`
+	ExecutionFingerprint      *string    `json:"execution_fingerprint,omitempty"`
 	// BlockConfig is the draft block config used for this block execution
 	BlockConfig map[string]interface{} `json:"block_config,omitempty"`
 	// SourceStepID is the step ID that was used for inputs (includes iteration prefix if applicable)
@@ -1020,13 +1020,13 @@ type ExperimentMetricsMissingError struct {
 // from the current draft, so its metrics no longer reflect the
 // experiment's definition.
 type ExperimentMetricsStaleError struct {
-	Kind                     *string                  `json:"kind,omitempty"`
-	Error                    *string                  `json:"error,omitempty"`
-	ExperimentID             string                   `json:"experiment_id"`
-	StaleReasons             []string                 `json:"stale_reasons,omitempty"`
-	LastRun                  MetricsStaleErrorLastRun `json:"last_run"`
-	CurrentConfigFingerprint *string                  `json:"current_config_fingerprint,omitempty"`
-	Message                  string                   `json:"message"`
+	Kind                             *string                  `json:"kind,omitempty"`
+	Error                            *string                  `json:"error,omitempty"`
+	ExperimentID                     string                   `json:"experiment_id"`
+	StaleReasons                     []string                 `json:"stale_reasons,omitempty"`
+	LastRun                          MetricsStaleErrorLastRun `json:"last_run"`
+	CurrentBlockExecutionFingerprint *string                  `json:"current_block_execution_fingerprint,omitempty"`
+	Message                          string                   `json:"message"`
 }
 
 // ExperimentResultTiming represents an experiment result timing.
@@ -1063,17 +1063,17 @@ type ExperimentSummaryMetricDocument struct {
 // `prior_run_id` + `prior_score` populate when the request opts into
 // prior-comparison and a completed prior run exists.
 type ExperimentSummaryMetricsResponse struct {
-	ExperimentID          string                                    `json:"experiment_id"`
-	RunID                 string                                    `json:"run_id"`
-	Kind                  *string                                   `json:"kind,omitempty"`
-	View                  *string                                   `json:"view,omitempty"`
-	DefinitionFingerprint *string                                   `json:"definition_fingerprint,omitempty"`
-	BlockType             ExperimentSummaryMetricsResponseBlockType `json:"block_type"`
-	Score                 *float64                                  `json:"score,omitempty"`
-	PriorScore            *float64                                  `json:"prior_score,omitempty"`
-	Documents             []*ExperimentSummaryMetricDocument        `json:"documents,omitempty"`
-	Aggregate             *interface{}                              `json:"aggregate,omitempty"`
-	PriorRunID            *string                                   `json:"prior_run_id,omitempty"`
+	ExperimentID              string                                    `json:"experiment_id"`
+	RunID                     string                                    `json:"run_id"`
+	Kind                      *string                                   `json:"kind,omitempty"`
+	View                      *string                                   `json:"view,omitempty"`
+	BlockExecutionFingerprint *string                                   `json:"block_execution_fingerprint,omitempty"`
+	BlockType                 ExperimentSummaryMetricsResponseBlockType `json:"block_type"`
+	Score                     *float64                                  `json:"score,omitempty"`
+	PriorScore                *float64                                  `json:"prior_score,omitempty"`
+	Documents                 []*ExperimentSummaryMetricDocument        `json:"documents,omitempty"`
+	Aggregate                 *interface{}                              `json:"aggregate,omitempty"`
+	PriorRunID                *string                                   `json:"prior_run_id,omitempty"`
 }
 
 // ExperimentTargetConfusionMetric directional confusion slice for one split/classifier target.
@@ -1326,19 +1326,19 @@ type JSONSchemaValidCondition struct {
 // `status` is one of `completed | error | cancelled` and `outcome` is
 // populated when `status == "completed"`.
 type LatestBlockEvalRunSummary struct {
-	RunRecordID              string                            `json:"run_record_id"`
-	Status                   LatestBlockEvalRunSummaryStatus   `json:"status"`
-	Outcome                  *LatestBlockEvalRunSummaryOutcome `json:"outcome,omitempty"`
-	StartedAt                time.Time                         `json:"started_at"`
-	CompletedAt              *time.Time                        `json:"completed_at,omitempty"`
-	DurationMs               *int                              `json:"duration_ms,omitempty"`
-	WorkflowDraftFingerprint *string                           `json:"workflow_draft_fingerprint,omitempty"`
-	BlockConfigFingerprint   *string                           `json:"block_config_fingerprint,omitempty"`
-	ValidityFingerprint      *string                           `json:"validity_fingerprint,omitempty"`
-	HandleInputsFingerprint  *string                           `json:"handle_inputs_fingerprint,omitempty"`
-	AssertionsPassed         *int                              `json:"assertions_passed,omitempty"`
-	AssertionsFailed         *int                              `json:"assertions_failed,omitempty"`
-	BlockedAssertions        *int                              `json:"blocked_assertions,omitempty"`
+	RunRecordID               string                            `json:"run_record_id"`
+	Status                    LatestBlockEvalRunSummaryStatus   `json:"status"`
+	Outcome                   *LatestBlockEvalRunSummaryOutcome `json:"outcome,omitempty"`
+	StartedAt                 time.Time                         `json:"started_at"`
+	CompletedAt               *time.Time                        `json:"completed_at,omitempty"`
+	DurationMs                *int                              `json:"duration_ms,omitempty"`
+	WorkflowDraftFingerprint  *string                           `json:"workflow_draft_fingerprint,omitempty"`
+	BlockExecutionFingerprint *string                           `json:"block_execution_fingerprint,omitempty"`
+	ValidityFingerprint       *string                           `json:"validity_fingerprint,omitempty"`
+	HandleInputsFingerprint   *string                           `json:"handle_inputs_fingerprint,omitempty"`
+	AssertionsPassed          *int                              `json:"assertions_passed,omitempty"`
+	AssertionsFailed          *int                              `json:"assertions_failed,omitempty"`
+	BlockedAssertions         *int                              `json:"blocked_assertions,omitempty"`
 }
 
 // LengthCompareCondition represents a length compare condition.
@@ -1376,10 +1376,10 @@ type MatcheRegexCondition struct {
 
 // MetricsStaleErrorLastRun represents a _metrics stale error last run.
 type MetricsStaleErrorLastRun struct {
-	RunID                 string     `json:"run_id"`
-	DefinitionFingerprint *string    `json:"definition_fingerprint,omitempty"`
-	Score                 *float64   `json:"score,omitempty"`
-	CreatedAt             *time.Time `json:"created_at,omitempty"`
+	RunID                     string     `json:"run_id"`
+	BlockExecutionFingerprint *string    `json:"block_execution_fingerprint,omitempty"`
+	Score                     *float64   `json:"score,omitempty"`
+	CreatedAt                 *time.Time `json:"created_at,omitempty"`
 }
 
 // NotContainsCondition represents a not contains condition.
@@ -2396,21 +2396,21 @@ type WorkflowEvalResult struct {
 	Lifecycle         *WorkflowEvalRunStatus `json:"lifecycle,omitempty"`
 	Timing            *WorkflowEvalRunTiming `json:"timing,omitempty"`
 	// Verdict is verdict label populated only when the underlying eval reaches a terminal lifecycle state and the verdict could be determined. Execution-error details flow through `lifecycle`, not through this enum.
-	Verdict                  *WorkflowEvalResultVerdict `json:"verdict,omitempty"`
-	WorkflowID               string                     `json:"workflow_id"`
-	BlockID                  string                     `json:"block_id"`
-	BlockType                string                     `json:"block_type"`
-	ExecutionFingerprint     *string                    `json:"execution_fingerprint,omitempty"`
-	HandleInputsFingerprint  *string                    `json:"handle_inputs_fingerprint,omitempty"`
-	WorkflowDraftFingerprint *string                    `json:"workflow_draft_fingerprint,omitempty"`
-	BlockConfigFingerprint   *string                    `json:"block_config_fingerprint,omitempty"`
-	Artifact                 *StepArtifactRef           `json:"artifact,omitempty"`
-	HandleInputs             map[string]HandleInputType `json:"handle_inputs,omitempty"`
-	HandleOutputs            map[string]HandleInputType `json:"handle_outputs,omitempty"`
-	RoutingDecisions         []string                   `json:"routing_decisions,omitempty"`
-	Warnings                 []string                   `json:"warnings,omitempty"`
-	AssertionResult          *AssertionResult           `json:"assertion_result,omitempty"`
-	VerdictSummary           *VerdictSummary            `json:"verdict_summary,omitempty"`
+	Verdict                   *WorkflowEvalResultVerdict `json:"verdict,omitempty"`
+	WorkflowID                string                     `json:"workflow_id"`
+	BlockID                   string                     `json:"block_id"`
+	BlockType                 string                     `json:"block_type"`
+	ExecutionFingerprint      *string                    `json:"execution_fingerprint,omitempty"`
+	HandleInputsFingerprint   *string                    `json:"handle_inputs_fingerprint,omitempty"`
+	WorkflowDraftFingerprint  *string                    `json:"workflow_draft_fingerprint,omitempty"`
+	BlockExecutionFingerprint *string                    `json:"block_execution_fingerprint,omitempty"`
+	Artifact                  *StepArtifactRef           `json:"artifact,omitempty"`
+	HandleInputs              map[string]HandleInputType `json:"handle_inputs,omitempty"`
+	HandleOutputs             map[string]HandleInputType `json:"handle_outputs,omitempty"`
+	RoutingDecisions          []string                   `json:"routing_decisions,omitempty"`
+	Warnings                  []string                   `json:"warnings,omitempty"`
+	AssertionResult           *AssertionResult           `json:"assertion_result,omitempty"`
+	VerdictSummary            *VerdictSummary            `json:"verdict_summary,omitempty"`
 }
 
 // WorkflowEvalRun a batch execution of a workflow's evals, with overall `lifecycle`, `timing`, and pass/fail `counts`.
@@ -2460,15 +2460,19 @@ type WorkflowExperiment struct {
 	// CreatedAt is when the experiment was created
 	CreatedAt *time.Time `json:"created_at,omitempty"`
 	// UpdatedAt is when the experiment was last updated
-	UpdatedAt         *time.Time                   `json:"updated_at,omitempty"`
-	Status            *ExperimentPublicStatus      `json:"status,omitempty"`
-	BlockType         ExperimentBlockType          `json:"block_type"`
-	Score             *float64                     `json:"score,omitempty"`
-	IsStale           *bool                        `json:"is_stale,omitempty"`
-	Freshness         *ArtifactFreshness           `json:"freshness,omitempty"`
-	SchemaDrift       *ExperimentSchemaDriftStatus `json:"schema_drift,omitempty"`
-	SchemaDriftDetail *string                      `json:"schema_drift_detail,omitempty"`
-	Drift             *ArtifactDrift               `json:"drift,omitempty"`
+	UpdatedAt               *time.Time                        `json:"updated_at,omitempty"`
+	Status                  *ExperimentPublicStatus           `json:"status,omitempty"`
+	BlockType               ExperimentBlockType               `json:"block_type"`
+	Score                   *float64                          `json:"score,omitempty"`
+	IsStale                 *bool                             `json:"is_stale,omitempty"`
+	Freshness               *ArtifactFreshness                `json:"freshness,omitempty"`
+	FreshnessState          *WorkflowExperimentFreshnessState `json:"freshness_state,omitempty"`
+	FreshnessReasons        []string                          `json:"freshness_reasons,omitempty"`
+	RunPlanMode             *WorkflowExperimentRunPlanMode    `json:"run_plan_mode,omitempty"`
+	RerunnableDocumentCount *int                              `json:"rerunnable_document_count,omitempty"`
+	SchemaDrift             *ExperimentSchemaDriftStatus      `json:"schema_drift,omitempty"`
+	SchemaDriftDetail       *string                           `json:"schema_drift_detail,omitempty"`
+	Drift                   *ArtifactDrift                    `json:"drift,omitempty"`
 }
 
 // ExperimentResult one experiment block execution for a single document, addressed by `experiment_run_id` and `document_id`.
@@ -2502,7 +2506,7 @@ type ExperimentRun struct {
 	BlockVersionID                    *string                 `json:"block_version_id,omitempty"`
 	MetricsValidityFingerprint        *string                 `json:"metrics_validity_fingerprint,omitempty"`
 	MetricsValidityFingerprintVersion *int                    `json:"metrics_validity_fingerprint_version,omitempty"`
-	DefinitionFingerprint             string                  `json:"definition_fingerprint"`
+	BlockExecutionFingerprint         string                  `json:"block_execution_fingerprint"`
 	DocumentsFingerprint              string                  `json:"documents_fingerprint"`
 	Score                             *float64                `json:"score,omitempty"`
 	TotalDocumentCount                *int                    `json:"total_document_count,omitempty"`

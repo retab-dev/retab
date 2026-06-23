@@ -142,7 +142,7 @@ class ExperimentMetricsStaleError(BaseModel):
     experiment_id: str
     stale_reasons: list[str] | None = Field(default=[])
     last_run: _MetricsStaleErrorLastRun
-    current_config_fingerprint: str | None = None
+    current_block_execution_fingerprint: str | None = None
     message: str
 
 
@@ -169,7 +169,7 @@ class ExperimentSummaryMetricsResponse(BaseModel):
     run_id: str
     kind: Literal["summary"] = Field(default="summary")
     view: Literal["summary"] = Field(default="summary")
-    definition_fingerprint: str | None = None
+    block_execution_fingerprint: str | None = None
     block_type: ExperimentSummaryMetricsResponseBlockType
     score: float | None = None
     prior_score: float | None = None
@@ -229,7 +229,7 @@ class _MetricsStaleErrorLastRun(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     run_id: str
-    definition_fingerprint: str | None = None
+    block_execution_fingerprint: str | None = None
     score: float | None = None
     created_at: datetime.datetime | None = None
 
