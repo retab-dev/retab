@@ -21,14 +21,15 @@ readonly class PartitionConsensus implements \JsonSerializable
          * @var array<\Retab\Resource\PartitionChunkLikelihood>|null
          */
         public ?array $likelihoods = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
     {
         return new self(
             choices: isset($data['choices']) ? $data['choices'] : null,
-            likelihoods: isset($data['likelihoods']) ? array_map(fn($item) => PartitionChunkLikelihood::fromArray($item), $data['likelihoods']) : null,
+            likelihoods: isset($data['likelihoods']) ? array_map(fn ($item) => PartitionChunkLikelihood::fromArray($item), $data['likelihoods']) : null,
         );
     }
 
@@ -37,7 +38,7 @@ readonly class PartitionConsensus implements \JsonSerializable
     {
         return [
             'choices' => $this->choices,
-            'likelihoods' => $this->likelihoods !== null ? array_map(fn($item) => $item->toArray(), $this->likelihoods) : null,
+            'likelihoods' => $this->likelihoods !== null ? array_map(fn ($item) => $item->toArray(), $this->likelihoods) : null,
         ];
     }
 }

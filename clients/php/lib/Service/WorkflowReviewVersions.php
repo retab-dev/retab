@@ -12,7 +12,8 @@ class WorkflowReviewVersions
 {
     public function __construct(
         private readonly \Retab\HttpClient $client,
-    ) {}
+    ) {
+    }
 
     /**
      * List Review Versions
@@ -40,7 +41,7 @@ class WorkflowReviewVersions
             'before' => $before,
             'after' => $after,
             'limit' => $limit,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         return $this->client->requestPage(
             method: 'GET',
             path: 'v1/workflows/reviews/versions',
@@ -73,7 +74,7 @@ class WorkflowReviewVersions
             'parent_id' => $parentId,
             'snapshot' => $snapshot,
             'note' => $note,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',
             path: 'v1/workflows/reviews/versions',

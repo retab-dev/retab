@@ -20,7 +20,8 @@ readonly class TriggerInfo implements \JsonSerializable
     public function __construct(
         /** What started this run */
         public TriggerInfoType $type,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

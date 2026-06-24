@@ -31,7 +31,8 @@ readonly class Parse implements \JsonSerializable
         /** Usage information for the parse operation */
         public ?RetabUsage $usage = null,
         public ?\DateTimeImmutable $createdAt = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

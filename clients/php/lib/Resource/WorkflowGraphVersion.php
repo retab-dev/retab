@@ -24,7 +24,8 @@ readonly class WorkflowGraphVersion implements \JsonSerializable
         public ?array $blockVersionIds = null,
         /** @var array<string>|null */
         public ?array $edgeVersionIds = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -42,8 +43,8 @@ readonly class WorkflowGraphVersion implements \JsonSerializable
             id: $data['id'],
             workflowId: $data['workflow_id'],
             createdAt: new \DateTimeImmutable($data['created_at']),
-            blocks: isset($data['blocks']) ? array_map(fn($item) => WorkflowConfigBlock::fromArray($item), $data['blocks']) : null,
-            edges: isset($data['edges']) ? array_map(fn($item) => WorkflowConfigEdge::fromArray($item), $data['edges']) : null,
+            blocks: isset($data['blocks']) ? array_map(fn ($item) => WorkflowConfigBlock::fromArray($item), $data['blocks']) : null,
+            edges: isset($data['edges']) ? array_map(fn ($item) => WorkflowConfigEdge::fromArray($item), $data['edges']) : null,
             blockVersionIds: $data['block_version_ids'] ?? null,
             edgeVersionIds: $data['edge_version_ids'] ?? null,
         );
@@ -56,8 +57,8 @@ readonly class WorkflowGraphVersion implements \JsonSerializable
             'id' => $this->id,
             'workflow_id' => $this->workflowId,
             'created_at' => $this->createdAt->format(\DateTimeInterface::RFC3339_EXTENDED),
-            'blocks' => $this->blocks !== null ? array_map(fn($item) => $item->toArray(), $this->blocks) : null,
-            'edges' => $this->edges !== null ? array_map(fn($item) => $item->toArray(), $this->edges) : null,
+            'blocks' => $this->blocks !== null ? array_map(fn ($item) => $item->toArray(), $this->blocks) : null,
+            'edges' => $this->edges !== null ? array_map(fn ($item) => $item->toArray(), $this->edges) : null,
             'block_version_ids' => $this->blockVersionIds,
             'edge_version_ids' => $this->edgeVersionIds,
         ];

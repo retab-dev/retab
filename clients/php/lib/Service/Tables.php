@@ -17,7 +17,8 @@ class Tables
 {
     public function __construct(
         private readonly \Retab\HttpClient $client,
-    ) {}
+    ) {
+    }
 
     /**
      * Table.List
@@ -31,7 +32,7 @@ class Tables
     ): \Retab\Resource\WorkflowTableListResponse {
         $query = array_filter([
             'project_id' => $projectId,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         $response = $this->client->request(
             method: 'GET',
             path: 'v1/tables',
@@ -158,7 +159,7 @@ class Tables
         $body = array_filter([
             'name' => $name,
             'metadata' => $metadata,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         $response = $this->client->request(
             method: 'PATCH',
             path: 'v1/tables/' . rawurlencode($tableId),
@@ -217,7 +218,7 @@ class Tables
     ): \Retab\Resource\WorkflowTableProfileResponse {
         $query = array_filter([
             'select' => $select,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         $response = $this->client->request(
             method: 'GET',
             path: 'v1/tables/' . rawurlencode($tableId) . '/profile',
@@ -289,7 +290,7 @@ class Tables
             'viewer_mode' => $viewerMode,
             'offset' => $offset,
             'limit' => $limit,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',
             path: 'v1/tables/' . rawurlencode($tableId) . '/query',
@@ -337,7 +338,7 @@ class Tables
             'required_columns' => $requiredColumns,
             'columns' => $columns,
             'unique' => $unique,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',
             path: 'v1/tables/' . rawurlencode($tableId) . '/validate',

@@ -14,7 +14,8 @@ readonly class CancelWorkflowRequest implements \JsonSerializable
     public function __construct(
         /** Optional idempotency key for deduplicating cancel commands */
         public ?string $commandId = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

@@ -372,8 +372,8 @@ spec:
             CancellationToken.None
         );
 
-        var trigger = Assert.IsType<TriggerInfo>(run.Trigger);
-        Assert.Equal(TriggerInfoType.Api, trigger.Type);
+        var trigger = Assert.IsType<EvalRunTrigger>(run.Trigger);
+        Assert.Equal(EvalRunTriggerType.Api, trigger.Type);
         Assert.IsType<CompletedBlockExecutionLifecycle>(run.Lifecycle);
     }
 

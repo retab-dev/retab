@@ -15,7 +15,8 @@ readonly class ClassificationDecision implements \JsonSerializable
         public string $reasoning,
         /** The category name that the document belongs to */
         public string $category,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

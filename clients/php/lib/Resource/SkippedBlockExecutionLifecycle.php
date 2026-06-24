@@ -19,7 +19,8 @@ readonly class SkippedBlockExecutionLifecycle implements \JsonSerializable
         /** Reason the block was skipped */
         public string $reason,
         public string $status = 'skipped',
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

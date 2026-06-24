@@ -14,7 +14,8 @@ readonly class ExperimentExtractSummaryAggregate implements \JsonSerializable
     public function __construct(
         /** @var array<string, float>|null */
         public ?array $likelihoods = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

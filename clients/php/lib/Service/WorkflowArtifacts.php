@@ -23,7 +23,8 @@ class WorkflowArtifacts
 {
     public function __construct(
         private readonly \Retab\HttpClient $client,
-    ) {}
+    ) {
+    }
 
     /**
      * List Workflow Artifacts
@@ -66,7 +67,7 @@ class WorkflowArtifacts
             'before' => $before,
             'after' => $after,
             'limit' => $limit,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         return $this->client->requestPage(
             method: 'GET',
             path: 'v1/workflows/artifacts',
@@ -96,8 +97,6 @@ class WorkflowArtifacts
             path: 'v1/workflows/artifacts/' . rawurlencode($artifactId),
             options: $options,
         );
-        return match ($response['operation'] ?? null) {
-            'extraction' => ExtractionWorkflowArtifact::fromArray($response), 'split' => SplitWorkflowArtifact::fromArray($response), 'classification' => ClassificationWorkflowArtifact::fromArray($response), 'parse' => ParseWorkflowArtifact::fromArray($response), 'edit' => EditWorkflowArtifact::fromArray($response), 'partition' => PartitionWorkflowArtifact::fromArray($response), 'conditional_evaluation' => ConditionalEvaluation::fromArray($response), 'review_trigger_evaluation' => ReviewEvaluation::fromArray($response), 'while_loop_termination' => WhileLoopTermination::fromArray($response), 'api_call_invocation' => ApiCallInvocation::fromArray($response), 'function_invocation' => FunctionInvocation::fromArray($response), default => throw new \UnexpectedValueException(sprintf('Unknown operation: %s', json_encode($response['operation'] ?? null))),
-        };
+        return match ($response['operation'] ?? null) { 'extraction' => ExtractionWorkflowArtifact::fromArray($response), 'split' => SplitWorkflowArtifact::fromArray($response), 'classification' => ClassificationWorkflowArtifact::fromArray($response), 'parse' => ParseWorkflowArtifact::fromArray($response), 'edit' => EditWorkflowArtifact::fromArray($response), 'partition' => PartitionWorkflowArtifact::fromArray($response), 'conditional_evaluation' => ConditionalEvaluation::fromArray($response), 'review_trigger_evaluation' => ReviewEvaluation::fromArray($response), 'while_loop_termination' => WhileLoopTermination::fromArray($response), 'api_call_invocation' => ApiCallInvocation::fromArray($response), 'function_invocation' => FunctionInvocation::fromArray($response), default => throw new \UnexpectedValueException(sprintf('Unknown operation: %s', json_encode($response['operation'] ?? null))), };
     }
 }

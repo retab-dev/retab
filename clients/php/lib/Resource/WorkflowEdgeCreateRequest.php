@@ -24,7 +24,8 @@ readonly class WorkflowEdgeCreateRequest implements \JsonSerializable
         public ?string $sourceHandle = null,
         /** Input handle */
         public ?string $targetHandle = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

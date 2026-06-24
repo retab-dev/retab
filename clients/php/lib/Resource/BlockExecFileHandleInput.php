@@ -13,7 +13,8 @@ readonly class BlockExecFileHandleInput implements \JsonSerializable
     public function __construct(
         public BlockExecFileRef $document,
         public string $type = 'file',
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

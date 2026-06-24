@@ -17,7 +17,8 @@ readonly class ReviewDecision implements \JsonSerializable
         public Actor $author,
         public \DateTimeImmutable $createdAt,
         public ?string $reason = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

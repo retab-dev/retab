@@ -29,7 +29,8 @@ readonly class EditTemplate implements \JsonSerializable
         public ?\DateTimeImmutable $createdAt = null,
         /** Timestamp of last update. */
         public ?\DateTimeImmutable $updatedAt = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -47,7 +48,7 @@ readonly class EditTemplate implements \JsonSerializable
             id: $data['id'],
             name: $data['name'],
             file: FileRef::fromArray($data['file']),
-            formFields: isset($data['form_fields']) ? array_map(fn($item) => FormField::fromArray($item), $data['form_fields']) : null,
+            formFields: isset($data['form_fields']) ? array_map(fn ($item) => FormField::fromArray($item), $data['form_fields']) : null,
             fieldCount: $data['field_count'] ?? null,
             createdAt: isset($data['created_at']) ? new \DateTimeImmutable($data['created_at']) : null,
             updatedAt: isset($data['updated_at']) ? new \DateTimeImmutable($data['updated_at']) : null,
@@ -61,7 +62,7 @@ readonly class EditTemplate implements \JsonSerializable
             'id' => $this->id,
             'name' => $this->name,
             'file' => $this->file->toArray(),
-            'form_fields' => $this->formFields !== null ? array_map(fn($item) => $item->toArray(), $this->formFields) : null,
+            'form_fields' => $this->formFields !== null ? array_map(fn ($item) => $item->toArray(), $this->formFields) : null,
             'field_count' => $this->fieldCount,
             'created_at' => $this->createdAt?->format(\DateTimeInterface::RFC3339_EXTENDED),
             'updated_at' => $this->updatedAt?->format(\DateTimeInterface::RFC3339_EXTENDED),

@@ -21,7 +21,8 @@ readonly class WorkflowArtifact implements \JsonSerializable
          * @var array<string, mixed>|null
          */
         public ?array $additionalProperties = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

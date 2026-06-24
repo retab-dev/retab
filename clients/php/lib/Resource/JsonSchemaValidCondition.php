@@ -14,7 +14,8 @@ readonly class JsonSchemaValidCondition implements \JsonSerializable
         /** @var array<string, mixed>|null */
         public ?array $schema = null,
         public string $kind = 'json_schema_valid',
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

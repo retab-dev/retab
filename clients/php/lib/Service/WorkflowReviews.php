@@ -15,7 +15,8 @@ class WorkflowReviews
 
     public function __construct(
         private readonly \Retab\HttpClient $client,
-    ) {}
+    ) {
+    }
 
     public function versions(): WorkflowReviewVersions
     {
@@ -60,7 +61,7 @@ class WorkflowReviews
             'before' => $before,
             'after' => $after,
             'limit' => $limit,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         return $this->client->requestPage(
             method: 'GET',
             path: 'v1/workflows/reviews',

@@ -31,7 +31,8 @@ readonly class WorkflowConfigBlock implements \JsonSerializable
         public ?float $height = null,
         /** ID of parent container block (while_loop, for_each) */
         public ?string $parentId = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

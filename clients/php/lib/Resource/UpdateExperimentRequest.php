@@ -18,14 +18,15 @@ readonly class UpdateExperimentRequest implements \JsonSerializable
         public ?array $documents = null,
         public ?NConsensusValue $nConsensus = null,
         public ?string $name = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
     {
         return new self(
-            documentCaptures: isset($data['document_captures']) ? array_map(fn($item) => ExperimentDocumentCaptureRequest::fromArray($item), $data['document_captures']) : null,
-            documents: isset($data['documents']) ? array_map(fn($item) => ExplicitExperimentDocumentRequest::fromArray($item), $data['documents']) : null,
+            documentCaptures: isset($data['document_captures']) ? array_map(fn ($item) => ExperimentDocumentCaptureRequest::fromArray($item), $data['document_captures']) : null,
+            documents: isset($data['documents']) ? array_map(fn ($item) => ExplicitExperimentDocumentRequest::fromArray($item), $data['documents']) : null,
             nConsensus: isset($data['n_consensus']) ? NConsensusValue::from($data['n_consensus']) : null,
             name: $data['name'] ?? null,
         );
@@ -35,8 +36,8 @@ readonly class UpdateExperimentRequest implements \JsonSerializable
     public function toArray(): array
     {
         return [
-            'document_captures' => $this->documentCaptures !== null ? array_map(fn($item) => $item->toArray(), $this->documentCaptures) : null,
-            'documents' => $this->documents !== null ? array_map(fn($item) => $item->toArray(), $this->documents) : null,
+            'document_captures' => $this->documentCaptures !== null ? array_map(fn ($item) => $item->toArray(), $this->documentCaptures) : null,
+            'documents' => $this->documents !== null ? array_map(fn ($item) => $item->toArray(), $this->documents) : null,
             'n_consensus' => $this->nConsensus?->value,
             'name' => $this->name,
         ];

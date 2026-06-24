@@ -36,7 +36,8 @@ readonly class WorkflowExperiment implements \JsonSerializable
         public ?WorkflowEvalSchemaDrift $schemaDrift = null,
         public ?string $schemaDriftDetail = null,
         public ?ArtifactDrift $drift = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

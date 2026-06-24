@@ -17,7 +17,8 @@ readonly class Category implements \JsonSerializable
         public ?string $handleKey = null,
         /** The description of the category */
         public ?string $description = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

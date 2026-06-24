@@ -18,7 +18,8 @@ readonly class EditResult implements \JsonSerializable
         public array $formData,
         /** PDF with the filled form values rendered in. */
         public MimeData $filledDocument,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -32,7 +33,7 @@ readonly class EditResult implements \JsonSerializable
             }
         }
         return new self(
-            formData: array_map(fn($item) => FormField::fromArray($item), $data['form_data']),
+            formData: array_map(fn ($item) => FormField::fromArray($item), $data['form_data']),
             filledDocument: MimeData::fromArray($data['filled_document']),
         );
     }
@@ -41,7 +42,7 @@ readonly class EditResult implements \JsonSerializable
     public function toArray(): array
     {
         return [
-            'form_data' => array_map(fn($item) => $item->toArray(), $this->formData),
+            'form_data' => array_map(fn ($item) => $item->toArray(), $this->formData),
             'filled_document' => $this->filledDocument->toArray(),
         ];
     }

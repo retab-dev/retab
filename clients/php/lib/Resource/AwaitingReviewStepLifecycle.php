@@ -13,7 +13,8 @@ readonly class AwaitingReviewStepLifecycle implements \JsonSerializable
 
     public function __construct(
         public string $status = 'awaiting_review',
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

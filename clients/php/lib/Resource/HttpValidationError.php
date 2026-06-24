@@ -13,13 +13,14 @@ readonly class HttpValidationError implements \JsonSerializable
     public function __construct(
         /** @var array<\Retab\Resource\ValidationError>|null */
         public ?array $detail = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
     {
         return new self(
-            detail: isset($data['detail']) ? array_map(fn($item) => ValidationError::fromArray($item), $data['detail']) : null,
+            detail: isset($data['detail']) ? array_map(fn ($item) => ValidationError::fromArray($item), $data['detail']) : null,
         );
     }
 
@@ -27,7 +28,7 @@ readonly class HttpValidationError implements \JsonSerializable
     public function toArray(): array
     {
         return [
-            'detail' => $this->detail !== null ? array_map(fn($item) => $item->toArray(), $this->detail) : null,
+            'detail' => $this->detail !== null ? array_map(fn ($item) => $item->toArray(), $this->detail) : null,
         ];
     }
 }

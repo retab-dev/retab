@@ -16,7 +16,8 @@ class Files
 {
     public function __construct(
         private readonly \Retab\HttpClient $client,
-    ) {}
+    ) {
+    }
 
     /**
      * List Files
@@ -59,7 +60,7 @@ class Files
             'to_date' => $toDate,
             'include_embeddings' => $includeEmbeddings,
             'sort_by' => $sortBy,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         return $this->client->requestPage(
             method: 'GET',
             path: 'v1/files',
@@ -92,7 +93,7 @@ class Files
             'intent' => $intent,
             'mode' => $mode?->value,
             'background' => $background,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',
             path: 'v1/files/blueprints',
@@ -118,7 +119,7 @@ class Files
     ): \Retab\Resource\FileBlueprint {
         $query = array_filter([
             'include_output' => $includeOutput,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         $response = $this->client->request(
             method: 'GET',
             path: 'v1/files/blueprints/' . rawurlencode($blueprintId),
@@ -176,7 +177,7 @@ class Files
             'content_type' => $contentType,
             'size_bytes' => $sizeBytes,
             'sha256' => $sha256,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',
             path: 'v1/files/upload',
@@ -208,7 +209,7 @@ class Files
     ): \Retab\Resource\MimeData {
         $body = array_filter([
             'sha256' => $sha256,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',
             path: 'v1/files/upload/' . rawurlencode($fileId) . '/complete',

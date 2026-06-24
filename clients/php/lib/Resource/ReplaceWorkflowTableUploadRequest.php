@@ -13,7 +13,8 @@ readonly class ReplaceWorkflowTableUploadRequest implements \JsonSerializable
     public function __construct(
         public string $file,
         public ?string $columnSchemaOverrides = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

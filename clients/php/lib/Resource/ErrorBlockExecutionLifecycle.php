@@ -18,7 +18,8 @@ readonly class ErrorBlockExecutionLifecycle implements \JsonSerializable
         /** Human-readable error message */
         public string $message,
         public string $status = 'error',
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

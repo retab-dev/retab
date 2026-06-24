@@ -23,7 +23,8 @@ readonly class CreateExperimentRunRequest implements \JsonSerializable
         public ?string $workflowId = null,
         /** Optional short-lived token returned by the run-plan preview. When supplied, run creation rejects if the current plan no longer matches the preview. */
         public ?string $planToken = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

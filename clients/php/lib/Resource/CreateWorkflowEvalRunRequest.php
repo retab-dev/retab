@@ -15,7 +15,8 @@ readonly class CreateWorkflowEvalRunRequest implements \JsonSerializable
         public string $workflowId,
         /** Optional execution scope. Omit (or pass null) to run every saved eval in the workflow. */
         public WorkflowEvalRunSingleScope|WorkflowEvalRunWorkflowScope|WorkflowEvalRunBlockScope|null $scope = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -29,9 +30,7 @@ readonly class CreateWorkflowEvalRunRequest implements \JsonSerializable
         }
         return new self(
             workflowId: $data['workflow_id'],
-            scope: isset($data['scope']) ? match ($data['scope']['type'] ?? null) {
-                'block' => WorkflowEvalRunBlockScope::fromArray($data['scope']), 'single' => WorkflowEvalRunSingleScope::fromArray($data['scope']), 'workflow' => WorkflowEvalRunWorkflowScope::fromArray($data['scope']), default => throw new \UnexpectedValueException(sprintf('Unknown type: %s', json_encode($data['scope']['type'] ?? null))),
-            } : null,
+            scope: isset($data['scope']) ? match ($data['scope']['type'] ?? null) { 'block' => WorkflowEvalRunBlockScope::fromArray($data['scope']), 'single' => WorkflowEvalRunSingleScope::fromArray($data['scope']), 'workflow' => WorkflowEvalRunWorkflowScope::fromArray($data['scope']), default => throw new \UnexpectedValueException(sprintf('Unknown type: %s', json_encode($data['scope']['type'] ?? null))), } : null,
         );
     }
 

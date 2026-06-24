@@ -27,7 +27,8 @@ readonly class WorkflowTableExplain implements \JsonSerializable
         public ?array $groupBy = null,
         /** @var array<\Retab\Resource\WorkflowTableAggregationRequest>|null */
         public ?array $aggregations = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -43,14 +44,14 @@ readonly class WorkflowTableExplain implements \JsonSerializable
             tableId: $data['table_id'],
             snapshotFileId: $data['snapshot_file_id'] ?? null,
             selectedColumns: $data['selected_columns'] ?? null,
-            filters: isset($data['filters']) ? array_map(fn($item) => WorkflowTableFilterRule::fromArray($item), $data['filters']) : null,
+            filters: isset($data['filters']) ? array_map(fn ($item) => WorkflowTableFilterRule::fromArray($item), $data['filters']) : null,
             search: isset($data['search']) ? WorkflowTableSearchRequest::fromArray($data['search']) : null,
-            sort: isset($data['sort']) ? array_map(fn($item) => WorkflowTableSortRule::fromArray($item), $data['sort']) : null,
+            sort: isset($data['sort']) ? array_map(fn ($item) => WorkflowTableSortRule::fromArray($item), $data['sort']) : null,
             offset: $data['offset'] ?? null,
             limit: $data['limit'] ?? null,
             distinct: isset($data['distinct']) ? WorkflowTableDistinctRequest::fromArray($data['distinct']) : null,
             groupBy: $data['group_by'] ?? null,
-            aggregations: isset($data['aggregations']) ? array_map(fn($item) => WorkflowTableAggregationRequest::fromArray($item), $data['aggregations']) : null,
+            aggregations: isset($data['aggregations']) ? array_map(fn ($item) => WorkflowTableAggregationRequest::fromArray($item), $data['aggregations']) : null,
         );
     }
 
@@ -61,14 +62,14 @@ readonly class WorkflowTableExplain implements \JsonSerializable
             'table_id' => $this->tableId,
             'snapshot_file_id' => $this->snapshotFileId,
             'selected_columns' => $this->selectedColumns,
-            'filters' => $this->filters !== null ? array_map(fn($item) => $item->toArray(), $this->filters) : null,
+            'filters' => $this->filters !== null ? array_map(fn ($item) => $item->toArray(), $this->filters) : null,
             'search' => $this->search?->toArray(),
-            'sort' => $this->sort !== null ? array_map(fn($item) => $item->toArray(), $this->sort) : null,
+            'sort' => $this->sort !== null ? array_map(fn ($item) => $item->toArray(), $this->sort) : null,
             'offset' => $this->offset,
             'limit' => $this->limit,
             'distinct' => $this->distinct?->toArray(),
             'group_by' => $this->groupBy,
-            'aggregations' => $this->aggregations !== null ? array_map(fn($item) => $item->toArray(), $this->aggregations) : null,
+            'aggregations' => $this->aggregations !== null ? array_map(fn ($item) => $item->toArray(), $this->aggregations) : null,
         ];
     }
 }

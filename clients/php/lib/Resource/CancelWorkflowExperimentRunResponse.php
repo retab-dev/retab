@@ -14,7 +14,8 @@ readonly class CancelWorkflowExperimentRunResponse implements \JsonSerializable
     public function __construct(
         public string $id,
         public PendingWorkflowExperimentRun|QueuedWorkflowExperimentRun|RunningWorkflowExperimentRun|CompletedWorkflowExperimentRun|ErrorWorkflowExperimentRun|CancelledWorkflowExperimentRun $lifecycle,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -29,9 +30,7 @@ readonly class CancelWorkflowExperimentRunResponse implements \JsonSerializable
         }
         return new self(
             id: $data['id'],
-            lifecycle: match ($data['lifecycle']['status'] ?? null) {
-                'cancelled' => CancelledWorkflowExperimentRun::fromArray($data['lifecycle']), 'completed' => CompletedWorkflowExperimentRun::fromArray($data['lifecycle']), 'error' => ErrorWorkflowExperimentRun::fromArray($data['lifecycle']), 'pending' => PendingWorkflowExperimentRun::fromArray($data['lifecycle']), 'queued' => QueuedWorkflowExperimentRun::fromArray($data['lifecycle']), 'running' => RunningWorkflowExperimentRun::fromArray($data['lifecycle']), default => throw new \UnexpectedValueException(sprintf('Unknown status: %s', json_encode($data['lifecycle']['status'] ?? null))),
-            },
+            lifecycle: match ($data['lifecycle']['status'] ?? null) { 'cancelled' => CancelledWorkflowExperimentRun::fromArray($data['lifecycle']), 'completed' => CompletedWorkflowExperimentRun::fromArray($data['lifecycle']), 'error' => ErrorWorkflowExperimentRun::fromArray($data['lifecycle']), 'pending' => PendingWorkflowExperimentRun::fromArray($data['lifecycle']), 'queued' => QueuedWorkflowExperimentRun::fromArray($data['lifecycle']), 'running' => RunningWorkflowExperimentRun::fromArray($data['lifecycle']), default => throw new \UnexpectedValueException(sprintf('Unknown status: %s', json_encode($data['lifecycle']['status'] ?? null))), },
         );
     }
 

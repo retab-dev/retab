@@ -14,7 +14,8 @@ readonly class ExperimentDocumentProvenance implements \JsonSerializable
     public function __construct(
         public ?string $runId = null,
         public ?string $stepId = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

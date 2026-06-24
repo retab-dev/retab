@@ -48,7 +48,8 @@ readonly class ConditionEvaluationResult implements \JsonSerializable
          * @var array<\Retab\Resource\ConditionEvaluationSubCondition>|null
          */
         public ?array $subEvaluations = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -71,8 +72,8 @@ readonly class ConditionEvaluationResult implements \JsonSerializable
             matched: $data['matched'] ?? null,
             branchName: $data['branch_name'] ?? null,
             logicalOperator: isset($data['logical_operator']) ? ConditionEvaluationResultLogicalOperator::from($data['logical_operator']) : null,
-            items: isset($data['items']) ? array_map(fn($item) => ConditionEvaluationPerItem::fromArray($item), $data['items']) : null,
-            subEvaluations: isset($data['sub_evaluations']) ? array_map(fn($item) => ConditionEvaluationSubCondition::fromArray($item), $data['sub_evaluations']) : null,
+            items: isset($data['items']) ? array_map(fn ($item) => ConditionEvaluationPerItem::fromArray($item), $data['items']) : null,
+            subEvaluations: isset($data['sub_evaluations']) ? array_map(fn ($item) => ConditionEvaluationSubCondition::fromArray($item), $data['sub_evaluations']) : null,
         );
     }
 
@@ -89,8 +90,8 @@ readonly class ConditionEvaluationResult implements \JsonSerializable
             'matched' => $this->matched,
             'branch_name' => $this->branchName,
             'logical_operator' => $this->logicalOperator?->value,
-            'items' => $this->items !== null ? array_map(fn($item) => $item->toArray(), $this->items) : null,
-            'sub_evaluations' => $this->subEvaluations !== null ? array_map(fn($item) => $item->toArray(), $this->subEvaluations) : null,
+            'items' => $this->items !== null ? array_map(fn ($item) => $item->toArray(), $this->items) : null,
+            'sub_evaluations' => $this->subEvaluations !== null ? array_map(fn ($item) => $item->toArray(), $this->subEvaluations) : null,
         ];
     }
 }

@@ -15,7 +15,8 @@ readonly class SkippedStepLifecycle implements \JsonSerializable
         /** Reason the step was skipped */
         public string $reason,
         public string $status = 'skipped',
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

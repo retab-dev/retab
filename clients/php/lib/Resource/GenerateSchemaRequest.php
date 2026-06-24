@@ -18,7 +18,8 @@ readonly class GenerateSchemaRequest implements \JsonSerializable
         public ?string $instructions = null,
         /** If true, run asynchronously: returns immediately with status 'queued'. Poll GET /v1/schemas/generate/{schema_generation_id} until status is terminal. */
         public ?bool $background = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -31,7 +32,7 @@ readonly class GenerateSchemaRequest implements \JsonSerializable
             }
         }
         return new self(
-            documents: array_map(fn($item) => MimeData::fromArray($item), $data['documents']),
+            documents: array_map(fn ($item) => MimeData::fromArray($item), $data['documents']),
             model: $data['model'] ?? null,
             instructions: $data['instructions'] ?? null,
             background: $data['background'] ?? null,
@@ -42,7 +43,7 @@ readonly class GenerateSchemaRequest implements \JsonSerializable
     public function toArray(): array
     {
         return [
-            'documents' => array_map(fn($item) => $item->toArray(), $this->documents),
+            'documents' => array_map(fn ($item) => $item->toArray(), $this->documents),
             'model' => $this->model,
             'instructions' => $this->instructions,
             'background' => $this->background,

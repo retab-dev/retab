@@ -14,7 +14,8 @@ readonly class WorkflowTableSchemaResponse implements \JsonSerializable
         public string $tableId,
         /** @var array<\Retab\Resource\WorkflowTableColumn>|null */
         public ?array $columns = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -28,7 +29,7 @@ readonly class WorkflowTableSchemaResponse implements \JsonSerializable
         }
         return new self(
             tableId: $data['table_id'],
-            columns: isset($data['columns']) ? array_map(fn($item) => WorkflowTableColumn::fromArray($item), $data['columns']) : null,
+            columns: isset($data['columns']) ? array_map(fn ($item) => WorkflowTableColumn::fromArray($item), $data['columns']) : null,
         );
     }
 
@@ -37,7 +38,7 @@ readonly class WorkflowTableSchemaResponse implements \JsonSerializable
     {
         return [
             'table_id' => $this->tableId,
-            'columns' => $this->columns !== null ? array_map(fn($item) => $item->toArray(), $this->columns) : null,
+            'columns' => $this->columns !== null ? array_map(fn ($item) => $item->toArray(), $this->columns) : null,
         ];
     }
 }

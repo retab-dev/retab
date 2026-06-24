@@ -32,7 +32,8 @@ readonly class FileBlueprint implements \JsonSerializable
         public ?\DateTimeImmutable $completedAt = null,
         public ?FileBlueprintMode $mode = null,
         public string $object = 'file.blueprint',
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

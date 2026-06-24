@@ -13,7 +13,8 @@ readonly class QueuedWorkflowEvalRun implements \JsonSerializable
 
     public function __construct(
         public string $status = 'queued',
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

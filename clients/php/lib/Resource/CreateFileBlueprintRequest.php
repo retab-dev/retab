@@ -20,7 +20,8 @@ readonly class CreateFileBlueprintRequest implements \JsonSerializable
         public ?FileBlueprintMode $mode = null,
         /** If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream. */
         public ?bool $background = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

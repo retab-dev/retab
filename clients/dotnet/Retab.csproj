@@ -8,7 +8,7 @@
     <RootNamespace>Retab</RootNamespace>
     <AssemblyName>Retab</AssemblyName>
     <PackageId>Retab</PackageId>
-    <Version>0.0.14</Version>
+    <Version>0.0.15</Version>
     <Authors>Retab</Authors>
     <Company>Retab</Company>
     <Description>Official .NET (C#) SDK for the Retab API.</Description>

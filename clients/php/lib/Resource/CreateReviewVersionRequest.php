@@ -25,7 +25,8 @@ readonly class CreateReviewVersionRequest implements \JsonSerializable
          */
         public array $snapshot,
         public ?string $note = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

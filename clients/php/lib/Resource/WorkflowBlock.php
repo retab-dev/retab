@@ -44,7 +44,8 @@ readonly class WorkflowBlock implements \JsonSerializable
          * @var array<string, mixed>|null
          */
         public ?array $resolvedSchemas = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

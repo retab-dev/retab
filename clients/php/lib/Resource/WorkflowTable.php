@@ -28,7 +28,8 @@ readonly class WorkflowTable implements \JsonSerializable
         public ?string $uploadedByUserId = null,
         public ?\DateTimeImmutable $createdAt = null,
         public ?\DateTimeImmutable $updatedAt = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -51,7 +52,7 @@ readonly class WorkflowTable implements \JsonSerializable
             projectId: $data['project_id'] ?? null,
             sourceFileId: $data['source_file_id'] ?? null,
             snapshotFileId: $data['snapshot_file_id'] ?? null,
-            columns: isset($data['columns']) ? array_map(fn($item) => WorkflowTableColumn::fromArray($item), $data['columns']) : null,
+            columns: isset($data['columns']) ? array_map(fn ($item) => WorkflowTableColumn::fromArray($item), $data['columns']) : null,
             sampleRows: $data['sample_rows'] ?? null,
             metadata: $data['metadata'] ?? null,
             uploadedByUserId: $data['uploaded_by_user_id'] ?? null,
@@ -71,7 +72,7 @@ readonly class WorkflowTable implements \JsonSerializable
             'project_id' => $this->projectId,
             'source_file_id' => $this->sourceFileId,
             'snapshot_file_id' => $this->snapshotFileId,
-            'columns' => $this->columns !== null ? array_map(fn($item) => $item->toArray(), $this->columns) : null,
+            'columns' => $this->columns !== null ? array_map(fn ($item) => $item->toArray(), $this->columns) : null,
             'sample_rows' => $this->sampleRows,
             'metadata' => $this->metadata,
             'uploaded_by_user_id' => $this->uploadedByUserId,

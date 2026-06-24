@@ -16,7 +16,8 @@ readonly class DeclarativeWorkflowRequest implements \JsonSerializable
         public string $yamlDefinition,
         /** Project that should own a workflow created from this spec. Required when applying a spec that creates a new workflow. */
         public ?string $projectId = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

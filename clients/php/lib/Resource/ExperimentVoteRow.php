@@ -19,7 +19,8 @@ readonly class ExperimentVoteRow implements \JsonSerializable
         public ?float $rowPresenceScore = null,
         public ?int $presentVoterCount = null,
         public ?int $totalVoterCount = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

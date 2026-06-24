@@ -14,7 +14,8 @@ class Secrets
 {
     public function __construct(
         private readonly \Retab\HttpClient $client,
-    ) {}
+    ) {
+    }
 
     /**
      * Secret.List

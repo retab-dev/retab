@@ -17,7 +17,8 @@ readonly class ErrorWorkflowExperimentResult implements \JsonSerializable
         /** Structured error context including stack trace */
         public ?ErrorDetails $details = null,
         public string $status = 'error',
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

@@ -13,7 +13,8 @@ readonly class MatcheRegexCondition implements \JsonSerializable
     public function __construct(
         public string $pattern,
         public string $kind = 'matches_regex',
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

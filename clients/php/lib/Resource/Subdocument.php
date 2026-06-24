@@ -17,7 +17,8 @@ readonly class Subdocument implements \JsonSerializable
         public ?string $description = null,
         /** When true, this subdocument type can appear more than once in the document — the split will identify each distinct instance (runs an extra vision-based refinement pass). */
         public ?bool $allowMultipleInstances = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

@@ -17,7 +17,8 @@ class WorkflowBlocks
 
     public function __construct(
         private readonly \Retab\HttpClient $client,
-    ) {}
+    ) {
+    }
 
     public function executions(): WorkflowBlockExecutions
     {
@@ -52,7 +53,7 @@ class WorkflowBlocks
             'before' => $before,
             'after' => $after,
             'limit' => $limit,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         return $this->client->requestPage(
             method: 'GET',
             path: 'v1/workflows/blocks',
@@ -103,7 +104,7 @@ class WorkflowBlocks
             'height' => $height,
             'config' => $config,
             'parent_id' => $parentId,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',
             path: 'v1/workflows/blocks',
@@ -140,7 +141,7 @@ class WorkflowBlocks
             'before' => $before,
             'after' => $after,
             'limit' => $limit,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         return $this->client->requestPage(
             method: 'GET',
             path: 'v1/workflows/blocks/versions',
@@ -227,7 +228,7 @@ class WorkflowBlocks
     ): \Retab\Resource\WorkflowBlock {
         $query = array_filter([
             'workflow_id' => $workflowId,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         $response = $this->client->request(
             method: 'GET',
             path: 'v1/workflows/blocks/' . rawurlencode($blockId),
@@ -279,10 +280,10 @@ class WorkflowBlocks
             'config' => $config,
             'parent_id' => $parentId,
             'config_mode' => $configMode?->value,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         $query = array_filter([
             'workflow_id' => $workflowId,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         $response = $this->client->request(
             method: 'PATCH',
             path: 'v1/workflows/blocks/' . rawurlencode($blockId),
@@ -311,7 +312,7 @@ class WorkflowBlocks
     ): void {
         $query = array_filter([
             'workflow_id' => $workflowId,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         $this->client->request(
             method: 'DELETE',
             path: 'v1/workflows/blocks/' . rawurlencode($blockId),
@@ -341,10 +342,10 @@ class WorkflowBlocks
         $body = array_filter([
             'config' => $config,
             'config_mode' => $configMode?->value,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         $query = array_filter([
             'workflow_id' => $workflowId,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',
             path: 'v1/workflows/blocks/' . rawurlencode($blockId) . '/validate-config',

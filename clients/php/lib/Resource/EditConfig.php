@@ -13,7 +13,8 @@ readonly class EditConfig implements \JsonSerializable
     public function __construct(
         /** Hex code of the color to use for the filled text. */
         public ?string $color = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

@@ -15,7 +15,8 @@ readonly class WorkflowTableProfileResponse implements \JsonSerializable
         public int $rowCount,
         /** @var array<\Retab\Resource\WorkflowTableProfileColumn>|null */
         public ?array $columns = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -31,7 +32,7 @@ readonly class WorkflowTableProfileResponse implements \JsonSerializable
         return new self(
             tableId: $data['table_id'],
             rowCount: $data['row_count'],
-            columns: isset($data['columns']) ? array_map(fn($item) => WorkflowTableProfileColumn::fromArray($item), $data['columns']) : null,
+            columns: isset($data['columns']) ? array_map(fn ($item) => WorkflowTableProfileColumn::fromArray($item), $data['columns']) : null,
         );
     }
 
@@ -41,7 +42,7 @@ readonly class WorkflowTableProfileResponse implements \JsonSerializable
         return [
             'table_id' => $this->tableId,
             'row_count' => $this->rowCount,
-            'columns' => $this->columns !== null ? array_map(fn($item) => $item->toArray(), $this->columns) : null,
+            'columns' => $this->columns !== null ? array_map(fn ($item) => $item->toArray(), $this->columns) : null,
         ];
     }
 }

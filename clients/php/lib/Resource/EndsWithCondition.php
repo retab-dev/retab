@@ -13,7 +13,8 @@ readonly class EndsWithCondition implements \JsonSerializable
     public function __construct(
         public string $expected,
         public string $kind = 'ends_with',
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

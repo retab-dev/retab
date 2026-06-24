@@ -14,7 +14,8 @@ class WorkflowEdges
 {
     public function __construct(
         private readonly \Retab\HttpClient $client,
-    ) {}
+    ) {
+    }
 
     /**
      * List Edges
@@ -49,7 +50,7 @@ class WorkflowEdges
             'before' => $before,
             'after' => $after,
             'limit' => $limit,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         return $this->client->requestPage(
             method: 'GET',
             path: 'v1/workflows/edges',
@@ -92,7 +93,7 @@ class WorkflowEdges
             'target_block' => $targetBlock,
             'source_handle' => $sourceHandle,
             'target_handle' => $targetHandle,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',
             path: 'v1/workflows/edges',
@@ -129,7 +130,7 @@ class WorkflowEdges
             'before' => $before,
             'after' => $after,
             'limit' => $limit,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         return $this->client->requestPage(
             method: 'GET',
             path: 'v1/workflows/edges/versions',
@@ -216,7 +217,7 @@ class WorkflowEdges
     ): \Retab\Resource\WorkflowEdgeDoc {
         $query = array_filter([
             'workflow_id' => $workflowId,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         $response = $this->client->request(
             method: 'GET',
             path: 'v1/workflows/edges/' . rawurlencode($edgeId),

@@ -26,7 +26,8 @@ readonly class WorkflowRun implements \JsonSerializable
         public RunTiming $timing,
         /** Input payloads supplied at run creation time */
         public ?RunInputs $inputs = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -48,9 +49,7 @@ readonly class WorkflowRun implements \JsonSerializable
             workflowId: $data['workflow_id'],
             workflowVersionId: $data['workflow_version_id'],
             trigger: TriggerInfo::fromArray($data['trigger']),
-            lifecycle: match ($data['lifecycle']['status'] ?? null) {
-                'awaiting_review' => AwaitingReviewRun::fromArray($data['lifecycle']), 'cancelled' => CancelledTerminal::fromArray($data['lifecycle']), 'completed' => CompletedTerminal::fromArray($data['lifecycle']), 'error' => ErrorTerminal::fromArray($data['lifecycle']), 'pending' => PendingRun::fromArray($data['lifecycle']), 'running' => RunningRun::fromArray($data['lifecycle']), default => throw new \UnexpectedValueException(sprintf('Unknown status: %s', json_encode($data['lifecycle']['status'] ?? null))),
-            },
+            lifecycle: match ($data['lifecycle']['status'] ?? null) { 'awaiting_review' => AwaitingReviewRun::fromArray($data['lifecycle']), 'cancelled' => CancelledTerminal::fromArray($data['lifecycle']), 'completed' => CompletedTerminal::fromArray($data['lifecycle']), 'error' => ErrorTerminal::fromArray($data['lifecycle']), 'pending' => PendingRun::fromArray($data['lifecycle']), 'running' => RunningRun::fromArray($data['lifecycle']), default => throw new \UnexpectedValueException(sprintf('Unknown status: %s', json_encode($data['lifecycle']['status'] ?? null))), },
             timing: RunTiming::fromArray($data['timing']),
             inputs: isset($data['inputs']) ? RunInputs::fromArray($data['inputs']) : null,
         );

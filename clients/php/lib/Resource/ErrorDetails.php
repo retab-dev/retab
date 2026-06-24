@@ -31,7 +31,8 @@ readonly class ErrorDetails implements \JsonSerializable
          * @var array<string, mixed>|null
          */
         public ?array $context = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

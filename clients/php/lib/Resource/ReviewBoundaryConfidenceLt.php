@@ -14,7 +14,8 @@ readonly class ReviewBoundaryConfidenceLt implements \JsonSerializable
     public function __construct(
         public float $threshold,
         public string $kind = 'boundary_confidence_lt',
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

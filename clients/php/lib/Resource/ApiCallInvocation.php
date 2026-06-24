@@ -27,7 +27,8 @@ readonly class ApiCallInvocation implements \JsonSerializable
         public ?\DateTimeImmutable $createdAt = null,
         /** The operation that produced this artifact */
         public string $operation = 'api_call_invocation',
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -45,7 +46,7 @@ readonly class ApiCallInvocation implements \JsonSerializable
             id: $data['id'],
             runId: $data['run_id'],
             stepId: $data['step_id'],
-            attempts: isset($data['attempts']) ? array_map(fn($item) => ApiCallAttempt::fromArray($item), $data['attempts']) : null,
+            attempts: isset($data['attempts']) ? array_map(fn ($item) => ApiCallAttempt::fromArray($item), $data['attempts']) : null,
             error: isset($data['error']) ? ErrorDetails::fromArray($data['error']) : null,
             createdAt: isset($data['created_at']) ? new \DateTimeImmutable($data['created_at']) : null,
             operation: $data['operation'] ?? 'api_call_invocation',
@@ -59,7 +60,7 @@ readonly class ApiCallInvocation implements \JsonSerializable
             'id' => $this->id,
             'run_id' => $this->runId,
             'step_id' => $this->stepId,
-            'attempts' => $this->attempts !== null ? array_map(fn($item) => $item->toArray(), $this->attempts) : null,
+            'attempts' => $this->attempts !== null ? array_map(fn ($item) => $item->toArray(), $this->attempts) : null,
             'error' => $this->error?->toArray(),
             'created_at' => $this->createdAt?->format(\DateTimeInterface::RFC3339_EXTENDED),
             'operation' => $this->operation,

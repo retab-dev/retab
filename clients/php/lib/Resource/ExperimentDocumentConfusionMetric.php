@@ -16,14 +16,15 @@ readonly class ExperimentDocumentConfusionMetric implements \JsonSerializable
         public ?array $diag = null,
         /** @var array<\Retab\Resource\ExperimentConfusionFlowMetric>|null */
         public ?array $flows = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
     {
         return new self(
             diag: $data['diag'] ?? null,
-            flows: isset($data['flows']) ? array_map(fn($item) => ExperimentConfusionFlowMetric::fromArray($item), $data['flows']) : null,
+            flows: isset($data['flows']) ? array_map(fn ($item) => ExperimentConfusionFlowMetric::fromArray($item), $data['flows']) : null,
         );
     }
 
@@ -32,7 +33,7 @@ readonly class ExperimentDocumentConfusionMetric implements \JsonSerializable
     {
         return [
             'diag' => $this->diag,
-            'flows' => $this->flows !== null ? array_map(fn($item) => $item->toArray(), $this->flows) : null,
+            'flows' => $this->flows !== null ? array_map(fn ($item) => $item->toArray(), $this->flows) : null,
         ];
     }
 }

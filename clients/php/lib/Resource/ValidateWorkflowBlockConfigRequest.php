@@ -19,7 +19,8 @@ readonly class ValidateWorkflowBlockConfigRequest implements \JsonSerializable
         public array $config,
         /** How to apply the config before validation. 'replace' validates the config as the full block config; 'merge' validates the result of merging it into the existing block config. */
         public ?UpdateWorkflowBlockRequestConfigMode $configMode = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

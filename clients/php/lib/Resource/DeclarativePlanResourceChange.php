@@ -22,7 +22,8 @@ readonly class DeclarativePlanResourceChange implements \JsonSerializable
         public string $summary,
         public DeclarativePlanChange $change,
         public ?string $path = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -47,7 +48,7 @@ readonly class DeclarativePlanResourceChange implements \JsonSerializable
             targetId: $data['target_id'],
             name: $data['name'],
             type: DeclarativePlanResourceChangeType::from($data['type']),
-            actions: array_map(fn($item) => DeclarativePlanFieldChangeAction::from($item), $data['actions']),
+            actions: array_map(fn ($item) => DeclarativePlanFieldChangeAction::from($item), $data['actions']),
             summary: $data['summary'],
             change: DeclarativePlanChange::fromArray($data['change']),
             path: $data['path'] ?? null,
@@ -63,7 +64,7 @@ readonly class DeclarativePlanResourceChange implements \JsonSerializable
             'target_id' => $this->targetId,
             'name' => $this->name,
             'type' => $this->type->value,
-            'actions' => array_map(fn($item) => $item->value, $this->actions),
+            'actions' => array_map(fn ($item) => $item->value, $this->actions),
             'summary' => $this->summary,
             'change' => $this->change->toArray(),
             'path' => $this->path,

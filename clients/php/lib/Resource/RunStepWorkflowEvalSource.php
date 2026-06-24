@@ -14,7 +14,8 @@ readonly class RunStepWorkflowEvalSource implements \JsonSerializable
         public string $runId,
         public ?string $stepId = null,
         public string $type = 'run_step',
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

@@ -12,7 +12,8 @@ class Partitions
 {
     public function __construct(
         private readonly \Retab\HttpClient $client,
-    ) {}
+    ) {
+    }
 
     /**
      * List Partitions
@@ -54,7 +55,7 @@ class Partitions
             'status' => $status?->value,
             'from_date' => $fromDate,
             'to_date' => $toDate,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         return $this->client->requestPage(
             method: 'GET',
             path: 'v1/partitions',
@@ -105,7 +106,7 @@ class Partitions
             'allow_overlap' => $allowOverlap,
             'bust_cache' => $bustCache,
             'background' => $background,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',
             path: 'v1/partitions',
@@ -135,7 +136,7 @@ class Partitions
     ): \Retab\Resource\Partition {
         $query = array_filter([
             'include_output' => $includeOutput,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         $response = $this->client->request(
             method: 'GET',
             path: 'v1/partitions/' . rawurlencode($partitionId),

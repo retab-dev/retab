@@ -17,14 +17,15 @@ readonly class ArtifactFreshness implements \JsonSerializable
         public ?string $validityFingerprint = null,
         public ?string $inputFingerprint = null,
         public ?string $baselineRunId = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
     {
         return new self(
             status: isset($data['status']) ? EvalRunFreshnessStatus::from($data['status']) : null,
-            reasons: isset($data['reasons']) ? array_map(fn($item) => EvalRunFreshnessReasons::from($item), $data['reasons']) : null,
+            reasons: isset($data['reasons']) ? array_map(fn ($item) => EvalRunFreshnessReasons::from($item), $data['reasons']) : null,
             validityFingerprint: $data['validity_fingerprint'] ?? null,
             inputFingerprint: $data['input_fingerprint'] ?? null,
             baselineRunId: $data['baseline_run_id'] ?? null,
@@ -36,7 +37,7 @@ readonly class ArtifactFreshness implements \JsonSerializable
     {
         return [
             'status' => $this->status?->value,
-            'reasons' => $this->reasons !== null ? array_map(fn($item) => $item->value, $this->reasons) : null,
+            'reasons' => $this->reasons !== null ? array_map(fn ($item) => $item->value, $this->reasons) : null,
             'validity_fingerprint' => $this->validityFingerprint,
             'input_fingerprint' => $this->inputFingerprint,
             'baseline_run_id' => $this->baselineRunId,

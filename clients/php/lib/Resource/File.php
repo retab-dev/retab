@@ -25,7 +25,8 @@ readonly class File implements \JsonSerializable
         /** Number of pages in the file */
         public ?int $pageCount = null,
         public string $object = 'file',
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

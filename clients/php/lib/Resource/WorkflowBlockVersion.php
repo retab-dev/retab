@@ -34,7 +34,8 @@ readonly class WorkflowBlockVersion implements \JsonSerializable
         public ?array $resolvedSchemas = null,
         /** Stable SHA-256 hash of the executable block config */
         public ?string $configHash = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

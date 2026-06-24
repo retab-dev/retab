@@ -20,7 +20,8 @@ readonly class DeclarativePlanFieldChange implements \JsonSerializable
         public ?bool $beforeSensitive = null,
         public ?bool $afterSensitive = null,
         public ?string $unifiedDiff = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

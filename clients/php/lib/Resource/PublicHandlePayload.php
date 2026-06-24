@@ -18,7 +18,8 @@ readonly class PublicHandlePayload implements \JsonSerializable
         public ?FileRef $document = null,
         /** For JSON handles: structured data */
         public mixed $data = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

@@ -47,7 +47,8 @@ readonly class ExtractionRequest implements \JsonSerializable
         public ?bool $background = null,
         /** @var array<string, string>|null */
         public ?array $chunkingKeys = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

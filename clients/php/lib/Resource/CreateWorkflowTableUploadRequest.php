@@ -15,7 +15,8 @@ readonly class CreateWorkflowTableUploadRequest implements \JsonSerializable
         public string $file,
         public ?string $columnSchemaOverrides = null,
         public ?string $projectId = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

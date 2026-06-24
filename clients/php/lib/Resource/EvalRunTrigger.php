@@ -12,7 +12,8 @@ readonly class EvalRunTrigger implements \JsonSerializable
 
     public function __construct(
         public TriggerInfoType $type,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

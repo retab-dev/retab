@@ -18,7 +18,8 @@ readonly class CreateWorkflowRequest implements \JsonSerializable
         public ?string $name = null,
         /** Description of the workflow */
         public ?string $description = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

@@ -17,7 +17,8 @@ readonly class CancelWorkflowResponse implements \JsonSerializable
         public ?bool $redisAvailable = null,
         /** Cancellation delivery state from this request */
         public ?CancelWorkflowResponseCancellationStatus $cancellationStatus = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

@@ -12,7 +12,8 @@ class WorkflowEvalRuns
 {
     public function __construct(
         private readonly \Retab\HttpClient $client,
-    ) {}
+    ) {
+    }
 
     /**
      * List Workflow Eval Runs
@@ -69,7 +70,7 @@ class WorkflowEvalRuns
             'after' => $after,
             'limit' => $limit,
             'order' => $order->value,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         return $this->client->requestPage(
             method: 'GET',
             path: 'v1/workflows/evals/runs',
@@ -99,7 +100,7 @@ class WorkflowEvalRuns
         $body = array_filter([
             'workflow_id' => $workflowId,
             'scope' => $scope,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',
             path: 'v1/workflows/evals/runs',

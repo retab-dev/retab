@@ -23,7 +23,8 @@ readonly class WorkflowTableProfileColumn implements \JsonSerializable
         /** @var array<string>|null */
         public ?array $sampleValues = null,
         public ?bool $isEstimated = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

@@ -17,7 +17,8 @@ readonly class DeclarativePlanChange implements \JsonSerializable
         public mixed $afterSensitive = null,
         /** @var array<\Retab\Resource\DeclarativePlanFieldChange>|null */
         public ?array $fieldChanges = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -27,7 +28,7 @@ readonly class DeclarativePlanChange implements \JsonSerializable
             after: $data['after'] ?? null,
             beforeSensitive: $data['before_sensitive'] ?? null,
             afterSensitive: $data['after_sensitive'] ?? null,
-            fieldChanges: isset($data['field_changes']) ? array_map(fn($item) => DeclarativePlanFieldChange::fromArray($item), $data['field_changes']) : null,
+            fieldChanges: isset($data['field_changes']) ? array_map(fn ($item) => DeclarativePlanFieldChange::fromArray($item), $data['field_changes']) : null,
         );
     }
 
@@ -39,7 +40,7 @@ readonly class DeclarativePlanChange implements \JsonSerializable
             'after' => $this->after,
             'before_sensitive' => $this->beforeSensitive,
             'after_sensitive' => $this->afterSensitive,
-            'field_changes' => $this->fieldChanges !== null ? array_map(fn($item) => $item->toArray(), $this->fieldChanges) : null,
+            'field_changes' => $this->fieldChanges !== null ? array_map(fn ($item) => $item->toArray(), $this->fieldChanges) : null,
         ];
     }
 }

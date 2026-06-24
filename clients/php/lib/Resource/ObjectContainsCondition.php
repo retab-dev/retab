@@ -14,7 +14,8 @@ readonly class ObjectContainsCondition implements \JsonSerializable
         /** @var array<string, mixed> */
         public array $expected,
         public string $kind = 'object_contains',
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

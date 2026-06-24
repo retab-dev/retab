@@ -12,7 +12,8 @@ readonly class WorkflowTableDistinctRequest implements \JsonSerializable
 
     public function __construct(
         public string $column,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

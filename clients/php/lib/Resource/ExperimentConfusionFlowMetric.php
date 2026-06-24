@@ -15,7 +15,8 @@ readonly class ExperimentConfusionFlowMetric implements \JsonSerializable
         public string $source,
         public string $target,
         public float $score,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

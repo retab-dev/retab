@@ -12,7 +12,8 @@ readonly class WorkflowTableTailRequest implements \JsonSerializable
 
     public function __construct(
         public int $size,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

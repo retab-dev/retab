@@ -15,7 +15,8 @@ readonly class ArtifactDrift implements \JsonSerializable
         /** @var array<string>|null */
         public ?array $affectedTargets = null,
         public ?string $detail = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

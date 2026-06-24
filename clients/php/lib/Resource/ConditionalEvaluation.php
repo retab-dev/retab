@@ -32,7 +32,8 @@ readonly class ConditionalEvaluation implements \JsonSerializable
         public ?\DateTimeImmutable $createdAt = null,
         /** The operation that produced this artifact */
         public string $operation = 'conditional_evaluation',
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -50,7 +51,7 @@ readonly class ConditionalEvaluation implements \JsonSerializable
             id: $data['id'],
             runId: $data['run_id'],
             stepId: $data['step_id'],
-            evaluations: isset($data['evaluations']) ? array_map(fn($item) => ConditionEvaluationResult::fromArray($item), $data['evaluations']) : null,
+            evaluations: isset($data['evaluations']) ? array_map(fn ($item) => ConditionEvaluationResult::fromArray($item), $data['evaluations']) : null,
             selectedHandles: $data['selected_handles'] ?? null,
             matchedBranchId: $data['matched_branch_id'] ?? null,
             matchedConditionIds: $data['matched_condition_ids'] ?? null,
@@ -66,7 +67,7 @@ readonly class ConditionalEvaluation implements \JsonSerializable
             'id' => $this->id,
             'run_id' => $this->runId,
             'step_id' => $this->stepId,
-            'evaluations' => $this->evaluations !== null ? array_map(fn($item) => $item->toArray(), $this->evaluations) : null,
+            'evaluations' => $this->evaluations !== null ? array_map(fn ($item) => $item->toArray(), $this->evaluations) : null,
             'selected_handles' => $this->selectedHandles,
             'matched_branch_id' => $this->matchedBranchId,
             'matched_condition_ids' => $this->matchedConditionIds,

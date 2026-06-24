@@ -18,7 +18,8 @@ readonly class SplitResult implements \JsonSerializable
          * @var array<int>
          */
         public array $pages,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

@@ -12,7 +12,8 @@ class Splits
 {
     public function __construct(
         private readonly \Retab\HttpClient $client,
-    ) {}
+    ) {
+    }
 
     /**
      * List Splits
@@ -54,7 +55,7 @@ class Splits
             'status' => $status?->value,
             'from_date' => $fromDate,
             'to_date' => $toDate,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         return $this->client->requestPage(
             method: 'GET',
             path: 'v1/splits',
@@ -102,7 +103,7 @@ class Splits
             'n_consensus' => $nConsensus,
             'bust_cache' => $bustCache,
             'background' => $background,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',
             path: 'v1/splits',
@@ -132,7 +133,7 @@ class Splits
     ): \Retab\Resource\Split {
         $query = array_filter([
             'include_output' => $includeOutput,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         $response = $this->client->request(
             method: 'GET',
             path: 'v1/splits/' . rawurlencode($splitId),

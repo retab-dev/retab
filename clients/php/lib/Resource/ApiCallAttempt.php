@@ -27,7 +27,8 @@ readonly class ApiCallAttempt implements \JsonSerializable
         public ?ErrorDetails $error = null,
         public ?\DateTimeImmutable $startedAt = null,
         public ?\DateTimeImmutable $completedAt = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

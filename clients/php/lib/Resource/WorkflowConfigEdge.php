@@ -19,7 +19,8 @@ readonly class WorkflowConfigEdge implements \JsonSerializable
         public ?string $sourceHandle = null,
         public ?string $targetHandle = null,
         public ?bool $animated = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

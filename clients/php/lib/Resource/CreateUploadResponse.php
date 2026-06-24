@@ -33,7 +33,8 @@ readonly class CreateUploadResponse implements \JsonSerializable
         public ?array $uploadHeaders = null,
         /** Durable Retab MIMEData reference */
         public ?MimeData $mimeData = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

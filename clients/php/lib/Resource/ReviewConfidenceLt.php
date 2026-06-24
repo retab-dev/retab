@@ -15,7 +15,8 @@ readonly class ReviewConfidenceLt implements \JsonSerializable
         /** Gate fires when consensus likelihood < threshold */
         public float $threshold,
         public string $kind = 'confidence_lt',
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

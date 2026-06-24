@@ -29,7 +29,8 @@ readonly class FunctionInvocation implements \JsonSerializable
         public ?\DateTimeImmutable $createdAt = null,
         /** The operation that produced this artifact */
         public string $operation = 'function_invocation',
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

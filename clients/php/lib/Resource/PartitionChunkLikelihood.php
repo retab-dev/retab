@@ -18,7 +18,8 @@ readonly class PartitionChunkLikelihood implements \JsonSerializable
          * @var array<float>|null
          */
         public ?array $pages = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

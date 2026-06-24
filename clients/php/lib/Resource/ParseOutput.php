@@ -18,7 +18,8 @@ readonly class ParseOutput implements \JsonSerializable
         public array $pages,
         /** Concatenated text content of the full document */
         public string $text,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

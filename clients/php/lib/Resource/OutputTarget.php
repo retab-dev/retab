@@ -14,7 +14,8 @@ readonly class OutputTarget implements \JsonSerializable
     public function __construct(
         public string $outputHandleId,
         public ?string $path = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

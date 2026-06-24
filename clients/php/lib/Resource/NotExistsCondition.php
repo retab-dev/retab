@@ -12,7 +12,8 @@ readonly class NotExistsCondition implements \JsonSerializable
 
     public function __construct(
         public string $kind = 'not_exists',
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

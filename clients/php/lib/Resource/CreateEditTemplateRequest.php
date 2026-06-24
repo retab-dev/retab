@@ -21,7 +21,8 @@ readonly class CreateEditTemplateRequest implements \JsonSerializable
          * @var array<\Retab\Resource\FormField>
          */
         public array $formFields,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -38,7 +39,7 @@ readonly class CreateEditTemplateRequest implements \JsonSerializable
         return new self(
             name: $data['name'],
             document: MimeData::fromArray($data['document']),
-            formFields: array_map(fn($item) => FormField::fromArray($item), $data['form_fields']),
+            formFields: array_map(fn ($item) => FormField::fromArray($item), $data['form_fields']),
         );
     }
 
@@ -48,7 +49,7 @@ readonly class CreateEditTemplateRequest implements \JsonSerializable
         return [
             'name' => $this->name,
             'document' => $this->document->toArray(),
-            'form_fields' => array_map(fn($item) => $item->toArray(), $this->formFields),
+            'form_fields' => array_map(fn ($item) => $item->toArray(), $this->formFields),
         ];
     }
 }

@@ -14,7 +14,8 @@ readonly class ApproveReviewRequest implements \JsonSerializable
     public function __construct(
         /** Exact content-addressed key of the version to approve. */
         public string $versionId,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

@@ -14,7 +14,8 @@ class WorkflowRuns
 {
     public function __construct(
         private readonly \Retab\HttpClient $client,
-    ) {}
+    ) {
+    }
 
     /**
      * List Workflow Runs
@@ -69,7 +70,7 @@ class WorkflowRuns
             'limit' => $limit,
             'order' => $order->value,
             'sort_by' => $sortBy,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         return $this->client->requestPage(
             method: 'GET',
             path: 'v1/workflows/runs',
@@ -98,14 +99,14 @@ class WorkflowRuns
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\WorkflowRun {
         if ($documents !== null) {
-            $documents = array_map(fn($__d) => \Retab\Resource\MimeDataCoerce::coerce($__d, $this->client), $documents);
+            $documents = array_map(fn ($__d) => \Retab\Resource\MimeDataCoerce::coerce($__d, $this->client), $documents);
         }
         $body = array_filter([
             'workflow_id' => $workflowId,
             'documents' => $documents,
             'json_inputs' => $jsonInputs,
             'version' => $version,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',
             path: 'v1/workflows/runs',
@@ -168,7 +169,7 @@ class WorkflowRuns
             'delimiter' => $delimiter,
             'line_delimiter' => $lineDelimiter,
             'quote' => $quote,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',
             path: 'v1/workflows/runs/export',
@@ -233,7 +234,7 @@ class WorkflowRuns
     ): \Retab\Resource\CancelWorkflowResponse {
         $body = array_filter([
             'command_id' => $commandId,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',
             path: 'v1/workflows/runs/' . rawurlencode($runId) . '/cancel',

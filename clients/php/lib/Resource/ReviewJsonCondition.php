@@ -25,7 +25,8 @@ readonly class ReviewJsonCondition implements \JsonSerializable
          */
         public array $condition,
         public string $kind = 'json_condition',
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

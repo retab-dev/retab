@@ -18,7 +18,8 @@ readonly class ErrorStepLifecycle implements \JsonSerializable
         public ?ErrorTerminalCategory $category = null,
         public ?ErrorDetails $details = null,
         public string $status = 'error',
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

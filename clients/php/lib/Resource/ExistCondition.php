@@ -12,7 +12,8 @@ readonly class ExistCondition implements \JsonSerializable
 
     public function __construct(
         public string $kind = 'exists',
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

@@ -18,7 +18,8 @@ readonly class WorkflowTableColumn implements \JsonSerializable
         public ?array $sampleValues = null,
         public ?bool $required = null,
         public ?bool $unique = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

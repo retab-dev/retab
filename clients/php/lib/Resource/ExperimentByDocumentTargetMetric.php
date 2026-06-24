@@ -16,7 +16,8 @@ readonly class ExperimentByDocumentTargetMetric implements \JsonSerializable
         public ?float $score = null,
         public ?float $priorScore = null,
         public mixed $value = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

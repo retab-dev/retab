@@ -17,7 +17,8 @@ readonly class WorkflowTableValidationRequest implements \JsonSerializable
         public ?array $columns = null,
         /** @var array<array<string>>|null */
         public ?array $unique = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

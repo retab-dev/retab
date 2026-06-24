@@ -13,13 +13,14 @@ readonly class SecretListResponse implements \JsonSerializable
     public function __construct(
         /** @var array<\Retab\Resource\Secret>|null */
         public ?array $secrets = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
     {
         return new self(
-            secrets: isset($data['secrets']) ? array_map(fn($item) => Secret::fromArray($item), $data['secrets']) : null,
+            secrets: isset($data['secrets']) ? array_map(fn ($item) => Secret::fromArray($item), $data['secrets']) : null,
         );
     }
 
@@ -27,7 +28,7 @@ readonly class SecretListResponse implements \JsonSerializable
     public function toArray(): array
     {
         return [
-            'secrets' => $this->secrets !== null ? array_map(fn($item) => $item->toArray(), $this->secrets) : null,
+            'secrets' => $this->secrets !== null ? array_map(fn ($item) => $item->toArray(), $this->secrets) : null,
         ];
     }
 }

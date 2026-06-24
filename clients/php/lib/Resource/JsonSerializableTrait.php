@@ -20,6 +20,6 @@ trait JsonSerializableTrait
      */
     public function jsonSerialize(): array
     {
-        return array_filter($this->toArray(), static fn($v) => $v !== null);
+        return array_filter($this->toArray(), static fn ($v) => $v !== null);
     }
 }

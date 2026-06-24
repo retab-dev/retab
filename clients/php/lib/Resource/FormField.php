@@ -21,7 +21,8 @@ readonly class FormField implements \JsonSerializable
         public string $key,
         /** Filled value of the field as text. Null when no filled value is set. */
         public ?string $value = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

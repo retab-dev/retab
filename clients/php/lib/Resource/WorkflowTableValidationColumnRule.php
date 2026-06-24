@@ -14,7 +14,8 @@ readonly class WorkflowTableValidationColumnRule implements \JsonSerializable
         public ?WorkflowTableValidationColumnRuleType $type = null,
         public ?string $format = null,
         public ?bool $isNotEmpty = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

@@ -12,7 +12,8 @@ readonly class ExperimentRunTrigger implements \JsonSerializable
 
     public function __construct(
         public ?string $type = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

@@ -20,7 +20,8 @@ readonly class ReviewBranchIn implements \JsonSerializable
         /** @var array<string> */
         public array $branches,
         public string $kind = 'branch_in',
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

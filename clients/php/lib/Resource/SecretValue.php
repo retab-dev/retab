@@ -15,7 +15,8 @@ readonly class SecretValue implements \JsonSerializable
         public string $value,
         /** When the secret value was last updated. */
         public \DateTimeImmutable $updatedAt,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

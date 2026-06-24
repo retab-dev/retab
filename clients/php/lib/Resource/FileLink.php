@@ -20,7 +20,8 @@ readonly class FileLink implements \JsonSerializable
         public string $filename,
         /** Durable Retab MIMEData reference for API reuse */
         public ?MimeData $mimeData = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

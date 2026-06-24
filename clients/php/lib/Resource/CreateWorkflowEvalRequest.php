@@ -17,7 +17,8 @@ readonly class CreateWorkflowEvalRequest implements \JsonSerializable
         public ManualWorkflowEvalSource|RunStepWorkflowEvalSource $source,
         public AssertionSpec $assertion,
         public ?string $name = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -35,9 +36,7 @@ readonly class CreateWorkflowEvalRequest implements \JsonSerializable
         return new self(
             workflowId: $data['workflow_id'],
             target: WorkflowEvalBlockTarget::fromArray($data['target']),
-            source: match ($data['source']['type'] ?? null) {
-                'manual' => ManualWorkflowEvalSource::fromArray($data['source']), 'run_step' => RunStepWorkflowEvalSource::fromArray($data['source']), default => throw new \UnexpectedValueException(sprintf('Unknown type: %s', json_encode($data['source']['type'] ?? null))),
-            },
+            source: match ($data['source']['type'] ?? null) { 'manual' => ManualWorkflowEvalSource::fromArray($data['source']), 'run_step' => RunStepWorkflowEvalSource::fromArray($data['source']), default => throw new \UnexpectedValueException(sprintf('Unknown type: %s', json_encode($data['source']['type'] ?? null))), },
             assertion: AssertionSpec::fromArray($data['assertion']),
             name: $data['name'] ?? null,
         );

@@ -18,7 +18,8 @@ readonly class Secret implements \JsonSerializable
         public \DateTimeImmutable $updatedAt,
         public ?string $createdBy = null,
         public ?string $updatedBy = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

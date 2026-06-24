@@ -13,7 +13,8 @@ readonly class WorkflowTableSortRule implements \JsonSerializable
     public function __construct(
         public string $column,
         public ?EditsOrder $direction = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

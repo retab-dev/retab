@@ -20,7 +20,8 @@ readonly class ContainerContextData implements \JsonSerializable
         public ?bool $isParallel = null,
         /** Parallel item index if is_parallel */
         public ?int $parallelItemIndex = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

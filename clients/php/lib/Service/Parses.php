@@ -12,7 +12,8 @@ class Parses
 {
     public function __construct(
         private readonly \Retab\HttpClient $client,
-    ) {}
+    ) {
+    }
 
     /**
      * List Parses
@@ -51,7 +52,7 @@ class Parses
             'filename' => $filename,
             'from_date' => $fromDate,
             'to_date' => $toDate,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         return $this->client->requestPage(
             method: 'GET',
             path: 'v1/parses',
@@ -96,7 +97,7 @@ class Parses
             'instructions' => $instructions,
             'bust_cache' => $bustCache,
             'background' => $background,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',
             path: 'v1/parses',
@@ -126,7 +127,7 @@ class Parses
     ): \Retab\Resource\Parse {
         $query = array_filter([
             'include_output' => $includeOutput,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         $response = $this->client->request(
             method: 'GET',
             path: 'v1/parses/' . rawurlencode($parseId),

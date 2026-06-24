@@ -29,7 +29,8 @@ readonly class SplitRequest implements \JsonSerializable
         public ?bool $bustCache = null,
         /** If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream. */
         public ?bool $background = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -44,7 +45,7 @@ readonly class SplitRequest implements \JsonSerializable
         }
         return new self(
             document: MimeData::fromArray($data['document']),
-            subdocuments: array_map(fn($item) => Subdocument::fromArray($item), $data['subdocuments']),
+            subdocuments: array_map(fn ($item) => Subdocument::fromArray($item), $data['subdocuments']),
             model: $data['model'] ?? null,
             instructions: $data['instructions'] ?? null,
             nConsensus: $data['n_consensus'] ?? null,
@@ -58,7 +59,7 @@ readonly class SplitRequest implements \JsonSerializable
     {
         return [
             'document' => $this->document->toArray(),
-            'subdocuments' => array_map(fn($item) => $item->toArray(), $this->subdocuments),
+            'subdocuments' => array_map(fn ($item) => $item->toArray(), $this->subdocuments),
             'model' => $this->model,
             'instructions' => $this->instructions,
             'n_consensus' => $this->nConsensus,

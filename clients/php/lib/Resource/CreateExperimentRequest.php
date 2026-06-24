@@ -33,7 +33,8 @@ readonly class CreateExperimentRequest implements \JsonSerializable
         public ?NConsensusValue $nConsensus = null,
         public ?string $name = null,
         public ?string $sourceExperimentId = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -48,8 +49,8 @@ readonly class CreateExperimentRequest implements \JsonSerializable
         return new self(
             workflowId: $data['workflow_id'],
             blockId: $data['block_id'] ?? null,
-            documentCaptures: isset($data['document_captures']) ? array_map(fn($item) => ExperimentDocumentCaptureRequest::fromArray($item), $data['document_captures']) : null,
-            documents: isset($data['documents']) ? array_map(fn($item) => ExplicitExperimentDocumentRequest::fromArray($item), $data['documents']) : null,
+            documentCaptures: isset($data['document_captures']) ? array_map(fn ($item) => ExperimentDocumentCaptureRequest::fromArray($item), $data['document_captures']) : null,
+            documents: isset($data['documents']) ? array_map(fn ($item) => ExplicitExperimentDocumentRequest::fromArray($item), $data['documents']) : null,
             nConsensus: isset($data['n_consensus']) ? NConsensusValue::from($data['n_consensus']) : null,
             name: $data['name'] ?? null,
             sourceExperimentId: $data['source_experiment_id'] ?? null,
@@ -62,8 +63,8 @@ readonly class CreateExperimentRequest implements \JsonSerializable
         return [
             'workflow_id' => $this->workflowId,
             'block_id' => $this->blockId,
-            'document_captures' => $this->documentCaptures !== null ? array_map(fn($item) => $item->toArray(), $this->documentCaptures) : null,
-            'documents' => $this->documents !== null ? array_map(fn($item) => $item->toArray(), $this->documents) : null,
+            'document_captures' => $this->documentCaptures !== null ? array_map(fn ($item) => $item->toArray(), $this->documentCaptures) : null,
+            'documents' => $this->documents !== null ? array_map(fn ($item) => $item->toArray(), $this->documents) : null,
             'n_consensus' => $this->nConsensus?->value,
             'name' => $this->name,
             'source_experiment_id' => $this->sourceExperimentId,

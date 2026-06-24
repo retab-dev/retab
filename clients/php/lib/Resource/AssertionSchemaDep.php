@@ -16,7 +16,8 @@ readonly class AssertionSchemaDep implements \JsonSerializable
         public string $subtreeHash,
         public ?string $outputHandleId = null,
         public ?bool $dependsOnRoot = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

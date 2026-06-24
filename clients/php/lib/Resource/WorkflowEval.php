@@ -34,7 +34,8 @@ readonly class WorkflowEval implements \JsonSerializable
         public ?\DateTimeImmutable $createdAt = null,
         /** When the workflow eval was last updated */
         public ?\DateTimeImmutable $updatedAt = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -53,9 +54,7 @@ readonly class WorkflowEval implements \JsonSerializable
             id: $data['id'],
             workflowId: $data['workflow_id'],
             target: WorkflowEvalBlockTarget::fromArray($data['target']),
-            source: match ($data['source']['type'] ?? null) {
-                'manual' => ManualWorkflowEvalSource::fromArray($data['source']), 'run_step' => RunStepWorkflowEvalSource::fromArray($data['source']), default => throw new \UnexpectedValueException(sprintf('Unknown type: %s', json_encode($data['source']['type'] ?? null))),
-            },
+            source: match ($data['source']['type'] ?? null) { 'manual' => ManualWorkflowEvalSource::fromArray($data['source']), 'run_step' => RunStepWorkflowEvalSource::fromArray($data['source']), default => throw new \UnexpectedValueException(sprintf('Unknown type: %s', json_encode($data['source']['type'] ?? null))), },
             name: $data['name'] ?? null,
             assertion: isset($data['assertion']) ? AssertionSpec::fromArray($data['assertion']) : null,
             assertionSchemaDep: isset($data['assertion_schema_dep']) ? AssertionSchemaDep::fromArray($data['assertion_schema_dep']) : null,

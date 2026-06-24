@@ -26,7 +26,8 @@ class Workflows
 
     public function __construct(
         private readonly \Retab\HttpClient $client,
-    ) {}
+    ) {
+    }
 
     public function artifacts(): WorkflowArtifacts
     {
@@ -102,7 +103,7 @@ class Workflows
             'order' => $order->value,
             'sort_by' => $sortBy,
             'project_id' => $projectId,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         return $this->client->requestPage(
             method: 'GET',
             path: 'v1/workflows',
@@ -134,7 +135,7 @@ class Workflows
             'name' => $name,
             'description' => $description,
             'project_id' => $projectId,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',
             path: 'v1/workflows',
@@ -170,7 +171,7 @@ class Workflows
         $body = array_filter([
             'yaml_definition' => $yamlDefinition,
             'project_id' => $projectId,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',
             path: $path,
@@ -206,7 +207,7 @@ class Workflows
         $body = array_filter([
             'yaml_definition' => $yamlDefinition,
             'project_id' => $projectId,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',
             path: $path,
@@ -237,7 +238,7 @@ class Workflows
             'before' => $before,
             'after' => $after,
             'limit' => $limit,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         return $this->client->requestPage(
             method: 'GET',
             path: 'v1/workflows/versions',
@@ -364,7 +365,7 @@ class Workflows
         $body = array_filter([
             'name' => $name,
             'description' => $description,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         $response = $this->client->request(
             method: 'PATCH',
             path: 'v1/workflows/' . rawurlencode($workflowId),
@@ -437,7 +438,7 @@ class Workflows
     ): \Retab\Resource\Workflow {
         $body = array_filter([
             'description' => $description,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',
             path: 'v1/workflows/' . rawurlencode($workflowId) . '/publish',

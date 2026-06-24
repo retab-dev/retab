@@ -29,7 +29,8 @@ readonly class WhileLoopTermination implements \JsonSerializable
         public ?array $evaluations = null,
         /** The operation that produced this artifact */
         public string $operation = 'while_loop_termination',
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -51,7 +52,7 @@ readonly class WhileLoopTermination implements \JsonSerializable
             stepId: $data['step_id'],
             terminationReason: WhileLoopTerminationTerminationReason::from($data['termination_reason']),
             createdAt: new \DateTimeImmutable($data['created_at']),
-            evaluations: isset($data['evaluations']) ? array_map(fn($item) => ConditionEvaluationResult::fromArray($item), $data['evaluations']) : null,
+            evaluations: isset($data['evaluations']) ? array_map(fn ($item) => ConditionEvaluationResult::fromArray($item), $data['evaluations']) : null,
             operation: $data['operation'] ?? 'while_loop_termination',
         );
     }
@@ -65,7 +66,7 @@ readonly class WhileLoopTermination implements \JsonSerializable
             'step_id' => $this->stepId,
             'termination_reason' => $this->terminationReason->value,
             'created_at' => $this->createdAt->format(\DateTimeInterface::RFC3339_EXTENDED),
-            'evaluations' => $this->evaluations !== null ? array_map(fn($item) => $item->toArray(), $this->evaluations) : null,
+            'evaluations' => $this->evaluations !== null ? array_map(fn ($item) => $item->toArray(), $this->evaluations) : null,
             'operation' => $this->operation,
         ];
     }

@@ -14,7 +14,8 @@ readonly class WorkflowTableFilterRule implements \JsonSerializable
         public string $column,
         public WorkflowTableFilterOperator $operator,
         public mixed $value = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

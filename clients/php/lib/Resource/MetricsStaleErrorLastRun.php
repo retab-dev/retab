@@ -15,7 +15,8 @@ readonly class MetricsStaleErrorLastRun implements \JsonSerializable
         public ?string $blockExecutionFingerprint = null,
         public ?float $score = null,
         public ?\DateTimeImmutable $createdAt = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

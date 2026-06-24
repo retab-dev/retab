@@ -49,7 +49,8 @@ readonly class WorkflowExportPayloadRequest implements \JsonSerializable
         public ?string $lineDelimiter = null,
         /** CSV quote character */
         public ?string $quote = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

@@ -37,7 +37,8 @@ readonly class WorkflowEvalResult implements \JsonSerializable
         public ?array $warnings = null,
         public ?AssertionResult $assertionResult = null,
         public ?VerdictSummary $verdictSummary = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -60,9 +61,7 @@ readonly class WorkflowEvalResult implements \JsonSerializable
             blockId: $data['block_id'],
             blockType: $data['block_type'],
             workflowEvalRunId: $data['workflow_eval_run_id'] ?? null,
-            lifecycle: isset($data['lifecycle']) ? match ($data['lifecycle']['status'] ?? null) {
-                'cancelled' => CancelledWorkflowEvalRun::fromArray($data['lifecycle']), 'completed' => CompletedWorkflowEvalRun::fromArray($data['lifecycle']), 'error' => ErrorWorkflowEvalRun::fromArray($data['lifecycle']), 'pending' => PendingWorkflowEvalRun::fromArray($data['lifecycle']), 'queued' => QueuedWorkflowEvalRun::fromArray($data['lifecycle']), 'running' => RunningWorkflowEvalRun::fromArray($data['lifecycle']), default => throw new \UnexpectedValueException(sprintf('Unknown status: %s', json_encode($data['lifecycle']['status'] ?? null))),
-            } : null,
+            lifecycle: isset($data['lifecycle']) ? match ($data['lifecycle']['status'] ?? null) { 'cancelled' => CancelledWorkflowEvalRun::fromArray($data['lifecycle']), 'completed' => CompletedWorkflowEvalRun::fromArray($data['lifecycle']), 'error' => ErrorWorkflowEvalRun::fromArray($data['lifecycle']), 'pending' => PendingWorkflowEvalRun::fromArray($data['lifecycle']), 'queued' => QueuedWorkflowEvalRun::fromArray($data['lifecycle']), 'running' => RunningWorkflowEvalRun::fromArray($data['lifecycle']), default => throw new \UnexpectedValueException(sprintf('Unknown status: %s', json_encode($data['lifecycle']['status'] ?? null))), } : null,
             timing: isset($data['timing']) ? WorkflowEvalRunTiming::fromArray($data['timing']) : null,
             verdict: isset($data['verdict']) ? AssertionOutcome::from($data['verdict']) : null,
             executionFingerprint: $data['execution_fingerprint'] ?? null,

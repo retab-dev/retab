@@ -14,7 +14,8 @@ readonly class UpdateWorkflowTableRequest implements \JsonSerializable
         public ?string $name = null,
         /** @var array<string, mixed>|null */
         public ?array $metadata = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

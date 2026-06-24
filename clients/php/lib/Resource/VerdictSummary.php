@@ -17,7 +17,8 @@ readonly class VerdictSummary implements \JsonSerializable
         public ?int $blockedAssertions = null,
         /** @var array<string>|null */
         public ?array $failedAssertionIds = null,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

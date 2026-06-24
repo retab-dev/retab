@@ -14,7 +14,8 @@ readonly class ManualWorkflowEvalSource implements \JsonSerializable
         /** @var array<string, \Retab\Resource\EvalJsonHandleInput|\Retab\Resource\EvalFileHandleInput>|null */
         public ?array $handleInputs = null,
         public string $type = 'manual',
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

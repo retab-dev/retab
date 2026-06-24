@@ -18,7 +18,8 @@ readonly class DeclarativeValidationResponse implements \JsonSerializable
         public bool $isValid,
         /** @var array<string, mixed> */
         public array $diagnostics,
-    ) {}
+    ) {
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
