@@ -53,6 +53,25 @@ func listAllWorkflowBlocks(ctx context.Context, client *retab.Client, workflowID
 	return blocks, nil
 }
 
+// listAllWorkflowEdges returns every edge for a workflow, walking all pages via
+// AutoPaging. The graph view must aggregate the complete edge set: a first-page
+// scan would render a truncated graph and could flag genuinely-connected blocks
+// as disconnected. Same rationale as listAllWorkflowBlocks.
+func listAllWorkflowEdges(ctx context.Context, client *retab.Client, workflowID string) ([]retab.WorkflowEdgeDoc, error) {
+	page, err := client.Workflows.Edges.List(ctx, &retab.WorkflowEdgesListParams{WorkflowID: workflowID})
+	if err != nil {
+		return nil, err
+	}
+	var edges []retab.WorkflowEdgeDoc
+	if err := page.AutoPaging(ctx, func(e retab.WorkflowEdgeDoc) error {
+		edges = append(edges, e)
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+	return edges, nil
+}
+
 // runE wraps a command body so APIErrors render as concise user-facing
 // messages by default and as full HTTP diagnostics with --debug. Other errors
 // render as a single line. Returned sentinel errors keep the process exit

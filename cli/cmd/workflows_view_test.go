@@ -507,6 +507,70 @@ func TestWorkflowsViewCommandFetchesGraphPartsAndPrintsASCII(t *testing.T) {
 	}
 }
 
+// TestWorkflowsViewCommandWalksAllBlockAndEdgePages guards the graph view
+// against first-page-only scans: blocks and edges are split across two pages
+// (page 1 returns an `after` cursor). A single-page scan would drop the
+// page-2 "load" block entirely and, lacking the page-2 edge that wires
+// extract->load, would falsely flag both as Disconnected. Walking all pages
+// must render the full graph with no disconnected warning.
+func TestWorkflowsViewCommandWalksAllBlockAndEdgePages(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/v1/workflows/wf_graph":
+			_ = json.NewEncoder(w).Encode(map[string]any{"id": "wf_graph", "name": "Invoice flow"})
+		case "/v1/workflows/blocks":
+			if r.URL.Query().Get("after") == "" {
+				_ = json.NewEncoder(w).Encode(map[string]any{
+					"data": []map[string]any{
+						{"id": "start", "type": "start_document", "label": "Start", "position_x": 0, "position_y": 0},
+						{"id": "extract", "type": "extract", "label": "Extract totals", "position_x": 300, "position_y": 0},
+					},
+					"list_metadata": map[string]any{"after": "blkcursor"},
+				})
+				return
+			}
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"data": []map[string]any{
+					{"id": "load", "type": "api_call", "label": "Load to ERP", "position_x": 600, "position_y": 0},
+				},
+				"list_metadata": map[string]any{"after": nil},
+			})
+		case "/v1/workflows/edges":
+			if r.URL.Query().Get("after") == "" {
+				_ = json.NewEncoder(w).Encode(map[string]any{
+					"data":          []map[string]any{{"id": "edge_1", "source_block": "start", "target_block": "extract"}},
+					"list_metadata": map[string]any{"after": "edgecursor"},
+				})
+				return
+			}
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"data":          []map[string]any{{"id": "edge_2", "source_block": "extract", "target_block": "load"}},
+				"list_metadata": map[string]any{"after": nil},
+			})
+		default:
+			t.Fatalf("unexpected path = %s", r.URL.Path)
+		}
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	stdout, stderr := captureStd(t, func() {
+		if err := workflowsViewCmd.RunE(workflowsViewCmd, []string{"wf_graph"}); err != nil {
+			t.Fatalf("workflows view: %v", err)
+		}
+	})
+	if strings.Contains(stdout, "Disconnected") {
+		t.Fatalf("page-2 edge ignored: graph falsely reports Disconnected:\n%s", stdout)
+	}
+	if !strings.Contains(stdout, "| load [api_call]") {
+		t.Fatalf("page-2 block missing from graph; got:\n%s%s", stdout, stderr)
+	}
+}
+
 func TestWorkflowsViewCommandHonorsExplicitOutputJSON(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
