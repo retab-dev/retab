@@ -22,6 +22,7 @@ pub struct WorkflowEvalRun {
     /// Defaults to `{"lifecycle_counts":{"cancelled":0,"completed":0,"error":0,"pending":0,"queued":0,"running":0},"outcome":{"blocked":0,"failed":0,"passed":0}}`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub counts: Option<BlockEvalBatchExecutionCounts>,
+    /// Compatibility envelope only. WorkflowEval.freshness is the authoritative read-time staleness verdict for saved eval definitions.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub freshness: Option<EvalRunFreshness>,
 }

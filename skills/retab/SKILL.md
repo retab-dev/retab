@@ -39,10 +39,10 @@ npm install @retab/node
 go get github.com/retab-dev/retab/clients/go
 
 # Java SDK - Maven
-mvn dependency:get -Dartifact=com.retab:retab:0.0.11
+mvn dependency:get -Dartifact=com.retab:retab:0.0.12
 
 # Java SDK - Gradle
-# Add implementation("com.retab:retab:0.0.11") to build.gradle.kts
+# Add implementation("com.retab:retab:0.0.12") to build.gradle.kts
 ```
 
 MCP:

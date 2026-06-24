@@ -31,8 +31,7 @@ pub struct WorkflowExperiment {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub score: Option<f64>,
     /// Defaults to `false`.
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub is_stale: Option<bool>,
+    pub is_stale: bool,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub freshness: Option<ArtifactFreshness>,
     /// Defaults to `unknown`.
@@ -64,6 +63,7 @@ impl WorkflowExperiment {
         n_consensus: NConsensusValue,
         name: impl Into<String>,
         block_type: ExperimentBlockType,
+        is_stale: bool,
         freshness_reasons: Vec<String>,
     ) -> Self {
         Self {
@@ -79,7 +79,7 @@ impl WorkflowExperiment {
             status: Default::default(),
             block_type,
             score: Default::default(),
-            is_stale: Default::default(),
+            is_stale,
             freshness: Default::default(),
             freshness_state: Default::default(),
             freshness_reasons,

@@ -5,6 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
+/// Compatibility envelope on WorkflowEvalRun. This is not the authoritative stale/fresh verdict for saved eval definitions; use WorkflowEval.freshness for current staleness presentation.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct EvalRunFreshness {
     /// Defaults to `unknown`.
