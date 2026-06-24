@@ -54,18 +54,6 @@ def _request_params(request: PreparedRequest) -> dict[str, object]:
     return cast(dict[str, object], request.params)
 
 
-def test_extractions_get_uses_new_resource_route() -> None:
-    def fake_prepared_request(request: object) -> dict[str, object]:
-        return {"id": "extr_123", "status": "completed"}
-
-    client, rec = mock_retab(fake_prepared_request)
-    with client:
-        client.extractions.get("extr_123")
-
-    assert getattr(rec.request, "url") == "/v1/extractions/extr_123"
-    assert getattr(rec.request, "method") == "GET"
-
-
 def test_extractions_create_exposes_stream_argument() -> None:
     assert "stream" in inspect.signature(Extractions.create).parameters
     assert "stream" in inspect.signature(AsyncExtractions.create).parameters

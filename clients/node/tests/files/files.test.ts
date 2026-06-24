@@ -143,7 +143,7 @@ describe('files blueprint paths', () => {
       file: { id: 'file_1', filename: 'a.pdf', mime_type: 'application/pdf' },
     });
 
-    await client.files.create_blueprint('file_1', 'extract invoices', false);
+    await client.files.create_blueprint('file_1', 'extract invoices', undefined, false);
 
     const call = lastCall(calls);
     expect(call.method).toBe('POST');
