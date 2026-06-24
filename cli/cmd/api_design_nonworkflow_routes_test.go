@@ -86,6 +86,9 @@ func nonWorkflowCLIClientCallRouteContracts() map[string][]cliRouteContract {
 		"Classifications.CreateCancel": {
 			{method: http.MethodPost, path: "/classifications/{classification_id}/cancel"},
 		},
+		"Classifications.Delete": {
+			{method: http.MethodDelete, path: "/classifications/{classification_id}"},
+		},
 		"Classifications.Get": {
 			{method: http.MethodGet, path: "/classifications/{classification_id}"},
 		},
@@ -97,6 +100,9 @@ func nonWorkflowCLIClientCallRouteContracts() map[string][]cliRouteContract {
 		},
 		"Edits.CreateCancel": {
 			{method: http.MethodPost, path: "/edits/{edit_id}/cancel"},
+		},
+		"Edits.Delete": {
+			{method: http.MethodDelete, path: "/edits/{edit_id}"},
 		},
 		"Edits.Get": {
 			{method: http.MethodGet, path: "/edits/{edit_id}"},
@@ -124,6 +130,9 @@ func nonWorkflowCLIClientCallRouteContracts() map[string][]cliRouteContract {
 		},
 		"Extractions.CreateCancel": {
 			{method: http.MethodPost, path: "/extractions/{extraction_id}/cancel"},
+		},
+		"Extractions.Delete": {
+			{method: http.MethodDelete, path: "/extractions/{extraction_id}"},
 		},
 		"Extractions.Get": {
 			{method: http.MethodGet, path: "/extractions/{extraction_id}"},
@@ -164,6 +173,9 @@ func nonWorkflowCLIClientCallRouteContracts() map[string][]cliRouteContract {
 		"Parses.Cancel": {
 			{method: http.MethodPost, path: "/parses/{parse_id}/cancel"},
 		},
+		"Parses.Delete": {
+			{method: http.MethodDelete, path: "/parses/{parse_id}"},
+		},
 		"Parses.Get": {
 			{method: http.MethodGet, path: "/parses/{parse_id}"},
 		},
@@ -175,6 +187,9 @@ func nonWorkflowCLIClientCallRouteContracts() map[string][]cliRouteContract {
 		},
 		"Partitions.CreateCancel": {
 			{method: http.MethodPost, path: "/partitions/{partition_id}/cancel"},
+		},
+		"Partitions.Delete": {
+			{method: http.MethodDelete, path: "/partitions/{partition_id}"},
 		},
 		"Partitions.Get": {
 			{method: http.MethodGet, path: "/partitions/{partition_id}"},
@@ -190,6 +205,9 @@ func nonWorkflowCLIClientCallRouteContracts() map[string][]cliRouteContract {
 		},
 		"Splits.CreateCancel": {
 			{method: http.MethodPost, path: "/splits/{split_id}/cancel"},
+		},
+		"Splits.Delete": {
+			{method: http.MethodDelete, path: "/splits/{split_id}"},
 		},
 		"Splits.Get": {
 			{method: http.MethodGet, path: "/splits/{split_id}"},
