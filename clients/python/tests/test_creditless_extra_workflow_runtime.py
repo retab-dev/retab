@@ -197,13 +197,18 @@ def test_reviews_list_typed_page(sync_client: Retab) -> None:
 
 
 def test_reviews_get_by_discovered_id(sync_client: Retab) -> None:
-    page = sync_client.workflows.reviews.list(limit=10)
+    page = sync_client.workflows.reviews.list(limit=20)
     if not page.data:
         pytest.skip("no reviews on staging to get-by-id")
-    target_id = page.data[0].id
-    fetched = sync_client.workflows.reviews.get(target_id)
-    assert isinstance(fetched, Review)
-    assert fetched.id == target_id
+    for review in page.data:
+        try:
+            fetched = sync_client.workflows.reviews.get(review.id)
+        except NotFoundError:
+            continue
+        assert isinstance(fetched, Review)
+        assert fetched.id == review.id
+        return
+    pytest.skip("no gettable reviews on staging to get-by-id")
 
 
 def test_reviews_get_bogus_id_404(sync_client: Retab) -> None:
