@@ -21,6 +21,7 @@ func TestPrimitiveListCommandsForwardFilterFlags(t *testing.T) {
 		{name: "edits", cmd: editsListCmd, path: "/v1/edits"},
 		{name: "classifications", cmd: classificationsListCmd, path: "/v1/classifications"},
 		{name: "splits", cmd: splitsListCmd, path: "/v1/splits"},
+		{name: "partitions", cmd: partitionsListCmd, path: "/v1/partitions"},
 	}
 
 	for _, tc := range cases {

@@ -383,6 +383,9 @@ workflow id is required: experiments have no org-wide listing.`,
 		if err != nil {
 			return err
 		}
+		if err := validateBeforeAfterMutex(cmd); err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
