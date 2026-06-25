@@ -483,6 +483,26 @@ removed in a future release.`,
 				return err
 			}
 		}
+		// Resolve any remaining file-id document inputs (id references supplied
+		// via --documents-file) into URL-backed MIMEData. --document-id is
+		// resolved above; this covers the descriptor-map form. The workflow-runs
+		// route accepts MIMEData only — a bare {id,...} body is rejected (422).
+		if req.Documents != nil {
+			for key, doc := range req.Documents {
+				fileID, ok := workflowRunDocumentFileID(doc)
+				if !ok {
+					continue
+				}
+				resolved, err := resolveFileIDToMIMEDataWithClient(ctx, client, fileID)
+				if err != nil {
+					return fmt.Errorf("documents[%q]: resolving file id %s: %w", key, fileID, err)
+				}
+				if name := workflowRunDocumentFilename(doc); name != "" {
+					resolved.Filename = name
+				}
+				req.Documents[key] = resolved
+			}
+		}
 		if req.JSONInputs != nil {
 			req.JSONInputs, err = resolveWorkflowRunJSONInputAliases(ctx, client, args[0], req.JSONInputs)
 			if err != nil {
@@ -743,13 +763,6 @@ func workflowRunDocumentsRequestBody(documents map[string]any) (map[string]map[s
 
 func workflowRunDocumentRequestBody(blockID string, document any) (map[string]string, error) {
 	switch value := document.(type) {
-	case retab.FileRef:
-		return workflowRunFileRefRequestBody(blockID, value), nil
-	case *retab.FileRef:
-		if value == nil {
-			return nil, fmt.Errorf("workflow run document %s must not be nil", blockID)
-		}
-		return workflowRunFileRefRequestBody(blockID, *value), nil
 	case retab.MIMEData:
 		return workflowRunMIMEDataRequestBody(blockID, value), nil
 	case *retab.MIMEData:
@@ -760,8 +773,11 @@ func workflowRunDocumentRequestBody(blockID string, document any) (map[string]st
 	case map[string]string:
 		return normalizeWorkflowRunDocumentRequestBody(blockID, value), nil
 	case map[string]any:
+		// The workflow-runs route accepts MIMEData only; file ids are resolved
+		// to a download URL before reaching here (see resolveFileIDToMIMEData*),
+		// so "id" is intentionally not copied into the request body.
 		descriptor := map[string]string{}
-		for _, key := range []string{"id", "filename", "url", "content", "mime_type"} {
+		for _, key := range []string{"filename", "url", "content", "mime_type"} {
 			raw, ok := value[key]
 			if !ok {
 				continue
@@ -782,23 +798,6 @@ func workflowRunDocumentRequestBody(blockID string, document any) (map[string]st
 		}
 		return workflowRunMIMEDataRequestBody(blockID, mimeData), nil
 	}
-}
-
-func workflowRunFileRefRequestBody(blockID string, ref retab.FileRef) map[string]string {
-	descriptor := map[string]string{}
-	if ref.ID != "" {
-		descriptor["id"] = ref.ID
-	}
-	if ref.Filename != "" {
-		descriptor["filename"] = ref.Filename
-	}
-	if ref.Content != "" {
-		descriptor["content"] = ref.Content
-	}
-	if ref.MIMEType != "" {
-		descriptor["mime_type"] = ref.MIMEType
-	}
-	return normalizeWorkflowRunDocumentRequestBody(blockID, descriptor)
 }
 
 func workflowRunMIMEDataRequestBody(blockID string, mimeData retab.MIMEData) map[string]string {

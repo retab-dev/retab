@@ -1755,12 +1755,26 @@ func resolveFileIDToMIMEData(cmd *cobra.Command, fileID string) (retab.MIMEData,
 	}
 	ctx, cancel := ctxFor(cmd)
 	defer cancel()
-	link, err := client.Files.GetDownloadLink(ctx, fileID)
+	mimeData, err := resolveFileIDToMIMEDataWithClient(ctx, client, fileID)
 	if err != nil {
 		return retab.MIMEData{}, fmt.Errorf("resolving --file-id %s: %w", fileID, err)
 	}
+	return mimeData, nil
+}
+
+// resolveFileIDToMIMEDataWithClient resolves a stored file id into MIMEData
+// populated with a filename + a fresh signed download URL, reusing a client and
+// context the caller already holds. The workflow-runs and single-document
+// routes accept MIMEData only — a bare FileRef{id} body is rejected (422) — so
+// every file-id input is resolved here before it is sent. Callers add their own
+// flag/field context to the returned error.
+func resolveFileIDToMIMEDataWithClient(ctx context.Context, client *retab.Client, fileID string) (retab.MIMEData, error) {
+	link, err := client.Files.GetDownloadLink(ctx, fileID)
+	if err != nil {
+		return retab.MIMEData{}, err
+	}
 	if link.DownloadURL == "" {
-		return retab.MIMEData{}, fmt.Errorf("--file-id %s: server returned no download URL", fileID)
+		return retab.MIMEData{}, fmt.Errorf("server returned no download URL")
 	}
 	if link.MIMEData != nil && link.MIMEData.URL != "" {
 		if link.MIMEData.Filename == "" {
