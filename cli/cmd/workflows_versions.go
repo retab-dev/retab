@@ -3,11 +3,37 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
 )
+
+// resolveWorkflowVersionRef maps the friendly selectors "production" /
+// "published" / "live" / "latest" to the workflow's currently published version
+// id, so the version inspect / compare / restore commands accept the same tokens
+// as `runs create --version`. A literal "ver_..." id (or any other value) passes
+// through untouched — the server returns 404 for a genuinely unknown id. "draft"
+// is rejected with guidance because the draft is not a published version and the
+// version endpoints cannot address it.
+func resolveWorkflowVersionRef(ctx context.Context, client *retab.Client, workflowID, ref string) (string, error) {
+	switch ref {
+	case "production", "published", "live", "latest":
+		wf, err := client.Workflows.Get(ctx, workflowID)
+		if err != nil {
+			return "", err
+		}
+		if wf == nil || wf.Published == nil || wf.Published.VersionID == nil || *wf.Published.VersionID == "" {
+			return "", fmt.Errorf("workflow %s has no published version to resolve %q; publish it first", workflowID, ref)
+		}
+		return *wf.Published.VersionID, nil
+	case "draft":
+		return "", fmt.Errorf("%q is not a published version; the version commands operate on published versions only — inspect the draft with `retab workflows spec get %s` or `retab workflows blocks list %s`, or publish it first", ref, workflowID, workflowID)
+	default:
+		return ref, nil
+	}
+}
 
 var workflowsVersionsCmd = &cobra.Command{
 	Use:   "versions",
@@ -42,7 +68,12 @@ var workflowsVersionsListCmd = &cobra.Command{
 var workflowsVersionsGetCmd = &cobra.Command{
 	Use:   "get <workflow-id> <workflow-version-id>",
 	Short: "Get a workflow version",
-	Args:  cobra.ExactArgs(2),
+	Long: `Get a single immutable workflow graph version.
+
+The version selector accepts a literal ` + "`ver_...`" + ` id or the friendly token
+` + "`production`" + ` (aliases ` + "`published`" + `, ` + "`live`" + `, ` + "`latest`" + `), which resolves to the
+workflow's currently published version.`,
+	Args: cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -50,7 +81,11 @@ var workflowsVersionsGetCmd = &cobra.Command{
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.GetVersion(ctx, args[1], &retab.WorkflowsGetVersionParams{WorkflowID: args[0]})
+		versionID, err := resolveWorkflowVersionRef(ctx, client, args[0], args[1])
+		if err != nil {
+			return err
+		}
+		result, err := client.Workflows.GetVersion(ctx, versionID, &retab.WorkflowsGetVersionParams{WorkflowID: args[0]})
 		if err != nil {
 			return err
 		}
@@ -61,7 +96,13 @@ var workflowsVersionsGetCmd = &cobra.Command{
 var workflowsVersionsDiffCmd = &cobra.Command{
 	Use:   "diff <workflow-id> <from-version-id> <to-version-id>",
 	Short: "Diff two workflow versions",
-	Args:  cobra.ExactArgs(3),
+	Long: `Diff two immutable workflow graph versions.
+
+Each version selector accepts a literal ` + "`ver_...`" + ` id or the friendly token
+` + "`production`" + ` (aliases ` + "`published`" + `, ` + "`live`" + `, ` + "`latest`" + `), which resolves to the
+workflow's currently published version — so ` + "`diff production ver_old`" + ` compares
+the live version against an earlier one.`,
+	Args: cobra.ExactArgs(3),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -69,10 +110,18 @@ var workflowsVersionsDiffCmd = &cobra.Command{
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
+		fromID, err := resolveWorkflowVersionRef(ctx, client, args[0], args[1])
+		if err != nil {
+			return err
+		}
+		toID, err := resolveWorkflowVersionRef(ctx, client, args[0], args[2])
+		if err != nil {
+			return err
+		}
 		result, err := client.Workflows.ListDiff(ctx, &retab.WorkflowsListDiffParams{
 			WorkflowID:            args[0],
-			FromWorkflowVersionID: args[1],
-			ToWorkflowVersionID:   args[2],
+			FromWorkflowVersionID: fromID,
+			ToWorkflowVersionID:   toID,
 		})
 		if err != nil {
 			return err
@@ -98,7 +147,11 @@ selected version. Pass ` + "`--yes`" + ` to confirm.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.CreateVersionRestore(ctx, args[1], &retab.WorkflowsCreateVersionRestoreParams{WorkflowID: args[0]})
+		versionID, err := resolveWorkflowVersionRef(ctx, client, args[0], args[1])
+		if err != nil {
+			return err
+		}
+		result, err := client.Workflows.CreateVersionRestore(ctx, versionID, &retab.WorkflowsCreateVersionRestoreParams{WorkflowID: args[0]})
 		if err != nil {
 			return err
 		}
