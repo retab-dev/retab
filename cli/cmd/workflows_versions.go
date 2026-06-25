@@ -5,6 +5,8 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"net/url"
 
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
@@ -38,27 +40,37 @@ func resolveWorkflowVersionRef(ctx context.Context, client *retab.Client, workfl
 var workflowsVersionsCmd = &cobra.Command{
 	Use:   "versions",
 	Short: "Inspect and restore workflow versions",
-	Long:  `Inspect immutable workflow graph versions and restore one into the current draft.`,
+	Long:  `Inspect published workflow versions and restore immutable graph versions into the current draft.`,
+}
+
+type cliPublishedWorkflowVersion struct {
+	ID                string  `json:"id"`
+	WorkflowID        string  `json:"workflow_id"`
+	Version           int     `json:"version"`
+	WorkflowVersionID string  `json:"workflow_version_id"`
+	Description       *string `json:"description,omitempty"`
+	BlockCount        int     `json:"block_count"`
+	EdgeCount         int     `json:"edge_count"`
+	PublishedBy       *string `json:"published_by,omitempty"`
+	PublishedByEmail  *string `json:"published_by_email,omitempty"`
+	PublishedByName   *string `json:"published_by_name,omitempty"`
+	PublishedAt       string  `json:"published_at"`
+	IsCurrent         bool    `json:"is_current"`
 }
 
 var workflowsVersionsListCmd = &cobra.Command{
 	Use:   "list <workflow-id>",
-	Short: "List workflow versions",
+	Short: "List published workflow versions",
 	Args:  cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		limit, _ := cmd.Flags().GetInt("limit")
-		params := &retab.WorkflowsListVersionsParams{WorkflowID: args[0]}
+		query := url.Values{}
 		if limit > 0 {
-			params.Limit = ptr(limit)
+			query.Set("limit", fmt.Sprint(limit))
 		}
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		result, err := client.Workflows.ListVersions(ctx, params)
-		if err != nil {
+		var result cliPaginatedList[cliPublishedWorkflowVersion]
+		path := fmt.Sprintf("/v1/workflows/%s/published-versions", url.PathEscape(args[0]))
+		if err := cliJSONRequestInto(cmd, http.MethodGet, path, query, nil, &result); err != nil {
 			return err
 		}
 		return printResult(cmd, result)
