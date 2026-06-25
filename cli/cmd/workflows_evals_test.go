@@ -2311,3 +2311,77 @@ func TestWorkflowsEvalsUpdateEqualsPreservesExistingPath(t *testing.T) {
 		t.Fatalf("update did not apply new expected value; condition=%v", cond)
 	}
 }
+
+// TestValidateWorkflowEvalSourceRejectsUnknownKeys guards the documented
+// extra="forbid" contract on the eval source/target value objects. The CLI
+// decodes source/target into typed structs, and the server's nested source
+// variants are deliberately loose, so a typo'd field (e.g. "step" for
+// "step_id") would otherwise be silently dropped end-to-end — the eval would
+// pin to an auto-resolved step instead of the one the user named, with no
+// error. The create help promises these are "rejected with 'Extra inputs are
+// not permitted'", so the local validators must enforce it.
+func TestValidateWorkflowEvalSourceRejectsUnknownKeys(t *testing.T) {
+	cases := []struct {
+		name      string
+		source    map[string]any
+		wantError string // substring; "" means the source must validate cleanly
+	}{
+		{
+			name:   "run_step valid with optional step_id",
+			source: map[string]any{"type": "run_step", "run_id": "run_1", "step_id": "step_1"},
+		},
+		{
+			name:   "run_step valid without step_id",
+			source: map[string]any{"type": "run_step", "run_id": "run_1"},
+		},
+		{
+			name:      "run_step typo step instead of step_id",
+			source:    map[string]any{"type": "run_step", "run_id": "run_1", "step": "step_1"},
+			wantError: "step",
+		},
+		{
+			name:      "run_step unknown key",
+			source:    map[string]any{"type": "run_step", "run_id": "run_1", "bogus_extra": 123},
+			wantError: "bogus_extra",
+		},
+		{
+			name:   "manual valid",
+			source: map[string]any{"type": "manual", "handle_inputs": map[string]any{}},
+		},
+		{
+			name:      "manual unknown key",
+			source:    map[string]any{"type": "manual", "handle_inputs": map[string]any{}, "extra": true},
+			wantError: "extra",
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := validateWorkflowEvalSource(tc.source)
+			if tc.wantError == "" {
+				if err != nil {
+					t.Fatalf("expected valid source, got error: %v", err)
+				}
+				return
+			}
+			if err == nil {
+				t.Fatalf("expected error mentioning %q, got nil", tc.wantError)
+			}
+			if !strings.Contains(err.Error(), tc.wantError) {
+				t.Fatalf("error %q does not mention %q", err.Error(), tc.wantError)
+			}
+		})
+	}
+}
+
+func TestValidateWorkflowEvalTargetRejectsUnknownKeys(t *testing.T) {
+	if err := validateWorkflowEvalTarget(map[string]any{"type": "block", "block_id": "blk_1"}); err != nil {
+		t.Fatalf("expected valid target, got error: %v", err)
+	}
+	err := validateWorkflowEvalTarget(map[string]any{"type": "block", "block_id": "blk_1", "junk": 1})
+	if err == nil {
+		t.Fatal("expected error for unknown target key, got nil")
+	}
+	if !strings.Contains(err.Error(), "junk") {
+		t.Fatalf("error %q does not mention the offending key", err.Error())
+	}
+}

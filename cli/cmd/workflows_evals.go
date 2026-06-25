@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/url"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -318,7 +319,33 @@ func validateWorkflowEvalTarget(target map[string]any) error {
 	if strings.TrimSpace(blockID) == "" {
 		return fmt.Errorf("target.block_id is required")
 	}
-	return nil
+	return rejectUnknownEvalKeys("target", target, "type", "block_id")
+}
+
+// rejectUnknownEvalKeys enforces the documented extra="forbid" contract on the
+// eval target/source value objects locally. The CLI decodes these into typed
+// structs (json.Unmarshal silently drops unknown fields) and the server's
+// nested source/target variants are deliberately loose, so without this guard a
+// typo'd field — e.g. "step" for "step_id" — is silently ignored end-to-end and
+// the eval pins to an auto-resolved step instead of the one the user named. Fail
+// fast naming the offending key(s) so the mistake is obvious.
+func rejectUnknownEvalKeys(label string, m map[string]any, allowed ...string) error {
+	allowedSet := make(map[string]struct{}, len(allowed))
+	for _, key := range allowed {
+		allowedSet[key] = struct{}{}
+	}
+	var unknown []string
+	for key := range m {
+		if _, ok := allowedSet[key]; !ok {
+			unknown = append(unknown, key)
+		}
+	}
+	if len(unknown) == 0 {
+		return nil
+	}
+	sort.Strings(unknown)
+	return fmt.Errorf("%s: unexpected field(s) %q — extra inputs are not permitted (allowed: %s)",
+		label, strings.Join(unknown, ", "), strings.Join(allowed, ", "))
 }
 
 func validateWorkflowEvalSource(source map[string]any) error {
@@ -341,7 +368,7 @@ func validateWorkflowEvalSource(source map[string]any) error {
 				}
 			}
 		}
-		return nil
+		return rejectUnknownEvalKeys("source", source, "type", "handle_inputs")
 	case "run_step":
 		runID, _ := source["run_id"].(string)
 		if strings.TrimSpace(runID) == "" {
@@ -352,7 +379,7 @@ func validateWorkflowEvalSource(source map[string]any) error {
 				return fmt.Errorf("source.step_id must be a string")
 			}
 		}
-		return nil
+		return rejectUnknownEvalKeys("source", source, "type", "run_id", "step_id")
 	default:
 		return fmt.Errorf("source.type must be manual or run_step")
 	}
