@@ -892,7 +892,9 @@ Pass ` + "`--wait`" + ` to block until the run reaches a terminal status
 (` + "`completed`" + `/` + "`error`" + `/` + "`cancelled`" + `) and print the
 final run — saving you from scripting a poll loop around
 ` + "`runs get`" + `. With ` + "`--wait`" + ` the command exits non-zero if the
-run ends in ` + "`error`" + `/` + "`cancelled`" + ` or the timeout elapses.
+run ends in ` + "`error`" + `/` + "`cancelled`" + `, the timeout elapses, or the
+completed run has any failed or blocked assertions — so CI can gate a build on a
+detected regression.
 Without it, poll progress with ` + "`workflows evals runs get`" + ` and fetch
 per-eval results with ` + "`workflows evals results list`" + `.`,
 	Example: `  # Run every eval in the workflow
@@ -1013,7 +1015,15 @@ func workflowEvalRunTerminalError(run *retab.WorkflowEvalRun) error {
 	}
 	switch status := workflowEvalRunStatus(run); status {
 	case "", "completed":
-		return nil
+		// A completed run still fails the command when any assertion did not pass,
+		// so `--wait` can gate CI on a detected regression — not only on a
+		// lifecycle error/cancelled/timeout. Blocked assertions (the target output
+		// handle/path could not be evaluated) are non-passing and count too.
+		failed, blocked := workflowEvalRunNonPassingCounts(run)
+		if failed == 0 && blocked == 0 {
+			return nil
+		}
+		return workflowEvalRunRegressionError(run, failed, blocked)
 	case "error", "cancelled":
 		if run.ID == "" {
 			return fmt.Errorf("workflow-eval run ended with status %s", status)
@@ -1022,6 +1032,40 @@ func workflowEvalRunTerminalError(run *retab.WorkflowEvalRun) error {
 	default:
 		return nil
 	}
+}
+
+// workflowEvalRunNonPassingCounts reads the failed and blocked outcome buckets
+// off a run's batch counts, tolerating the nil counts/outcome a run carries
+// before it completes.
+func workflowEvalRunNonPassingCounts(run *retab.WorkflowEvalRun) (failed int, blocked int) {
+	if run == nil || run.Counts == nil || run.Counts.Outcome == nil {
+		return 0, 0
+	}
+	outcome := run.Counts.Outcome
+	if outcome.Failed != nil {
+		failed = *outcome.Failed
+	}
+	if outcome.Blocked != nil {
+		blocked = *outcome.Blocked
+	}
+	return failed, blocked
+}
+
+// workflowEvalRunRegressionError renders the non-zero exit for a completed run
+// whose assertions did not all pass.
+func workflowEvalRunRegressionError(run *retab.WorkflowEvalRun, failed, blocked int) error {
+	parts := make([]string, 0, 2)
+	if failed > 0 {
+		parts = append(parts, fmt.Sprintf("%d failed", failed))
+	}
+	if blocked > 0 {
+		parts = append(parts, fmt.Sprintf("%d blocked", blocked))
+	}
+	detail := strings.Join(parts, ", ")
+	if run == nil || run.ID == "" {
+		return fmt.Errorf("workflow-eval run completed with non-passing assertions (%s)", detail)
+	}
+	return fmt.Errorf("workflow-eval run %s completed with non-passing assertions (%s)", run.ID, detail)
 }
 
 // waitForWorkflowEvalRun polls Runs.Get until the run reaches a terminal
@@ -1075,7 +1119,8 @@ timeout.
 
 Cleaner than scripting a poll loop around ` + "`runs get`" + ` — the CLI
 handles the interval and timeout, and exits non-zero if the run ends in
-` + "`error`" + `/` + "`cancelled`" + ` or the timeout elapses. Pair with
+` + "`error`" + `/` + "`cancelled`" + `, the timeout elapses, or the completed run
+has any failed or blocked assertions. Pair with
 ` + "`runs create --wait`" + ` to create and block in a single step.`,
 	Example: `  # Wait with defaults (2s polls, 600s timeout)
   retab workflows evals runs wait wfevalrun_mno345

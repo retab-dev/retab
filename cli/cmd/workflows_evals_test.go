@@ -15,6 +15,7 @@ import (
 	"sync/atomic"
 	"testing"
 
+	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
 )
 
@@ -2383,5 +2384,58 @@ func TestValidateWorkflowEvalTargetRejectsUnknownKeys(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "junk") {
 		t.Fatalf("error %q does not mention the offending key", err.Error())
+	}
+}
+
+// TestWorkflowEvalRunTerminalErrorFailsOnNonPassingAssertions guards that
+// `workflows evals runs create --wait` exits non-zero when a completed run has
+// failed or blocked assertions, so CI can gate a build on a detected regression
+// (not only on lifecycle error/cancelled/timeout).
+func TestWorkflowEvalRunTerminalErrorFailsOnNonPassingAssertions(t *testing.T) {
+	completed := func(passed, failed, blocked int) *retab.WorkflowEvalRun {
+		return &retab.WorkflowEvalRun{
+			ID:        "wfevalrun_x",
+			Lifecycle: retab.WorkflowEvalRunStatusFromCompletedWorkflowEvalRun(retab.CompletedWorkflowEvalRun{}),
+			Counts: &retab.BlockEvalBatchExecutionCounts{
+				Outcome: &retab.BlockEvalOutcomeCounts{Passed: &passed, Failed: &failed, Blocked: &blocked},
+			},
+		}
+	}
+	cases := []struct {
+		name    string
+		run     *retab.WorkflowEvalRun
+		wantErr bool
+	}{
+		{name: "all passed", run: completed(8, 0, 0), wantErr: false},
+		{name: "some failed", run: completed(7, 1, 0), wantErr: true},
+		{name: "some blocked", run: completed(7, 0, 1), wantErr: true},
+		{name: "failed and blocked", run: completed(5, 2, 1), wantErr: true},
+		{
+			name: "completed with no counts is success",
+			run: &retab.WorkflowEvalRun{
+				ID:        "wfevalrun_y",
+				Lifecycle: retab.WorkflowEvalRunStatusFromCompletedWorkflowEvalRun(retab.CompletedWorkflowEvalRun{}),
+			},
+			wantErr: false,
+		},
+		{
+			name: "error lifecycle still fails",
+			run: &retab.WorkflowEvalRun{
+				ID:        "wfevalrun_z",
+				Lifecycle: retab.WorkflowEvalRunStatusFromErrorWorkflowEvalRun(retab.ErrorWorkflowEvalRun{}),
+			},
+			wantErr: true,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := workflowEvalRunTerminalError(tc.run)
+			if tc.wantErr && err == nil {
+				t.Fatalf("expected non-zero exit error, got nil")
+			}
+			if !tc.wantErr && err != nil {
+				t.Fatalf("expected success, got error: %v", err)
+			}
+		})
 	}
 }
