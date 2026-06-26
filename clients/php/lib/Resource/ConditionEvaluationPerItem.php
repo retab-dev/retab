@@ -28,8 +28,7 @@ readonly class ConditionEvaluationPerItem implements \JsonSerializable
         public mixed $actual = null,
         /** Whether this item matched the condition */
         public ?bool $matched = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

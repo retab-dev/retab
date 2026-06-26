@@ -24,8 +24,7 @@ readonly class DeclarativeApplyResponse implements \JsonSerializable
         /** @var array<\Retab\Resource\DeclarativePlanResourceChange>|null */
         public ?array $resourceChanges = null,
         public ?string $renderedPlan = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -51,7 +50,7 @@ readonly class DeclarativeApplyResponse implements \JsonSerializable
             diagnostics: $data['diagnostics'],
             formatVersion: $data['format_version'] ?? null,
             summary: isset($data['summary']) ? DeclarativePlanSummary::fromArray($data['summary']) : null,
-            resourceChanges: isset($data['resource_changes']) ? array_map(fn ($item) => DeclarativePlanResourceChange::fromArray($item), $data['resource_changes']) : null,
+            resourceChanges: isset($data['resource_changes']) ? array_map(fn($item) => DeclarativePlanResourceChange::fromArray($item), $data['resource_changes']) : null,
             renderedPlan: $data['rendered_plan'] ?? null,
         );
     }
@@ -68,7 +67,7 @@ readonly class DeclarativeApplyResponse implements \JsonSerializable
             'diagnostics' => $this->diagnostics,
             'format_version' => $this->formatVersion,
             'summary' => $this->summary?->toArray(),
-            'resource_changes' => $this->resourceChanges !== null ? array_map(fn ($item) => $item->toArray(), $this->resourceChanges) : null,
+            'resource_changes' => $this->resourceChanges !== null ? array_map(fn($item) => $item->toArray(), $this->resourceChanges) : null,
             'rendered_plan' => $this->renderedPlan,
         ];
     }

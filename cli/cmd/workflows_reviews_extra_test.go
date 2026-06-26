@@ -220,6 +220,46 @@ func TestReviewsApproveSurfacesSkippedResumeStatusToStderr(t *testing.T) {
 	}
 }
 
+func TestReviewsApproveConflictDoesNotClaimDecisionWasRecorded(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"submission_status": "conflict",
+			"resume_status":     "skipped",
+			"resume_error":      "Review rev_1 already has a decision.",
+			"review":            reviewOverlayBody(reviewDecisionBody("rejected", reviewTestVersionID)),
+		})
+	}))
+	defer server.Close()
+	setReviewsBaseURL(t, server.URL)
+
+	cmd := newApproveTestCmd()
+	if err := cmd.Flags().Set("version-id", reviewTestVersionID); err != nil {
+		t.Fatal(err)
+	}
+	stdout, stderr := captureStd(t, func() {
+		err := cmd.RunE(cmd, []string{"rev_1"})
+		if err == nil {
+			t.Fatal("expected conflict to return a non-zero error")
+		}
+		if !strings.Contains(err.Error(), "already has a different decision") {
+			t.Fatalf("error = %v", err)
+		}
+	})
+	if !strings.Contains(stdout, `"submission_status": "conflict"`) {
+		t.Fatalf("stdout = %s", stdout)
+	}
+	if strings.Contains(stderr, "decision was recorded") || strings.Contains(stderr, "no resume signal was sent") {
+		t.Fatalf("conflict stderr should not claim the attempted decision was recorded:\n%s", stderr)
+	}
+	if !strings.Contains(stderr, "did NOT change it") {
+		t.Fatalf("stderr should explain the conflict:\n%s", stderr)
+	}
+}
+
 func TestReviewsGetTableShowsDecisionColumnsForDecidedOverlay(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())

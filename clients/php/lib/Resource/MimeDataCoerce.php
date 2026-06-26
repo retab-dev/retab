@@ -96,7 +96,7 @@ final class MimeDataCoerce
             }
             throw new \InvalidArgumentException(
                 'Cannot coerce array to Retab\\Resource\\MimeData; supply '
-                . 'either {filename?, url} (wire shape) or {id, filename?, mime_type?} (file reference).'
+                . 'either {filename?, url} (wire shape) or {id, filename?, mime_type?} (file reference).',
             );
         }
         if (is_string($input)) {
@@ -113,7 +113,7 @@ final class MimeDataCoerce
         }
         throw new \InvalidArgumentException(
             'Cannot coerce ' . get_debug_type($input) . ' to Retab\\Resource\\MimeData; '
-            . 'supply a MimeData, FileRef, SplFileInfo, path string, URL string, stream resource, or array.'
+            . 'supply a MimeData, FileRef, SplFileInfo, path string, URL string, stream resource, or array.',
         );
     }
 
@@ -132,7 +132,7 @@ final class MimeDataCoerce
         if ($client === null) {
             throw new \InvalidArgumentException(
                 'A file-id document requires a Retab client to resolve a download link; '
-                . 'call the resource method on a client instance.'
+                . 'call the resource method on a client instance.',
             );
         }
         $link = $client->request(
@@ -147,7 +147,7 @@ final class MimeDataCoerce
             : $downloadUrl;
         if ($url === '') {
             throw new \InvalidArgumentException(
-                "Resolving file id '$fileId': server returned no download URL."
+                "Resolving file id '$fileId': server returned no download URL.",
             );
         }
 

@@ -14,8 +14,7 @@ class Edits
 
     public function __construct(
         private readonly \Retab\HttpClient $client,
-    ) {
-    }
+    ) {}
 
     public function templates(): EditTemplates
     {
@@ -65,7 +64,7 @@ class Edits
             'status' => $status?->value,
             'from_date' => $fromDate,
             'to_date' => $toDate,
-        ], fn ($v) => $v !== null);
+        ], fn($v) => $v !== null);
         return $this->client->requestPage(
             method: 'GET',
             path: 'v1/edits',
@@ -116,7 +115,7 @@ class Edits
             'config' => $config,
             'bust_cache' => $bustCache,
             'background' => $background,
-        ], fn ($v) => $v !== null);
+        ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',
             path: 'v1/edits',
@@ -146,7 +145,7 @@ class Edits
     ): \Retab\Resource\Edit {
         $query = array_filter([
             'include_output' => $includeOutput,
-        ], fn ($v) => $v !== null);
+        ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'GET',
             path: 'v1/edits/' . rawurlencode($editId),

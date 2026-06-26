@@ -4,11 +4,11 @@
 
 # @oagen-ignore-file
 
-source "https://rubygems.org"
+source 'https://rubygems.org'
 
 gemspec
 
 group :development, :test do
-  gem "minitest", "~> 5.20"
-  gem "webmock", "~> 3.20"
+  gem 'minitest', '~> 5.20'
+  gem 'webmock', '~> 3.20'
 end

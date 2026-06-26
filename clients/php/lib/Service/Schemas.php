@@ -12,8 +12,7 @@ class Schemas
 {
     public function __construct(
         private readonly \Retab\HttpClient $client,
-    ) {
-    }
+    ) {}
 
     /**
      * Generate Schema From Examples
@@ -33,13 +32,13 @@ class Schemas
         ?bool $background = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\SchemaGeneration {
-        $documents = array_map(fn ($__d) => \Retab\Resource\MimeDataCoerce::coerce($__d, $this->client), $documents);
+        $documents = array_map(fn($__d) => \Retab\Resource\MimeDataCoerce::coerce($__d, $this->client), $documents);
         $body = array_filter([
             'documents' => $documents,
             'model' => $model,
             'instructions' => $instructions,
             'background' => $background,
-        ], fn ($v) => $v !== null);
+        ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',
             path: 'v1/schemas/generate',

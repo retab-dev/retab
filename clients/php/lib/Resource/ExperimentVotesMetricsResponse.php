@@ -21,8 +21,7 @@ readonly class ExperimentVotesMetricsResponse implements \JsonSerializable
         public ?array $rows = null,
         public string $kind = 'votes',
         public string $view = 'votes',
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -42,7 +41,7 @@ readonly class ExperimentVotesMetricsResponse implements \JsonSerializable
             target: $data['target'],
             score: $data['score'] ?? null,
             priorScore: $data['prior_score'] ?? null,
-            rows: isset($data['rows']) ? array_map(fn ($item) => ExperimentVoteRow::fromArray($item), $data['rows']) : null,
+            rows: isset($data['rows']) ? array_map(fn($item) => ExperimentVoteRow::fromArray($item), $data['rows']) : null,
             kind: $data['kind'] ?? 'votes',
             view: $data['view'] ?? 'votes',
         );
@@ -57,7 +56,7 @@ readonly class ExperimentVotesMetricsResponse implements \JsonSerializable
             'target' => $this->target,
             'score' => $this->score,
             'prior_score' => $this->priorScore,
-            'rows' => $this->rows !== null ? array_map(fn ($item) => $item->toArray(), $this->rows) : null,
+            'rows' => $this->rows !== null ? array_map(fn($item) => $item->toArray(), $this->rows) : null,
             'kind' => $this->kind,
             'view' => $this->view,
         ];

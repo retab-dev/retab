@@ -16,8 +16,7 @@ readonly class ExperimentSummaryMetricDocument implements \JsonSerializable
         public string $filename,
         public ?float $score = null,
         public ?float $priorScore = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

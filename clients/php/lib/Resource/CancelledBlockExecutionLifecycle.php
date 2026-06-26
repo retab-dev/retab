@@ -14,8 +14,7 @@ readonly class CancelledBlockExecutionLifecycle implements \JsonSerializable
     public function __construct(
         public mixed $reason = null,
         public string $status = 'cancelled',
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

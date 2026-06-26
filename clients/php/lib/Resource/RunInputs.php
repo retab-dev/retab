@@ -22,8 +22,7 @@ readonly class RunInputs implements \JsonSerializable
          * @var array<string, mixed>|null
          */
         public ?array $jsonData = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

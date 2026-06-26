@@ -14,8 +14,7 @@ readonly class ExplicitExperimentDocumentRequest implements \JsonSerializable
         /** @var array<string, \Retab\Resource\JsonHandleInput|\Retab\Resource\FileHandleInput> */
         public array $handleInputs,
         public ?ExperimentDocumentProvenance $provenance = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

@@ -39,8 +39,7 @@ readonly class ConditionEvaluationDetails implements \JsonSerializable
         public ?array $subConditions = null,
         /** Logical operator combining sub-conditions */
         public ?ConditionEvaluationResultLogicalOperator $logicalOperator = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -51,8 +50,8 @@ readonly class ConditionEvaluationDetails implements \JsonSerializable
             expected: $data['expected'] ?? null,
             actual: $data['actual'] ?? null,
             matched: $data['matched'] ?? null,
-            items: isset($data['items']) ? array_map(fn ($item) => ConditionEvaluationPerItem::fromArray($item), $data['items']) : null,
-            subConditions: isset($data['sub_conditions']) ? array_map(fn ($item) => ConditionEvaluationSubCondition::fromArray($item), $data['sub_conditions']) : null,
+            items: isset($data['items']) ? array_map(fn($item) => ConditionEvaluationPerItem::fromArray($item), $data['items']) : null,
+            subConditions: isset($data['sub_conditions']) ? array_map(fn($item) => ConditionEvaluationSubCondition::fromArray($item), $data['sub_conditions']) : null,
             logicalOperator: isset($data['logical_operator']) ? ConditionEvaluationResultLogicalOperator::from($data['logical_operator']) : null,
         );
     }
@@ -66,8 +65,8 @@ readonly class ConditionEvaluationDetails implements \JsonSerializable
             'expected' => $this->expected,
             'actual' => $this->actual,
             'matched' => $this->matched,
-            'items' => $this->items !== null ? array_map(fn ($item) => $item->toArray(), $this->items) : null,
-            'sub_conditions' => $this->subConditions !== null ? array_map(fn ($item) => $item->toArray(), $this->subConditions) : null,
+            'items' => $this->items !== null ? array_map(fn($item) => $item->toArray(), $this->items) : null,
+            'sub_conditions' => $this->subConditions !== null ? array_map(fn($item) => $item->toArray(), $this->subConditions) : null,
             'logical_operator' => $this->logicalOperator?->value,
         ];
     }

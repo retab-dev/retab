@@ -13,8 +13,7 @@ readonly class PendingBlockExecutionLifecycle implements \JsonSerializable
 
     public function __construct(
         public string $status = 'pending',
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

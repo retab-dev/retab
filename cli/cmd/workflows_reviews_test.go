@@ -414,15 +414,40 @@ func TestReviewsSchemaCommandPrintsBlockSpecificSnapshotContract(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
 
-	var seenPath string
-	var seenMethod string
+	var seenPaths []string
+	var seenMethods []string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		seenMethod = r.Method
-		seenPath = r.URL.Path
-		body := reviewOverlayBody(nil)
-		body["block_type"] = "classifier"
+		seenMethods = append(seenMethods, r.Method)
+		seenPaths = append(seenPaths, r.URL.Path)
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(body)
+		switch r.URL.Path {
+		case "/v1/workflows/reviews/rev_1":
+			body := reviewOverlayBody(nil)
+			body["block_type"] = "classifier"
+			_ = json.NewEncoder(w).Encode(body)
+		case "/v1/workflows/versions/wfv_1":
+			if r.URL.Query().Get("workflow_id") != "wf_1" {
+				t.Fatalf("query = %q", r.URL.RawQuery)
+			}
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"id":          "wfv_1",
+				"workflow_id": "wf_1",
+				"blocks": []any{
+					map[string]any{
+						"id":   "blk_1",
+						"type": "classifier",
+						"config": map[string]any{
+							"categories": []any{
+								map[string]any{"name": "invoice"},
+								map[string]any{"name": "receipt"},
+							},
+						},
+					},
+				},
+			})
+		default:
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.String())
+		}
 	}))
 	defer server.Close()
 	t.Setenv("RETAB_API_BASE_URL", server.URL)
@@ -436,16 +461,23 @@ func TestReviewsSchemaCommandPrintsBlockSpecificSnapshotContract(t *testing.T) {
 	if stderr != "" {
 		t.Fatalf("stderr = %s", stderr)
 	}
-	if seenMethod != http.MethodGet {
-		t.Fatalf("method = %s", seenMethod)
+	for _, method := range seenMethods {
+		if method != http.MethodGet {
+			t.Fatalf("method = %s", method)
+		}
 	}
-	if seenPath != "/v1/workflows/reviews/rev_1" {
-		t.Fatalf("path = %s", seenPath)
+	for _, wantPath := range []string{"/v1/workflows/reviews/rev_1", "/v1/workflows/versions/wfv_1"} {
+		if !slices.Contains(seenPaths, wantPath) {
+			t.Fatalf("paths = %v, missing %s", seenPaths, wantPath)
+		}
 	}
 	for _, want := range []string{
 		`"block_type": "classifier"`,
 		`"snapshot_schema"`,
 		`"category"`,
+		`"enum": [`,
+		`"invoice"`,
+		`"receipt"`,
 		`"additionalProperties": false`,
 		`"Do not include confidence fields or other metadata."`,
 		`"create_usage"`,
@@ -456,6 +488,70 @@ func TestReviewsSchemaCommandPrintsBlockSpecificSnapshotContract(t *testing.T) {
 	}
 	if strings.Contains(stdout, `"reasoning"`) {
 		t.Fatalf("classifier schema should not advertise reasoning:\n%s", stdout)
+	}
+}
+
+func TestReviewsSchemaCommandUsesExtractBlockJSONSchema(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/v1/workflows/reviews/rev_1":
+			_ = json.NewEncoder(w).Encode(reviewOverlayBody(nil))
+		case "/v1/workflows/versions/wfv_1":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"id":          "wfv_1",
+				"workflow_id": "wf_1",
+				"blocks": []any{
+					map[string]any{
+						"id":   "blk_1",
+						"type": "extract",
+						"config": map[string]any{
+							"json_schema": map[string]any{
+								"type":                 "object",
+								"required":             []any{"invoice_number", "total"},
+								"additionalProperties": false,
+								"properties": map[string]any{
+									"invoice_number": map[string]any{"type": "string"},
+									"total":          map[string]any{"type": "number"},
+								},
+							},
+						},
+					},
+				},
+			})
+		default:
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.String())
+		}
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	cmd := &cobra.Command{Use: "schema", RunE: workflowsReviewsSchemaCmd.RunE}
+	stdout, stderr := captureStd(t, func() {
+		if err := cmd.RunE(cmd, []string{"rev_1"}); err != nil {
+			t.Fatalf("reviews schema: %v", err)
+		}
+	})
+	if stderr != "" {
+		t.Fatalf("stderr = %s", stderr)
+	}
+	for _, want := range []string{
+		`"block_type": "extract"`,
+		`"required": [`,
+		`"invoice_number"`,
+		`"total"`,
+		`"additionalProperties": false`,
+		`"The json_schema above was loaded from the reviewed extract block's workflow-version config."`,
+	} {
+		if !strings.Contains(stdout, want) {
+			t.Fatalf("expected %q in schema output:\n%s", want, stdout)
+		}
+	}
+	if strings.Contains(stdout, `"additionalProperties": true`) {
+		t.Fatalf("extract schema should not advertise generic additionalProperties=true:\n%s", stdout)
 	}
 }
 
@@ -516,7 +612,16 @@ func TestReviewsSchemaCommandCoversEveryReviewableBlockType(t *testing.T) {
 			var requests int
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				requests++
-				if r.Method != http.MethodGet || r.URL.Path != "/v1/workflows/reviews/rev_1" {
+				if r.Method != http.MethodGet {
+					t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+				}
+				if (r.URL.Path == "/v1/workflows/versions/wfv_1" || r.URL.Path == "/v1/workflows/blocks/versions" || r.URL.Path == "/v1/workflows/blocks/blk_1") && reviewSchemaCanUseBlockConfig(tc.blockType) {
+					w.Header().Set("Content-Type", "application/json")
+					w.WriteHeader(http.StatusNotFound)
+					_ = json.NewEncoder(w).Encode(map[string]any{"detail": "block not found"})
+					return
+				}
+				if r.URL.Path != "/v1/workflows/reviews/rev_1" {
 					t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 				}
 				body := reviewOverlayBody(nil)
@@ -536,7 +641,11 @@ func TestReviewsSchemaCommandCoversEveryReviewableBlockType(t *testing.T) {
 			if stderr != "" {
 				t.Fatalf("stderr = %s", stderr)
 			}
-			if requests != 1 {
+			expectedRequests := 1
+			if reviewSchemaCanUseBlockConfig(tc.blockType) {
+				expectedRequests = 4
+			}
+			if requests != expectedRequests {
 				t.Fatalf("requests = %d", requests)
 			}
 			for _, want := range tc.want {

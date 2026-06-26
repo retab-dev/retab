@@ -71,8 +71,7 @@ readonly class StoredBlockExecution implements \JsonSerializable
          * @var array<array<string, mixed>>|null
          */
         public ?array $availableIterations = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -95,7 +94,9 @@ readonly class StoredBlockExecution implements \JsonSerializable
             sourceRunId: $data['source_run_id'],
             blockId: $data['block_id'],
             blockType: $data['block_type'],
-            lifecycle: match ($data['lifecycle']['status'] ?? null) { 'cancelled' => CancelledBlockExecutionLifecycle::fromArray($data['lifecycle']), 'completed' => CompletedBlockExecutionLifecycle::fromArray($data['lifecycle']), 'error' => ErrorBlockExecutionLifecycle::fromArray($data['lifecycle']), 'pending' => PendingBlockExecutionLifecycle::fromArray($data['lifecycle']), 'queued' => QueuedBlockExecutionLifecycle::fromArray($data['lifecycle']), 'running' => RunningBlockExecutionLifecycle::fromArray($data['lifecycle']), 'skipped' => SkippedBlockExecutionLifecycle::fromArray($data['lifecycle']), default => throw new \UnexpectedValueException(sprintf('Unknown status: %s', json_encode($data['lifecycle']['status'] ?? null))), },
+            lifecycle: match ($data['lifecycle']['status'] ?? null) {
+                'cancelled' => CancelledBlockExecutionLifecycle::fromArray($data['lifecycle']), 'completed' => CompletedBlockExecutionLifecycle::fromArray($data['lifecycle']), 'error' => ErrorBlockExecutionLifecycle::fromArray($data['lifecycle']), 'pending' => PendingBlockExecutionLifecycle::fromArray($data['lifecycle']), 'queued' => QueuedBlockExecutionLifecycle::fromArray($data['lifecycle']), 'running' => RunningBlockExecutionLifecycle::fromArray($data['lifecycle']), 'skipped' => SkippedBlockExecutionLifecycle::fromArray($data['lifecycle']), default => throw new \UnexpectedValueException(sprintf('Unknown status: %s', json_encode($data['lifecycle']['status'] ?? null))),
+            },
             workflowVersionId: $data['workflow_version_id'] ?? null,
             handleInputs: $data['handle_inputs'] ?? null,
             artifact: isset($data['artifact']) ? StepArtifactRef::fromArray($data['artifact']) : null,

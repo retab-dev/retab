@@ -14,8 +14,7 @@ readonly class RetabUsage implements \JsonSerializable
     public function __construct(
         /** Credits consumed for processing */
         public float $credits,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

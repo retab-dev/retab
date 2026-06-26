@@ -15,8 +15,7 @@ readonly class BetweenCondition implements \JsonSerializable
         public int|float $upper,
         public ?bool $inclusive = null,
         public string $kind = 'between',
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

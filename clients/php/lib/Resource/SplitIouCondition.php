@@ -21,8 +21,7 @@ readonly class SplitIouCondition implements \JsonSerializable
         public array $expected,
         public ?float $threshold = null,
         public string $kind = 'split_iou_gte',
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

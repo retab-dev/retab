@@ -56,7 +56,7 @@ public final class WorkflowExperiment {
       @JsonProperty(value = "freshness", required = false) ArtifactFreshness freshness,
       @JsonProperty(value = "freshness_state", required = false)
           WorkflowExperimentFreshnessState freshnessState,
-      @JsonProperty(value = "freshness_reasons", required = true) List<String> freshnessReasons,
+      @JsonProperty(value = "freshness_reasons", required = false) List<String> freshnessReasons,
       @JsonProperty(value = "run_plan_mode", required = false)
           WorkflowExperimentRunPlanMode runPlanMode,
       @JsonProperty(value = "rerunnable_document_count", required = false)

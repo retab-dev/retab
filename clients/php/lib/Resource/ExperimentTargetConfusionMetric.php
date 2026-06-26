@@ -17,8 +17,7 @@ readonly class ExperimentTargetConfusionMetric implements \JsonSerializable
         public ?array $flowFrom = null,
         /** @var array<string, float>|null */
         public ?array $flowTo = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

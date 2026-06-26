@@ -41,8 +41,7 @@ readonly class ClassificationWorkflowArtifact implements \JsonSerializable
         public ?RetabUsage $usage = null,
         /** The operation that produced this artifact */
         public string $operation = 'classification',
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -62,7 +61,7 @@ readonly class ClassificationWorkflowArtifact implements \JsonSerializable
             id: $data['id'],
             file: FileRef::fromArray($data['file']),
             model: $data['model'],
-            categories: array_map(fn ($item) => Category::fromArray($item), $data['categories']),
+            categories: array_map(fn($item) => Category::fromArray($item), $data['categories']),
             createdAt: new \DateTimeImmutable($data['created_at']),
             nConsensus: $data['n_consensus'] ?? null,
             instructions: $data['instructions'] ?? null,
@@ -82,7 +81,7 @@ readonly class ClassificationWorkflowArtifact implements \JsonSerializable
             'id' => $this->id,
             'file' => $this->file->toArray(),
             'model' => $this->model,
-            'categories' => array_map(fn ($item) => $item->toArray(), $this->categories),
+            'categories' => array_map(fn($item) => $item->toArray(), $this->categories),
             'created_at' => $this->createdAt->format(\DateTimeInterface::RFC3339_EXTENDED),
             'n_consensus' => $this->nConsensus,
             'instructions' => $this->instructions,

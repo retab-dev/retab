@@ -14,8 +14,7 @@ readonly class ReviewTopMarginLt implements \JsonSerializable
     public function __construct(
         public float $margin,
         public string $kind = 'top_margin_lt',
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

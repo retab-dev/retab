@@ -21,8 +21,7 @@ readonly class StepArtifactRef implements \JsonSerializable
         public StepArtifactRefOperation $operation,
         /** Resource identifier */
         public string $id,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

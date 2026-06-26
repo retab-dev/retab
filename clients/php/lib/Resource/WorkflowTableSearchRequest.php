@@ -14,8 +14,7 @@ readonly class WorkflowTableSearchRequest implements \JsonSerializable
         public string $query,
         /** @var array<string>|null */
         public ?array $columns = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

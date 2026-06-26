@@ -37,8 +37,7 @@ readonly class SourcesResponse implements \JsonSerializable
          */
         public array $sources,
         public string $object = 'extraction.sources',
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

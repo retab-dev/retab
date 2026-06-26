@@ -13,8 +13,7 @@ readonly class EqualCondition implements \JsonSerializable
     public function __construct(
         public mixed $expected,
         public string $kind = 'equals',
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

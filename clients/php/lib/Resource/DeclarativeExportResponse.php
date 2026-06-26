@@ -14,8 +14,7 @@ readonly class DeclarativeExportResponse implements \JsonSerializable
     public function __construct(
         public string $workflowId,
         public string $yamlDefinition,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

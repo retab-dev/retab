@@ -38,8 +38,7 @@ readonly class Classification implements \JsonSerializable
         /** Usage information for the classification */
         public ?RetabUsage $usage = null,
         public ?\DateTimeImmutable $createdAt = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -58,7 +57,7 @@ readonly class Classification implements \JsonSerializable
             id: $data['id'],
             file: FileRef::fromArray($data['file']),
             model: $data['model'],
-            categories: array_map(fn ($item) => Category::fromArray($item), $data['categories']),
+            categories: array_map(fn($item) => Category::fromArray($item), $data['categories']),
             nConsensus: $data['n_consensus'] ?? null,
             instructions: $data['instructions'] ?? null,
             output: isset($data['output']) ? ClassificationDecision::fromArray($data['output']) : null,
@@ -77,7 +76,7 @@ readonly class Classification implements \JsonSerializable
             'id' => $this->id,
             'file' => $this->file->toArray(),
             'model' => $this->model,
-            'categories' => array_map(fn ($item) => $item->toArray(), $this->categories),
+            'categories' => array_map(fn($item) => $item->toArray(), $this->categories),
             'n_consensus' => $this->nConsensus,
             'instructions' => $this->instructions,
             'output' => $this->output?->toArray(),

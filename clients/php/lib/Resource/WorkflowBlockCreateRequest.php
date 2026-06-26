@@ -35,8 +35,7 @@ readonly class WorkflowBlockCreateRequest implements \JsonSerializable
         public ?array $config = null,
         /** ID of parent container block (while_loop, for_each) */
         public ?string $parentId = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

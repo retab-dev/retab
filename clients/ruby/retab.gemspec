@@ -9,27 +9,27 @@
 # are manual.
 
 Gem::Specification.new do |spec|
-  spec.name = "retab"
-  spec.version = "0.1.10"
-  spec.authors = ["Retab"]
-  spec.email = ["support@retab.com"]
+  spec.name = 'retab'
+  spec.version = '0.1.0'
+  spec.authors = ['Retab']
+  spec.email = ['support@retab.com']
 
-  spec.summary = "Retab Ruby SDK"
-  spec.description = "Official Ruby client for the Retab API."
-  spec.homepage = "https://retab.com"
-  spec.license = "MIT"
+  spec.summary = 'Retab Ruby SDK'
+  spec.description = 'Official Ruby client for the Retab API.'
+  spec.homepage = 'https://retab.com'
+  spec.license = 'MIT'
 
-  spec.required_ruby_version = ">= 3.0.0"
+  spec.required_ruby_version = '>= 3.0.0'
 
-  spec.files = Dir["lib/**/*.rb", "rbi/**/*.rbi", "README.md", "LICENSE"]
-  spec.require_paths = ["lib"]
+  spec.files = Dir['lib/**/*.rb', 'rbi/**/*.rbi', 'README.md', 'LICENSE']
+  spec.require_paths = ['lib']
 
-  spec.add_dependency "base64", "~> 0.2"
-  spec.add_dependency "zeitwerk", "~> 2.6"
+  spec.add_dependency 'base64', '~> 0.2'
+  spec.add_dependency 'zeitwerk', '~> 2.6'
 
   spec.metadata = {
-    "homepage_uri" => spec.homepage,
-    "source_code_uri" => "https://github.com/retab-inc/monorepo",
-    "rubygems_mfa_required" => "true",
+    'homepage_uri' => spec.homepage,
+    'source_code_uri' => 'https://github.com/Retab-dev/retab',
+    'rubygems_mfa_required' => 'true',
   }
 end

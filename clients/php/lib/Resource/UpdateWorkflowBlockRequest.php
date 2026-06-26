@@ -30,8 +30,7 @@ readonly class UpdateWorkflowBlockRequest implements \JsonSerializable
         public ?string $parentId = null,
         /** How to apply the `config` field. 'merge' (default) deep-merges the patch into the existing config with null-as-delete; 'replace' uses the patch as the full new config. */
         public ?UpdateWorkflowBlockRequestConfigMode $configMode = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

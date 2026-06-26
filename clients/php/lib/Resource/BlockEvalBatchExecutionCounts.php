@@ -20,8 +20,7 @@ readonly class BlockEvalBatchExecutionCounts implements \JsonSerializable
     public function __construct(
         public ?BlockEvalLifecycleCounts $lifecycleCounts = null,
         public ?BlockEvalOutcomeCounts $outcome = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

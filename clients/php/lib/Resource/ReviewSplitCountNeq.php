@@ -14,8 +14,7 @@ readonly class ReviewSplitCountNeq implements \JsonSerializable
     public function __construct(
         public int $expected,
         public string $kind = 'split_count_neq',
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

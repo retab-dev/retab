@@ -14,8 +14,7 @@ readonly class CompleteFileUploadRequest implements \JsonSerializable
     public function __construct(
         /** Optional SHA-256 checksum */
         public ?string $sha256 = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

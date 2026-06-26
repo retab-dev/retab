@@ -20,8 +20,7 @@ readonly class PrimitiveError implements \JsonSerializable
          * @var array<string, mixed>|null
          */
         public ?array $details = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

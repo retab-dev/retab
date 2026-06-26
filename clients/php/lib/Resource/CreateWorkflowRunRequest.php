@@ -26,8 +26,7 @@ readonly class CreateWorkflowRunRequest implements \JsonSerializable
         public ?array $jsonInputs = null,
         /** Workflow version to run: 'production', 'draft', or a pinned version id like 'ver_...'. Only valid for fresh-run creation. */
         public ?string $version = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

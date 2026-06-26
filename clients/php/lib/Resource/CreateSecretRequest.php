@@ -13,8 +13,7 @@ readonly class CreateSecretRequest implements \JsonSerializable
     public function __construct(
         public string $name,
         public string $value,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

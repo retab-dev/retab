@@ -18,8 +18,7 @@ readonly class WorkflowExportPayloadResponse implements \JsonSerializable
         public int $rows,
         /** Column count including fixed columns */
         public int $columns,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

@@ -31,8 +31,7 @@ readonly class ClassificationRequest implements \JsonSerializable
         public ?bool $bustCache = null,
         /** If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream. */
         public ?bool $background = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -47,7 +46,7 @@ readonly class ClassificationRequest implements \JsonSerializable
         }
         return new self(
             document: MimeData::fromArray($data['document']),
-            categories: array_map(fn ($item) => Category::fromArray($item), $data['categories']),
+            categories: array_map(fn($item) => Category::fromArray($item), $data['categories']),
             model: $data['model'] ?? null,
             firstNPages: $data['first_n_pages'] ?? null,
             instructions: $data['instructions'] ?? null,
@@ -62,7 +61,7 @@ readonly class ClassificationRequest implements \JsonSerializable
     {
         return [
             'document' => $this->document->toArray(),
-            'categories' => array_map(fn ($item) => $item->toArray(), $this->categories),
+            'categories' => array_map(fn($item) => $item->toArray(), $this->categories),
             'model' => $this->model,
             'first_n_pages' => $this->firstNPages,
             'instructions' => $this->instructions,

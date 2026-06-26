@@ -21,8 +21,7 @@ readonly class SubmitDecisionResponse implements \JsonSerializable
         public ?SubmissionStatus $submissionStatus = null,
         public ?ResumeStatus $resumeStatus = null,
         public ?string $resumeError = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

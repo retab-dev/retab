@@ -16,8 +16,7 @@ readonly class WorkflowEdgeVersionDiff implements \JsonSerializable
         public string $edgeId,
         /** @var array<\Retab\Resource\WorkflowVersionFieldDiff>|null */
         public ?array $changes = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -35,7 +34,7 @@ readonly class WorkflowEdgeVersionDiff implements \JsonSerializable
             fromEdgeVersionId: $data['from_edge_version_id'],
             toEdgeVersionId: $data['to_edge_version_id'],
             edgeId: $data['edge_id'],
-            changes: isset($data['changes']) ? array_map(fn ($item) => WorkflowVersionFieldDiff::fromArray($item), $data['changes']) : null,
+            changes: isset($data['changes']) ? array_map(fn($item) => WorkflowVersionFieldDiff::fromArray($item), $data['changes']) : null,
         );
     }
 
@@ -46,7 +45,7 @@ readonly class WorkflowEdgeVersionDiff implements \JsonSerializable
             'from_edge_version_id' => $this->fromEdgeVersionId,
             'to_edge_version_id' => $this->toEdgeVersionId,
             'edge_id' => $this->edgeId,
-            'changes' => $this->changes !== null ? array_map(fn ($item) => $item->toArray(), $this->changes) : null,
+            'changes' => $this->changes !== null ? array_map(fn($item) => $item->toArray(), $this->changes) : null,
         ];
     }
 }

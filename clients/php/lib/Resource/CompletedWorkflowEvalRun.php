@@ -13,8 +13,7 @@ readonly class CompletedWorkflowEvalRun implements \JsonSerializable
 
     public function __construct(
         public string $status = 'completed',
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

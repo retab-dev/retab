@@ -25,8 +25,7 @@ readonly class ExperimentResult implements \JsonSerializable
         public ?array $handleOutputs = null,
         public ?StepArtifactRef $artifact = null,
         public ?int $attempt = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -49,7 +48,9 @@ readonly class ExperimentResult implements \JsonSerializable
             experimentRunId: $data['experiment_run_id'],
             experimentId: $data['experiment_id'],
             documentId: $data['document_id'],
-            lifecycle: match ($data['lifecycle']['status'] ?? null) { 'cancelled' => CancelledWorkflowExperimentResult::fromArray($data['lifecycle']), 'completed' => CompletedWorkflowExperimentResult::fromArray($data['lifecycle']), 'error' => ErrorWorkflowExperimentResult::fromArray($data['lifecycle']), 'pending' => PendingWorkflowExperimentResult::fromArray($data['lifecycle']), 'queued' => QueuedWorkflowExperimentResult::fromArray($data['lifecycle']), 'running' => RunningWorkflowExperimentResult::fromArray($data['lifecycle']), default => throw new \UnexpectedValueException(sprintf('Unknown status: %s', json_encode($data['lifecycle']['status'] ?? null))), },
+            lifecycle: match ($data['lifecycle']['status'] ?? null) {
+                'cancelled' => CancelledWorkflowExperimentResult::fromArray($data['lifecycle']), 'completed' => CompletedWorkflowExperimentResult::fromArray($data['lifecycle']), 'error' => ErrorWorkflowExperimentResult::fromArray($data['lifecycle']), 'pending' => PendingWorkflowExperimentResult::fromArray($data['lifecycle']), 'queued' => QueuedWorkflowExperimentResult::fromArray($data['lifecycle']), 'running' => RunningWorkflowExperimentResult::fromArray($data['lifecycle']), default => throw new \UnexpectedValueException(sprintf('Unknown status: %s', json_encode($data['lifecycle']['status'] ?? null))),
+            },
             timing: ExperimentResultTiming::fromArray($data['timing']),
             blockType: ReviewBlockType::from($data['block_type']),
             handleInputs: $data['handle_inputs'] ?? null,

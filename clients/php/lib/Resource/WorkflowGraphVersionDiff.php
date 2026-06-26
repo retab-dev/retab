@@ -25,8 +25,7 @@ readonly class WorkflowGraphVersionDiff implements \JsonSerializable
         public ?array $removedEdgeIds = null,
         /** @var array<string>|null */
         public ?array $changedEdgeIds = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

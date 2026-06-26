@@ -33,21 +33,20 @@ readonly class QueryWorkflowTableRequest implements \JsonSerializable
         public ?string $viewerMode = null,
         public ?int $offset = null,
         public ?int $limit = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
     {
         return new self(
-            filters: isset($data['filters']) ? array_map(fn ($item) => WorkflowTableFilterRule::fromArray($item), $data['filters']) : null,
+            filters: isset($data['filters']) ? array_map(fn($item) => WorkflowTableFilterRule::fromArray($item), $data['filters']) : null,
             search: isset($data['search']) ? WorkflowTableSearchRequest::fromArray($data['search']) : null,
             caseSensitive: $data['case_sensitive'] ?? null,
             select: $data['select'] ?? null,
             distinct: isset($data['distinct']) ? WorkflowTableDistinctRequest::fromArray($data['distinct']) : null,
             groupBy: $data['group_by'] ?? null,
-            aggregations: isset($data['aggregations']) ? array_map(fn ($item) => WorkflowTableAggregationRequest::fromArray($item), $data['aggregations']) : null,
-            sort: isset($data['sort']) ? array_map(fn ($item) => WorkflowTableSortRule::fromArray($item), $data['sort']) : null,
+            aggregations: isset($data['aggregations']) ? array_map(fn($item) => WorkflowTableAggregationRequest::fromArray($item), $data['aggregations']) : null,
+            sort: isset($data['sort']) ? array_map(fn($item) => WorkflowTableSortRule::fromArray($item), $data['sort']) : null,
             sample: isset($data['sample']) ? WorkflowTableSampleRequest::fromArray($data['sample']) : null,
             tail: isset($data['tail']) ? WorkflowTableTailRequest::fromArray($data['tail']) : null,
             countOnly: $data['count_only'] ?? null,
@@ -64,14 +63,14 @@ readonly class QueryWorkflowTableRequest implements \JsonSerializable
     public function toArray(): array
     {
         return [
-            'filters' => $this->filters !== null ? array_map(fn ($item) => $item->toArray(), $this->filters) : null,
+            'filters' => $this->filters !== null ? array_map(fn($item) => $item->toArray(), $this->filters) : null,
             'search' => $this->search?->toArray(),
             'case_sensitive' => $this->caseSensitive,
             'select' => $this->select,
             'distinct' => $this->distinct?->toArray(),
             'group_by' => $this->groupBy,
-            'aggregations' => $this->aggregations !== null ? array_map(fn ($item) => $item->toArray(), $this->aggregations) : null,
-            'sort' => $this->sort !== null ? array_map(fn ($item) => $item->toArray(), $this->sort) : null,
+            'aggregations' => $this->aggregations !== null ? array_map(fn($item) => $item->toArray(), $this->aggregations) : null,
+            'sort' => $this->sort !== null ? array_map(fn($item) => $item->toArray(), $this->sort) : null,
             'sample' => $this->sample?->toArray(),
             'tail' => $this->tail?->toArray(),
             'count_only' => $this->countOnly,

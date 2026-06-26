@@ -18,8 +18,6 @@ readonly class WorkflowExperiment implements \JsonSerializable
         public NConsensusValue $nConsensus,
         public string $name,
         public ReviewBlockType $blockType,
-        /** @var array<string> */
-        public array $freshnessReasons,
         public ?int $documentCount = null,
         public ?string $lastRunId = null,
         /** When the experiment was created */
@@ -31,13 +29,14 @@ readonly class WorkflowExperiment implements \JsonSerializable
         public ?bool $isStale = null,
         public ?ArtifactFreshness $freshness = null,
         public ?EvalRunFreshnessStatus $freshnessState = null,
+        /** @var array<string>|null */
+        public ?array $freshnessReasons = null,
         public ?WorkflowExperimentRunPlanMode $runPlanMode = null,
         public ?int $rerunnableDocumentCount = null,
         public ?WorkflowEvalSchemaDrift $schemaDrift = null,
         public ?string $schemaDriftDetail = null,
         public ?ArtifactDrift $drift = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -49,7 +48,6 @@ readonly class WorkflowExperiment implements \JsonSerializable
             'n_consensus',
             'name',
             'block_type',
-            'freshness_reasons',
         ] as $__required) {
             if (!array_key_exists($__required, $data)) {
                 throw new \UnexpectedValueException("Missing required field '$__required' for WorkflowExperiment::fromArray()");
@@ -62,7 +60,6 @@ readonly class WorkflowExperiment implements \JsonSerializable
             nConsensus: NConsensusValue::from($data['n_consensus']),
             name: $data['name'],
             blockType: ReviewBlockType::from($data['block_type']),
-            freshnessReasons: $data['freshness_reasons'],
             documentCount: $data['document_count'] ?? null,
             lastRunId: $data['last_run_id'] ?? null,
             createdAt: isset($data['created_at']) ? new \DateTimeImmutable($data['created_at']) : null,
@@ -72,6 +69,7 @@ readonly class WorkflowExperiment implements \JsonSerializable
             isStale: $data['is_stale'] ?? null,
             freshness: isset($data['freshness']) ? ArtifactFreshness::fromArray($data['freshness']) : null,
             freshnessState: isset($data['freshness_state']) ? EvalRunFreshnessStatus::from($data['freshness_state']) : null,
+            freshnessReasons: $data['freshness_reasons'] ?? null,
             runPlanMode: isset($data['run_plan_mode']) ? WorkflowExperimentRunPlanMode::from($data['run_plan_mode']) : null,
             rerunnableDocumentCount: $data['rerunnable_document_count'] ?? null,
             schemaDrift: isset($data['schema_drift']) ? WorkflowEvalSchemaDrift::from($data['schema_drift']) : null,
@@ -90,7 +88,6 @@ readonly class WorkflowExperiment implements \JsonSerializable
             'n_consensus' => $this->nConsensus->value,
             'name' => $this->name,
             'block_type' => $this->blockType->value,
-            'freshness_reasons' => $this->freshnessReasons,
             'document_count' => $this->documentCount,
             'last_run_id' => $this->lastRunId,
             'created_at' => $this->createdAt?->format(\DateTimeInterface::RFC3339_EXTENDED),
@@ -100,6 +97,7 @@ readonly class WorkflowExperiment implements \JsonSerializable
             'is_stale' => $this->isStale,
             'freshness' => $this->freshness?->toArray(),
             'freshness_state' => $this->freshnessState?->value,
+            'freshness_reasons' => $this->freshnessReasons,
             'run_plan_mode' => $this->runPlanMode?->value,
             'rerunnable_document_count' => $this->rerunnableDocumentCount,
             'schema_drift' => $this->schemaDrift?->value,

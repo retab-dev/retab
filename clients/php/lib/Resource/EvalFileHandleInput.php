@@ -13,8 +13,7 @@ readonly class EvalFileHandleInput implements \JsonSerializable
     public function __construct(
         public EvalPublicFileRef $document,
         public string $type = 'file',
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

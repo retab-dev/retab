@@ -29,8 +29,7 @@ readonly class CreateBlockExecutionRequest implements \JsonSerializable
         public ?int $nConsensus = null,
         /** Whether to verify the upstream subgraph hasn't drifted since the source run. Disable only for explicit force-rerun flows. */
         public ?bool $checkEligibility = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

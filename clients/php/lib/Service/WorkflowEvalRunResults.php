@@ -12,8 +12,7 @@ class WorkflowEvalRunResults
 {
     public function __construct(
         private readonly \Retab\HttpClient $client,
-    ) {
-    }
+    ) {}
 
     /**
      * List Workflow Eval Results
@@ -43,7 +42,7 @@ class WorkflowEvalRunResults
             'after' => $after,
             'limit' => $limit,
             'order' => $order->value,
-        ], fn ($v) => $v !== null);
+        ], fn($v) => $v !== null);
         return $this->client->requestPage(
             method: 'GET',
             path: 'v1/workflows/evals/results',

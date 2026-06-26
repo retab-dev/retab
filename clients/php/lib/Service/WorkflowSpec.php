@@ -14,8 +14,7 @@ class WorkflowSpec
 {
     public function __construct(
         private readonly \Retab\HttpClient $client,
-    ) {
-    }
+    ) {}
 
     /**
      * Validate Workflow Spec
@@ -38,7 +37,7 @@ class WorkflowSpec
         $body = array_filter([
             'yaml_definition' => $yamlDefinition,
             'project_id' => $projectId,
-        ], fn ($v) => $v !== null);
+        ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',
             path: 'v1/workflows/spec/validate',

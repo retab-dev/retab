@@ -15,8 +15,7 @@ readonly class AssertionFailure implements \JsonSerializable
         public string $message,
         /** @var array<string, mixed>|null */
         public ?array $details = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

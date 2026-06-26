@@ -15,8 +15,7 @@ readonly class SimilarityGteCondition implements \JsonSerializable
         public float $threshold,
         public ?SimilarityGteConditionMethod $method = null,
         public string $kind = 'similarity_gte',
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

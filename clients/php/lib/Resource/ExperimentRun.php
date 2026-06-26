@@ -33,8 +33,7 @@ readonly class ExperimentRun implements \JsonSerializable
         public ?int $completedDocumentCount = null,
         public ?int $documentCount = null,
         public ?int $errorCount = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -66,7 +65,9 @@ readonly class ExperimentRun implements \JsonSerializable
             blockId: $data['block_id'],
             blockType: ReviewBlockType::from($data['block_type']),
             nConsensus: NConsensusValue::from($data['n_consensus']),
-            lifecycle: match ($data['lifecycle']['status'] ?? null) { 'cancelled' => CancelledWorkflowExperimentRun::fromArray($data['lifecycle']), 'completed' => CompletedWorkflowExperimentRun::fromArray($data['lifecycle']), 'error' => ErrorWorkflowExperimentRun::fromArray($data['lifecycle']), 'pending' => PendingWorkflowExperimentRun::fromArray($data['lifecycle']), 'queued' => QueuedWorkflowExperimentRun::fromArray($data['lifecycle']), 'running' => RunningWorkflowExperimentRun::fromArray($data['lifecycle']), default => throw new \UnexpectedValueException(sprintf('Unknown status: %s', json_encode($data['lifecycle']['status'] ?? null))), },
+            lifecycle: match ($data['lifecycle']['status'] ?? null) {
+                'cancelled' => CancelledWorkflowExperimentRun::fromArray($data['lifecycle']), 'completed' => CompletedWorkflowExperimentRun::fromArray($data['lifecycle']), 'error' => ErrorWorkflowExperimentRun::fromArray($data['lifecycle']), 'pending' => PendingWorkflowExperimentRun::fromArray($data['lifecycle']), 'queued' => QueuedWorkflowExperimentRun::fromArray($data['lifecycle']), 'running' => RunningWorkflowExperimentRun::fromArray($data['lifecycle']), default => throw new \UnexpectedValueException(sprintf('Unknown status: %s', json_encode($data['lifecycle']['status'] ?? null))),
+            },
             timing: ExperimentRunTiming::fromArray($data['timing']),
             blockExecutionFingerprint: $data['block_execution_fingerprint'],
             documentsFingerprint: $data['documents_fingerprint'],
