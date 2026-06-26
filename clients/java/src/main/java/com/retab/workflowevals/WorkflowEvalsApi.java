@@ -12,6 +12,8 @@ import com.retab.models.WorkflowEval;
 import com.retab.models.WorkflowEvalBlockTarget;
 import com.retab.models.WorkflowEvalSource;
 import com.retab.types.SortOrder;
+import com.retab.workflowevalrunresults.WorkflowEvalRunResultsApi;
+import com.retab.workflowevalruns.WorkflowEvalRunsApi;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -31,6 +33,14 @@ public final class WorkflowEvalsApi {
 
   public RetabClient getClient() {
     return client;
+  }
+
+  public WorkflowEvalRunResultsApi results() {
+    return new WorkflowEvalRunResultsApi(client);
+  }
+
+  public WorkflowEvalRunsApi runs() {
+    return new WorkflowEvalRunsApi(client);
   }
 
   public List<WorkflowEval> list(
