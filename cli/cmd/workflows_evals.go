@@ -97,6 +97,8 @@ An eval pins a target block's expected output against a recorded input
 after any change — config update, model swap, prompt edit — to
 catch silent drift in extraction quality or classification accuracy.
 
+Supported eval targets are function, extract, split, and classifier blocks.
+
 An eval has three pieces:
 
   * ` + "`target`" + `   — which block is under eval
@@ -414,6 +416,8 @@ var workflowsEvalsCreateCmd = &cobra.Command{
 	Use:   "create <workflow-id> [flags]",
 	Short: "Create a workflow eval",
 	Long: `Create a regression eval pinning a block's expected output.
+Currently supported target block types are function, extract, split, and classifier.
+
 You'll typically capture the three files from a successful past run:
 
   ` + "`--target-file`" + `     — which block to eval (e.g.
@@ -893,8 +897,8 @@ Pass ` + "`--wait`" + ` to block until the run reaches a terminal status
 final run — saving you from scripting a poll loop around
 ` + "`runs get`" + `. With ` + "`--wait`" + ` the command exits non-zero if the
 run ends in ` + "`error`" + `/` + "`cancelled`" + `, the timeout elapses, or the
-completed run has any failed or blocked assertions — so CI can gate a build on a
-detected regression.
+completed run has any failed/blocked assertions or child eval errors — so CI can
+gate a build on a detected regression.
 Without it, poll progress with ` + "`workflows evals runs get`" + ` and fetch
 per-eval results with ` + "`workflows evals results list`" + `.`,
 	Example: `  # Run every eval in the workflow
@@ -1020,10 +1024,11 @@ func workflowEvalRunTerminalError(run *retab.WorkflowEvalRun) error {
 		// lifecycle error/cancelled/timeout. Blocked assertions (the target output
 		// handle/path could not be evaluated) are non-passing and count too.
 		failed, blocked := workflowEvalRunNonPassingCounts(run)
-		if failed == 0 && blocked == 0 {
+		childErrors, childCancelled := workflowEvalRunChildLifecycleFailureCounts(run)
+		if failed == 0 && blocked == 0 && childErrors == 0 && childCancelled == 0 {
 			return nil
 		}
-		return workflowEvalRunRegressionError(run, failed, blocked)
+		return workflowEvalRunRegressionError(run, failed, blocked, childErrors, childCancelled)
 	case "error", "cancelled":
 		if run.ID == "" {
 			return fmt.Errorf("workflow-eval run ended with status %s", status)
@@ -1051,15 +1056,35 @@ func workflowEvalRunNonPassingCounts(run *retab.WorkflowEvalRun) (failed int, bl
 	return failed, blocked
 }
 
+func workflowEvalRunChildLifecycleFailureCounts(run *retab.WorkflowEvalRun) (errored int, cancelled int) {
+	if run == nil || run.Counts == nil || run.Counts.LifecycleCounts == nil {
+		return 0, 0
+	}
+	counts := run.Counts.LifecycleCounts
+	if counts.Error != nil {
+		errored = *counts.Error
+	}
+	if counts.Cancelled != nil {
+		cancelled = *counts.Cancelled
+	}
+	return errored, cancelled
+}
+
 // workflowEvalRunRegressionError renders the non-zero exit for a completed run
 // whose assertions did not all pass.
-func workflowEvalRunRegressionError(run *retab.WorkflowEvalRun, failed, blocked int) error {
-	parts := make([]string, 0, 2)
+func workflowEvalRunRegressionError(run *retab.WorkflowEvalRun, failed, blocked, childErrors, childCancelled int) error {
+	parts := make([]string, 0, 4)
 	if failed > 0 {
 		parts = append(parts, fmt.Sprintf("%d failed", failed))
 	}
 	if blocked > 0 {
 		parts = append(parts, fmt.Sprintf("%d blocked", blocked))
+	}
+	if childErrors > 0 {
+		parts = append(parts, fmt.Sprintf("%d child error", childErrors))
+	}
+	if childCancelled > 0 {
+		parts = append(parts, fmt.Sprintf("%d child cancelled", childCancelled))
 	}
 	detail := strings.Join(parts, ", ")
 	if run == nil || run.ID == "" {
@@ -1120,7 +1145,7 @@ timeout.
 Cleaner than scripting a poll loop around ` + "`runs get`" + ` — the CLI
 handles the interval and timeout, and exits non-zero if the run ends in
 ` + "`error`" + `/` + "`cancelled`" + `, the timeout elapses, or the completed run
-has any failed or blocked assertions. Pair with
+has any failed/blocked assertions or child eval errors. Pair with
 ` + "`runs create --wait`" + ` to create and block in a single step.`,
 	Example: `  # Wait with defaults (2s polls, 600s timeout)
   retab workflows evals runs wait wfevalrun_mno345

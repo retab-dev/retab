@@ -2401,6 +2401,15 @@ func TestWorkflowEvalRunTerminalErrorFailsOnNonPassingAssertions(t *testing.T) {
 			},
 		}
 	}
+	completedWithChildLifecycle := func(errored, cancelled int) *retab.WorkflowEvalRun {
+		return &retab.WorkflowEvalRun{
+			ID:        "wfevalrun_child_lifecycle",
+			Lifecycle: retab.WorkflowEvalRunStatusFromCompletedWorkflowEvalRun(retab.CompletedWorkflowEvalRun{}),
+			Counts: &retab.BlockEvalBatchExecutionCounts{
+				LifecycleCounts: &retab.BlockEvalLifecycleCounts{Error: &errored, Cancelled: &cancelled},
+			},
+		}
+	}
 	cases := []struct {
 		name    string
 		run     *retab.WorkflowEvalRun
@@ -2410,6 +2419,8 @@ func TestWorkflowEvalRunTerminalErrorFailsOnNonPassingAssertions(t *testing.T) {
 		{name: "some failed", run: completed(7, 1, 0), wantErr: true},
 		{name: "some blocked", run: completed(7, 0, 1), wantErr: true},
 		{name: "failed and blocked", run: completed(5, 2, 1), wantErr: true},
+		{name: "child eval error", run: completedWithChildLifecycle(1, 0), wantErr: true},
+		{name: "child eval cancelled", run: completedWithChildLifecycle(0, 1), wantErr: true},
 		{
 			name: "completed with no counts is success",
 			run: &retab.WorkflowEvalRun{
