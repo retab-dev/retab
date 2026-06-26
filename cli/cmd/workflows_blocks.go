@@ -11,6 +11,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	defaultNoteBlockWidth     = 280.0
+	defaultNoteBlockHeight    = 120.0
+	defaultContainerBlockSize = 800.0
+)
+
 var workflowsBlocksCmd = &cobra.Command{
 	Use:   "blocks",
 	Short: "Manage workflow blocks",
@@ -80,7 +86,35 @@ func parseBlockCreate(obj map[string]any) (retab.WorkflowBlocksCreateParams, err
 	if req.Type == "hil" {
 		return req, fmt.Errorf("legacy hil blocks are no longer supported; add config.review to a reviewable block instead")
 	}
+	defaultBlockCreateDimensions(&req)
 	return req, nil
+}
+
+func defaultBlockCreateDimensions(req *retab.WorkflowBlocksCreateParams) {
+	switch req.Type {
+	case "note":
+		req.Width = defaultPositiveBlockDimension(req.Width, defaultNoteBlockWidth)
+		req.Height = defaultPositiveBlockDimension(req.Height, defaultNoteBlockHeight)
+	case "for_each", "while_loop":
+		req.Width = clampMinimumBlockDimension(req.Width, defaultContainerBlockSize)
+		req.Height = clampMinimumBlockDimension(req.Height, defaultContainerBlockSize)
+	}
+}
+
+func defaultPositiveBlockDimension(value *float64, fallback float64) *float64 {
+	if value != nil && *value > 0 {
+		return value
+	}
+	v := fallback
+	return &v
+}
+
+func clampMinimumBlockDimension(value *float64, minimum float64) *float64 {
+	if value != nil && *value >= minimum {
+		return value
+	}
+	v := minimum
+	return &v
 }
 
 func parseBlockCreateForWorkflow(workflowID string, obj map[string]any) (retab.WorkflowBlocksCreateParams, error) {
