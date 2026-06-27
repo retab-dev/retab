@@ -6,7 +6,7 @@ declare(strict_types=1);
 //
 // Hand-maintained pagination-contract regression. Mirrors the equivalent
 // suites in the Python, Node, and Go SDKs
-// (.notes/blueprints/sdk-pagination-contract.md).
+// (docs/blueprints/sdk-pagination-contract.md).
 //
 // For every Retab\Service\* class that exposes a `list(...)` method
 // returning `Retab\PaginatedResponse`, this suite:
@@ -41,7 +41,7 @@ class PaginationContractTest extends TestCase
      * Services that legitimately bypass the central pagination contract.
      * Empty for PHP — when populated, every entry needs a comment linking
      * to the matching exception in
-     * .notes/blueprints/sdk-pagination-contract.md.
+     * docs/blueprints/sdk-pagination-contract.md.
      *
      * @var array<int, string>
      */

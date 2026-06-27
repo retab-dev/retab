@@ -98,5 +98,5 @@ The tests use the same test data as the Python test suite:
 # Example of running a specific test:
 
 ```bash
-cd /workspaces/retab/open-source/sdk/clients/node && bun test tests/extractions/extraction.test.ts -t "test_extract_with_multipart" 2>&1
+cd /workspaces/retab/public/sdk/clients/node && bun test tests/extractions/extraction.test.ts -t "test_extract_with_multipart" 2>&1
 ```

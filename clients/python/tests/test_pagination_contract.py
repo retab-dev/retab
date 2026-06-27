@@ -1,6 +1,6 @@
 """Runtime regression test for the SDK pagination closure contract.
 
-Per [.notes/blueprints/sdk-pagination-contract.md](../../../../../.notes/blueprints/sdk-pagination-contract.md),
+Per [docs/blueprints/sdk-pagination-contract.md](../../../../../docs/blueprints/sdk-pagination-contract.md),
 every paginated ``.list()`` method on a public resource must delegate to the
 central ``SyncAPIResource.request_page`` / ``AsyncAPIResource.request_page``
 helper. The helper is what wires the ``_fetch_next_page`` closure so callers
@@ -266,7 +266,7 @@ def test_sync_list_method_wires_closure(
         "SyncAPIResource.request_page. Auto-pagination via `for item in page:` "
         "will silently stop after the first page. Rewrite this list method to "
         "delegate via `self.request_page(request, model=...)`. See "
-        ".notes/blueprints/sdk-pagination-contract.md for the contract."
+        "docs/blueprints/sdk-pagination-contract.md for the contract."
     )
 
 
@@ -295,5 +295,5 @@ def test_async_list_method_wires_closure(
         "AsyncAPIResource.request_page. `async for item in page:` will silently "
         "stop after the first page. Rewrite this list method to delegate via "
         "`await self.request_page(request, model=...)`. See "
-        ".notes/blueprints/sdk-pagination-contract.md for the contract."
+        "docs/blueprints/sdk-pagination-contract.md for the contract."
     )

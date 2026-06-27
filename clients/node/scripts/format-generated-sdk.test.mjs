@@ -111,7 +111,7 @@ test('writes plain relative out dirs under the current package output directory'
 
     const execroot = join(tmp, 'execroot');
     const bindir = 'bazel-out/darwin_arm64-fastbuild/bin';
-    const packagePath = 'open-source/sdk/clients/node';
+    const packagePath = 'public/sdk/clients/node';
     const packageOutDir = join(execroot, bindir, packagePath);
     mkdirSync(packageOutDir, { recursive: true });
 
@@ -150,7 +150,7 @@ test('resolves execroot-relative Bazel output dirs from the execroot', () => {
 
     const execroot = join(tmp, 'execroot');
     const bindir = 'bazel-out/darwin_arm64-fastbuild/bin';
-    const packagePath = 'open-source/sdk/clients/node';
+    const packagePath = 'public/sdk/clients/node';
     const packageOutDir = join(execroot, bindir, packagePath);
     mkdirSync(packageOutDir, { recursive: true });
 

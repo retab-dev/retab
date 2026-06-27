@@ -1363,11 +1363,20 @@ var workflowsEvalsResultsListCmd = &cobra.Command{
 	Short: "List child results for a workflow-eval run",
 	Args:  cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		if err := validateBeforeAfterMutex(cmd); err != nil {
+			return err
+		}
 		params := &retab.WorkflowEvalRunResultsListParams{
 			RunID: args[0],
 			PaginationParams: retab.PaginationParams{
 				Limit: ptr(getIntFlagOrDefault(cmd, "limit", 20)),
 			},
+		}
+		if v, _ := cmd.Flags().GetString("before"); v != "" {
+			params.Before = ptr(v)
+		}
+		if v, _ := cmd.Flags().GetString("after"); v != "" {
+			params.After = ptr(v)
 		}
 		client, err := newClient(cmd)
 		if err != nil {
@@ -1461,6 +1470,8 @@ func init() {
 	// the create knobs and the experiment/primitive wait commands.
 	addPrimitiveWaitTuningFlags(workflowsEvalsRunsWaitCmd, false)
 	workflowsEvalsResultsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items (1-100; default 20)")
+	workflowsEvalsResultsListCmd.Flags().String("before", "", "page before cursor (mutually exclusive with --after)")
+	workflowsEvalsResultsListCmd.Flags().String("after", "", "page after cursor (mutually exclusive with --before)")
 
 	workflowsEvalsResultsCmd.AddCommand(workflowsEvalsResultsListCmd, workflowsEvalsResultsGetCmd)
 	workflowsEvalsRunsCmd.AddCommand(workflowsEvalsRunsCreateCmd, workflowsEvalsRunsListCmd, workflowsEvalsRunsGetCmd, workflowsEvalsRunsCancelCmd, workflowsEvalsRunsWaitCmd)

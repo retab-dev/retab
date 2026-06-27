@@ -5,7 +5,7 @@
 # @oagen-ignore-file
 #
 # Cross-language paginated-list wrapper. See
-# .notes/blueprints/sdk-pagination-contract.md for the full contract.
+# docs/blueprints/sdk-pagination-contract.md for the full contract.
 #
 # Every `def list` method on a Retab service returns one of these. The
 # class includes `Enumerable`, so callers can iterate every page

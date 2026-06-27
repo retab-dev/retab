@@ -65,7 +65,7 @@ builds:
 archives:
   - id: retab
     # install.sh constructs this exact name. Do not change without
-    # updating frontend/public/install.sh in the monorepo.
+    # updating apps/dashboard/public/install.sh in the monorepo.
     name_template: "retab_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     formats: [tar.gz]
     format_overrides:

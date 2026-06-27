@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -705,6 +706,89 @@ func TestWorkflowRunListCommandsHonorExplicitLimit(t *testing.T) {
 				t.Fatalf("server was hit %d time(s), want 1", got)
 			}
 		})
+	}
+}
+
+func TestWorkflowsEvalsResultsListSupportsCursorPagination(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var gotQuery string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v1/workflows/evals/results" {
+			t.Fatalf("path = %q, want /v1/workflows/evals/results", r.URL.Path)
+		}
+		gotQuery = r.URL.RawQuery
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"data":[],"list_metadata":{"after":null,"before":null}}`))
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	for flag, value := range map[string]string{
+		"limit": "3",
+		"after": "wfnodeevalrun_cursor",
+	} {
+		if err := workflowsEvalsResultsListCmd.Flags().Set(flag, value); err != nil {
+			t.Fatalf("set --%s: %v", flag, err)
+		}
+		flag := flag
+		t.Cleanup(func() {
+			reset := ""
+			if flag == "limit" {
+				reset = "20"
+			}
+			_ = workflowsEvalsResultsListCmd.Flags().Set(flag, reset)
+			workflowsEvalsResultsListCmd.Flags().Lookup(flag).Changed = false
+		})
+	}
+
+	var err error
+	captureStd(t, func() {
+		err = workflowsEvalsResultsListCmd.RunE(workflowsEvalsResultsListCmd, []string{"wfevalrun_123"})
+	})
+	if err != nil {
+		t.Fatalf("results list: %v", err)
+	}
+	values, parseErr := url.ParseQuery(gotQuery)
+	if parseErr != nil {
+		t.Fatalf("parse query %q: %v", gotQuery, parseErr)
+	}
+	if got := values.Get("run_id"); got != "wfevalrun_123" {
+		t.Fatalf("run_id = %q, want wfevalrun_123", got)
+	}
+	if got := values.Get("limit"); got != "3" {
+		t.Fatalf("limit = %q, want 3", got)
+	}
+	if got := values.Get("after"); got != "wfnodeevalrun_cursor" {
+		t.Fatalf("after = %q, want wfnodeevalrun_cursor", got)
+	}
+}
+
+func TestWorkflowsEvalsResultsListRejectsBeforeAfterTogether(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	for flag, value := range map[string]string{
+		"before": "wfnodeevalrun_before",
+		"after":  "wfnodeevalrun_after",
+	} {
+		if err := workflowsEvalsResultsListCmd.Flags().Set(flag, value); err != nil {
+			t.Fatalf("set --%s: %v", flag, err)
+		}
+		flag := flag
+		t.Cleanup(func() {
+			_ = workflowsEvalsResultsListCmd.Flags().Set(flag, "")
+			workflowsEvalsResultsListCmd.Flags().Lookup(flag).Changed = false
+		})
+	}
+
+	err := workflowsEvalsResultsListCmd.RunE(workflowsEvalsResultsListCmd, []string{"wfevalrun_123"})
+	if err == nil {
+		t.Fatal("expected before/after mutual exclusion error")
+	}
+	if !strings.Contains(err.Error(), "--before and --after are mutually exclusive") {
+		t.Fatalf("error %q does not contain before/after message", err.Error())
 	}
 }
 

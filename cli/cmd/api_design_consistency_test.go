@@ -222,7 +222,7 @@ func loadCLIOpenAPIContract(t *testing.T) cliOpenAPIContract {
 	t.Helper()
 	data, err := os.ReadFile(filepath.Join("..", "..", "..", "docs", "api-reference", "openapi.json"))
 	if os.IsNotExist(err) {
-		// The contract lives in the sibling open-source/docs submodule, which is
+		// The contract lives in the sibling public/docs submodule, which is
 		// only checked out in the full monorepo. Standalone SDK checkouts (the
 		// release worktree, a bare retab-dev/retab clone) have nothing to compare
 		// against, so this monorepo-only parity check skips rather than fails.

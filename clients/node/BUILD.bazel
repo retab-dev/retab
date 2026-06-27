@@ -1,7 +1,7 @@
 load("@aspect_bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 load("@aspect_rules_js//js:defs.bzl", "js_binary", "js_run_binary")
 load("@node_sdk_npm//:defs.bzl", "npm_link_all_packages")
-load("//tools/bazel:defs.bzl", "MANUAL_LOCAL_TAGS")
+load("//factory/bazel:defs.bzl", "MANUAL_LOCAL_TAGS")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -21,7 +21,7 @@ npm_link_all_packages(name = "node_modules")
 
 # Hermetic prettier-format step for the sandboxed Node SDK drift check.
 #
-# The generator (//.oagen-workspace/retab-gen:generated_node_sdk_raw) emits an
+# The generator (//factory/generators/oagen/retab-gen:generated_node_sdk_raw) emits an
 # UNFORMATTED src/ + manifest tree. prettier is not in the generator closure, so
 # this step formats that raw tree with the Node SDK client's OWN vendored
 # prettier (node_sdk_npm, pinned to package-lock.json) plus this package's
@@ -55,12 +55,12 @@ js_run_binary(
     name = "generated_node_sdk_formatted",
     args = ["--formatter-output-version=1"],
     srcs = [
-        "//.oagen-workspace/retab-gen:generated_node_sdk_raw",
+        "//factory/generators/oagen/retab-gen:generated_node_sdk_raw",
         ".prettierrc",
     ],
     chdir = package_name(),
     env = {
-        "RETAB_RAW_SDK_DIR": "$(execpath //.oagen-workspace/retab-gen:generated_node_sdk_raw)",
+        "RETAB_RAW_SDK_DIR": "$(execpath //factory/generators/oagen/retab-gen:generated_node_sdk_raw)",
         "RETAB_FORMATTED_SDK_DIR": "generated-node-formatted-v3",
         "RETAB_NODE_SDK_FORMATTER_OUTPUT_VERSION": "7",
         "RETAB_PRETTIERRC": "$(execpath .prettierrc)",
@@ -91,7 +91,7 @@ filegroup(
 
 sh_test(
     name = "format_check",
-    srcs = ["//tools/bazel:run_node_sdk.sh"],
+    srcs = ["//factory/bazel:run_node_sdk.sh"],
     args = ["format_check"],
     data = [":sources"],
     tags = MANUAL_LOCAL_TAGS,
@@ -99,7 +99,7 @@ sh_test(
 
 sh_test(
     name = "lint",
-    srcs = ["//tools/bazel:run_node_sdk.sh"],
+    srcs = ["//factory/bazel:run_node_sdk.sh"],
     args = ["lint"],
     data = [":sources"],
     tags = MANUAL_LOCAL_TAGS,
@@ -107,7 +107,7 @@ sh_test(
 
 sh_test(
     name = "test",
-    srcs = ["//tools/bazel:run_node_sdk.sh"],
+    srcs = ["//factory/bazel:run_node_sdk.sh"],
     args = ["test"],
     data = [":sources"],
     tags = MANUAL_LOCAL_TAGS,
