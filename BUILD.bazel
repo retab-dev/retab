@@ -161,7 +161,7 @@ sh_test(
     env = {
         "RETAB_NODE_SDK_CHECK_VERSION": "3",
     },
-    tags = ["generated-check", "no-cache"],
+    tags = ["generated-check"],
 )
 
 sdk_generation_tree(
