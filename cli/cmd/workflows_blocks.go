@@ -300,8 +300,8 @@ func blockInputHandles(config map[string]any) []string {
 		return nil
 	}
 	// Function blocks consume a single JSON payload at the runtime-level
-	// handle input-json-0. The optional config.inputs names are for type
-	// inference/local bundles and are not connectable handles.
+	// handle input-json-0. Server-bound function configs do not accept
+	// config.inputs; local bundles derive input typing from resolved schemas.
 	if _, ok := config["code"].(string); ok {
 		if _, hasOutputSchema := config["output_schema"].(map[string]any); hasOutputSchema {
 			return []string{"input-json-0"}
