@@ -40,6 +40,7 @@ func TestWorkflowsBlocksCreateHelpShowsExtractReviewConfig(t *testing.T) {
 		`likelihoods.splits.invoice_type`,
 		`"n_consensus": 3`,
 		`"path": "likelihoods.invoice_total"`,
+		`top_margin_lt` + "` uses\n`margin`",
 	} {
 		if !strings.Contains(help, want) {
 			t.Fatalf("blocks create help should show review config fragment %q, got:\n%s", want, help)
@@ -137,6 +138,8 @@ func TestWorkflowsBlocksUpdateHelpShowsReviewConfig(t *testing.T) {
 		`n_consensus`,
 		`confidence_lt`,
 		`"threshold":0.8`,
+		`"kind":"top_margin_lt","margin":0.2`,
+		"the numeric field is `margin`",
 	} {
 		if !strings.Contains(help, want) {
 			t.Fatalf("blocks update help should show review config guidance %q, got:\n%s", want, help)
@@ -155,7 +158,9 @@ func TestWorkflowsBlocksUpdateRenderedHelpShowsConsensusPatch(t *testing.T) {
 	for _, want := range []string{
 		"For consensus-based review, patch both `n_consensus` and `review`",
 		`{"n_consensus":3,"review":{"predicate":{"kind":"confidence_lt","threshold":0.8}}}`,
+		`{"review":{"predicate":{"kind":"top_margin_lt","margin":0.2}}}`,
 		"Add consensus review to an extract or classifier block",
+		"Add classifier top-margin review",
 	} {
 		if !strings.Contains(help, want) {
 			t.Fatalf("rendered blocks update help should contain %q, got:\n%s", want, help)

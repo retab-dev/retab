@@ -410,7 +410,9 @@ Consensus criteria require ` + "`n_consensus > 1`" + ` on the reviewed block.
 Use ` + "`confidence_lt`" + ` for the block's overall consensus likelihood,
 ` + "`field_confidence_lt`" + ` for extract field scores, ` + "`top_margin_lt`" + `
 for close classifier categories, and ` + "`boundary_confidence_lt`" + ` for split
-boundary scores. ` + "`json_condition`" + ` can target the block output through
+boundary scores. Numeric predicate fields are type-specific: confidence-style
+predicates use ` + "`threshold`" + `, while classifier ` + "`top_margin_lt`" + ` uses
+` + "`margin`" + `. ` + "`json_condition`" + ` can target the block output through
 ` + "`data.*`" + ` (or extract's ` + "`output-json-0.*`" + ` alias) and consensus
 scores through ` + "`likelihoods.*`" + ` paths such as
 ` + "`likelihoods.invoice_total`" + `, ` + "`likelihoods.invoice`" + `, or
@@ -538,6 +540,11 @@ For consensus-based review, patch both ` + "`n_consensus`" + ` and ` + "`review`
   printf '{"n_consensus":3,"review":{"predicate":{"kind":"confidence_lt","threshold":0.8}}}' |
     retab workflows blocks update BLK --merge-config-file -
 
+For classifier top-margin review, the numeric field is ` + "`margin`" + `:
+
+  printf '{"review":{"predicate":{"kind":"top_margin_lt","margin":0.2}}}' |
+    retab workflows blocks update BLK --merge-config-file -
+
 Pass ` + "`{\"review\":null}`" + ` to remove review without touching anything else.
 
 The flags are mutually exclusive. Layout fields (` + "`position-*`" + `,
@@ -564,6 +571,10 @@ duplicate block ids.`,
 
   # Add consensus review to an extract or classifier block
   printf '{"n_consensus":3,"review":{"predicate":{"kind":"confidence_lt","threshold":0.8}}}' |
+    retab workflows blocks update block_def456 --merge-config-file -
+
+  # Add classifier top-margin review
+  printf '{"review":{"predicate":{"kind":"top_margin_lt","margin":0.2}}}' |
     retab workflows blocks update block_def456 --merge-config-file -
 
   # Rename a block's label
