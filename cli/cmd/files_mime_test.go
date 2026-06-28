@@ -168,7 +168,7 @@ func TestFilesUploadAlwaysEmitsMIMEType(t *testing.T) {
 					// direct upload PUT: accept the bytes.
 					seenPutContentType = r.Header.Get("Content-Type")
 					w.WriteHeader(http.StatusOK)
-				case r.Method == http.MethodPost && r.URL.Path == "/v1/files/upload/file_mime_qa/e2e/sdk-cli/complete":
+				case r.Method == http.MethodPost && r.URL.Path == "/v1/files/upload/file_mime_e2e/complete":
 					// complete-upload: reproduce the reported bug — the server
 					// response carries an EMPTY mime_type.
 					w.Header().Set("Content-Type", "application/json")
