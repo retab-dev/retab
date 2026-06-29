@@ -98,6 +98,7 @@ var workflowCLIOnlyCommands = map[string]string{
 	"workflows blocks api-calls run":     "local api_call dry-run renderer and opt-in executor",
 	"workflows blocks functions hydrate": "local function runtime scaffolding for pulled function bundles",
 	"workflows blocks functions run":     "local function runner for hydrated function bundles",
+	"workflows blocks stats get":         "dashboard block stats read, not in public generated Go SDK",
 	"workflows spec plan-to":             "workflows.Plan with an explicit workflow_id (existing-workflow plan route)",
 	"workflows spec apply-to":            "workflows.Apply with an explicit workflow_id (existing-workflow apply route)",
 	"workflows reviews schema":           "local schema helper composed from reviews get",
