@@ -579,7 +579,11 @@ particular block.
 Name the workflow either positionally (` + "`list <workflow-id>`" + `) or with
 the ` + "`--workflow-id`" + ` flag — the two forms are equivalent. Passing both
 is accepted when they agree; an error is raised only when they disagree. The
-workflow id is required: evals have no org-wide listing.`,
+workflow id is required: evals have no org-wide listing.
+
+Paginate by passing the cursor from a previous response's list_metadata:
+` + "`--after`" + ` for the next page, ` + "`--before`" + ` for the previous
+one. The two are mutually exclusive.`,
 	Example: `  # All evals in a workflow (positional)
   retab workflows evals list wf_abc123
 
@@ -602,11 +606,18 @@ workflow id is required: evals have no org-wide listing.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		req := retab.WorkflowEvalsListParams{WorkflowID: workflowID}
+		if err := validateBeforeAfterMutex(cmd); err != nil {
+			return err
+		}
+		req := retab.WorkflowEvalsListParams{
+			PaginationParams: collectListParams(cmd),
+			WorkflowID:       workflowID,
+		}
 		if v, _ := cmd.Flags().GetString("target-block-id"); v != "" {
 			req.TargetBlockID = ptr(v)
 		}
-		if v := getIntFlagOrDefault(cmd, "limit", 50); v > 0 {
+		if !cmd.Flags().Changed("limit") {
+			v := getIntFlagOrDefault(cmd, "limit", 50)
 			req.Limit = ptr(v)
 		}
 		result, err := client.Workflows.Evals.List(ctx, &req)
@@ -1433,6 +1444,9 @@ func init() {
 	workflowsEvalsListCmd.Flags().String("workflow-id", "", "workflow id (alternative to the positional form)")
 	workflowsEvalsListCmd.Flags().String("target-block-id", "", "filter by target block id")
 	workflowsEvalsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items (1-100; default 50)")
+	workflowsEvalsListCmd.Flags().String("before", "", "eval id: return items before this id (mutually exclusive with --after)")
+	workflowsEvalsListCmd.Flags().String("after", "", "eval id: return items after this id (mutually exclusive with --before)")
+	workflowsEvalsListCmd.Flags().Var(&orderFlagValue{}, "order", "asc | desc")
 
 	workflowsEvalsUpdateCmd.Flags().String("name", "", "new eval name")
 	workflowsEvalsUpdateCmd.Flags().String("assertion-file", "", "JSON file with new assertion (or - for stdin). Alternative to --output-handle-id/--path/--equals.")
