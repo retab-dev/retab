@@ -27,7 +27,7 @@ type workflowBlockConfigHistoryVersion struct {
 	FirstSeenAt                   string                            `json:"first_seen_at,omitempty"`
 	LastSeenAt                    string                            `json:"last_seen_at,omitempty"`
 	PublishEpochs                 []workflowBlockConfigPublishEpoch `json:"publish_epochs,omitempty"`
-	RunCount                      int                               `json:"run_count,omitempty"`
+	RunCount                      *int                              `json:"run_count,omitempty"`
 	MatchesCurrentDraft           bool                              `json:"matches_current_draft,omitempty"`
 	IsCurrentPublished            bool                              `json:"is_current_published,omitempty"`
 	IsCurrent                     bool                              `json:"is_current,omitempty"`

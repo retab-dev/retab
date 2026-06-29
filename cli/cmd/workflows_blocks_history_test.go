@@ -131,6 +131,15 @@ func TestWorkflowsBlocksHistoryRejectsConflictingWorkflowID(t *testing.T) {
 	}
 }
 
+func TestWorkflowsBlocksHistoryRunCountCellPreservesOmission(t *testing.T) {
+	if got := blockConfigHistoryCell(workflowBlockConfigHistoryVersion{}, "run_count"); got != "" {
+		t.Fatalf("omitted run_count cell = %q, want blank", got)
+	}
+	if got := blockConfigHistoryCell(workflowBlockConfigHistoryVersion{RunCount: ptr(3)}, "run_count"); got != "3" {
+		t.Fatalf("run_count cell = %q, want 3", got)
+	}
+}
+
 func writeBlockConfigHistoryTestResponse(t *testing.T, w http.ResponseWriter) {
 	t.Helper()
 	w.Header().Set("Content-Type", "application/json")
