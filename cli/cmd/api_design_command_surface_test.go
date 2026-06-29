@@ -25,7 +25,7 @@ func TestAPICommandSurfaceUsesCanonicalResourceActionNames(t *testing.T) {
 		"push": true, "query": true, "reject": true, "remove": true, "render": true, "replace": true, "restart": true, "restore": true, "results": true, "retry": true, "retrieve": true,
 		"reviews": true, "revoke": true, "run": true, "runs": true, "schema": true, "schemas": true, "secrets": true,
 		"set": true, "setup": true, "executions": true, "sources": true, "spec": true,
-		"splits": true, "status": true, "steps": true, "stream": true,
+		"splits": true, "stats": true, "status": true, "steps": true, "stream": true,
 		"switch": true, "sync": true, "tables": true, "templates": true, "evals": true, "update": true,
 		"upload": true, "validate": true, "value": true, "versions": true, "version": true,
 		"view": true, "wait": true, "which": true, "workflows": true,
