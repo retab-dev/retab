@@ -101,6 +101,8 @@ var workflowCLIOnlyCommands = map[string]string{
 	"workflows blocks history list":      "dashboard block config-history read, not in public generated Go SDK",
 	"workflows blocks runs list":         "block-scoped alias over workflows steps list",
 	"workflows blocks stats get":         "dashboard block stats read, not in public generated Go SDK",
+	"workflows stats get":                "dashboard workflow stats read, not in public generated Go SDK",
+	"workflows stats blocks get":         "dashboard block stats read alias, not in public generated Go SDK",
 	"workflows spec plan-to":             "workflows.Plan with an explicit workflow_id (existing-workflow plan route)",
 	"workflows spec apply-to":            "workflows.Apply with an explicit workflow_id (existing-workflow apply route)",
 	"workflows reviews schema":           "local schema helper composed from reviews get",
