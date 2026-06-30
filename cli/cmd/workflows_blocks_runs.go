@@ -45,6 +45,9 @@ func runWorkflowsBlocksRunsList(cmd *cobra.Command, args []string) error {
 	if err := validateBeforeAfterMutex(cmd); err != nil {
 		return err
 	}
+	if err := validateWorkflowBlockRunsListFilters(cmd); err != nil {
+		return err
+	}
 	workflowID, blockID, err := resolveWorkflowBlockScope(cmd, args, false, "runs")
 	if err != nil {
 		return err
@@ -60,7 +63,7 @@ func runWorkflowsBlocksRunsList(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	}
-	params := workflowBlockRunsListParams(cmd, blockID)
+	params := workflowBlockRunsListParams(cmd, workflowID, blockID)
 	result, err := client.Workflows.Steps.List(ctx, params)
 	if err != nil {
 		return err
@@ -68,18 +71,38 @@ func runWorkflowsBlocksRunsList(cmd *cobra.Command, args []string) error {
 	return printBlockRunsListResult(cmd, result)
 }
 
-func workflowBlockRunsListParams(cmd *cobra.Command, blockID string) *retab.WorkflowStepsListParams {
+func workflowBlockRunsListParams(cmd *cobra.Command, workflowID, blockID string) *retab.WorkflowStepsListParams {
 	params := &retab.WorkflowStepsListParams{
 		PaginationParams: collectListParams(cmd),
 		BlockID:          ptr(blockID),
+	}
+	if workflowID != "" {
+		params.WorkflowID = ptr(workflowID)
 	}
 	if runID, _ := cmd.Flags().GetString("run-id"); strings.TrimSpace(runID) != "" {
 		params.RunID = ptr(strings.TrimSpace(runID))
 	}
 	if status, _ := cmd.Flags().GetString("status"); strings.TrimSpace(status) != "" {
-		params.Status = []string{strings.TrimSpace(status)}
+		params.Status = []retab.WorkflowStepsStatus{retab.WorkflowStepsStatus(strings.TrimSpace(status))}
 	}
 	return params
+}
+
+var allowedWorkflowStepStatuses = map[string]bool{
+	"pending":         true,
+	"queued":          true,
+	"running":         true,
+	"completed":       true,
+	"awaiting_review": true,
+	"error":           true,
+	"skipped":         true,
+	"cancelled":       true,
+}
+
+const workflowStepStatusValues = "pending, queued, running, completed, awaiting_review, error, skipped, cancelled"
+
+func validateWorkflowBlockRunsListFilters(cmd *cobra.Command) error {
+	return validateEnumFlag(cmd, "status", allowedWorkflowStepStatuses, workflowStepStatusValues)
 }
 
 var blockRunColumns = []TableColumn{

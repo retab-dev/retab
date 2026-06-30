@@ -2,11 +2,12 @@
 from __future__ import annotations
 # ruff: noqa: F401
 
-from typing import Any
+from typing import Any, cast
 
 from retab._resource import AsyncAPIResource, SyncAPIResource
 from retab.types.standards import PreparedRequest
-from retab.types.pagination import AsyncPaginatedList, PaginatedList
+from retab.types.pagination import AsyncPaginatedList, PaginatedList, PaginationOrder
+from retab.types.classifications import WorkflowStepsStatus
 from retab.types.workflows.steps import WorkflowRunStep
 
 
@@ -16,24 +17,28 @@ class WorkflowStepsMixin:
     def prepare_list(
         self,
         run_id: str | None = None,
+        workflow_id: str | None = None,
         block_id: str | None = None,
         step_id: str | None = None,
         block_type: list[str] | None = None,
-        status: list[str] | None = None,
+        status: list[WorkflowStepsStatus] | None = None,
         before: str | None = None,
         after: str | None = None,
+        order: PaginationOrder | None = cast(PaginationOrder, "asc"),
         limit: int | None = 20,
         **extra_params: Any,
     ) -> PreparedRequest:
         """List Workflow Run Steps List steps with status and artifact summaries. Sorted by `started_at` ascending with `step_id` as the tiebreaker (the same compound key the underlying index uses). Pass `after` for the next page, `before` for the previous page — mutually exclusive. `run_id` is optional; when omitted the list is scoped to the caller's organization."""
         params: dict[str, Any] = {
             "run_id": run_id,
+            "workflow_id": workflow_id,
             "block_id": block_id,
             "step_id": step_id,
             "block_type": block_type,
             "status": status,
             "before": before,
             "after": after,
+            "order": order,
             "limit": limit,
         }
         if extra_params:
@@ -60,18 +65,30 @@ class WorkflowSteps(SyncAPIResource, WorkflowStepsMixin):
     def list(
         self,
         run_id: str | None = None,
+        workflow_id: str | None = None,
         block_id: str | None = None,
         step_id: str | None = None,
         block_type: list[str] | None = None,
-        status: list[str] | None = None,
+        status: list[WorkflowStepsStatus] | None = None,
         before: str | None = None,
         after: str | None = None,
+        order: PaginationOrder | None = cast(PaginationOrder, "asc"),
         limit: int | None = 20,
         **extra_params: Any,
     ) -> PaginatedList[WorkflowRunStep]:
         """List Workflow Run Steps List steps with status and artifact summaries. Sorted by `started_at` ascending with `step_id` as the tiebreaker (the same compound key the underlying index uses). Pass `after` for the next page, `before` for the previous page — mutually exclusive. `run_id` is optional; when omitted the list is scoped to the caller's organization."""
         prepared_request = self.prepare_list(
-            run_id=run_id, block_id=block_id, step_id=step_id, block_type=block_type, status=status, before=before, after=after, limit=limit, **extra_params
+            run_id=run_id,
+            workflow_id=workflow_id,
+            block_id=block_id,
+            step_id=step_id,
+            block_type=block_type,
+            status=status,
+            before=before,
+            after=after,
+            order=order,
+            limit=limit,
+            **extra_params,
         )
         return self.request_page(prepared_request, model=WorkflowRunStep)
 
@@ -88,18 +105,30 @@ class AsyncWorkflowSteps(AsyncAPIResource, WorkflowStepsMixin):
     async def list(
         self,
         run_id: str | None = None,
+        workflow_id: str | None = None,
         block_id: str | None = None,
         step_id: str | None = None,
         block_type: list[str] | None = None,
-        status: list[str] | None = None,
+        status: list[WorkflowStepsStatus] | None = None,
         before: str | None = None,
         after: str | None = None,
+        order: PaginationOrder | None = cast(PaginationOrder, "asc"),
         limit: int | None = 20,
         **extra_params: Any,
     ) -> AsyncPaginatedList[WorkflowRunStep]:
         """List Workflow Run Steps List steps with status and artifact summaries. Sorted by `started_at` ascending with `step_id` as the tiebreaker (the same compound key the underlying index uses). Pass `after` for the next page, `before` for the previous page — mutually exclusive. `run_id` is optional; when omitted the list is scoped to the caller's organization."""
         prepared_request = self.prepare_list(
-            run_id=run_id, block_id=block_id, step_id=step_id, block_type=block_type, status=status, before=before, after=after, limit=limit, **extra_params
+            run_id=run_id,
+            workflow_id=workflow_id,
+            block_id=block_id,
+            step_id=step_id,
+            block_type=block_type,
+            status=status,
+            before=before,
+            after=after,
+            order=order,
+            limit=limit,
+            **extra_params,
         )
         return await self.request_page(prepared_request, model=WorkflowRunStep)
 

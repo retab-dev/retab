@@ -2,6 +2,7 @@
 
 import type { Retab } from '../../retab.js';
 import { PaginatedList } from '../../_pagination.js';
+import type { WorkflowStepsStatus } from '../../common/interfaces/index.js';
 import type {
   WorkflowRunStep,
   WorkflowRunStepResponse,
@@ -14,10 +15,11 @@ export class WorkflowSteps {
   /** List Workflow Run Steps */
   async list(options?: {
     runId?: string | null | undefined;
+    workflowId?: string | null | undefined;
     blockId?: string | null | undefined;
     stepId?: string | null | undefined;
     blockType?: string[] | null | undefined;
-    status?: string[] | null | undefined;
+    status?: WorkflowStepsStatus[] | null | undefined;
     limit?: number;
     before?: string;
     after?: string;
@@ -28,6 +30,7 @@ export class WorkflowSteps {
       path: '/v1/workflows/steps',
       query: {
         run_id: options?.runId,
+        workflow_id: options?.workflowId,
         block_id: options?.blockId,
         step_id: options?.stepId,
         block_type: options?.blockType,

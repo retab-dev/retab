@@ -18,6 +18,8 @@ pub struct ListParams {
     /// Optional workflow run ID filter.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub run_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub workflow_id: Option<String>,
     /// Optional logical block ID filter.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub block_id: Option<String>,
@@ -29,13 +31,16 @@ pub struct ListParams {
     pub block_type: Option<Vec<String>>,
     /// Optional step lifecycle status filter. Repeat the query parameter for multiple values.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub status: Option<Vec<String>>,
+    pub status: Option<Vec<WorkflowStepsStatus>>,
     /// Step id cursor: return the page before this id (mutually exclusive with `after`).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub before: Option<String>,
     /// Step id cursor: return the page after this id (mutually exclusive with `before`).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub after: Option<String>,
+    /// Defaults to `asc`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub order: Option<WorkflowStepsOrder>,
     /// Maximum number of steps to return per page (1-1000). Each step hydrates its handle payloads from the artifact store, so raise it deliberately for larger pages and use cursor pagination for the rest.
     ///
     /// Defaults to `20`.
@@ -48,12 +53,14 @@ impl Default for ListParams {
     fn default() -> Self {
         Self {
             run_id: Default::default(),
+            workflow_id: Default::default(),
             block_id: Default::default(),
             step_id: Default::default(),
             block_type: Default::default(),
             status: Default::default(),
             before: Default::default(),
             after: Default::default(),
+            order: Some(WorkflowStepsOrder::Asc),
             limit: Some(20),
         }
     }

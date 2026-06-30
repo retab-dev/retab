@@ -91,6 +91,30 @@ func TestWorkflowsBlocksRunsListPassesRunAndStatusFilters(t *testing.T) {
 	}
 }
 
+func TestWorkflowsBlocksRunsRejectsInvalidStatus(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Fatalf("server should not be reached, got %s %s", r.Method, r.URL.Path)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := workflowsBlocksRunsListCmd.Flags().Set("status", "definitely_not_a_status"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { resetWorkflowBlockRunsFlag(t, workflowsBlocksRunsListCmd, "status") })
+
+	err := workflowsBlocksRunsListCmd.RunE(workflowsBlocksRunsListCmd, []string{"blk_extract"})
+	if err == nil {
+		t.Fatal("expected invalid status error")
+	}
+	if !strings.Contains(err.Error(), "invalid --status") {
+		t.Fatalf("error = %q", err.Error())
+	}
+}
+
 func TestWorkflowsBlocksRunsVerifiesWorkflowScopedBlock(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
@@ -116,6 +140,9 @@ func TestWorkflowsBlocksRunsVerifiesWorkflowScopedBlock(t *testing.T) {
 			stepsCount.Add(1)
 			if r.URL.Query().Get("block_id") != "blk_extract" {
 				t.Fatalf("steps query = %s, want block_id=blk_extract", r.URL.RawQuery)
+			}
+			if r.URL.Query().Get("workflow_id") != "wf_123" {
+				t.Fatalf("steps query = %s, want workflow_id=wf_123", r.URL.RawQuery)
 			}
 			writeBlockRunsTestResponse(t, w)
 		default:

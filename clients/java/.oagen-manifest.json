@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "java",
-  "generatedAt": "1970-01-01T00:00:00.000Z",
+  "generatedAt": "2026-06-30T22:56:40.600Z",
   "files": [
     "build.gradle.kts",
     "checkstyle.xml",
@@ -428,6 +428,7 @@
     "src/main/java/com/retab/types/WorkflowRunsExcludeStatus.java",
     "src/main/java/com/retab/types/WorkflowRunsStatus.java",
     "src/main/java/com/retab/types/WorkflowRunsTriggerType.java",
+    "src/main/java/com/retab/types/WorkflowStepsStatus.java",
     "src/main/java/com/retab/types/WorkflowTableAggregationFunction.java",
     "src/main/java/com/retab/types/WorkflowTableFilterOperator.java",
     "src/main/java/com/retab/types/WorkflowTableValidationColumnRuleType.java",
@@ -844,47 +845,47 @@
     },
     "GET /v1/workflows/evals": {
       "sdkMethod": "list",
-      "service": "workflows.evals"
+      "service": "workflowEvals"
     },
     "POST /v1/workflows/evals": {
       "sdkMethod": "create",
-      "service": "workflows.evals"
+      "service": "workflowEvals"
     },
     "GET /v1/workflows/evals/{eval_id}": {
       "sdkMethod": "get",
-      "service": "workflows.evals"
+      "service": "workflowEvals"
     },
     "PATCH /v1/workflows/evals/{eval_id}": {
       "sdkMethod": "update",
-      "service": "workflows.evals"
+      "service": "workflowEvals"
     },
     "DELETE /v1/workflows/evals/{eval_id}": {
       "sdkMethod": "delete",
-      "service": "workflows.evals"
+      "service": "workflowEvals"
     },
     "GET /v1/workflows/evals/results": {
       "sdkMethod": "list",
-      "service": "workflows.evals.results"
+      "service": "workflowEvalRunResults"
     },
     "GET /v1/workflows/evals/results/{result_id}": {
       "sdkMethod": "get",
-      "service": "workflows.evals.results"
+      "service": "workflowEvalRunResults"
     },
     "GET /v1/workflows/evals/runs": {
       "sdkMethod": "list",
-      "service": "workflows.evals.runs"
+      "service": "workflowEvalRuns"
     },
     "POST /v1/workflows/evals/runs": {
       "sdkMethod": "create",
-      "service": "workflows.evals.runs"
+      "service": "workflowEvalRuns"
     },
     "GET /v1/workflows/evals/runs/{run_id}": {
       "sdkMethod": "get",
-      "service": "workflows.evals.runs"
+      "service": "workflowEvalRuns"
     },
     "POST /v1/workflows/evals/runs/{run_id}/cancel": {
       "sdkMethod": "cancel",
-      "service": "workflows.evals.runs"
+      "service": "workflowEvalRuns"
     },
     "GET /v1/workflows/experiments": {
       "sdkMethod": "list",

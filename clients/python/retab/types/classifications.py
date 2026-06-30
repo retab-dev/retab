@@ -61,6 +61,17 @@ class WorkflowRunsTriggerType(str, Enum):
     RESTART = "restart"
 
 
+class WorkflowStepsStatus(str, Enum):
+    PENDING = "pending"
+    QUEUED = "queued"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    AWAITING_REVIEW = "awaiting_review"
+    ERROR = "error"
+    SKIPPED = "skipped"
+    CANCELLED = "cancelled"
+
+
 ClassificationStatus = EditsStatus
 
 

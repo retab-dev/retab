@@ -6,6 +6,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.retab.RetabClient;
 import com.retab.models.WorkflowRunStep;
+import com.retab.types.SortOrder;
+import com.retab.types.WorkflowStepsStatus;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -26,28 +28,32 @@ public final class WorkflowStepsApi {
   }
 
   public List<WorkflowRunStep> list() throws IOException, InterruptedException {
-    return list(null, null, null, null, null, null, null, null);
+    return list(null, null, null, null, null, null, null, null, null, null);
   }
 
   public List<WorkflowRunStep> list(
       String runId,
+      String workflowId,
       String blockId,
       String stepId,
       List<String> blockType,
-      List<String> status,
+      List<WorkflowStepsStatus> status,
       String before,
       String after,
+      SortOrder order,
       Long limit)
       throws IOException, InterruptedException {
     String path = "/v1/workflows/steps";
     StringBuilder query = new StringBuilder();
     appendQueryParam(query, "run_id", runId);
+    appendQueryParam(query, "workflow_id", workflowId);
     appendQueryParam(query, "block_id", blockId);
     appendQueryParam(query, "step_id", stepId);
     appendQueryParam(query, "block_type", blockType);
     appendQueryParam(query, "status", status);
     appendQueryParam(query, "before", before);
     appendQueryParam(query, "after", after);
+    appendQueryParam(query, "order", order);
     appendQueryParam(query, "limit", limit);
     URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();

@@ -25,35 +25,41 @@ class WorkflowSteps
      * `run_id` is optional; when omitted the list is scoped to the caller's
      * organization.
      * @param string|null $runId Optional workflow run ID filter.
+     * @param string|null $workflowId
      * @param string|null $blockId Optional logical block ID filter.
      * @param string|null $stepId Optional step ID filter.
      * @param array<string>|null $blockType Optional block type filter. Repeat the query parameter for multiple values.
-     * @param array<string>|null $status Optional step lifecycle status filter. Repeat the query parameter for multiple values.
+     * @param array<\Retab\Resource\WorkflowStepsStatus>|null $status Optional step lifecycle status filter. Repeat the query parameter for multiple values.
      * @param string|null $before Step id cursor: return the page before this id (mutually exclusive with `after`).
      * @param string|null $after Step id cursor: return the page after this id (mutually exclusive with `before`).
+     * @param \Retab\Resource\EditsOrder $order Defaults to "asc".
      * @param int|null $limit Maximum number of steps to return per page (1-1000). Each step hydrates its handle payloads from the artifact store, so raise it deliberately for larger pages and use cursor pagination for the rest. Defaults to 20.
      * @return \Retab\PaginatedResponse<\Retab\Resource\WorkflowRunStep>
      * @throws \Retab\Exception\RetabException
      */
     public function list(
         ?string $runId = null,
+        ?string $workflowId = null,
         ?string $blockId = null,
         ?string $stepId = null,
         ?array $blockType = null,
         ?array $status = null,
         ?string $before = null,
         ?string $after = null,
+        \Retab\Resource\EditsOrder $order = \Retab\Resource\EditsOrder::Asc,
         ?int $limit = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\PaginatedResponse {
         $query = array_filter([
             'run_id' => $runId,
+            'workflow_id' => $workflowId,
             'block_id' => $blockId,
             'step_id' => $stepId,
             'block_type' => $blockType,
-            'status' => $status,
+            'status' => $status !== null ? array_map(fn($item) => $item->value, $status) : null,
             'before' => $before,
             'after' => $after,
+            'order' => $order->value,
             'limit' => $limit,
         ], fn($v) => $v !== null);
         return $this->client->requestPage(
