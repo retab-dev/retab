@@ -19,13 +19,14 @@ type WorkflowExperimentService struct {
 // WorkflowExperimentsListParams contains the parameters for List.
 type WorkflowExperimentsListParams struct {
 	PaginationParams
-	WorkflowID string `url:"workflow_id" json:"-"`
+	WorkflowID string  `url:"workflow_id" json:"-"`
+	BlockID    *string `url:"block_id,omitempty" json:"-"`
 }
 
 // List experiments
 // List experiments under one workflow with cursor pagination.
-// Each experiment is returned with its latest-run snapshot, block info, and
-// drift detection.
+// Optionally filter by `block_id`. Each experiment is returned with its
+// latest-run snapshot, block info, and drift detection.
 func (s *WorkflowExperimentService) List(ctx context.Context, params *WorkflowExperimentsListParams, opts ...RequestOption) (*PaginatedList[WorkflowExperiment], error) {
 	if params == nil {
 		return nil, fmt.Errorf("retab: workflow_id is required")

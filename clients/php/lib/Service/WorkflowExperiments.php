@@ -38,9 +38,10 @@ class WorkflowExperiments
      *
      * List experiments under one workflow with cursor pagination.
      *
-     * Each experiment is returned with its latest-run snapshot, block info, and
-     * drift detection.
+     * Optionally filter by `block_id`. Each experiment is returned with its
+     * latest-run snapshot, block info, and drift detection.
      * @param string $workflowId
+     * @param string|null $blockId
      * @param string|null $before
      * @param string|null $after
      * @param int|null $limit Defaults to 50.
@@ -50,6 +51,7 @@ class WorkflowExperiments
      */
     public function list(
         string $workflowId,
+        ?string $blockId = null,
         ?string $before = null,
         ?string $after = null,
         ?int $limit = null,
@@ -58,6 +60,7 @@ class WorkflowExperiments
     ): \Retab\PaginatedResponse {
         $query = array_filter([
             'workflow_id' => $workflowId,
+            'block_id' => $blockId,
             'before' => $before,
             'after' => $after,
             'limit' => $limit,

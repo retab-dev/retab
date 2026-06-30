@@ -21,6 +21,7 @@ module Retab
     sig do
       params(
         workflow_id: String,
+        block_id: T.nilable(String),
         before: T.nilable(String),
         after: T.nilable(String),
         limit: T.nilable(Integer),
@@ -28,7 +29,7 @@ module Retab
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::PaginatedList[Retab::WorkflowExperiment])
     end
-    def list(workflow_id:, before:, after:, limit:, order:, request_options:); end
+    def list(workflow_id:, block_id:, before:, after:, limit:, order:, request_options:); end
 
     sig do
       params(

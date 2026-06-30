@@ -29,15 +29,17 @@ class WorkflowExperimentsMixin:
     def prepare_list(
         self,
         workflow_id: str,
+        block_id: str | None = None,
         before: str | None = None,
         after: str | None = None,
         limit: int | None = 50,
         order: PaginationOrder | None = cast(PaginationOrder, "desc"),
         **extra_params: Any,
     ) -> PreparedRequest:
-        """List Experiments List experiments under one workflow with cursor pagination. Each experiment is returned with its latest-run snapshot, block info, and drift detection."""
+        """List Experiments List experiments under one workflow with cursor pagination. Optionally filter by `block_id`. Each experiment is returned with its latest-run snapshot, block info, and drift detection."""
         params: dict[str, Any] = {
             "workflow_id": workflow_id,
+            "block_id": block_id,
             "before": before,
             "after": after,
             "limit": limit,
@@ -126,14 +128,15 @@ class WorkflowExperiments(SyncAPIResource, WorkflowExperimentsMixin):
     def list(
         self,
         workflow_id: str,
+        block_id: str | None = None,
         before: str | None = None,
         after: str | None = None,
         limit: int | None = 50,
         order: PaginationOrder | None = cast(PaginationOrder, "desc"),
         **extra_params: Any,
     ) -> PaginatedList[WorkflowExperiment]:
-        """List Experiments List experiments under one workflow with cursor pagination. Each experiment is returned with its latest-run snapshot, block info, and drift detection."""
-        prepared_request = self.prepare_list(workflow_id=workflow_id, before=before, after=after, limit=limit, order=order, **extra_params)
+        """List Experiments List experiments under one workflow with cursor pagination. Optionally filter by `block_id`. Each experiment is returned with its latest-run snapshot, block info, and drift detection."""
+        prepared_request = self.prepare_list(workflow_id=workflow_id, block_id=block_id, before=before, after=after, limit=limit, order=order, **extra_params)
         return self.request_page(prepared_request, model=WorkflowExperiment)
 
     def create(
@@ -200,14 +203,15 @@ class AsyncWorkflowExperiments(AsyncAPIResource, WorkflowExperimentsMixin):
     async def list(
         self,
         workflow_id: str,
+        block_id: str | None = None,
         before: str | None = None,
         after: str | None = None,
         limit: int | None = 50,
         order: PaginationOrder | None = cast(PaginationOrder, "desc"),
         **extra_params: Any,
     ) -> AsyncPaginatedList[WorkflowExperiment]:
-        """List Experiments List experiments under one workflow with cursor pagination. Each experiment is returned with its latest-run snapshot, block info, and drift detection."""
-        prepared_request = self.prepare_list(workflow_id=workflow_id, before=before, after=after, limit=limit, order=order, **extra_params)
+        """List Experiments List experiments under one workflow with cursor pagination. Optionally filter by `block_id`. Each experiment is returned with its latest-run snapshot, block info, and drift detection."""
+        prepared_request = self.prepare_list(workflow_id=workflow_id, block_id=block_id, before=before, after=after, limit=limit, order=order, **extra_params)
         return await self.request_page(prepared_request, model=WorkflowExperiment)
 
     async def create(

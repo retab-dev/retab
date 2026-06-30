@@ -24,6 +24,7 @@ module Retab
 
     # List Experiments
     # @param workflow_id [String]
+    # @param block_id [String, nil]
     # @param before [String, nil]
     # @param after [String, nil]
     # @param limit [Integer, nil]
@@ -32,6 +33,7 @@ module Retab
     # @return [Retab::PaginatedList<Retab::WorkflowExperiment>]
     def list(
       workflow_id:,
+      block_id: nil,
       before: nil,
       after: nil,
       limit: 50,
@@ -40,6 +42,7 @@ module Retab
     )
       params = {
         "workflow_id" => workflow_id,
+        "block_id" => block_id,
         "before" => before,
         "after" => after,
         "limit" => limit,
@@ -55,6 +58,7 @@ module Retab
       fetch_next = -> (cursor) {
         list(
           workflow_id: workflow_id,
+          block_id: block_id,
           before: before,
           after: cursor,
           limit: limit,
@@ -65,7 +69,7 @@ module Retab
       Retab::PaginatedList.from_response(
         response,
         model: Retab::WorkflowExperiment,
-        filters: {workflow_id: workflow_id, before: before, limit: limit, order: order},
+        filters: {workflow_id: workflow_id, block_id: block_id, before: before, limit: limit, order: order},
         fetch_next: fetch_next
       )
     end

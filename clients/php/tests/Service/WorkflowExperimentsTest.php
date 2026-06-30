@@ -17,13 +17,14 @@ class WorkflowExperimentsTest extends TestCase
     {
         $fixture = $this->loadFixture('list_workflow_experiment');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflows()->experiments()->list(workflowId: 'test_value', before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\EditsOrder::Asc);
+        $result = $client->workflows()->experiments()->list(workflowId: 'test_value', blockId: 'test_value', before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\EditsOrder::Asc);
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());
         $this->assertStringEndsWith('v1/workflows/experiments', $request->getUri()->getPath());
         parse_str($request->getUri()->getQuery(), $query);
         $this->assertSame('test_value', $query['workflow_id']);
+        $this->assertSame('test_value', $query['block_id']);
         $this->assertSame('test_value', $query['before']);
         $this->assertSame('test_value', $query['after']);
         $this->assertArrayHasKey('limit', $query);

@@ -21,6 +21,8 @@ pub struct ListParams {
     /// Required.
     pub workflow_id: String,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub block_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub before: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub after: Option<String>,
@@ -38,6 +40,7 @@ impl ListParams {
     pub fn new(workflow_id: impl Into<String>) -> Self {
         Self {
             workflow_id: workflow_id.into(),
+            block_id: Default::default(),
             before: Default::default(),
             after: Default::default(),
             limit: Some(50),
@@ -106,8 +109,8 @@ impl<'a> WorkflowExperimentsApi<'a> {
     ///
     /// List experiments under one workflow with cursor pagination.
     ///
-    /// Each experiment is returned with its latest-run snapshot, block info, and
-    /// drift detection.
+    /// Optionally filter by `block_id`. Each experiment is returned with its
+    /// latest-run snapshot, block info, and drift detection.
     pub async fn list(&self, params: ListParams) -> Result<WorkflowExperimentList, Error> {
         self.list_with_options(params, None).await
     }

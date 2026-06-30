@@ -29,8 +29,8 @@ namespace Retab
         /// <summary>List Experiments</summary>
         /// <remarks>
         /// List experiments under one workflow with cursor pagination.
-        /// Each experiment is returned with its latest-run snapshot, block info, and
-        /// drift detection.
+        /// Optionally filter by `block_id`. Each experiment is returned with its
+        /// latest-run snapshot, block info, and drift detection.
         /// </remarks>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>

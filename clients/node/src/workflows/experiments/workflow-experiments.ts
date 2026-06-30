@@ -33,6 +33,7 @@ export class WorkflowExperiments {
   /** List Experiments */
   async list(options: {
     workflowId: string;
+    blockId?: string | null | undefined;
     limit?: number;
     before?: string;
     after?: string;
@@ -43,6 +44,7 @@ export class WorkflowExperiments {
       path: '/v1/workflows/experiments',
       query: {
         workflow_id: options?.workflowId,
+        block_id: options?.blockId,
         limit: options?.limit,
         before: options?.before,
         after: options?.after,

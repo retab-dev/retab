@@ -50,11 +50,12 @@ public final class WorkflowExperimentsApi {
   }
 
   public List<WorkflowExperiment> list(
-      String workflowId, String before, String after, Long limit, SortOrder order)
+      String workflowId, String blockId, String before, String after, Long limit, SortOrder order)
       throws IOException, InterruptedException {
     String path = "/v1/workflows/experiments";
     StringBuilder query = new StringBuilder();
     appendQueryParam(query, "workflow_id", workflowId);
+    appendQueryParam(query, "block_id", blockId);
     appendQueryParam(query, "before", before);
     appendQueryParam(query, "after", after);
     appendQueryParam(query, "limit", limit);
