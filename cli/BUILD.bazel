@@ -17,16 +17,16 @@ filegroup(
 
 sh_test(
     name = "api_overlay_inventory_check",
-    srcs = ["//tools/bazel:run_api_surface_check.sh"],
+    srcs = ["//factory/bazel:run_api_surface_check.sh"],
     args = [
         "cli-overlay",
-        "$(location //open-source/docs/api-reference:openapi_json)",
-        "open-source/sdk/cli/api-overlay-inventory.json",
+        "$(location //public/docs/api-reference:openapi_json)",
+        "public/sdk/cli/api-overlay-inventory.json",
     ],
     data = [
         ":sources",
-        "//open-source/docs/api-reference:openapi_json",
-        "//tools/bazel:api_surface.py",
+        "//public/docs/api-reference:openapi_json",
+        "//factory/bazel:api_surface.py",
     ],
     tags = [
         "local",
@@ -37,12 +37,12 @@ sh_test(
 
 sh_binary(
     name = "api_overlay_inventory_update",
-    srcs = ["//tools/bazel:update_checked_contract_artifact.sh"],
+    srcs = ["//factory/bazel:update_checked_contract_artifact.sh"],
     args = [
         "cli-api-overlay-inventory",
-        "open-source/sdk/cli/api-overlay-inventory.json",
-        "//open-source/sdk/cli:api_overlay_inventory_check",
-        "//open-source/sdk/cli:api_overlay_contract_check",
+        "public/sdk/cli/api-overlay-inventory.json",
+        "//public/sdk/cli:api_overlay_inventory_check",
+        "//public/sdk/cli:api_overlay_contract_check",
         "//:api_surface_checks",
     ],
     data = [":api_overlay_inventory"],

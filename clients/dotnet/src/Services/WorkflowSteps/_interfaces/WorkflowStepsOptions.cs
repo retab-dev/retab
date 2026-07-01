@@ -11,6 +11,8 @@ namespace Retab
         /// <summary>Optional workflow run ID filter.</summary>
         public string? RunId { get; set; }
 
+        public string? WorkflowId { get; set; }
+
         /// <summary>Optional logical block ID filter.</summary>
         public string? BlockId { get; set; }
 
@@ -21,7 +23,7 @@ namespace Retab
         public List<string>? BlockType { get; set; }
 
         /// <summary>Optional step lifecycle status filter. Repeat the query parameter for multiple values.</summary>
-        public List<string>? Status { get; set; }
+        public List<WorkflowStepsStatus>? Status { get; set; }
 
     }
 

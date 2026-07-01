@@ -18,14 +18,13 @@ readonly class ClassificationConsensus implements \JsonSerializable
         public ?array $choices = null,
         /** Consensus likelihood score (0.0-1.0) of the winning classification. */
         public ?float $likelihoods = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
     {
         return new self(
-            choices: isset($data['choices']) ? array_map(fn ($item) => ClassificationDecision::fromArray($item), $data['choices']) : null,
+            choices: isset($data['choices']) ? array_map(fn($item) => ClassificationDecision::fromArray($item), $data['choices']) : null,
             likelihoods: $data['likelihoods'] ?? null,
         );
     }
@@ -34,7 +33,7 @@ readonly class ClassificationConsensus implements \JsonSerializable
     public function toArray(): array
     {
         return [
-            'choices' => $this->choices !== null ? array_map(fn ($item) => $item->toArray(), $this->choices) : null,
+            'choices' => $this->choices !== null ? array_map(fn($item) => $item->toArray(), $this->choices) : null,
             'likelihoods' => $this->likelihoods,
         ];
     }

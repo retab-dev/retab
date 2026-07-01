@@ -24,8 +24,7 @@ readonly class WorkflowTableRowsResponse implements \JsonSerializable
         public ?string $nextCursor = null,
         public ?string $previousCursor = null,
         public ?WorkflowTableExplain $explain = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -41,8 +40,8 @@ readonly class WorkflowTableRowsResponse implements \JsonSerializable
         return new self(
             tableId: $data['table_id'],
             rowCount: $data['row_count'],
-            columns: isset($data['columns']) ? array_map(fn ($item) => WorkflowTableColumn::fromArray($item), $data['columns']) : null,
-            rows: isset($data['rows']) ? array_map(fn ($item) => WorkflowTableRow::fromArray($item), $data['rows']) : null,
+            columns: isset($data['columns']) ? array_map(fn($item) => WorkflowTableColumn::fromArray($item), $data['columns']) : null,
+            rows: isset($data['rows']) ? array_map(fn($item) => WorkflowTableRow::fromArray($item), $data['rows']) : null,
             filteredRowCount: $data['filtered_row_count'] ?? null,
             offset: $data['offset'] ?? null,
             limit: $data['limit'] ?? null,
@@ -59,8 +58,8 @@ readonly class WorkflowTableRowsResponse implements \JsonSerializable
         return [
             'table_id' => $this->tableId,
             'row_count' => $this->rowCount,
-            'columns' => $this->columns !== null ? array_map(fn ($item) => $item->toArray(), $this->columns) : null,
-            'rows' => $this->rows !== null ? array_map(fn ($item) => $item->toArray(), $this->rows) : null,
+            'columns' => $this->columns !== null ? array_map(fn($item) => $item->toArray(), $this->columns) : null,
+            'rows' => $this->rows !== null ? array_map(fn($item) => $item->toArray(), $this->rows) : null,
             'filtered_row_count' => $this->filteredRowCount,
             'offset' => $this->offset,
             'limit' => $this->limit,

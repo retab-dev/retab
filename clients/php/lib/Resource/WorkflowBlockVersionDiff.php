@@ -16,8 +16,7 @@ readonly class WorkflowBlockVersionDiff implements \JsonSerializable
         public string $blockId,
         /** @var array<\Retab\Resource\WorkflowVersionFieldDiff>|null */
         public ?array $changes = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -35,7 +34,7 @@ readonly class WorkflowBlockVersionDiff implements \JsonSerializable
             fromBlockVersionId: $data['from_block_version_id'],
             toBlockVersionId: $data['to_block_version_id'],
             blockId: $data['block_id'],
-            changes: isset($data['changes']) ? array_map(fn ($item) => WorkflowVersionFieldDiff::fromArray($item), $data['changes']) : null,
+            changes: isset($data['changes']) ? array_map(fn($item) => WorkflowVersionFieldDiff::fromArray($item), $data['changes']) : null,
         );
     }
 
@@ -46,7 +45,7 @@ readonly class WorkflowBlockVersionDiff implements \JsonSerializable
             'from_block_version_id' => $this->fromBlockVersionId,
             'to_block_version_id' => $this->toBlockVersionId,
             'block_id' => $this->blockId,
-            'changes' => $this->changes !== null ? array_map(fn ($item) => $item->toArray(), $this->changes) : null,
+            'changes' => $this->changes !== null ? array_map(fn($item) => $item->toArray(), $this->changes) : null,
         ];
     }
 }

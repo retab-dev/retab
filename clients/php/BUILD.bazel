@@ -5,10 +5,10 @@ package(default_visibility = ["//visibility:public"])
 
 # Hermetic php-cs-fixer step for the sandboxed PHP SDK drift check.
 #
-# The generator (//.oagen-workspace/retab-gen:generated_php_sdk_raw) emits an
+# The generator (//factory/generators/oagen/retab-gen:generated_php_sdk_raw) emits an
 # UNFORMATTED PHP tree (lib/ + tests/ + composer.json + manifest). php-cs-fixer is
 # a PHP program, not in the oagen (Node) generator closure, so this step formats
-# the raw tree with //tools/bazel/php_cs_fixer_sdk_tree -- the vendored, pinned
+# the raw tree with //factory/bazel/php_cs_fixer_sdk_tree -- the vendored, pinned
 # static PHP 8.5.6 CLI running the pinned php-cs-fixer 3.95.2 PHAR -- mirroring how
 # the Node SDK reformats with vendored prettier, Go with gofmt, and Ruby with
 # rubyfmt. The committed .php-cs-fixer.dist.php config is passed in (it is NOT
@@ -19,20 +19,20 @@ package(default_visibility = ["//visibility:public"])
 run_binary(
     name = "generated_php_sdk_formatted",
     srcs = [
-        "//.oagen-workspace/retab-gen:generated_php_sdk_raw",
-        "//tools/bazel/php_cs_fixer_sdk_tree:static_php",
+        "//factory/generators/oagen/retab-gen:generated_php_sdk_raw",
+        "//factory/bazel/php_cs_fixer_sdk_tree:static_php",
         "@php_cs_fixer_phar//file",
         ".php-cs-fixer.dist.php",
     ],
     args = [
-        "$(execpath //tools/bazel/php_cs_fixer_sdk_tree:static_php)",
+        "$(execpath //factory/bazel/php_cs_fixer_sdk_tree:static_php)",
         "$(execpath @php_cs_fixer_phar//file)",
         "$(execpath .php-cs-fixer.dist.php)",
-        "$(execpath //.oagen-workspace/retab-gen:generated_php_sdk_raw)",
+        "$(execpath //factory/generators/oagen/retab-gen:generated_php_sdk_raw)",
         "$@",
     ],
     out_dirs = ["generated-php-formatted"],
-    tool = "//tools/bazel/php_cs_fixer_sdk_tree:format_php_sdk_tree",
+    tool = "//factory/bazel/php_cs_fixer_sdk_tree:format_php_sdk_tree",
 )
 
 # Stage the committed PHP SDK generated paths into a single TreeArtifact so the

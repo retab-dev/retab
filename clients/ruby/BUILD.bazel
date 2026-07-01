@@ -5,27 +5,27 @@ package(default_visibility = ["//visibility:public"])
 
 # Hermetic rubyfmt step for the sandboxed Ruby SDK drift check.
 #
-# The generator (//.oagen-workspace/retab-gen:generated_ruby_sdk_raw) emits an
+# The generator (//factory/generators/oagen/retab-gen:generated_ruby_sdk_raw) emits an
 # UNFORMATTED lib/ + rbi/ + test/ + Gemfile + retab.gemspec + manifest tree.
 # rubyfmt is not in the generator closure (it is a self-contained native binary,
 # not a gem), so this step formats that raw tree with the lockfile-pinned,
 # vendored rubyfmt binary (//MODULE.bazel: rubyfmt v0.14.0, platform-selected at
-# //tools/bazel/rubyfmt_sdk_tree:rubyfmt) -- mirroring how the Node SDK reformats
+# //factory/bazel/rubyfmt_sdk_tree:rubyfmt) -- mirroring how the Node SDK reformats
 # with its own vendored prettier and the Go SDK with gofmt. Only lib/ + test/ are
 # formatted (exactly the generator's rubyfmt command); rbi/ is emitted formatted.
 run_binary(
     name = "generated_ruby_sdk_formatted",
     srcs = [
-        "//.oagen-workspace/retab-gen:generated_ruby_sdk_raw",
-        "//tools/bazel/rubyfmt_sdk_tree:rubyfmt",
+        "//factory/generators/oagen/retab-gen:generated_ruby_sdk_raw",
+        "//factory/bazel/rubyfmt_sdk_tree:rubyfmt",
     ],
     args = [
-        "$(execpath //tools/bazel/rubyfmt_sdk_tree:rubyfmt)",
-        "$(execpath //.oagen-workspace/retab-gen:generated_ruby_sdk_raw)",
+        "$(execpath //factory/bazel/rubyfmt_sdk_tree:rubyfmt)",
+        "$(execpath //factory/generators/oagen/retab-gen:generated_ruby_sdk_raw)",
         "$@",
     ],
     out_dirs = ["generated-ruby-formatted"],
-    tool = "//tools/bazel/rubyfmt_sdk_tree:format_ruby_sdk_tree",
+    tool = "//factory/bazel/rubyfmt_sdk_tree:format_ruby_sdk_tree",
 )
 
 # Stage the committed Ruby SDK generated paths into a single TreeArtifact so the

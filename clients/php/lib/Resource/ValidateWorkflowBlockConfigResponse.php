@@ -16,8 +16,7 @@ readonly class ValidateWorkflowBlockConfigResponse implements \JsonSerializable
         public string $blockType,
         public string $configHash,
         public ?bool $ok = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

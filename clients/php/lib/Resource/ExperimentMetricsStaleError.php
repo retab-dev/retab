@@ -24,8 +24,7 @@ readonly class ExperimentMetricsStaleError implements \JsonSerializable
         public ?string $currentBlockExecutionFingerprint = null,
         public string $kind = 'stale_metrics',
         public string $error = 'stale_metrics',
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

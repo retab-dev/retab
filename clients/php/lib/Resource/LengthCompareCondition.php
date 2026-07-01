@@ -14,8 +14,7 @@ readonly class LengthCompareCondition implements \JsonSerializable
         public LengthCompareConditionOp $op,
         public int $expected,
         public string $kind = 'length_compare',
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

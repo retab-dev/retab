@@ -14,8 +14,7 @@ readonly class PublishWorkflowRequest implements \JsonSerializable
     public function __construct(
         /** Optional description for this published version */
         public ?string $description = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

@@ -32,8 +32,7 @@ readonly class LatestBlockEvalRunSummary implements \JsonSerializable
         public ?int $assertionsPassed = null,
         public ?int $assertionsFailed = null,
         public ?int $blockedAssertions = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

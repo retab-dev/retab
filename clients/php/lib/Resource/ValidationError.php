@@ -18,8 +18,7 @@ readonly class ValidationError implements \JsonSerializable
         public mixed $input = null,
         /** @var array<string, mixed>|null */
         public ?array $ctx = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

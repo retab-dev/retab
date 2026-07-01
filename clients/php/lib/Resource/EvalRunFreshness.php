@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
+/** Compatibility envelope on WorkflowEvalRun. This is not the authoritative stale/fresh verdict for saved eval definitions; use WorkflowEval.freshness for current staleness presentation. */
 readonly class EvalRunFreshness implements \JsonSerializable
 {
     use JsonSerializableTrait;
@@ -17,8 +18,7 @@ readonly class EvalRunFreshness implements \JsonSerializable
         public ?EvalRunFreshnessStatus $status = null,
         /** @var array<\Retab\Resource\EvalRunFreshnessReasons>|null */
         public ?array $reasons = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -37,7 +37,7 @@ readonly class EvalRunFreshness implements \JsonSerializable
             inputFingerprint: $data['input_fingerprint'] ?? null,
             baselineRunId: $data['baseline_run_id'] ?? null,
             status: isset($data['status']) ? EvalRunFreshnessStatus::from($data['status']) : null,
-            reasons: isset($data['reasons']) ? array_map(fn ($item) => EvalRunFreshnessReasons::from($item), $data['reasons']) : null,
+            reasons: isset($data['reasons']) ? array_map(fn($item) => EvalRunFreshnessReasons::from($item), $data['reasons']) : null,
         );
     }
 
@@ -49,7 +49,7 @@ readonly class EvalRunFreshness implements \JsonSerializable
             'input_fingerprint' => $this->inputFingerprint,
             'baseline_run_id' => $this->baselineRunId,
             'status' => $this->status?->value,
-            'reasons' => $this->reasons !== null ? array_map(fn ($item) => $item->value, $this->reasons) : null,
+            'reasons' => $this->reasons !== null ? array_map(fn($item) => $item->value, $this->reasons) : null,
         ];
     }
 }

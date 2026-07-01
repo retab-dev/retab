@@ -40,6 +40,7 @@ func TestWorkflowsBlocksCreateHelpShowsExtractReviewConfig(t *testing.T) {
 		`likelihoods.splits.invoice_type`,
 		`"n_consensus": 3`,
 		`"path": "likelihoods.invoice_total"`,
+		`top_margin_lt` + "` uses\n`margin`",
 	} {
 		if !strings.Contains(help, want) {
 			t.Fatalf("blocks create help should show review config fragment %q, got:\n%s", want, help)
@@ -137,6 +138,8 @@ func TestWorkflowsBlocksUpdateHelpShowsReviewConfig(t *testing.T) {
 		`n_consensus`,
 		`confidence_lt`,
 		`"threshold":0.8`,
+		`"kind":"top_margin_lt","margin":0.2`,
+		"the numeric field is `margin`",
 	} {
 		if !strings.Contains(help, want) {
 			t.Fatalf("blocks update help should show review config guidance %q, got:\n%s", want, help)
@@ -155,7 +158,9 @@ func TestWorkflowsBlocksUpdateRenderedHelpShowsConsensusPatch(t *testing.T) {
 	for _, want := range []string{
 		"For consensus-based review, patch both `n_consensus` and `review`",
 		`{"n_consensus":3,"review":{"predicate":{"kind":"confidence_lt","threshold":0.8}}}`,
+		`{"review":{"predicate":{"kind":"top_margin_lt","margin":0.2}}}`,
 		"Add consensus review to an extract or classifier block",
+		"Add classifier top-margin review",
 	} {
 		if !strings.Contains(help, want) {
 			t.Fatalf("rendered blocks update help should contain %q, got:\n%s", want, help)
@@ -342,6 +347,106 @@ func TestParseBlockCreatePreservesExplicitZeroPositions(t *testing.T) {
 	}
 	if req.PositionY == nil || *req.PositionY != 0 {
 		t.Fatalf("position_y = %v, want explicit 0 pointer", req.PositionY)
+	}
+}
+
+func TestParseBlockCreateDefaultsNoteDimensions(t *testing.T) {
+	req, err := parseBlockCreate(map[string]any{
+		"type": "note",
+	})
+	if err != nil {
+		t.Fatalf("note should be accepted, got error: %v", err)
+	}
+	if req.Width == nil || *req.Width != defaultNoteBlockWidth {
+		t.Fatalf("width = %v, want %v", req.Width, defaultNoteBlockWidth)
+	}
+	if req.Height == nil || *req.Height != defaultNoteBlockHeight {
+		t.Fatalf("height = %v, want %v", req.Height, defaultNoteBlockHeight)
+	}
+}
+
+func TestParseBlockCreateDefaultsZeroNoteDimensions(t *testing.T) {
+	req, err := parseBlockCreate(map[string]any{
+		"type":   "note",
+		"width":  float64(0),
+		"height": float64(0),
+	})
+	if err != nil {
+		t.Fatalf("note should be accepted, got error: %v", err)
+	}
+	if req.Width == nil || *req.Width != defaultNoteBlockWidth {
+		t.Fatalf("width = %v, want %v", req.Width, defaultNoteBlockWidth)
+	}
+	if req.Height == nil || *req.Height != defaultNoteBlockHeight {
+		t.Fatalf("height = %v, want %v", req.Height, defaultNoteBlockHeight)
+	}
+}
+
+func TestParseBlockCreatePreservesPositiveNoteDimensions(t *testing.T) {
+	req, err := parseBlockCreate(map[string]any{
+		"type":   "note",
+		"width":  float64(220),
+		"height": float64(80),
+	})
+	if err != nil {
+		t.Fatalf("note should be accepted, got error: %v", err)
+	}
+	if req.Width == nil || *req.Width != 220 {
+		t.Fatalf("width = %v, want 220", req.Width)
+	}
+	if req.Height == nil || *req.Height != 80 {
+		t.Fatalf("height = %v, want 80", req.Height)
+	}
+}
+
+func TestParseBlockCreateDefaultsContainerDimensions(t *testing.T) {
+	cases := []struct {
+		name       string
+		blockType  string
+		width      any
+		height     any
+		wantWidth  float64
+		wantHeight float64
+	}{
+		{name: "for_each omitted", blockType: "for_each", wantWidth: 800, wantHeight: 800},
+		{name: "while_loop omitted", blockType: "while_loop", wantWidth: 800, wantHeight: 800},
+		{name: "for_each zero", blockType: "for_each", width: float64(0), height: float64(0), wantWidth: 800, wantHeight: 800},
+		{name: "while_loop negative", blockType: "while_loop", width: float64(-1), height: float64(-2), wantWidth: 800, wantHeight: 800},
+		{name: "for_each below minimum clamps independently", blockType: "for_each", width: float64(799), height: float64(900), wantWidth: 800, wantHeight: 900},
+		{name: "while_loop above minimum is preserved", blockType: "while_loop", width: float64(950), height: float64(875), wantWidth: 950, wantHeight: 875},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			body := map[string]any{"type": tc.blockType}
+			if tc.width != nil {
+				body["width"] = tc.width
+			}
+			if tc.height != nil {
+				body["height"] = tc.height
+			}
+			req, err := parseBlockCreate(body)
+			if err != nil {
+				t.Fatalf("%s should be accepted, got error: %v", tc.blockType, err)
+			}
+			if req.Width == nil || *req.Width != tc.wantWidth {
+				t.Fatalf("width = %v, want %v", req.Width, tc.wantWidth)
+			}
+			if req.Height == nil || *req.Height != tc.wantHeight {
+				t.Fatalf("height = %v, want %v", req.Height, tc.wantHeight)
+			}
+		})
+	}
+}
+
+func TestParseBlockCreateLeavesRegularBlockDimensionsUnset(t *testing.T) {
+	req, err := parseBlockCreate(map[string]any{
+		"type": "extract",
+	})
+	if err != nil {
+		t.Fatalf("extract should be accepted, got error: %v", err)
+	}
+	if req.Width != nil || req.Height != nil {
+		t.Fatalf("regular block should not get default dimensions, got width=%v height=%v", req.Width, req.Height)
 	}
 }
 

@@ -15,8 +15,7 @@ readonly class ReviewCategoryIn implements \JsonSerializable
         /** @var array<string> */
         public array $categories,
         public string $kind = 'category_in',
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

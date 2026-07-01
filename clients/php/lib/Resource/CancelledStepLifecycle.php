@@ -15,8 +15,7 @@ readonly class CancelledStepLifecycle implements \JsonSerializable
         /** Reason the step was cancelled */
         public string $reason,
         public string $status = 'cancelled',
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

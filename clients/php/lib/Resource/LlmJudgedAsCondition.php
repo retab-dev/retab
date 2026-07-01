@@ -14,8 +14,7 @@ readonly class LlmJudgedAsCondition implements \JsonSerializable
         public string $rubric,
         public ?string $expectedLabel = null,
         public string $kind = 'llm_judged_as',
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

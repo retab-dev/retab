@@ -44,8 +44,7 @@ readonly class SplitWorkflowArtifact implements \JsonSerializable
         public ?RetabUsage $usage = null,
         /** The operation that produced this artifact */
         public string $operation = 'split',
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -65,11 +64,11 @@ readonly class SplitWorkflowArtifact implements \JsonSerializable
             id: $data['id'],
             file: FileRef::fromArray($data['file']),
             model: $data['model'],
-            subdocuments: array_map(fn ($item) => Subdocument::fromArray($item), $data['subdocuments']),
+            subdocuments: array_map(fn($item) => Subdocument::fromArray($item), $data['subdocuments']),
             createdAt: new \DateTimeImmutable($data['created_at']),
             nConsensus: $data['n_consensus'] ?? null,
             instructions: $data['instructions'] ?? null,
-            output: isset($data['output']) ? array_map(fn ($item) => SplitResult::fromArray($item), $data['output']) : null,
+            output: isset($data['output']) ? array_map(fn($item) => SplitResult::fromArray($item), $data['output']) : null,
             status: isset($data['status']) ? EditStatus::from($data['status']) : null,
             error: isset($data['error']) ? PrimitiveError::fromArray($data['error']) : null,
             consensus: isset($data['consensus']) ? SplitConsensus::fromArray($data['consensus']) : null,
@@ -85,11 +84,11 @@ readonly class SplitWorkflowArtifact implements \JsonSerializable
             'id' => $this->id,
             'file' => $this->file->toArray(),
             'model' => $this->model,
-            'subdocuments' => array_map(fn ($item) => $item->toArray(), $this->subdocuments),
+            'subdocuments' => array_map(fn($item) => $item->toArray(), $this->subdocuments),
             'created_at' => $this->createdAt->format(\DateTimeInterface::RFC3339_EXTENDED),
             'n_consensus' => $this->nConsensus,
             'instructions' => $this->instructions,
-            'output' => $this->output !== null ? array_map(fn ($item) => $item->toArray(), $this->output) : null,
+            'output' => $this->output !== null ? array_map(fn($item) => $item->toArray(), $this->output) : null,
             'status' => $this->status?->value,
             'error' => $this->error?->toArray(),
             'consensus' => $this->consensus?->toArray(),

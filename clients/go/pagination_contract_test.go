@@ -13,7 +13,7 @@ import (
 
 // TestPaginationContract is a runtime-introspection regression test that
 // catches future drift away from the centralized doPaginated[T] helper. See
-// .notes/blueprints/sdk-pagination-contract.md for the contract this enforces.
+// docs/blueprints/sdk-pagination-contract.md for the contract this enforces.
 //
 // It walks every *Service exposed on *Client via reflection, finds all
 // `.List(...)` methods returning `*PaginatedList[T]`, and asserts each one
@@ -32,7 +32,7 @@ import (
 func TestPaginationContract(t *testing.T) {
 	// Allowlist: List methods that intentionally bypass doPaginated[T].
 	// Any new entry here MUST also be documented in
-	// .notes/blueprints/sdk-pagination-contract.md under "Acceptable exceptions".
+	// docs/blueprints/sdk-pagination-contract.md under "Acceptable exceptions".
 	knownBypass := map[string]string{
 		"Workflows.Artifacts.List": "dual-shape (envelope OR bare array) — uses decodeArtifactListResponse",
 		"Workflows.Blocks.List":    "dual-shape envelope-or-array decoder",

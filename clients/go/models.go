@@ -909,7 +909,7 @@ type EvalRunBlockTarget struct {
 	BlockID string  `json:"block_id"`
 }
 
-// EvalRunFreshness represents an eval run freshness.
+// EvalRunFreshness compatibility envelope on WorkflowEvalRun. This is not the authoritative stale/fresh verdict for saved eval definitions; use WorkflowEval.freshness for current staleness presentation.
 type EvalRunFreshness struct {
 	Status              *EvalRunFreshnessStatus   `json:"status,omitempty"`
 	Reasons             []EvalRunFreshnessReasons `json:"reasons,omitempty"`
@@ -2425,7 +2425,8 @@ type WorkflowEvalRun struct {
 	EvalID            *string                        `json:"eval_id,omitempty"`
 	TotalEvals        int                            `json:"total_evals"`
 	Counts            *BlockEvalBatchExecutionCounts `json:"counts,omitempty"`
-	Freshness         *EvalRunFreshness              `json:"freshness,omitempty"`
+	// Freshness is compatibility envelope only. WorkflowEval.freshness is the authoritative read-time staleness verdict for saved eval definitions.
+	Freshness *EvalRunFreshness `json:"freshness,omitempty"`
 }
 
 // WorkflowEvalRunBlockScope run every workflow eval for one block in the workflow.
@@ -2467,7 +2468,7 @@ type WorkflowExperiment struct {
 	IsStale                 *bool                             `json:"is_stale,omitempty"`
 	Freshness               *ArtifactFreshness                `json:"freshness,omitempty"`
 	FreshnessState          *WorkflowExperimentFreshnessState `json:"freshness_state,omitempty"`
-	FreshnessReasons        []string                          `json:"freshness_reasons"`
+	FreshnessReasons        []string                          `json:"freshness_reasons,omitempty"`
 	RunPlanMode             *WorkflowExperimentRunPlanMode    `json:"run_plan_mode,omitempty"`
 	RerunnableDocumentCount *int                              `json:"rerunnable_document_count,omitempty"`
 	SchemaDrift             *ExperimentSchemaDriftStatus      `json:"schema_drift,omitempty"`

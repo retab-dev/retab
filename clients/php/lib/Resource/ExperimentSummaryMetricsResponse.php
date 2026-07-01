@@ -29,8 +29,7 @@ readonly class ExperimentSummaryMetricsResponse implements \JsonSerializable
         public ?string $priorRunId = null,
         public string $kind = 'summary',
         public string $view = 'summary',
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -51,8 +50,12 @@ readonly class ExperimentSummaryMetricsResponse implements \JsonSerializable
             blockExecutionFingerprint: $data['block_execution_fingerprint'] ?? null,
             score: $data['score'] ?? null,
             priorScore: $data['prior_score'] ?? null,
-            documents: isset($data['documents']) ? array_map(fn ($item) => ExperimentSummaryMetricDocument::fromArray($item), $data['documents']) : null,
-            aggregate: isset($data['aggregate']) ? (static function (array $__value) { return match (true) { array_intersect_key($__value, ['likelihoods' => true]) !== [] => ExperimentExtractSummaryAggregate::fromArray($__value), array_intersect_key($__value, ['diag' => true, 'flows' => true]) !== [] => ExperimentConfusionSummaryAggregate::fromArray($__value), default => ExperimentExtractSummaryAggregate::fromArray($__value), }; })($data['aggregate']) : null,
+            documents: isset($data['documents']) ? array_map(fn($item) => ExperimentSummaryMetricDocument::fromArray($item), $data['documents']) : null,
+            aggregate: isset($data['aggregate']) ? (static function (array $__value) {
+                return match (true) {
+                    array_intersect_key($__value, ['likelihoods' => true]) !== [] => ExperimentExtractSummaryAggregate::fromArray($__value), array_intersect_key($__value, ['diag' => true, 'flows' => true]) !== [] => ExperimentConfusionSummaryAggregate::fromArray($__value), default => ExperimentExtractSummaryAggregate::fromArray($__value),
+                };
+            })($data['aggregate']) : null,
             priorRunId: $data['prior_run_id'] ?? null,
             kind: $data['kind'] ?? 'summary',
             view: $data['view'] ?? 'summary',
@@ -69,7 +72,7 @@ readonly class ExperimentSummaryMetricsResponse implements \JsonSerializable
             'block_execution_fingerprint' => $this->blockExecutionFingerprint,
             'score' => $this->score,
             'prior_score' => $this->priorScore,
-            'documents' => $this->documents !== null ? array_map(fn ($item) => $item->toArray(), $this->documents) : null,
+            'documents' => $this->documents !== null ? array_map(fn($item) => $item->toArray(), $this->documents) : null,
             'aggregate' => $this->aggregate?->toArray(),
             'prior_run_id' => $this->priorRunId,
             'kind' => $this->kind,

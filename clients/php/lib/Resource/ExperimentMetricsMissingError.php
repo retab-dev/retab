@@ -16,8 +16,7 @@ readonly class ExperimentMetricsMissingError implements \JsonSerializable
         public string $message,
         public string $kind = 'no_metrics',
         public string $error = 'no_metrics',
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

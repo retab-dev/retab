@@ -15,8 +15,7 @@ readonly class UpdateWorkflowEvalRequest implements \JsonSerializable
         public ?string $name = null,
         public ?AssertionSpec $assertion = null,
         public ManualWorkflowEvalSource|RunStepWorkflowEvalSource|null $source = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -24,7 +23,9 @@ readonly class UpdateWorkflowEvalRequest implements \JsonSerializable
         return new self(
             name: $data['name'] ?? null,
             assertion: isset($data['assertion']) ? AssertionSpec::fromArray($data['assertion']) : null,
-            source: isset($data['source']) ? match ($data['source']['type'] ?? null) { 'manual' => ManualWorkflowEvalSource::fromArray($data['source']), 'run_step' => RunStepWorkflowEvalSource::fromArray($data['source']), default => throw new \UnexpectedValueException(sprintf('Unknown type: %s', json_encode($data['source']['type'] ?? null))), } : null,
+            source: isset($data['source']) ? match ($data['source']['type'] ?? null) {
+                'manual' => ManualWorkflowEvalSource::fromArray($data['source']), 'run_step' => RunStepWorkflowEvalSource::fromArray($data['source']), default => throw new \UnexpectedValueException(sprintf('Unknown type: %s', json_encode($data['source']['type'] ?? null))),
+            } : null,
         );
     }
 

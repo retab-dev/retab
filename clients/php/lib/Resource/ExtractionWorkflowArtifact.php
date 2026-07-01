@@ -46,8 +46,7 @@ readonly class ExtractionWorkflowArtifact implements \JsonSerializable
         public ?\DateTimeImmutable $createdAt = null,
         /** The operation that produced this artifact */
         public string $operation = 'extraction',
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

@@ -5,22 +5,22 @@ package(default_visibility = ["//visibility:public"])
 
 # Hermetic gofmt step for the sandboxed Go SDK drift check.
 #
-# The generator (//.oagen-workspace/retab-gen:generated_go_sdk_raw) emits an
+# The generator (//factory/generators/oagen/retab-gen:generated_go_sdk_raw) emits an
 # UNFORMATTED root *.go + go.mod + manifest tree. gofmt is not in the generator
-# closure, so this step formats that raw tree with //tools/bazel/gofmt_sdk_tree --
+# closure, so this step formats that raw tree with //factory/bazel/gofmt_sdk_tree --
 # a rules_go go_binary that runs go/format.Source (the exact gofmt engine) on the
 # pinned, hermetic Go toolchain -- mirroring how the Node SDK reformats with its
 # own vendored prettier. The generator already emits `any` (not `interface{}`),
 # so plain gofmt (no -s simplify, no -r rewrites) reproduces the committed SDK.
 run_binary(
     name = "generated_go_sdk_formatted",
-    srcs = ["//.oagen-workspace/retab-gen:generated_go_sdk_raw"],
+    srcs = ["//factory/generators/oagen/retab-gen:generated_go_sdk_raw"],
     args = [
-        "$(execpath //.oagen-workspace/retab-gen:generated_go_sdk_raw)",
+        "$(execpath //factory/generators/oagen/retab-gen:generated_go_sdk_raw)",
         "$@",
     ],
     out_dirs = ["generated-go-formatted"],
-    tool = "//tools/bazel/gofmt_sdk_tree:gofmt_sdk_tree",
+    tool = "//factory/bazel/gofmt_sdk_tree:gofmt_sdk_tree",
 )
 
 # Stage the committed Go SDK generated paths into a single TreeArtifact so the

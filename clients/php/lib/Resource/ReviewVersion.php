@@ -22,8 +22,7 @@ readonly class ReviewVersion implements \JsonSerializable
         public \DateTimeImmutable $createdAt,
         public ?string $parentId = null,
         public ?string $note = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

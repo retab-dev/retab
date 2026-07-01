@@ -99,10 +99,10 @@ module Retab
     sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
     def freshness_state=(value); end
 
-    sig { returns(T::Array[String]) }
+    sig { returns(T.nilable(T::Array[String])) }
     def freshness_reasons; end
 
-    sig { params(value: T::Array[String]).returns(T::Array[String]) }
+    sig { params(value: T.nilable(T::Array[String])).returns(T.nilable(T::Array[String])) }
     def freshness_reasons=(value); end
 
     sig { returns(T.nilable(String)) }

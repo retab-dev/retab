@@ -18,8 +18,7 @@ readonly class DeclarativePlanSummary implements \JsonSerializable
         public ?int $noop = null,
         public ?int $total = null,
         public ?bool $hasChanges = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

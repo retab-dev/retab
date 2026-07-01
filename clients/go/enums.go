@@ -773,3 +773,20 @@ type WorkflowRunsTriggerType = WorkflowExportPayloadRequestTriggerType
 
 // WorkflowRunsOrder is an alias for ClassificationsOrder.
 type WorkflowRunsOrder = ClassificationsOrder
+
+// WorkflowStepsStatus represents workflow steps status values.
+type WorkflowStepsStatus string
+
+const (
+	WorkflowStepsStatusPending        WorkflowStepsStatus = "pending"
+	WorkflowStepsStatusQueued         WorkflowStepsStatus = "queued"
+	WorkflowStepsStatusRunning        WorkflowStepsStatus = "running"
+	WorkflowStepsStatusCompleted      WorkflowStepsStatus = "completed"
+	WorkflowStepsStatusAwaitingReview WorkflowStepsStatus = "awaiting_review"
+	WorkflowStepsStatusError          WorkflowStepsStatus = "error"
+	WorkflowStepsStatusSkipped        WorkflowStepsStatus = "skipped"
+	WorkflowStepsStatusCancelled      WorkflowStepsStatus = "cancelled"
+)
+
+// WorkflowStepsOrder is an alias for ClassificationsOrder.
+type WorkflowStepsOrder = ClassificationsOrder

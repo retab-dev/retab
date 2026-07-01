@@ -5,10 +5,10 @@ package(default_visibility = ["//visibility:public"])
 
 # Hermetic rustfmt step for the sandboxed Rust SDK drift check.
 #
-# The generator (//.oagen-workspace/retab-gen:generated_rust_sdk_raw) emits an
+# The generator (//factory/generators/oagen/retab-gen:generated_rust_sdk_raw) emits an
 # UNFORMATTED Rust tree (src/** + Cargo.toml + tests + manifest). rustfmt is not
 # in the oagen (Node) generator closure, so this step formats the raw tree with
-# the lockfile-pinned, vendored rustfmt binary via //tools/bazel/rustfmt_sdk_tree
+# the lockfile-pinned, vendored rustfmt binary via //factory/bazel/rustfmt_sdk_tree
 # -- mirroring how the Node SDK reformats with its own vendored prettier, Go with
 # gofmt, and Python with ruff. rustfmt is NOT self-contained (it dynamically
 # loads librustc_driver from the rustc component's lib/), so the pinned rustc
@@ -22,18 +22,18 @@ package(default_visibility = ["//visibility:public"])
 run_binary(
     name = "generated_rust_sdk_formatted",
     srcs = [
-        "//.oagen-workspace/retab-gen:generated_rust_sdk_raw",
-        "//tools/bazel/rustfmt_sdk_tree:rustfmt",
-        "//tools/bazel/rustfmt_sdk_tree:rustc_lib",
+        "//factory/generators/oagen/retab-gen:generated_rust_sdk_raw",
+        "//factory/bazel/rustfmt_sdk_tree:rustfmt",
+        "//factory/bazel/rustfmt_sdk_tree:rustc_lib",
     ],
     args = [
-        "$(execpath //tools/bazel/rustfmt_sdk_tree:rustfmt)",
-        "$(execpath //.oagen-workspace/retab-gen:generated_rust_sdk_raw)",
+        "$(execpath //factory/bazel/rustfmt_sdk_tree:rustfmt)",
+        "$(execpath //factory/generators/oagen/retab-gen:generated_rust_sdk_raw)",
         "$@",
-        "$(execpaths //tools/bazel/rustfmt_sdk_tree:rustc_lib)",
+        "$(execpaths //factory/bazel/rustfmt_sdk_tree:rustc_lib)",
     ],
     out_dirs = ["generated-rust-formatted"],
-    tool = "//tools/bazel/rustfmt_sdk_tree:format_rust_sdk_tree",
+    tool = "//factory/bazel/rustfmt_sdk_tree:format_rust_sdk_tree",
 )
 
 # Stage the committed Rust SDK generated paths into a single TreeArtifact so the

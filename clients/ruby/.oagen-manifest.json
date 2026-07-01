@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "ruby",
-  "generatedAt": "2026-06-24T00:04:52.941Z",
+  "generatedAt": "2026-06-30T22:56:50.801Z",
   "files": [
     "Gemfile",
     "lib/retab.rb",
@@ -260,6 +260,8 @@
     "lib/retab/types/workflow_runs_order.rb",
     "lib/retab/types/workflow_runs_status.rb",
     "lib/retab/types/workflow_runs_trigger_type.rb",
+    "lib/retab/types/workflow_steps_order.rb",
+    "lib/retab/types/workflow_steps_status.rb",
     "lib/retab/types/workflow_table_aggregation_function.rb",
     "lib/retab/types/workflow_table_filter_operator.rb",
     "lib/retab/types/workflow_table_sort_direction.rb",

@@ -24,8 +24,7 @@ readonly class RunTiming implements \JsonSerializable
         public ?\DateTimeImmutable $startedAt = null,
         /** When the run finished executing */
         public ?\DateTimeImmutable $completedAt = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

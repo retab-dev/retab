@@ -33,8 +33,7 @@ readonly class ConditionEvaluationSubCondition implements \JsonSerializable
          * @var array<\Retab\Resource\ConditionEvaluationPerItem>|null
          */
         public ?array $items = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -46,7 +45,7 @@ readonly class ConditionEvaluationSubCondition implements \JsonSerializable
             expected: $data['expected'] ?? null,
             actual: $data['actual'] ?? null,
             matched: $data['matched'] ?? null,
-            items: isset($data['items']) ? array_map(fn ($item) => ConditionEvaluationPerItem::fromArray($item), $data['items']) : null,
+            items: isset($data['items']) ? array_map(fn($item) => ConditionEvaluationPerItem::fromArray($item), $data['items']) : null,
         );
     }
 
@@ -60,7 +59,7 @@ readonly class ConditionEvaluationSubCondition implements \JsonSerializable
             'expected' => $this->expected,
             'actual' => $this->actual,
             'matched' => $this->matched,
-            'items' => $this->items !== null ? array_map(fn ($item) => $item->toArray(), $this->items) : null,
+            'items' => $this->items !== null ? array_map(fn($item) => $item->toArray(), $this->items) : null,
         ];
     }
 }

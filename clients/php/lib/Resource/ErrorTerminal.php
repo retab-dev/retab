@@ -23,8 +23,7 @@ readonly class ErrorTerminal implements \JsonSerializable
         /** Step ID of the failing step, when the failure was attributable to a specific step */
         public ?string $failingStepId = null,
         public string $status = 'error',
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

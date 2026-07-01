@@ -13,8 +13,7 @@ readonly class BlockExecJsonHandleInput implements \JsonSerializable
     public function __construct(
         public mixed $data = null,
         public string $type = 'json',
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

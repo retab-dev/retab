@@ -18,8 +18,7 @@ readonly class AwaitingReviewRun implements \JsonSerializable
          */
         public ?array $waitingForBlockIds = null,
         public string $status = 'awaiting_review',
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

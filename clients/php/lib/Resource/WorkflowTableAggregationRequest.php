@@ -14,8 +14,7 @@ readonly class WorkflowTableAggregationRequest implements \JsonSerializable
         public WorkflowTableAggregationFunction $function,
         public ?string $column = null,
         public ?string $alias = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

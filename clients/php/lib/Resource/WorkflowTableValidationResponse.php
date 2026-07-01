@@ -15,8 +15,7 @@ readonly class WorkflowTableValidationResponse implements \JsonSerializable
         /** @var array<\Retab\Resource\WorkflowTableValidationDiagnostic>|null */
         public ?array $diagnostics = null,
         public ?bool $hasErrors = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -30,7 +29,7 @@ readonly class WorkflowTableValidationResponse implements \JsonSerializable
         }
         return new self(
             tableId: $data['table_id'],
-            diagnostics: isset($data['diagnostics']) ? array_map(fn ($item) => WorkflowTableValidationDiagnostic::fromArray($item), $data['diagnostics']) : null,
+            diagnostics: isset($data['diagnostics']) ? array_map(fn($item) => WorkflowTableValidationDiagnostic::fromArray($item), $data['diagnostics']) : null,
             hasErrors: $data['has_errors'] ?? null,
         );
     }
@@ -40,7 +39,7 @@ readonly class WorkflowTableValidationResponse implements \JsonSerializable
     {
         return [
             'table_id' => $this->tableId,
-            'diagnostics' => $this->diagnostics !== null ? array_map(fn ($item) => $item->toArray(), $this->diagnostics) : null,
+            'diagnostics' => $this->diagnostics !== null ? array_map(fn($item) => $item->toArray(), $this->diagnostics) : null,
             'has_errors' => $this->hasErrors,
         ];
     }

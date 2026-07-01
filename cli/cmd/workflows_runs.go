@@ -888,9 +888,12 @@ func resolveWorkflowRunDocumentAliases(
 	if len(documents) == 0 {
 		return documents, nil
 	}
-	if !shouldResolveWorkflowRunDocumentAliases(documents) {
-		return documents, nil
-	}
+	// Always list the workflow's blocks before resolving keys. An earlier
+	// optimization skipped this when every key already looked like a canonical
+	// "block_..." id, but that is unsound now that a "block_" key can be a
+	// declarative_source_block_id alias (e.g. "block_document" -> the generated
+	// start_document block): the client cannot tell an alias from a real id
+	// without the block list, so it must always resolve.
 	blocks, err := listAllWorkflowBlocks(ctx, client, workflowID)
 	if err != nil {
 		return nil, fmt.Errorf("resolve workflow run document aliases: %w", err)
@@ -915,15 +918,6 @@ func resolveWorkflowRunDocumentAliases(
 		resolved[resolvedKey] = value
 	}
 	return resolved, nil
-}
-
-func shouldResolveWorkflowRunDocumentAliases(documents map[string]any) bool {
-	for key := range documents {
-		if key == "start" || strings.HasPrefix(key, "block_b_") || !strings.HasPrefix(key, "block_") {
-			return true
-		}
-	}
-	return false
 }
 
 func resolveWorkflowRunDocumentKey(key string, blockIDs map[string]bool, startDocumentBlocks []retab.WorkflowBlock) (string, error) {

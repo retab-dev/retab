@@ -23,8 +23,7 @@ readonly class SchemaGeneration implements \JsonSerializable
         public ?EditStatus $status = null,
         /** Error details when a background run fails; null otherwise. Always present so consumers can read it without an existence check. */
         public ?PrimitiveError $error = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

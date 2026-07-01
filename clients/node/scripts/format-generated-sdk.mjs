@@ -1,6 +1,6 @@
 // Hermetic prettier-format step for the sandboxed Node SDK drift check.
 //
-// The generator (//.oagen-workspace/retab-gen:generated_node_sdk_raw) emits an
+// The generator (//factory/generators/oagen/retab-gen:generated_node_sdk_raw) emits an
 // UNFORMATTED SDK tree (src/ + .oagen-manifest.json) in a network-free Bazel
 // sandbox. Prettier is NOT part of the generator's dependency closure, so this
 // downstream step formats that raw tree with the Node SDK client's OWN vendored
@@ -126,7 +126,7 @@ for (const file of files) {
     if (fileMetadata.isSymbolicLink()) {
       rmSync(file);
     } else {
-      chmodSync(file, 0o644);
+      rmSync(file, { force: true });
     }
     writeFileSync(file, formatted);
   }

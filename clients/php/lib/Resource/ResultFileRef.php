@@ -18,8 +18,7 @@ readonly class ResultFileRef implements \JsonSerializable
         public string $filename,
         /** MIME type of the file */
         public string $mimeType,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

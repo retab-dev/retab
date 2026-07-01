@@ -34,8 +34,7 @@ readonly class ParseWorkflowArtifact implements \JsonSerializable
         public ?RetabUsage $usage = null,
         /** The operation that produced this artifact */
         public string $operation = 'parse',
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

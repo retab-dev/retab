@@ -16,8 +16,7 @@ readonly class RejectReviewRequest implements \JsonSerializable
         public string $versionId,
         /** Required, non-empty rejection reason. */
         public string $reason,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

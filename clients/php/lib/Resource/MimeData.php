@@ -16,8 +16,7 @@ readonly class MimeData implements \JsonSerializable
         public string $filename,
         /** The URL of the file in base64 format */
         public string $url,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

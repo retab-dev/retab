@@ -14,8 +14,7 @@ readonly class ExperimentDocumentCaptureRequest implements \JsonSerializable
     public function __construct(
         public string $runId,
         public ?string $stepId = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

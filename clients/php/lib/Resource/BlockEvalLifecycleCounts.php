@@ -18,8 +18,7 @@ readonly class BlockEvalLifecycleCounts implements \JsonSerializable
         public ?int $completed = null,
         public ?int $error = null,
         public ?int $cancelled = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

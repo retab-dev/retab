@@ -21,8 +21,7 @@ readonly class BBox implements \JsonSerializable
         public float $height,
         /** 1-based index of the page where this field appears. */
         public int $page,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

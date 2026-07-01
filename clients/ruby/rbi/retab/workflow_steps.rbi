@@ -12,17 +12,19 @@ module Retab
     sig do
       params(
         run_id: T.nilable(String),
+        workflow_id: T.nilable(String),
         block_id: T.nilable(String),
         step_id: T.nilable(String),
         block_type: T.nilable(T::Array[String]),
         status: T.nilable(T::Array[String]),
         before: T.nilable(String),
         after: T.nilable(String),
+        order: T.nilable(String),
         limit: T.nilable(Integer),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::PaginatedList[Retab::WorkflowRunStep])
     end
-    def list(run_id:, block_id:, step_id:, block_type:, status:, before:, after:, limit:, request_options:); end
+    def list(run_id:, workflow_id:, block_id:, step_id:, block_type:, status:, before:, after:, order:, limit:, request_options:); end
 
     sig do
       params(

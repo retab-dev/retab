@@ -14,8 +14,7 @@ readonly class NumberCompareCondition implements \JsonSerializable
         public LengthCompareConditionOp $op,
         public int|float $expected,
         public string $kind = 'number_compare',
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

@@ -25,8 +25,7 @@ readonly class Review implements \JsonSerializable
         public ?string $parentStepId = null,
         public ?string $iterationKey = null,
         public ?ReviewDecision $decision = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -54,7 +53,9 @@ readonly class Review implements \JsonSerializable
             blockId: $data['block_id'],
             stepId: $data['step_id'],
             blockType: ReviewBlockType::from($data['block_type']),
-            triggeredBy: match ($data['triggered_by']['kind'] ?? null) { 'all_of' => ReviewAllOf::fromArray($data['triggered_by']), 'always' => ReviewAlways::fromArray($data['triggered_by']), 'any_of' => ReviewAnyOf::fromArray($data['triggered_by']), 'any_required_field_null' => ReviewAnyRequiredFieldNull::fromArray($data['triggered_by']), 'any_split_pages_lt' => ReviewAnySplitPagesLt::fromArray($data['triggered_by']), 'boundary_confidence_lt' => ReviewBoundaryConfidenceLt::fromArray($data['triggered_by']), 'branch_in' => ReviewBranchIn::fromArray($data['triggered_by']), 'category_in' => ReviewCategoryIn::fromArray($data['triggered_by']), 'confidence_lt' => ReviewConfidenceLt::fromArray($data['triggered_by']), 'field_confidence_lt' => ReviewFieldConfidenceLt::fromArray($data['triggered_by']), 'json_condition' => ReviewJsonCondition::fromArray($data['triggered_by']), 'split_count_neq' => ReviewSplitCountNeq::fromArray($data['triggered_by']), 'top_margin_lt' => ReviewTopMarginLt::fromArray($data['triggered_by']), 'validation_failed' => ReviewValidationFailed::fromArray($data['triggered_by']), default => throw new \UnexpectedValueException(sprintf('Unknown kind: %s', json_encode($data['triggered_by']['kind'] ?? null))), },
+            triggeredBy: match ($data['triggered_by']['kind'] ?? null) {
+                'all_of' => ReviewAllOf::fromArray($data['triggered_by']), 'always' => ReviewAlways::fromArray($data['triggered_by']), 'any_of' => ReviewAnyOf::fromArray($data['triggered_by']), 'any_required_field_null' => ReviewAnyRequiredFieldNull::fromArray($data['triggered_by']), 'any_split_pages_lt' => ReviewAnySplitPagesLt::fromArray($data['triggered_by']), 'boundary_confidence_lt' => ReviewBoundaryConfidenceLt::fromArray($data['triggered_by']), 'branch_in' => ReviewBranchIn::fromArray($data['triggered_by']), 'category_in' => ReviewCategoryIn::fromArray($data['triggered_by']), 'confidence_lt' => ReviewConfidenceLt::fromArray($data['triggered_by']), 'field_confidence_lt' => ReviewFieldConfidenceLt::fromArray($data['triggered_by']), 'json_condition' => ReviewJsonCondition::fromArray($data['triggered_by']), 'split_count_neq' => ReviewSplitCountNeq::fromArray($data['triggered_by']), 'top_margin_lt' => ReviewTopMarginLt::fromArray($data['triggered_by']), 'validation_failed' => ReviewValidationFailed::fromArray($data['triggered_by']), default => throw new \UnexpectedValueException(sprintf('Unknown kind: %s', json_encode($data['triggered_by']['kind'] ?? null))),
+            },
             createdAt: new \DateTimeImmutable($data['created_at']),
             parentStepId: $data['parent_step_id'] ?? null,
             iterationKey: $data['iteration_key'] ?? null,

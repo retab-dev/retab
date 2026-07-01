@@ -20,8 +20,7 @@ readonly class UploadFileRequest implements \JsonSerializable
         public ?string $contentType = null,
         /** Optional SHA-256 checksum */
         public ?string $sha256 = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

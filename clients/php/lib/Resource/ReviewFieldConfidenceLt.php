@@ -16,8 +16,7 @@ readonly class ReviewFieldConfidenceLt implements \JsonSerializable
         public string $path,
         public float $threshold,
         public string $kind = 'field_confidence_lt',
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

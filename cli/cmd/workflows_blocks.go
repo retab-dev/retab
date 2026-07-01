@@ -11,6 +11,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	defaultNoteBlockWidth     = 280.0
+	defaultNoteBlockHeight    = 120.0
+	defaultContainerBlockSize = 800.0
+)
+
 var workflowsBlocksCmd = &cobra.Command{
 	Use:   "blocks",
 	Short: "Manage workflow blocks",
@@ -80,7 +86,35 @@ func parseBlockCreate(obj map[string]any) (retab.WorkflowBlocksCreateParams, err
 	if req.Type == "hil" {
 		return req, fmt.Errorf("legacy hil blocks are no longer supported; add config.review to a reviewable block instead")
 	}
+	defaultBlockCreateDimensions(&req)
 	return req, nil
+}
+
+func defaultBlockCreateDimensions(req *retab.WorkflowBlocksCreateParams) {
+	switch req.Type {
+	case "note":
+		req.Width = defaultPositiveBlockDimension(req.Width, defaultNoteBlockWidth)
+		req.Height = defaultPositiveBlockDimension(req.Height, defaultNoteBlockHeight)
+	case "for_each", "while_loop":
+		req.Width = clampMinimumBlockDimension(req.Width, defaultContainerBlockSize)
+		req.Height = clampMinimumBlockDimension(req.Height, defaultContainerBlockSize)
+	}
+}
+
+func defaultPositiveBlockDimension(value *float64, fallback float64) *float64 {
+	if value != nil && *value > 0 {
+		return value
+	}
+	v := fallback
+	return &v
+}
+
+func clampMinimumBlockDimension(value *float64, minimum float64) *float64 {
+	if value != nil && *value >= minimum {
+		return value
+	}
+	v := minimum
+	return &v
 }
 
 func parseBlockCreateForWorkflow(workflowID string, obj map[string]any) (retab.WorkflowBlocksCreateParams, error) {
@@ -271,8 +305,8 @@ func blockInputHandles(config map[string]any) []string {
 		return nil
 	}
 	// Function blocks consume a single JSON payload at the runtime-level
-	// handle input-json-0. The optional config.inputs names are for type
-	// inference/local bundles and are not connectable handles.
+	// handle input-json-0. Server-bound function configs do not accept
+	// config.inputs; local bundles derive input typing from resolved schemas.
 	if _, ok := config["code"].(string); ok {
 		if _, hasOutputSchema := config["output_schema"].(map[string]any); hasOutputSchema {
 			return []string{"input-json-0"}
@@ -381,7 +415,9 @@ Consensus criteria require ` + "`n_consensus > 1`" + ` on the reviewed block.
 Use ` + "`confidence_lt`" + ` for the block's overall consensus likelihood,
 ` + "`field_confidence_lt`" + ` for extract field scores, ` + "`top_margin_lt`" + `
 for close classifier categories, and ` + "`boundary_confidence_lt`" + ` for split
-boundary scores. ` + "`json_condition`" + ` can target the block output through
+boundary scores. Numeric predicate fields are type-specific: confidence-style
+predicates use ` + "`threshold`" + `, while classifier ` + "`top_margin_lt`" + ` uses
+` + "`margin`" + `. ` + "`json_condition`" + ` can target the block output through
 ` + "`data.*`" + ` (or extract's ` + "`output-json-0.*`" + ` alias) and consensus
 scores through ` + "`likelihoods.*`" + ` paths such as
 ` + "`likelihoods.invoice_total`" + `, ` + "`likelihoods.invoice`" + `, or
@@ -509,6 +545,11 @@ For consensus-based review, patch both ` + "`n_consensus`" + ` and ` + "`review`
   printf '{"n_consensus":3,"review":{"predicate":{"kind":"confidence_lt","threshold":0.8}}}' |
     retab workflows blocks update BLK --merge-config-file -
 
+For classifier top-margin review, the numeric field is ` + "`margin`" + `:
+
+  printf '{"review":{"predicate":{"kind":"top_margin_lt","margin":0.2}}}' |
+    retab workflows blocks update BLK --merge-config-file -
+
 Pass ` + "`{\"review\":null}`" + ` to remove review without touching anything else.
 
 The flags are mutually exclusive. Layout fields (` + "`position-*`" + `,
@@ -535,6 +576,10 @@ duplicate block ids.`,
 
   # Add consensus review to an extract or classifier block
   printf '{"n_consensus":3,"review":{"predicate":{"kind":"confidence_lt","threshold":0.8}}}' |
+    retab workflows blocks update block_def456 --merge-config-file -
+
+  # Add classifier top-margin review
+  printf '{"review":{"predicate":{"kind":"top_margin_lt","margin":0.2}}}' |
     retab workflows blocks update block_def456 --merge-config-file -
 
   # Rename a block's label

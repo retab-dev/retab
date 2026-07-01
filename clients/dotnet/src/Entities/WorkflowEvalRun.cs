@@ -15,6 +15,8 @@ namespace Retab
         public string? EvalId { get; set; }
         public long TotalEvals { get; set; }
         public BlockEvalBatchExecutionCounts? Counts { get; set; }
+
+        /// <summary>Compatibility envelope only. WorkflowEval.freshness is the authoritative read-time staleness verdict for saved eval definitions.</summary>
         public EvalRunFreshness? Freshness { get; set; }
 
         /// <summary>

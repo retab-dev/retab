@@ -24,8 +24,7 @@ readonly class WorkflowEdgeDoc implements \JsonSerializable
         public ?string $sourceHandle = null,
         /** Input handle on target block */
         public ?string $targetHandle = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

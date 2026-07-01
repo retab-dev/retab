@@ -17,7 +17,8 @@ type WorkflowStepService struct {
 type WorkflowStepsListParams struct {
 	PaginationParams
 	// RunID is optional workflow run ID filter.
-	RunID *string `url:"run_id,omitempty" json:"-"`
+	RunID      *string `url:"run_id,omitempty" json:"-"`
+	WorkflowID *string `url:"workflow_id,omitempty" json:"-"`
 	// BlockID is optional logical block ID filter.
 	BlockID *string `url:"block_id,omitempty" json:"-"`
 	// StepID is optional step ID filter.
@@ -25,7 +26,7 @@ type WorkflowStepsListParams struct {
 	// BlockType is optional block type filter. Repeat the query parameter for multiple values.
 	BlockType []string `url:"block_type,omitempty" json:"-"`
 	// Status is optional step lifecycle status filter. Repeat the query parameter for multiple values.
-	Status []string `url:"status,omitempty" json:"-"`
+	Status []WorkflowStepsStatus `url:"status,omitempty" json:"-"`
 }
 
 // List workflow Run Steps

@@ -10,6 +10,8 @@ namespace Retab
     {
         public string WorkflowId { get; set; } = default!;
 
+        public string? BlockId { get; set; }
+
     }
 
     /// <summary>Request options for <see cref="WorkflowExperimentsService.CreateAsync"/>: Create Experiment</summary>

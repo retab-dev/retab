@@ -99,6 +99,8 @@ class EvalRunBlockTarget(BaseModel):
 
 
 class EvalRunFreshness(BaseModel):
+    """Compatibility envelope on WorkflowEvalRun. This is not the authoritative stale/fresh verdict for saved eval definitions; use WorkflowEval.freshness for current staleness presentation."""
+
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     status: EvalRunFreshnessStatus | None = Field(default=cast(EvalRunFreshnessStatus, "unknown"), validate_default=True)
@@ -134,7 +136,9 @@ class WorkflowEvalRun(BaseModel):
         default={"lifecycle_counts": {"cancelled": 0, "completed": 0, "error": 0, "pending": 0, "queued": 0, "running": 0}, "outcome": {"blocked": 0, "failed": 0, "passed": 0}},
         validate_default=True,
     )
-    freshness: EvalRunFreshness | None = None
+    freshness: EvalRunFreshness | None = Field(
+        default=None, description="Compatibility envelope only. WorkflowEval.freshness is the authoritative read-time staleness verdict for saved eval definitions."
+    )
 
 
 class WorkflowEvalRunBlockScope(BaseModel):

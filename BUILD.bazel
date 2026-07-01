@@ -1,12 +1,12 @@
-load("//tools/bazel:defs.bzl", "LOCAL_TAGS", "MANUAL_LOCAL_TAGS")
-load("//tools/bazel:sdk_generation.bzl", "sdk_generation_tree")
+load("//factory/bazel:defs.bzl", "LOCAL_TAGS", "MANUAL_LOCAL_TAGS")
+load("//factory/bazel:sdk_generation.bzl", "sdk_generation_tree")
 
 package(default_visibility = ["//visibility:public"])
 
 filegroup(
     name = "sdk_generation_common_inputs",
     srcs = [
-        "//.scripts:sdk_generation_scripts",
+        "//tools/dev/scripts:sdk_generation_scripts",
         "//:oagen_generation_inputs",
     ],
 )
@@ -102,7 +102,7 @@ filegroup(
         exclude = SDK_CLIENT_INPUT_EXCLUDES,
     ) + [
         ":sdk_generation_common_inputs",
-        "//open-source/sdk/cli:sources",
+        "//public/sdk/cli:sources",
     ],
 )
 
@@ -113,7 +113,7 @@ filegroup(
 #     the committed OpenAPI contract on the pinned Node toolchain via the
 #     lockfile-materialized oagen_npm closure) re-formatted with the
 #     lockfile-pinned, vendored ruff 0.15.13 binary via
-#     //tools/bazel/ruff_sdk_tree (line-length 180, target-version py312,
+#     //factory/bazel/ruff_sdk_tree (line-length 180, target-version py312,
 #     --isolated -- the committed pyproject.toml [tool.ruff] config).
 #   * committed_python_sdk_tree -- the committed retab/resources/** +
 #     retab/types/** generated .py files + manifest staged into a tree.
@@ -123,15 +123,15 @@ filegroup(
 # the committed tree via RETAB_REPO_ROOT.
 sh_test(
     name = "check_python",
-    srcs = ["//tools/bazel:diff_generated_sdk_tree.sh"],
+    srcs = ["//factory/bazel:diff_generated_sdk_tree.sh"],
     args = [
         "python",
-        "$(location //open-source/sdk/clients/python:generated_python_sdk_formatted)",
-        "$(location //open-source/sdk/clients/python:committed_python_sdk_tree)",
+        "$(location //public/sdk/clients/python:generated_python_sdk_formatted)",
+        "$(location //public/sdk/clients/python:committed_python_sdk_tree)",
     ],
     data = [
-        "//open-source/sdk/clients/python:committed_python_sdk_tree",
-        "//open-source/sdk/clients/python:generated_python_sdk_formatted",
+        "//public/sdk/clients/python:committed_python_sdk_tree",
+        "//public/sdk/clients/python:generated_python_sdk_formatted",
     ],
     tags = ["generated-check"],
 )
@@ -143,31 +143,31 @@ sh_test(
 # cannot make the freshness gate flaky.
 sh_test(
     name = "check_node",
-    srcs = ["//tools/bazel:diff_node_sdk_tree.sh"],
+    srcs = ["//factory/bazel:diff_node_sdk_tree.sh"],
     args = [
-        "$(location //.oagen-workspace/retab-gen:generated_node_sdk_raw)",
-        "$(location //open-source/sdk/clients/node:committed_node_sdk_tree)",
-        "$(location //open-source/sdk/clients/node:format_generated_node_sdk_bin)",
-        "$(location //open-source/sdk/clients/node:.prettierrc)",
-        "$(location //tools/bazel:diff_generated_sdk_tree.sh)",
+        "$(location //factory/generators/oagen/retab-gen:generated_node_sdk_raw)",
+        "$(location //public/sdk/clients/node:committed_node_sdk_tree)",
+        "$(location //public/sdk/clients/node:format_generated_node_sdk_bin)",
+        "$(location //public/sdk/clients/node:.prettierrc)",
+        "$(location //factory/bazel:diff_generated_sdk_tree.sh)",
     ],
     data = [
-        "//.oagen-workspace/retab-gen:generated_node_sdk_raw",
-        "//open-source/sdk/clients/node:committed_node_sdk_tree",
-        "//open-source/sdk/clients/node:format_generated_node_sdk_bin",
-        "//open-source/sdk/clients/node:.prettierrc",
-        "//tools/bazel:diff_generated_sdk_tree.sh",
+        "//factory/generators/oagen/retab-gen:generated_node_sdk_raw",
+        "//public/sdk/clients/node:committed_node_sdk_tree",
+        "//public/sdk/clients/node:format_generated_node_sdk_bin",
+        "//public/sdk/clients/node:.prettierrc",
+        "//factory/bazel:diff_generated_sdk_tree.sh",
     ],
     env = {
         "RETAB_NODE_SDK_CHECK_VERSION": "3",
     },
-    tags = ["generated-check", "no-cache"],
+    tags = ["generated-check"],
 )
 
 sdk_generation_tree(
     name = "generated_python_sdk",
     language = "python",
-    openapi = "//open-source/docs/api-reference:openapi_json",
+    openapi = "//public/docs/api-reference:openapi_json",
     srcs = [":generation_inputs"],
     tags = MANUAL_LOCAL_TAGS + ["generated-artifact"],
 )
@@ -175,7 +175,7 @@ sdk_generation_tree(
 sdk_generation_tree(
     name = "generated_node_sdk",
     language = "node",
-    openapi = "//open-source/docs/api-reference:openapi_json",
+    openapi = "//public/docs/api-reference:openapi_json",
     srcs = [":generation_inputs"],
     tags = LOCAL_TAGS + ["generated-artifact"],
 )
@@ -185,7 +185,7 @@ sdk_generation_tree(
 # Bazel-declared TreeArtifacts:
 #   * generated_go_sdk_formatted -- the raw generator output (sandboxed, from the
 #     committed OpenAPI contract on the pinned Node toolchain via the lockfile-
-#     materialized oagen_npm closure) re-formatted with //tools/bazel/gofmt_sdk_tree
+#     materialized oagen_npm closure) re-formatted with //factory/bazel/gofmt_sdk_tree
 #     (a rules_go go_binary running the gofmt engine on the pinned Go toolchain).
 #   * committed_go_sdk_tree -- the committed non-test root *.go + go.mod + manifest
 #     staged into a tree.
@@ -195,14 +195,14 @@ sdk_generation_tree(
 # the committed tree via RETAB_REPO_ROOT.
 sh_test(
     name = "check_go",
-    srcs = ["//tools/bazel:diff_generated_sdk_tree.sh"],
+    srcs = ["//factory/bazel:diff_generated_sdk_tree.sh"],
     args = [
         "go",
         "$(location :generated_go_sdk)",
-        "$(location //open-source/sdk/clients/go:committed_go_sdk_tree)",
+        "$(location //public/sdk/clients/go:committed_go_sdk_tree)",
     ],
     data = [
-        "//open-source/sdk/clients/go:committed_go_sdk_tree",
+        "//public/sdk/clients/go:committed_go_sdk_tree",
         ":generated_go_sdk",
     ],
     tags = ["generated-check"],
@@ -214,7 +214,7 @@ sh_test(
 #   * generated_rust_sdk_formatted -- the raw generator output (sandboxed, from
 #     the committed OpenAPI contract on the pinned Node toolchain via the
 #     lockfile-materialized oagen_npm closure) re-formatted with the pinned,
-#     vendored rustfmt binary via //tools/bazel/rustfmt_sdk_tree (the rustc
+#     vendored rustfmt binary via //factory/bazel/rustfmt_sdk_tree (the rustc
 #     runtime libs travel with it; the format script points the dynamic loader
 #     at their dir). Scoped to src/** + manifest (Node parity).
 #   * committed_rust_sdk_tree -- the committed src/**/*.rs + manifest staged into
@@ -226,15 +226,15 @@ sh_test(
 # the committed tree via RETAB_REPO_ROOT.
 sh_test(
     name = "check_rust",
-    srcs = ["//tools/bazel:diff_generated_sdk_tree.sh"],
+    srcs = ["//factory/bazel:diff_generated_sdk_tree.sh"],
     args = [
         "rust",
-        "$(location //open-source/sdk/clients/rust:generated_rust_sdk_formatted)",
-        "$(location //open-source/sdk/clients/rust:committed_rust_sdk_tree)",
+        "$(location //public/sdk/clients/rust:generated_rust_sdk_formatted)",
+        "$(location //public/sdk/clients/rust:committed_rust_sdk_tree)",
     ],
     data = [
-        "//open-source/sdk/clients/rust:committed_rust_sdk_tree",
-        "//open-source/sdk/clients/rust:generated_rust_sdk_formatted",
+        "//public/sdk/clients/rust:committed_rust_sdk_tree",
+        "//public/sdk/clients/rust:generated_rust_sdk_formatted",
     ],
     tags = ["generated-check"],
 )
@@ -253,18 +253,18 @@ sh_test(
 # hand-extended tests/ are intentionally out of scope (Node parity excludes
 # package.json + tests). The retab-dotnet-oagen-emitter service boundary selects
 # this target for real regenerate-and-diff drift coverage instead of the
-# //api-quality:unit_tests proxy.
+# //factory/api-quality:unit_tests proxy.
 sh_test(
     name = "check_dotnet",
-    srcs = ["//tools/bazel:diff_generated_sdk_tree.sh"],
+    srcs = ["//factory/bazel:diff_generated_sdk_tree.sh"],
     args = [
         "dotnet",
-        "$(location //open-source/sdk/clients/dotnet:generated_dotnet_sdk_formatted)",
-        "$(location //open-source/sdk/clients/dotnet:committed_dotnet_sdk_tree)",
+        "$(location //public/sdk/clients/dotnet:generated_dotnet_sdk_formatted)",
+        "$(location //public/sdk/clients/dotnet:committed_dotnet_sdk_tree)",
     ],
     data = [
-        "//open-source/sdk/clients/dotnet:committed_dotnet_sdk_tree",
-        "//open-source/sdk/clients/dotnet:generated_dotnet_sdk_formatted",
+        "//public/sdk/clients/dotnet:committed_dotnet_sdk_tree",
+        "//public/sdk/clients/dotnet:generated_dotnet_sdk_formatted",
     ],
     tags = ["generated-check"],
 )
@@ -274,7 +274,7 @@ sh_test(
 # Bazel-declared TreeArtifacts:
 #   * generated_php_sdk_formatted -- the raw generator output (sandboxed, from the
 #     committed OpenAPI contract on the pinned Node toolchain via the lockfile-
-#     materialized oagen_npm closure) re-formatted with //tools/bazel/php_cs_fixer_sdk_tree
+#     materialized oagen_npm closure) re-formatted with //factory/bazel/php_cs_fixer_sdk_tree
 #     (the vendored, pinned static PHP 8.5.6 CLI running php-cs-fixer 3.95.2),
 #     scoped to the generated lib/ + tests/ + manifest set.
 #   * committed_php_sdk_tree -- the committed generated lib/ + tests/ + manifest
@@ -285,17 +285,17 @@ sh_test(
 # replaces the old LOCAL/no-sandbox check that regenerated on the host and read
 # the committed tree via RETAB_REPO_ROOT. The retab-php-oagen-emitter service
 # boundary selects this target for real regenerate-and-diff drift coverage instead
-# of the //api-quality:unit_tests proxy.
+# of the //factory/api-quality:unit_tests proxy.
 sh_test(
     name = "check_php",
-    srcs = ["//tools/bazel:diff_generated_sdk_tree.sh"],
+    srcs = ["//factory/bazel:diff_generated_sdk_tree.sh"],
     args = [
         "php",
         "$(location :generated_php_sdk)",
-        "$(location //open-source/sdk/clients/php:committed_php_sdk_tree)",
+        "$(location //public/sdk/clients/php:committed_php_sdk_tree)",
     ],
     data = [
-        "//open-source/sdk/clients/php:committed_php_sdk_tree",
+        "//public/sdk/clients/php:committed_php_sdk_tree",
         ":generated_php_sdk",
     ],
     tags = ["generated-check"],
@@ -307,25 +307,25 @@ sh_test(
 #   * generated_ruby_sdk_formatted -- the raw generator output (sandboxed, from
 #     the committed OpenAPI contract on the pinned Node toolchain via the
 #     lockfile-materialized oagen_npm closure) re-formatted with the vendored,
-#     lockfile-pinned rubyfmt binary (//tools/bazel/rubyfmt_sdk_tree:rubyfmt).
+#     lockfile-pinned rubyfmt binary (//factory/bazel/rubyfmt_sdk_tree:rubyfmt).
 #   * committed_ruby_sdk_tree -- the committed lib/ + rbi/ + generated test/ +
 #     Gemfile + retab.gemspec + manifest staged into a tree.
 # diff_generated_sdk_tree.sh compares the two inside the sandbox (normalizing the
 # manifest generatedAt timestamp), so nothing reaches the live working tree. The
 # retab-ruby-oagen-emitter service boundary selects this target for real
-# regenerate-and-diff drift coverage, instead of the //api-quality:unit_tests
+# regenerate-and-diff drift coverage, instead of the //factory/api-quality:unit_tests
 # proxy other (still-manual) languages use.
 sh_test(
     name = "check_ruby",
-    srcs = ["//tools/bazel:diff_generated_sdk_tree.sh"],
+    srcs = ["//factory/bazel:diff_generated_sdk_tree.sh"],
     args = [
         "ruby",
-        "$(location //open-source/sdk/clients/ruby:generated_ruby_sdk_formatted)",
-        "$(location //open-source/sdk/clients/ruby:committed_ruby_sdk_tree)",
+        "$(location //public/sdk/clients/ruby:generated_ruby_sdk_formatted)",
+        "$(location //public/sdk/clients/ruby:committed_ruby_sdk_tree)",
     ],
     data = [
-        "//open-source/sdk/clients/ruby:committed_ruby_sdk_tree",
-        "//open-source/sdk/clients/ruby:generated_ruby_sdk_formatted",
+        "//public/sdk/clients/ruby:committed_ruby_sdk_tree",
+        "//public/sdk/clients/ruby:generated_ruby_sdk_formatted",
     ],
     tags = ["generated-check"],
 )
@@ -346,15 +346,15 @@ sh_test(
 # the committed tree via RETAB_REPO_ROOT.
 sh_test(
     name = "check_java",
-    srcs = ["//tools/bazel:diff_generated_sdk_tree.sh"],
+    srcs = ["//factory/bazel:diff_generated_sdk_tree.sh"],
     args = [
         "java",
-        "$(location //open-source/sdk/clients/java:generated_java_sdk_formatted)",
-        "$(location //open-source/sdk/clients/java:committed_java_sdk_tree)",
+        "$(location //public/sdk/clients/java:generated_java_sdk_formatted)",
+        "$(location //public/sdk/clients/java:committed_java_sdk_tree)",
     ],
     data = [
-        "//open-source/sdk/clients/java:committed_java_sdk_tree",
-        "//open-source/sdk/clients/java:generated_java_sdk_formatted",
+        "//public/sdk/clients/java:committed_java_sdk_tree",
+        "//public/sdk/clients/java:generated_java_sdk_formatted",
     ],
     tags = ["generated-check"],
 )
@@ -362,7 +362,7 @@ sh_test(
 sdk_generation_tree(
     name = "generated_go_sdk",
     language = "go",
-    openapi = "//open-source/docs/api-reference:openapi_json",
+    openapi = "//public/docs/api-reference:openapi_json",
     srcs = [":generation_inputs"],
     tags = MANUAL_LOCAL_TAGS + ["generated-artifact"],
 )
@@ -370,7 +370,7 @@ sdk_generation_tree(
 sdk_generation_tree(
     name = "generated_rust_sdk",
     language = "rust",
-    openapi = "//open-source/docs/api-reference:openapi_json",
+    openapi = "//public/docs/api-reference:openapi_json",
     srcs = [":generation_inputs"],
     tags = MANUAL_LOCAL_TAGS + ["generated-artifact"],
 )
@@ -378,7 +378,7 @@ sdk_generation_tree(
 sdk_generation_tree(
     name = "generated_dotnet_sdk",
     language = "dotnet",
-    openapi = "//open-source/docs/api-reference:openapi_json",
+    openapi = "//public/docs/api-reference:openapi_json",
     srcs = [":generation_inputs"],
     tags = MANUAL_LOCAL_TAGS + ["generated-artifact"],
 )
@@ -386,7 +386,7 @@ sdk_generation_tree(
 sdk_generation_tree(
     name = "generated_php_sdk",
     language = "php",
-    openapi = "//open-source/docs/api-reference:openapi_json",
+    openapi = "//public/docs/api-reference:openapi_json",
     srcs = [":generation_inputs"],
     tags = MANUAL_LOCAL_TAGS + ["generated-artifact"],
 )
@@ -394,7 +394,7 @@ sdk_generation_tree(
 sdk_generation_tree(
     name = "generated_ruby_sdk",
     language = "ruby",
-    openapi = "//open-source/docs/api-reference:openapi_json",
+    openapi = "//public/docs/api-reference:openapi_json",
     srcs = [":generation_inputs"],
     tags = MANUAL_LOCAL_TAGS + ["generated-artifact"],
 )
@@ -402,7 +402,7 @@ sdk_generation_tree(
 sdk_generation_tree(
     name = "generated_java_sdk",
     language = "java",
-    openapi = "//open-source/docs/api-reference:openapi_json",
+    openapi = "//public/docs/api-reference:openapi_json",
     srcs = [":generation_inputs"],
     tags = MANUAL_LOCAL_TAGS + ["generated-artifact"],
 )
@@ -414,7 +414,7 @@ sdk_generation_tree(
         # Snippet lint is downstream of SDK trees generated from the same public
         # OpenAPI artifact as the checked SDKs. This keeps docs examples on the
         # Go routes -> public OpenAPI -> SDK -> snippet-lint chain.
-        openapi = "//open-source/docs/api-reference:openapi_json",
+        openapi = "//public/docs/api-reference:openapi_json",
         srcs = [
             ":sdk_generation_common_inputs",
             ":%s_sdk_seed_inputs" % spec["language"],
@@ -428,71 +428,71 @@ sdk_generation_tree(
 SDK_UPDATE_SPECS = [
     {
         "check": ":check_python",
-        "client": "open-source/sdk/clients/python",
-        "generated": "//open-source/sdk/clients/python:generated_python_sdk_formatted",
+        "client": "public/sdk/clients/python",
+        "generated": "//public/sdk/clients/python:generated_python_sdk_formatted",
         "language": "python",
-        "snippet": "//open-source/docs:snippet_lint_python",
+        "snippet": "//public/docs:snippet_lint_python",
     },
     {
         "check": ":check_node",
-        "client": "open-source/sdk/clients/node",
-        "generated": "//open-source/sdk/clients/node:generated_node_sdk_formatted",
+        "client": "public/sdk/clients/node",
+        "generated": "//public/sdk/clients/node:generated_node_sdk_formatted",
         "language": "node",
-        "snippet": "//open-source/docs:snippet_lint_typescript",
+        "snippet": "//public/docs:snippet_lint_typescript",
     },
     {
         "check": ":check_go",
-        "client": "open-source/sdk/clients/go",
+        "client": "public/sdk/clients/go",
         "generated": ":generated_go_sdk",
         "language": "go",
-        "snippet": "//open-source/docs:snippet_lint_go",
+        "snippet": "//public/docs:snippet_lint_go",
     },
     {
         "check": ":check_rust",
-        "client": "open-source/sdk/clients/rust",
+        "client": "public/sdk/clients/rust",
         "generated": ":generated_rust_sdk",
         "language": "rust",
-        "snippet": "//open-source/docs:snippet_lint_rust",
+        "snippet": "//public/docs:snippet_lint_rust",
     },
     {
         "check": ":check_dotnet",
-        "client": "open-source/sdk/clients/dotnet",
+        "client": "public/sdk/clients/dotnet",
         "generated": ":generated_dotnet_sdk",
         "language": "dotnet",
-        "snippet": "//open-source/docs:snippet_lint_dotnet",
+        "snippet": "//public/docs:snippet_lint_dotnet",
     },
     {
         "check": ":check_php",
-        "client": "open-source/sdk/clients/php",
+        "client": "public/sdk/clients/php",
         "generated": ":generated_php_sdk",
         "language": "php",
-        "snippet": "//open-source/docs:snippet_lint_php",
+        "snippet": "//public/docs:snippet_lint_php",
     },
     {
         "check": ":check_ruby",
-        "client": "open-source/sdk/clients/ruby",
-        "generated": "//open-source/sdk/clients/ruby:generated_ruby_sdk_formatted",
+        "client": "public/sdk/clients/ruby",
+        "generated": "//public/sdk/clients/ruby:generated_ruby_sdk_formatted",
         "language": "ruby",
-        "snippet": "//open-source/docs:snippet_lint_ruby",
+        "snippet": "//public/docs:snippet_lint_ruby",
     },
     {
         "check": ":check_java",
-        "client": "open-source/sdk/clients/java",
-        "generated": "//open-source/sdk/clients/java:generated_java_sdk_formatted",
+        "client": "public/sdk/clients/java",
+        "generated": "//public/sdk/clients/java:generated_java_sdk_formatted",
         "language": "java",
-        "snippet": "//open-source/docs:snippet_lint_java",
+        "snippet": "//public/docs:snippet_lint_java",
     },
 ]
 
 [
     sh_binary(
         name = "generated_%s_sdk_update" % spec["language"],
-        srcs = ["//tools/bazel:update_generated_sdk_tree.sh"],
+        srcs = ["//factory/bazel:update_generated_sdk_tree.sh"],
         args = [
             spec["language"],
             "$(location %s)" % spec["generated"],
             spec["client"],
-            "//open-source/sdk:check_%s" % spec["language"],
+            "//public/sdk:check_%s" % spec["language"],
             spec["snippet"],
         ],
         data = [
@@ -506,9 +506,9 @@ SDK_UPDATE_SPECS = [
 
 sh_binary(
     name = "generated_sdks_update",
-    srcs = ["//tools/bazel:update_generated_sdks.sh"],
+    srcs = ["//factory/bazel:update_generated_sdks.sh"],
     args = [
-        "$(location //tools/bazel:update_generated_sdk_tree.sh)",
+        "$(location //factory/bazel:update_generated_sdk_tree.sh)",
     ] + [
         item
         for spec in SDK_UPDATE_SPECS
@@ -516,12 +516,12 @@ sh_binary(
             spec["language"],
             "$(location %s)" % spec["generated"],
             spec["client"],
-            "//open-source/sdk:check_%s" % spec["language"],
+            "//public/sdk:check_%s" % spec["language"],
             spec["snippet"],
         ]
     ],
     data = [
-        "//tools/bazel:update_generated_sdk_tree.sh",
+        "//factory/bazel:update_generated_sdk_tree.sh",
         ":generation_inputs",
     ] + [
         spec["generated"]
@@ -541,9 +541,9 @@ sh_binary(
 test_suite(
     name = "generated_sdks",
     tests = [
-        "//tools/bazel:oagen_core_dist_freshness",
+        "//factory/bazel:oagen_core_dist_freshness",
         ":check_python",
-        "//open-source/sdk/clients/node:format_generated_node_sdk_test",
+        "//public/sdk/clients/node:format_generated_node_sdk_test",
         ":check_node",
         ":check_go",
         ":check_rust",
@@ -569,24 +569,24 @@ test_suite(
 test_suite(
     name = "lint",
     tests = [
-        "//open-source/sdk/clients/node:lint",
-        "//open-source/sdk/clients/python:lint",
+        "//public/sdk/clients/node:lint",
+        "//public/sdk/clients/python:lint",
     ],
 )
 
 test_suite(
     name = "format_check",
     tests = [
-        "//open-source/sdk/clients/node:format_check",
-        "//open-source/sdk/clients/python:format_check",
+        "//public/sdk/clients/node:format_check",
+        "//public/sdk/clients/python:format_check",
     ],
 )
 
 test_suite(
     name = "client_tests",
     tests = [
-        "//open-source/sdk/clients/node:test",
-        "//open-source/sdk/clients/python:test",
+        "//public/sdk/clients/node:test",
+        "//public/sdk/clients/python:test",
     ],
 )
 
@@ -626,7 +626,7 @@ test_suite(
 
 sh_test(
     name = "check_all",
-    srcs = ["//tools/bazel:run_sdk_generation_check.sh"],
+    srcs = ["//factory/bazel:run_sdk_generation_check.sh"],
     data = [":generation_inputs"],
     tags = MANUAL_LOCAL_TAGS + ["generated-check"],
 )

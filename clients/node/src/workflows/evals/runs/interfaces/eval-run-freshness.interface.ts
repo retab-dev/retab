@@ -6,6 +6,7 @@ import { ZEvalRunFreshnessReasons } from './eval-run-freshness-reasons.interface
 import type { EvalRunFreshnessStatus } from './eval-run-freshness-status.interface.js';
 import { ZEvalRunFreshnessStatus } from './eval-run-freshness-status.interface.js';
 
+/** Compatibility envelope on WorkflowEvalRun. This is not the authoritative stale/fresh verdict for saved eval definitions; use WorkflowEval.freshness for current staleness presentation. */
 export interface EvalRunFreshness {
   /** @default "unknown" */
   status?: EvalRunFreshnessStatus;

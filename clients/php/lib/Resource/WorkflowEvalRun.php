@@ -22,9 +22,9 @@ readonly class WorkflowEvalRun implements \JsonSerializable
         public ?EvalRunBlockTarget $target = null,
         public ?string $evalId = null,
         public ?BlockEvalBatchExecutionCounts $counts = null,
+        /** Compatibility envelope only. WorkflowEval.freshness is the authoritative read-time staleness verdict for saved eval definitions. */
         public ?EvalRunFreshness $freshness = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -47,7 +47,9 @@ readonly class WorkflowEvalRun implements \JsonSerializable
             workflowId: $data['workflow_id'],
             workflowVersionId: $data['workflow_version_id'],
             trigger: EvalRunTrigger::fromArray($data['trigger']),
-            lifecycle: match ($data['lifecycle']['status'] ?? null) { 'cancelled' => CancelledWorkflowEvalRun::fromArray($data['lifecycle']), 'completed' => CompletedWorkflowEvalRun::fromArray($data['lifecycle']), 'error' => ErrorWorkflowEvalRun::fromArray($data['lifecycle']), 'pending' => PendingWorkflowEvalRun::fromArray($data['lifecycle']), 'queued' => QueuedWorkflowEvalRun::fromArray($data['lifecycle']), 'running' => RunningWorkflowEvalRun::fromArray($data['lifecycle']), default => throw new \UnexpectedValueException(sprintf('Unknown status: %s', json_encode($data['lifecycle']['status'] ?? null))), },
+            lifecycle: match ($data['lifecycle']['status'] ?? null) {
+                'cancelled' => CancelledWorkflowEvalRun::fromArray($data['lifecycle']), 'completed' => CompletedWorkflowEvalRun::fromArray($data['lifecycle']), 'error' => ErrorWorkflowEvalRun::fromArray($data['lifecycle']), 'pending' => PendingWorkflowEvalRun::fromArray($data['lifecycle']), 'queued' => QueuedWorkflowEvalRun::fromArray($data['lifecycle']), 'running' => RunningWorkflowEvalRun::fromArray($data['lifecycle']), default => throw new \UnexpectedValueException(sprintf('Unknown status: %s', json_encode($data['lifecycle']['status'] ?? null))),
+            },
             timing: WorkflowEvalRunTiming::fromArray($data['timing']),
             totalEvals: $data['total_evals'],
             target: isset($data['target']) ? EvalRunBlockTarget::fromArray($data['target']) : null,

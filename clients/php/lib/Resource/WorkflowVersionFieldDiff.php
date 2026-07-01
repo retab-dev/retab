@@ -15,8 +15,7 @@ readonly class WorkflowVersionFieldDiff implements \JsonSerializable
         public string $field,
         public mixed $fromValue = null,
         public mixed $toValue = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

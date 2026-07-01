@@ -13,8 +13,7 @@ class Extractions
 {
     public function __construct(
         private readonly \Retab\HttpClient $client,
-    ) {
-    }
+    ) {}
 
     /**
      * List Extractions
@@ -67,7 +66,7 @@ class Extractions
             'from_date' => $fromDate,
             'to_date' => $toDate,
             'metadata' => $metadata,
-        ], fn ($v) => $v !== null);
+        ], fn($v) => $v !== null);
         return $this->client->requestPage(
             method: 'GET',
             path: 'v1/extractions',
@@ -127,7 +126,7 @@ class Extractions
             'stream' => $stream,
             'background' => $background,
             'chunking_keys' => $chunkingKeys,
-        ], fn ($v) => $v !== null);
+        ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',
             path: 'v1/extractions',
@@ -182,7 +181,7 @@ class Extractions
             'stream' => $stream,
             'background' => $background,
             'chunking_keys' => $chunkingKeys,
-        ], fn ($v) => $v !== null);
+        ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',
             path: 'v1/extractions/stream',
@@ -212,7 +211,7 @@ class Extractions
     ): \Retab\Resource\Extraction {
         $query = array_filter([
             'include_output' => $includeOutput,
-        ], fn ($v) => $v !== null);
+        ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'GET',
             path: 'v1/extractions/' . rawurlencode($extractionId),

@@ -197,6 +197,14 @@ to the review and it does not change the stored review object.`,
 		if err != nil {
 			return err
 		}
+		if reviewSchemaCanUseBlockConfig(schema.BlockType) {
+			config, configSource := reviewSchemaBlockConfig(ctx, client, review)
+			if config != nil {
+				schema = reviewSchemaWithBlockConfig(schema, config, configSource)
+			} else {
+				schema.Notes = append(schema.Notes, "Could not load block config; showing the generic review snapshot schema.")
+			}
+		}
 		schema.CreateUsage = fmt.Sprintf(
 			"retab workflows reviews versions create %s --parent-id <rvr_...> --snapshot-file <snapshot.json>",
 			args[0],
@@ -485,7 +493,7 @@ func printReviewDecisionResult(cmd *cobra.Command, result *retab.SubmitDecisionR
 	// ("skipped" — e.g. run already terminal). The JSON on stdout still
 	// carries the full payload for programmatic consumers; the stderr
 	// note is a one-line nudge that a poll on `runs get` is needed.
-	if format != OutputTable && result != nil && result.ResumeStatus != nil && *result.ResumeStatus != retab.ResumeStatusResumed {
+	if format != OutputTable && !conflict && result != nil && result.ResumeStatus != nil && *result.ResumeStatus != retab.ResumeStatusResumed {
 		switch *result.ResumeStatus {
 		case retab.ResumeStatusPending:
 			fmt.Fprintf(
@@ -776,6 +784,163 @@ func reviewSchemaForBlockType(blockType string) (reviewSnapshotSchema, error) {
 	default:
 		return reviewSnapshotSchema{}, fmt.Errorf("block type %q is not reviewable", blockType)
 	}
+}
+
+func reviewSchemaCanUseBlockConfig(blockType string) bool {
+	return blockType == "extract" || blockType == "classifier"
+}
+
+func reviewSchemaBlockConfig(ctx context.Context, client *retab.Client, review *retab.Review) (map[string]any, string) {
+	workflowVersion, err := client.Workflows.GetVersion(ctx, review.WorkflowVersionID, &retab.WorkflowsGetVersionParams{WorkflowID: review.WorkflowID})
+	if err == nil && workflowVersion != nil {
+		for _, block := range workflowVersion.Blocks {
+			if block != nil && block.ID != nil && *block.ID == review.BlockID {
+				return block.Config, "workflow-version"
+			}
+		}
+	}
+
+	versions, err := client.Workflows.Blocks.ListVersions(ctx, &retab.WorkflowBlocksListVersionsParams{
+		WorkflowID:        review.WorkflowID,
+		BlockID:           ptr(review.BlockID),
+		WorkflowVersionID: ptr(review.WorkflowVersionID),
+		PaginationParams:  retab.PaginationParams{Limit: ptr(1)},
+	})
+	if err == nil && versions != nil && len(versions.Data) > 0 {
+		return versions.Data[0].Config, "workflow-version"
+	}
+
+	block, err := client.Workflows.Blocks.Get(ctx, review.BlockID, &retab.WorkflowBlocksGetParams{WorkflowID: ptr(review.WorkflowID)})
+	if err == nil && block != nil {
+		return block.Config, "current-block"
+	}
+	return nil, ""
+}
+
+func reviewSchemaWithBlockConfig(schema reviewSnapshotSchema, config map[string]any, configSource string) reviewSnapshotSchema {
+	switch schema.BlockType {
+	case "extract":
+		if jsonSchema, ok := mapValue(config["json_schema"]); ok && len(jsonSchema) > 0 {
+			schema.Snapshot = cloneReviewSchemaMap(jsonSchema)
+			schema.Example = reviewExampleForJSONSchema(jsonSchema, schema.Example)
+			schema.Notes = append(schema.Notes, reviewSchemaConfigSourceNote("extract", configSource, "json_schema"))
+		}
+	case "classifier":
+		categories := reviewClassifierCategoryNames(config)
+		if len(categories) > 0 {
+			if properties, ok := mapValue(schema.Snapshot["properties"]); ok {
+				properties["category"] = map[string]any{
+					"type": "string",
+					"enum": categories,
+				}
+			}
+			schema.Example = map[string]any{"category": categories[0]}
+			schema.Notes = append(schema.Notes, reviewSchemaConfigSourceNote("classifier", configSource, "categories"))
+		}
+	}
+	return schema
+}
+
+func reviewSchemaConfigSourceNote(blockType string, configSource string, field string) string {
+	if configSource == "workflow-version" {
+		return fmt.Sprintf("The %s above was loaded from the reviewed %s block's workflow-version config.", field, blockType)
+	}
+	return fmt.Sprintf("The %s above was loaded from the current %s block config; it may differ if the block changed after this review was created.", field, blockType)
+}
+
+func cloneReviewSchemaMap(input map[string]any) map[string]any {
+	out := make(map[string]any, len(input))
+	for key, value := range input {
+		out[key] = value
+	}
+	return out
+}
+
+func reviewExampleForJSONSchema(schema map[string]any, fallback map[string]any) map[string]any {
+	properties, ok := mapValue(schema["properties"])
+	if !ok || len(properties) == 0 {
+		return fallback
+	}
+	example := make(map[string]any, len(properties))
+	for name, rawProperty := range properties {
+		property, ok := mapValue(rawProperty)
+		if !ok {
+			example[name] = nil
+			continue
+		}
+		example[name] = reviewExampleValueForJSONSchema(property)
+	}
+	return example
+}
+
+func reviewExampleValueForJSONSchema(schema map[string]any) any {
+	if enum, ok := schema["enum"].([]any); ok && len(enum) > 0 {
+		return enum[0]
+	}
+	schemaType := reviewJSONSchemaType(schema["type"])
+	switch schemaType {
+	case "boolean":
+		return true
+	case "integer":
+		return 1
+	case "number":
+		return 1.0
+	case "array":
+		return []any{}
+	case "object":
+		return map[string]any{}
+	case "null":
+		return nil
+	default:
+		return "string"
+	}
+}
+
+func reviewJSONSchemaType(raw any) string {
+	if value, ok := raw.(string); ok {
+		return value
+	}
+	values, ok := raw.([]any)
+	if !ok {
+		return ""
+	}
+	for _, item := range values {
+		value, ok := item.(string)
+		if ok && value != "null" {
+			return value
+		}
+	}
+	if len(values) > 0 {
+		if value, ok := values[0].(string); ok {
+			return value
+		}
+	}
+	return ""
+}
+
+func reviewClassifierCategoryNames(config map[string]any) []string {
+	rawCategories, ok := config["categories"].([]any)
+	if !ok {
+		return nil
+	}
+	categories := make([]string, 0, len(rawCategories))
+	for _, rawCategory := range rawCategories {
+		switch category := rawCategory.(type) {
+		case string:
+			if value := strings.TrimSpace(category); value != "" {
+				categories = append(categories, value)
+			}
+		case map[string]any:
+			if value, ok := category["name"].(string); ok && strings.TrimSpace(value) != "" {
+				categories = append(categories, strings.TrimSpace(value))
+				continue
+			}
+			if value, ok := category["handle_key"].(string); ok && strings.TrimSpace(value) != "" {
+				categories = append(categories, strings.TrimSpace(value))
+			}
+		}
+	}
+	return categories
 }
 
 // truncateReviewCell shortens long string cells so the table view stays

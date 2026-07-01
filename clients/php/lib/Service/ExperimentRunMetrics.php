@@ -17,8 +17,7 @@ class ExperimentRunMetrics
 {
     public function __construct(
         private readonly \Retab\HttpClient $client,
-    ) {
-    }
+    ) {}
 
     /**
      * Get Experiment Metrics For Run
@@ -56,13 +55,15 @@ class ExperimentRunMetrics
             'target_path' => $targetPath,
             'include_prior' => $includePrior,
             'prior_run_id' => $priorRunId,
-        ], fn ($v) => $v !== null);
+        ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'GET',
             path: 'v1/workflows/experiments/metrics',
             query: $query,
             options: $options,
         );
-        return match ($response['kind'] ?? null) { 'summary' => ExperimentSummaryMetricsResponse::fromArray($response), 'by_document' => ExperimentByDocumentMetricsResponse::fromArray($response), 'by_target' => ExperimentByTargetMetricsResponse::fromArray($response), 'votes' => ExperimentVotesMetricsResponse::fromArray($response), 'stale_metrics' => ExperimentMetricsStaleError::fromArray($response), 'no_metrics' => ExperimentMetricsMissingError::fromArray($response), default => throw new \UnexpectedValueException(sprintf('Unknown kind: %s', json_encode($response['kind'] ?? null))), };
+        return match ($response['kind'] ?? null) {
+            'summary' => ExperimentSummaryMetricsResponse::fromArray($response), 'by_document' => ExperimentByDocumentMetricsResponse::fromArray($response), 'by_target' => ExperimentByTargetMetricsResponse::fromArray($response), 'votes' => ExperimentVotesMetricsResponse::fromArray($response), 'stale_metrics' => ExperimentMetricsStaleError::fromArray($response), 'no_metrics' => ExperimentMetricsMissingError::fromArray($response), default => throw new \UnexpectedValueException(sprintf('Unknown kind: %s', json_encode($response['kind'] ?? null))),
+        };
     }
 }

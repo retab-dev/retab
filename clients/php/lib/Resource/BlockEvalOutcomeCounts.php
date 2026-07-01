@@ -15,8 +15,7 @@ readonly class BlockEvalOutcomeCounts implements \JsonSerializable
         public ?int $passed = null,
         public ?int $failed = null,
         public ?int $blocked = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

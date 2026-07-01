@@ -13,14 +13,13 @@ readonly class WorkflowTableListResponse implements \JsonSerializable
     public function __construct(
         /** @var array<\Retab\Resource\WorkflowTable>|null */
         public ?array $tables = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
     {
         return new self(
-            tables: isset($data['tables']) ? array_map(fn ($item) => WorkflowTable::fromArray($item), $data['tables']) : null,
+            tables: isset($data['tables']) ? array_map(fn($item) => WorkflowTable::fromArray($item), $data['tables']) : null,
         );
     }
 
@@ -28,7 +27,7 @@ readonly class WorkflowTableListResponse implements \JsonSerializable
     public function toArray(): array
     {
         return [
-            'tables' => $this->tables !== null ? array_map(fn ($item) => $item->toArray(), $this->tables) : null,
+            'tables' => $this->tables !== null ? array_map(fn($item) => $item->toArray(), $this->tables) : null,
         ];
     }
 }

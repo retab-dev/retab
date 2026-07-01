@@ -15,8 +15,7 @@ readonly class Actor implements \JsonSerializable
         public ActorKind $kind,
         public string $id,
         public string $displayName,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

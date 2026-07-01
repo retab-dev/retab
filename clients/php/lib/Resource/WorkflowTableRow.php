@@ -15,8 +15,7 @@ readonly class WorkflowTableRow implements \JsonSerializable
         public int $position,
         /** @var array<string, mixed>|null */
         public ?array $data = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

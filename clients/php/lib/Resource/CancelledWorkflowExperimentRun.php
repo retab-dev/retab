@@ -15,8 +15,7 @@ readonly class CancelledWorkflowExperimentRun implements \JsonSerializable
         /** Human-readable reason, when known */
         public ?string $reason = null,
         public string $status = 'cancelled',
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

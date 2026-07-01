@@ -13,8 +13,7 @@ readonly class WorkflowBlockPosition implements \JsonSerializable
     public function __construct(
         public float $x,
         public float $y,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

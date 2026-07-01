@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/url"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -95,6 +96,8 @@ An eval pins a target block's expected output against a recorded input
 (typically captured from a successful past run). Run the eval suite
 after any change — config update, model swap, prompt edit — to
 catch silent drift in extraction quality or classification accuracy.
+
+Supported eval targets are function, extract, split, and classifier blocks.
 
 An eval has three pieces:
 
@@ -318,7 +321,33 @@ func validateWorkflowEvalTarget(target map[string]any) error {
 	if strings.TrimSpace(blockID) == "" {
 		return fmt.Errorf("target.block_id is required")
 	}
-	return nil
+	return rejectUnknownEvalKeys("target", target, "type", "block_id")
+}
+
+// rejectUnknownEvalKeys enforces the documented extra="forbid" contract on the
+// eval target/source value objects locally. The CLI decodes these into typed
+// structs (json.Unmarshal silently drops unknown fields) and the server's
+// nested source/target variants are deliberately loose, so without this guard a
+// typo'd field — e.g. "step" for "step_id" — is silently ignored end-to-end and
+// the eval pins to an auto-resolved step instead of the one the user named. Fail
+// fast naming the offending key(s) so the mistake is obvious.
+func rejectUnknownEvalKeys(label string, m map[string]any, allowed ...string) error {
+	allowedSet := make(map[string]struct{}, len(allowed))
+	for _, key := range allowed {
+		allowedSet[key] = struct{}{}
+	}
+	var unknown []string
+	for key := range m {
+		if _, ok := allowedSet[key]; !ok {
+			unknown = append(unknown, key)
+		}
+	}
+	if len(unknown) == 0 {
+		return nil
+	}
+	sort.Strings(unknown)
+	return fmt.Errorf("%s: unexpected field(s) %q — extra inputs are not permitted (allowed: %s)",
+		label, strings.Join(unknown, ", "), strings.Join(allowed, ", "))
 }
 
 func validateWorkflowEvalSource(source map[string]any) error {
@@ -341,7 +370,7 @@ func validateWorkflowEvalSource(source map[string]any) error {
 				}
 			}
 		}
-		return nil
+		return rejectUnknownEvalKeys("source", source, "type", "handle_inputs")
 	case "run_step":
 		runID, _ := source["run_id"].(string)
 		if strings.TrimSpace(runID) == "" {
@@ -352,7 +381,7 @@ func validateWorkflowEvalSource(source map[string]any) error {
 				return fmt.Errorf("source.step_id must be a string")
 			}
 		}
-		return nil
+		return rejectUnknownEvalKeys("source", source, "type", "run_id", "step_id")
 	default:
 		return fmt.Errorf("source.type must be manual or run_step")
 	}
@@ -387,6 +416,8 @@ var workflowsEvalsCreateCmd = &cobra.Command{
 	Use:   "create <workflow-id> [flags]",
 	Short: "Create a workflow eval",
 	Long: `Create a regression eval pinning a block's expected output.
+Currently supported target block types are function, extract, split, and classifier.
+
 You'll typically capture the three files from a successful past run:
 
   ` + "`--target-file`" + `     — which block to eval (e.g.
@@ -548,7 +579,11 @@ particular block.
 Name the workflow either positionally (` + "`list <workflow-id>`" + `) or with
 the ` + "`--workflow-id`" + ` flag — the two forms are equivalent. Passing both
 is accepted when they agree; an error is raised only when they disagree. The
-workflow id is required: evals have no org-wide listing.`,
+workflow id is required: evals have no org-wide listing.
+
+Paginate by passing the cursor from a previous response's list_metadata:
+` + "`--after`" + ` for the next page, ` + "`--before`" + ` for the previous
+one. The two are mutually exclusive.`,
 	Example: `  # All evals in a workflow (positional)
   retab workflows evals list wf_abc123
 
@@ -571,11 +606,18 @@ workflow id is required: evals have no org-wide listing.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		req := retab.WorkflowEvalsListParams{WorkflowID: workflowID}
+		if err := validateBeforeAfterMutex(cmd); err != nil {
+			return err
+		}
+		req := retab.WorkflowEvalsListParams{
+			PaginationParams: collectListParams(cmd),
+			WorkflowID:       workflowID,
+		}
 		if v, _ := cmd.Flags().GetString("target-block-id"); v != "" {
 			req.TargetBlockID = ptr(v)
 		}
-		if v := getIntFlagOrDefault(cmd, "limit", 50); v > 0 {
+		if !cmd.Flags().Changed("limit") {
+			v := getIntFlagOrDefault(cmd, "limit", 50)
 			req.Limit = ptr(v)
 		}
 		result, err := client.Workflows.Evals.List(ctx, &req)
@@ -865,7 +907,9 @@ Pass ` + "`--wait`" + ` to block until the run reaches a terminal status
 (` + "`completed`" + `/` + "`error`" + `/` + "`cancelled`" + `) and print the
 final run — saving you from scripting a poll loop around
 ` + "`runs get`" + `. With ` + "`--wait`" + ` the command exits non-zero if the
-run ends in ` + "`error`" + `/` + "`cancelled`" + ` or the timeout elapses.
+run ends in ` + "`error`" + `/` + "`cancelled`" + `, the timeout elapses, or the
+completed run has any failed/blocked assertions or child eval errors — so CI can
+gate a build on a detected regression.
 Without it, poll progress with ` + "`workflows evals runs get`" + ` and fetch
 per-eval results with ` + "`workflows evals results list`" + `.`,
 	Example: `  # Run every eval in the workflow
@@ -986,7 +1030,16 @@ func workflowEvalRunTerminalError(run *retab.WorkflowEvalRun) error {
 	}
 	switch status := workflowEvalRunStatus(run); status {
 	case "", "completed":
-		return nil
+		// A completed run still fails the command when any assertion did not pass,
+		// so `--wait` can gate CI on a detected regression — not only on a
+		// lifecycle error/cancelled/timeout. Blocked assertions (the target output
+		// handle/path could not be evaluated) are non-passing and count too.
+		failed, blocked := workflowEvalRunNonPassingCounts(run)
+		childErrors, childCancelled := workflowEvalRunChildLifecycleFailureCounts(run)
+		if failed == 0 && blocked == 0 && childErrors == 0 && childCancelled == 0 {
+			return nil
+		}
+		return workflowEvalRunRegressionError(run, failed, blocked, childErrors, childCancelled)
 	case "error", "cancelled":
 		if run.ID == "" {
 			return fmt.Errorf("workflow-eval run ended with status %s", status)
@@ -995,6 +1048,60 @@ func workflowEvalRunTerminalError(run *retab.WorkflowEvalRun) error {
 	default:
 		return nil
 	}
+}
+
+// workflowEvalRunNonPassingCounts reads the failed and blocked outcome buckets
+// off a run's batch counts, tolerating the nil counts/outcome a run carries
+// before it completes.
+func workflowEvalRunNonPassingCounts(run *retab.WorkflowEvalRun) (failed int, blocked int) {
+	if run == nil || run.Counts == nil || run.Counts.Outcome == nil {
+		return 0, 0
+	}
+	outcome := run.Counts.Outcome
+	if outcome.Failed != nil {
+		failed = *outcome.Failed
+	}
+	if outcome.Blocked != nil {
+		blocked = *outcome.Blocked
+	}
+	return failed, blocked
+}
+
+func workflowEvalRunChildLifecycleFailureCounts(run *retab.WorkflowEvalRun) (errored int, cancelled int) {
+	if run == nil || run.Counts == nil || run.Counts.LifecycleCounts == nil {
+		return 0, 0
+	}
+	counts := run.Counts.LifecycleCounts
+	if counts.Error != nil {
+		errored = *counts.Error
+	}
+	if counts.Cancelled != nil {
+		cancelled = *counts.Cancelled
+	}
+	return errored, cancelled
+}
+
+// workflowEvalRunRegressionError renders the non-zero exit for a completed run
+// whose assertions did not all pass.
+func workflowEvalRunRegressionError(run *retab.WorkflowEvalRun, failed, blocked, childErrors, childCancelled int) error {
+	parts := make([]string, 0, 4)
+	if failed > 0 {
+		parts = append(parts, fmt.Sprintf("%d failed", failed))
+	}
+	if blocked > 0 {
+		parts = append(parts, fmt.Sprintf("%d blocked", blocked))
+	}
+	if childErrors > 0 {
+		parts = append(parts, fmt.Sprintf("%d child error", childErrors))
+	}
+	if childCancelled > 0 {
+		parts = append(parts, fmt.Sprintf("%d child cancelled", childCancelled))
+	}
+	detail := strings.Join(parts, ", ")
+	if run == nil || run.ID == "" {
+		return fmt.Errorf("workflow-eval run completed with non-passing assertions (%s)", detail)
+	}
+	return fmt.Errorf("workflow-eval run %s completed with non-passing assertions (%s)", run.ID, detail)
 }
 
 // waitForWorkflowEvalRun polls Runs.Get until the run reaches a terminal
@@ -1048,7 +1155,8 @@ timeout.
 
 Cleaner than scripting a poll loop around ` + "`runs get`" + ` — the CLI
 handles the interval and timeout, and exits non-zero if the run ends in
-` + "`error`" + `/` + "`cancelled`" + ` or the timeout elapses. Pair with
+` + "`error`" + `/` + "`cancelled`" + `, the timeout elapses, or the completed run
+has any failed/blocked assertions or child eval errors. Pair with
 ` + "`runs create --wait`" + ` to create and block in a single step.`,
 	Example: `  # Wait with defaults (2s polls, 600s timeout)
   retab workflows evals runs wait wfevalrun_mno345
@@ -1266,11 +1374,20 @@ var workflowsEvalsResultsListCmd = &cobra.Command{
 	Short: "List child results for a workflow-eval run",
 	Args:  cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		if err := validateBeforeAfterMutex(cmd); err != nil {
+			return err
+		}
 		params := &retab.WorkflowEvalRunResultsListParams{
 			RunID: args[0],
 			PaginationParams: retab.PaginationParams{
 				Limit: ptr(getIntFlagOrDefault(cmd, "limit", 20)),
 			},
+		}
+		if v, _ := cmd.Flags().GetString("before"); v != "" {
+			params.Before = ptr(v)
+		}
+		if v, _ := cmd.Flags().GetString("after"); v != "" {
+			params.After = ptr(v)
 		}
 		client, err := newClient(cmd)
 		if err != nil {
@@ -1327,6 +1444,9 @@ func init() {
 	workflowsEvalsListCmd.Flags().String("workflow-id", "", "workflow id (alternative to the positional form)")
 	workflowsEvalsListCmd.Flags().String("target-block-id", "", "filter by target block id")
 	workflowsEvalsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items (1-100; default 50)")
+	workflowsEvalsListCmd.Flags().String("before", "", "eval id: return items before this id (mutually exclusive with --after)")
+	workflowsEvalsListCmd.Flags().String("after", "", "eval id: return items after this id (mutually exclusive with --before)")
+	workflowsEvalsListCmd.Flags().Var(&orderFlagValue{}, "order", "asc | desc")
 
 	workflowsEvalsUpdateCmd.Flags().String("name", "", "new eval name")
 	workflowsEvalsUpdateCmd.Flags().String("assertion-file", "", "JSON file with new assertion (or - for stdin). Alternative to --output-handle-id/--path/--equals.")
@@ -1364,6 +1484,8 @@ func init() {
 	// the create knobs and the experiment/primitive wait commands.
 	addPrimitiveWaitTuningFlags(workflowsEvalsRunsWaitCmd, false)
 	workflowsEvalsResultsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items (1-100; default 20)")
+	workflowsEvalsResultsListCmd.Flags().String("before", "", "page before cursor (mutually exclusive with --after)")
+	workflowsEvalsResultsListCmd.Flags().String("after", "", "page after cursor (mutually exclusive with --before)")
 
 	workflowsEvalsResultsCmd.AddCommand(workflowsEvalsResultsListCmd, workflowsEvalsResultsGetCmd)
 	workflowsEvalsRunsCmd.AddCommand(workflowsEvalsRunsCreateCmd, workflowsEvalsRunsListCmd, workflowsEvalsRunsGetCmd, workflowsEvalsRunsCancelCmd, workflowsEvalsRunsWaitCmd)

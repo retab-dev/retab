@@ -32,8 +32,7 @@ readonly class AssertionResult implements \JsonSerializable
         public ?string $metricKind = null,
         public ?string $assertionLabel = null,
         public ?AssertionFailure $failure = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

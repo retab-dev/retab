@@ -12,8 +12,7 @@ readonly class WorkflowTableResponse implements \JsonSerializable
 
     public function __construct(
         public WorkflowTable $table,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

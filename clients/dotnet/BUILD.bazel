@@ -23,7 +23,7 @@ copy_to_directory(
 # downstream formatter step and NO .NET SDK toolchain in the closure.
 copy_to_directory(
     name = "generated_dotnet_sdk_formatted",
-    srcs = ["//.oagen-workspace/retab-gen:generated_dotnet_sdk_raw"],
+    srcs = ["//factory/generators/oagen/retab-gen:generated_dotnet_sdk_raw"],
     include_srcs_patterns = [
         "**/src/**",
         "**/.oagen-manifest.json",

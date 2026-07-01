@@ -51,8 +51,7 @@ readonly class WorkflowRunStep implements \JsonSerializable
         public ?StepArtifactRef $artifact = null,
         /** Number of retry attempts */
         public ?int $retryCount = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -74,12 +73,14 @@ readonly class WorkflowRunStep implements \JsonSerializable
             stepId: $data['step_id'],
             blockType: WorkflowBlockType::from($data['block_type']),
             blockLabel: $data['block_label'],
-            lifecycle: match ($data['lifecycle']['status'] ?? null) { 'awaiting_review' => AwaitingReviewStepLifecycle::fromArray($data['lifecycle']), 'cancelled' => CancelledStepLifecycle::fromArray($data['lifecycle']), 'completed' => CompletedStepLifecycle::fromArray($data['lifecycle']), 'error' => ErrorStepLifecycle::fromArray($data['lifecycle']), 'pending' => PendingStepLifecycle::fromArray($data['lifecycle']), 'queued' => QueuedStepLifecycle::fromArray($data['lifecycle']), 'running' => RunningStepLifecycle::fromArray($data['lifecycle']), 'skipped' => SkippedStepLifecycle::fromArray($data['lifecycle']), default => throw new \UnexpectedValueException(sprintf('Unknown status: %s', json_encode($data['lifecycle']['status'] ?? null))), },
+            lifecycle: match ($data['lifecycle']['status'] ?? null) {
+                'awaiting_review' => AwaitingReviewStepLifecycle::fromArray($data['lifecycle']), 'cancelled' => CancelledStepLifecycle::fromArray($data['lifecycle']), 'completed' => CompletedStepLifecycle::fromArray($data['lifecycle']), 'error' => ErrorStepLifecycle::fromArray($data['lifecycle']), 'pending' => PendingStepLifecycle::fromArray($data['lifecycle']), 'queued' => QueuedStepLifecycle::fromArray($data['lifecycle']), 'running' => RunningStepLifecycle::fromArray($data['lifecycle']), 'skipped' => SkippedStepLifecycle::fromArray($data['lifecycle']), default => throw new \UnexpectedValueException(sprintf('Unknown status: %s', json_encode($data['lifecycle']['status'] ?? null))),
+            },
             runId: $data['run_id'],
             startedAt: isset($data['started_at']) ? new \DateTimeImmutable($data['started_at']) : null,
             completedAt: isset($data['completed_at']) ? new \DateTimeImmutable($data['completed_at']) : null,
             model: $data['model'] ?? null,
-            loopContainers: isset($data['loop_containers']) ? array_map(fn ($item) => ContainerContextData::fromArray($item), $data['loop_containers']) : null,
+            loopContainers: isset($data['loop_containers']) ? array_map(fn($item) => ContainerContextData::fromArray($item), $data['loop_containers']) : null,
             createdAt: isset($data['created_at']) ? new \DateTimeImmutable($data['created_at']) : null,
             handleInputs: $data['handle_inputs'] ?? null,
             handleOutputs: $data['handle_outputs'] ?? null,
@@ -101,7 +102,7 @@ readonly class WorkflowRunStep implements \JsonSerializable
             'started_at' => $this->startedAt?->format(\DateTimeInterface::RFC3339_EXTENDED),
             'completed_at' => $this->completedAt?->format(\DateTimeInterface::RFC3339_EXTENDED),
             'model' => $this->model,
-            'loop_containers' => $this->loopContainers !== null ? array_map(fn ($item) => $item->toArray(), $this->loopContainers) : null,
+            'loop_containers' => $this->loopContainers !== null ? array_map(fn($item) => $item->toArray(), $this->loopContainers) : null,
             'created_at' => $this->createdAt?->format(\DateTimeInterface::RFC3339_EXTENDED),
             'handle_inputs' => $this->handleInputs,
             'handle_outputs' => $this->handleOutputs,

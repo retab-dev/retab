@@ -13,8 +13,7 @@ readonly class ReviewAnyRequiredFieldNull implements \JsonSerializable
 
     public function __construct(
         public string $kind = 'any_required_field_null',
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

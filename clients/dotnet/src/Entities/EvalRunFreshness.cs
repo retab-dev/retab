@@ -2,7 +2,7 @@ namespace Retab
 {
     using System.Collections.Generic;
 
-    /// <summary>Represents an eval run freshness.</summary>
+    /// <summary>Compatibility envelope on WorkflowEvalRun. This is not the authoritative stale/fresh verdict for saved eval definitions; use WorkflowEval.freshness for current staleness presentation.</summary>
     public class EvalRunFreshness
     {
         public ArtifactFreshnessStatus? Status { get; set; }

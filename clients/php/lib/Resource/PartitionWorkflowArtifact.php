@@ -43,8 +43,7 @@ readonly class PartitionWorkflowArtifact implements \JsonSerializable
         public ?\DateTimeImmutable $createdAt = null,
         /** The operation that produced this artifact */
         public string $operation = 'partition',
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -67,7 +66,7 @@ readonly class PartitionWorkflowArtifact implements \JsonSerializable
             instructions: $data['instructions'] ?? null,
             nConsensus: $data['n_consensus'] ?? null,
             allowOverlap: $data['allow_overlap'] ?? null,
-            output: isset($data['output']) ? array_map(fn ($item) => PartitionChunk::fromArray($item), $data['output']) : null,
+            output: isset($data['output']) ? array_map(fn($item) => PartitionChunk::fromArray($item), $data['output']) : null,
             status: isset($data['status']) ? EditStatus::from($data['status']) : null,
             error: isset($data['error']) ? PrimitiveError::fromArray($data['error']) : null,
             consensus: isset($data['consensus']) ? PartitionConsensus::fromArray($data['consensus']) : null,
@@ -88,7 +87,7 @@ readonly class PartitionWorkflowArtifact implements \JsonSerializable
             'instructions' => $this->instructions,
             'n_consensus' => $this->nConsensus,
             'allow_overlap' => $this->allowOverlap,
-            'output' => $this->output !== null ? array_map(fn ($item) => $item->toArray(), $this->output) : null,
+            'output' => $this->output !== null ? array_map(fn($item) => $item->toArray(), $this->output) : null,
             'status' => $this->status?->value,
             'error' => $this->error?->toArray(),
             'consensus' => $this->consensus?->toArray(),

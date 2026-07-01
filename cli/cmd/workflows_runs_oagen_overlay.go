@@ -296,9 +296,6 @@ func resolveWorkflowRunDocumentAliases(
 	if len(documents) == 0 {
 		return documents, nil
 	}
-	if !shouldResolveWorkflowRunDocumentAliases(documents) {
-		return documents, nil
-	}
 	blocks, err := client.Workflows.Blocks.List(ctx, &retab.WorkflowBlocksListParams{WorkflowID: workflowID})
 	if err != nil {
 		return nil, fmt.Errorf("resolve workflow run document aliases: %w", err)
@@ -323,15 +320,6 @@ func resolveWorkflowRunDocumentAliases(
 		resolved[resolvedKey] = value
 	}
 	return resolved, nil
-}
-
-func shouldResolveWorkflowRunDocumentAliases(documents map[string]any) bool {
-	for key := range documents {
-		if key == "start" || strings.HasPrefix(key, "block_b_") || !strings.HasPrefix(key, "block_") {
-			return true
-		}
-	}
-	return false
 }
 
 func resolveWorkflowRunDocumentKey(key string, blockIDs map[string]bool, startDocumentBlocks []retab.WorkflowBlock) (string, error) {

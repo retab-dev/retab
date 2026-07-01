@@ -273,6 +273,13 @@ func TestWorkflowsRunsCreateSendsDocumentURLPayload(t *testing.T) {
 	var postedDocuments map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+		if r.Method == http.MethodGet && r.URL.Path == "/v1/workflows/blocks" && r.URL.Query().Get("workflow_id") == "wf_123" {
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"data":          []map[string]any{{"id": "block_start", "type": "start_document", "label": "Document"}},
+				"list_metadata": map[string]any{},
+			})
+			return
+		}
 		if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows/runs" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
@@ -348,6 +355,13 @@ func TestWorkflowsRunsCreateMaterializesExternalDocumentURL(t *testing.T) {
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
+		if r.Method == http.MethodGet && r.URL.Path == "/v1/workflows/blocks" && r.URL.Query().Get("workflow_id") == "wf_123" {
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"data":          []map[string]any{{"id": "block_start", "type": "start_document", "label": "Document"}},
+				"list_metadata": map[string]any{},
+			})
+			return
+		}
 		if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows/runs" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
@@ -406,6 +420,13 @@ func TestWorkflowsRunsCreateAcceptsDocumentsFileDescriptors(t *testing.T) {
 	var postedDocuments map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+		if r.Method == http.MethodGet && r.URL.Path == "/v1/workflows/blocks" && r.URL.Query().Get("workflow_id") == "wf_123" {
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"data":          []map[string]any{{"id": "block_start", "type": "start_document", "label": "Document"}},
+				"list_metadata": map[string]any{},
+			})
+			return
+		}
 		if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows/runs" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
@@ -475,6 +496,11 @@ func TestWorkflowsRunsCreateResolvesDocumentIDToStorageURL(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch {
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/workflows/blocks" && r.URL.Query().Get("workflow_id") == "wf_123":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"data":          []map[string]any{{"id": "block_start", "type": "start_document", "label": "Document"}},
+				"list_metadata": map[string]any{},
+			})
 		// A --document-id is resolved into the durable storage.retab.com URL
 		// the canonical create route accepts (the server short-circuits it back
 		// to the stored object — no re-download), not sent as a by-id FileRef
@@ -556,6 +582,11 @@ func TestWorkflowsRunsCreateResolvesFileRefIDFromDocumentsFile(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch {
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/workflows/blocks" && r.URL.Query().Get("workflow_id") == "wf_123":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"data":          []map[string]any{{"id": "block_start", "type": "start_document", "label": "Document"}},
+				"list_metadata": map[string]any{},
+			})
 		// A by-id file reference in --documents-file resolves to the durable
 		// storage.retab.com URL the canonical create route accepts.
 		case r.Method == http.MethodGet && r.URL.Path == "/v1/files/file_abc/download-link":
@@ -860,6 +891,81 @@ func TestWorkflowsRunsCreateResolvesDeclarativeDocumentSourceIDFromDocumentsFile
 	}
 	if _, ok := postedDocuments["block_b_doc_start"]; ok {
 		t.Fatalf("declarative source id leaked into request body: %#v", postedDocuments)
+	}
+}
+
+func TestWorkflowsRunsCreateResolvesBlockPrefixedDeclarativeDocumentIDFromDocumentsFile(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var postedBody map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/workflows/blocks" && r.URL.Query().Get("workflow_id") == "wf_123":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"data": []map[string]any{
+					{
+						"id":                          "block_generated_doc",
+						"type":                        "start_document",
+						"label":                       "Document",
+						"declarative_path":            "document",
+						"declarative_source_block_id": "block_document",
+					},
+				},
+				"list_metadata": map[string]any{},
+			})
+		case r.Method == http.MethodPost && r.URL.Path == "/v1/workflows/runs":
+			if err := json.NewDecoder(r.Body).Decode(&postedBody); err != nil {
+				t.Fatalf("decode request body: %v", err)
+			}
+			_ = json.NewEncoder(w).Encode(map[string]any{"id": "run_123"})
+		default:
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	docsPath := filepath.Join(t.TempDir(), "documents.json")
+	if err := os.WriteFile(
+		docsPath,
+		[]byte(`{"block_document":{"filename":"invoice.pdf","url":"https://example.com/invoice.pdf"}}`),
+		0o600,
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	cmd := &cobra.Command{Use: "eval-run-create", RunE: workflowsRunsCreateCmd.RunE}
+	cmd.Flags().String("version", "", "")
+	cmd.Flags().String("documents-file", "", "")
+	cmd.Flags().StringArray("document", nil, "")
+	cmd.Flags().StringArray("document-file", nil, "")
+	cmd.Flags().StringArray("document-url", nil, "")
+	cmd.Flags().StringArray("document-id", nil, "")
+	cmd.Flags().String("json-inputs-file", "", "")
+	if err := cmd.Flags().Set("documents-file", docsPath); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("version", "draft"); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := cmd.RunE(cmd, []string{"wf_123"}); err != nil {
+		t.Fatalf("runs create: %v", err)
+	}
+	if postedBody["version"] != "draft" {
+		t.Fatalf("version = %#v, want draft", postedBody["version"])
+	}
+	postedDocuments, ok := postedBody["documents"].(map[string]any)
+	if !ok {
+		t.Fatalf("documents = %#v", postedBody["documents"])
+	}
+	if _, ok := postedDocuments["block_generated_doc"]; !ok {
+		t.Fatalf("documents posted under keys %#v, want block_generated_doc", keysOfAnyMap(postedDocuments))
+	}
+	if _, ok := postedDocuments["block_document"]; ok {
+		t.Fatalf("declarative block id leaked into request body: %#v", postedDocuments)
 	}
 }
 

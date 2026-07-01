@@ -13,8 +13,7 @@ readonly class WorkflowEvalRunWorkflowScope implements \JsonSerializable
 
     public function __construct(
         public string $type = 'workflow',
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

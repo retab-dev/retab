@@ -21,8 +21,7 @@ readonly class ExperimentByTargetMetricsResponse implements \JsonSerializable
         public ?array $documents = null,
         public string $kind = 'by_target',
         public string $view = 'by_target',
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -41,7 +40,7 @@ readonly class ExperimentByTargetMetricsResponse implements \JsonSerializable
             score: $data['score'] ?? null,
             priorScore: $data['prior_score'] ?? null,
             confusion: isset($data['confusion']) ? ExperimentTargetConfusionMetric::fromArray($data['confusion']) : null,
-            documents: isset($data['documents']) ? array_map(fn ($item) => ExperimentByTargetDocumentMetric::fromArray($item), $data['documents']) : null,
+            documents: isset($data['documents']) ? array_map(fn($item) => ExperimentByTargetDocumentMetric::fromArray($item), $data['documents']) : null,
             kind: $data['kind'] ?? 'by_target',
             view: $data['view'] ?? 'by_target',
         );
@@ -56,7 +55,7 @@ readonly class ExperimentByTargetMetricsResponse implements \JsonSerializable
             'score' => $this->score,
             'prior_score' => $this->priorScore,
             'confusion' => $this->confusion?->toArray(),
-            'documents' => $this->documents !== null ? array_map(fn ($item) => $item->toArray(), $this->documents) : null,
+            'documents' => $this->documents !== null ? array_map(fn($item) => $item->toArray(), $this->documents) : null,
             'kind' => $this->kind,
             'view' => $this->view,
         ];

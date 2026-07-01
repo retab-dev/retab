@@ -12,8 +12,7 @@ class EditTemplates
 {
     public function __construct(
         private readonly \Retab\HttpClient $client,
-    ) {
-    }
+    ) {}
 
     /**
      * List Templates
@@ -50,7 +49,7 @@ class EditTemplates
             'order' => $order->value,
             'name' => $name,
             'sort_by' => $sortBy,
-        ], fn ($v) => $v !== null);
+        ], fn($v) => $v !== null);
         return $this->client->requestPage(
             method: 'GET',
             path: 'v1/edits/templates',
@@ -143,7 +142,7 @@ class EditTemplates
         $body = array_filter([
             'name' => $name,
             'form_fields' => $formFields,
-        ], fn ($v) => $v !== null);
+        ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'PATCH',
             path: 'v1/edits/templates/' . rawurlencode($templateId),

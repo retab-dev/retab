@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "dotnet",
-  "generatedAt": "2026-06-24T00:23:47.970Z",
+  "generatedAt": "2026-06-30T22:56:38.960Z",
   "files": [
     "README.md",
     "Retab.csproj",
@@ -295,6 +295,7 @@
     "src/Enums/WorkflowExportPayloadRequestExcludeStatus.cs",
     "src/Enums/WorkflowExportPayloadRequestExportSource.cs",
     "src/Enums/WorkflowExportPayloadRequestTriggerType.cs",
+    "src/Enums/WorkflowStepsStatus.cs",
     "src/Enums/WorkflowTableAggregationFunction.cs",
     "src/Enums/WorkflowTableFilterOperator.cs",
     "src/Enums/WorkflowTableValidationColumnRuleType.cs",

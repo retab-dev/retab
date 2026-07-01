@@ -13,8 +13,7 @@ readonly class RunningWorkflowEvalRun implements \JsonSerializable
 
     public function __construct(
         public string $status = 'running',
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

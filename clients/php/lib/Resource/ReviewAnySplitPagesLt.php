@@ -14,8 +14,7 @@ readonly class ReviewAnySplitPagesLt implements \JsonSerializable
     public function __construct(
         public int $minPages,
         public string $kind = 'any_split_pages_lt',
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

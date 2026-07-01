@@ -16,8 +16,7 @@ readonly class ExperimentRunTiming implements \JsonSerializable
         public ?\DateTimeImmutable $startedAt = null,
         public ?\DateTimeImmutable $completedAt = null,
         public ?int $durationMs = null,
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

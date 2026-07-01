@@ -19,8 +19,7 @@ readonly class EvalRunBlockTarget implements \JsonSerializable
     public function __construct(
         public string $blockId,
         public string $type = 'block',
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self

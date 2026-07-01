@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -15,6 +16,7 @@ import (
 	"sync/atomic"
 	"testing"
 
+	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
 )
 
@@ -566,6 +568,93 @@ func TestWorkflowsEvalsListCSVUsesDedicatedColumns(t *testing.T) {
 	}
 }
 
+func TestWorkflowsEvalsListSupportsCursorPagination(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var gotQuery string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v1/workflows/evals" {
+			t.Fatalf("path = %q, want /v1/workflows/evals", r.URL.Path)
+		}
+		gotQuery = r.URL.RawQuery
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"data":[],"list_metadata":{"after":null,"before":null}}`))
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	for flag, value := range map[string]string{
+		"limit": "3",
+		"after": "wfnodeeval_cursor",
+		"order": "asc",
+	} {
+		if err := workflowsEvalsListCmd.Flags().Set(flag, value); err != nil {
+			t.Fatalf("set --%s: %v", flag, err)
+		}
+		flag := flag
+		t.Cleanup(func() {
+			reset := ""
+			if flag == "limit" {
+				reset = "50"
+			}
+			_ = workflowsEvalsListCmd.Flags().Set(flag, reset)
+			workflowsEvalsListCmd.Flags().Lookup(flag).Changed = false
+		})
+	}
+
+	var err error
+	captureStd(t, func() {
+		err = workflowsEvalsListCmd.RunE(workflowsEvalsListCmd, []string{"wrk_123"})
+	})
+	if err != nil {
+		t.Fatalf("evals list: %v", err)
+	}
+	values, parseErr := url.ParseQuery(gotQuery)
+	if parseErr != nil {
+		t.Fatalf("parse query %q: %v", gotQuery, parseErr)
+	}
+	if got := values.Get("workflow_id"); got != "wrk_123" {
+		t.Fatalf("workflow_id = %q, want wrk_123", got)
+	}
+	if got := values.Get("limit"); got != "3" {
+		t.Fatalf("limit = %q, want 3", got)
+	}
+	if got := values.Get("after"); got != "wfnodeeval_cursor" {
+		t.Fatalf("after = %q, want wfnodeeval_cursor", got)
+	}
+	if got := values.Get("order"); got != "asc" {
+		t.Fatalf("order = %q, want asc", got)
+	}
+}
+
+func TestWorkflowsEvalsListRejectsBeforeAfterTogether(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	for flag, value := range map[string]string{
+		"before": "wfnodeeval_before",
+		"after":  "wfnodeeval_after",
+	} {
+		if err := workflowsEvalsListCmd.Flags().Set(flag, value); err != nil {
+			t.Fatalf("set --%s: %v", flag, err)
+		}
+		flag := flag
+		t.Cleanup(func() {
+			_ = workflowsEvalsListCmd.Flags().Set(flag, "")
+			workflowsEvalsListCmd.Flags().Lookup(flag).Changed = false
+		})
+	}
+
+	err := workflowsEvalsListCmd.RunE(workflowsEvalsListCmd, []string{"wrk_123"})
+	if err == nil {
+		t.Fatal("expected before/after mutual exclusion error")
+	}
+	if !strings.Contains(err.Error(), "--before and --after are mutually exclusive") {
+		t.Fatalf("error %q does not contain before/after message", err.Error())
+	}
+}
+
 func TestWorkflowsEvalsRunsListFormatsDateFiltersAsRFC3339(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
@@ -704,6 +793,89 @@ func TestWorkflowRunListCommandsHonorExplicitLimit(t *testing.T) {
 				t.Fatalf("server was hit %d time(s), want 1", got)
 			}
 		})
+	}
+}
+
+func TestWorkflowsEvalsResultsListSupportsCursorPagination(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var gotQuery string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v1/workflows/evals/results" {
+			t.Fatalf("path = %q, want /v1/workflows/evals/results", r.URL.Path)
+		}
+		gotQuery = r.URL.RawQuery
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"data":[],"list_metadata":{"after":null,"before":null}}`))
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	for flag, value := range map[string]string{
+		"limit": "3",
+		"after": "wfnodeevalrun_cursor",
+	} {
+		if err := workflowsEvalsResultsListCmd.Flags().Set(flag, value); err != nil {
+			t.Fatalf("set --%s: %v", flag, err)
+		}
+		flag := flag
+		t.Cleanup(func() {
+			reset := ""
+			if flag == "limit" {
+				reset = "20"
+			}
+			_ = workflowsEvalsResultsListCmd.Flags().Set(flag, reset)
+			workflowsEvalsResultsListCmd.Flags().Lookup(flag).Changed = false
+		})
+	}
+
+	var err error
+	captureStd(t, func() {
+		err = workflowsEvalsResultsListCmd.RunE(workflowsEvalsResultsListCmd, []string{"wfevalrun_123"})
+	})
+	if err != nil {
+		t.Fatalf("results list: %v", err)
+	}
+	values, parseErr := url.ParseQuery(gotQuery)
+	if parseErr != nil {
+		t.Fatalf("parse query %q: %v", gotQuery, parseErr)
+	}
+	if got := values.Get("run_id"); got != "wfevalrun_123" {
+		t.Fatalf("run_id = %q, want wfevalrun_123", got)
+	}
+	if got := values.Get("limit"); got != "3" {
+		t.Fatalf("limit = %q, want 3", got)
+	}
+	if got := values.Get("after"); got != "wfnodeevalrun_cursor" {
+		t.Fatalf("after = %q, want wfnodeevalrun_cursor", got)
+	}
+}
+
+func TestWorkflowsEvalsResultsListRejectsBeforeAfterTogether(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	for flag, value := range map[string]string{
+		"before": "wfnodeevalrun_before",
+		"after":  "wfnodeevalrun_after",
+	} {
+		if err := workflowsEvalsResultsListCmd.Flags().Set(flag, value); err != nil {
+			t.Fatalf("set --%s: %v", flag, err)
+		}
+		flag := flag
+		t.Cleanup(func() {
+			_ = workflowsEvalsResultsListCmd.Flags().Set(flag, "")
+			workflowsEvalsResultsListCmd.Flags().Lookup(flag).Changed = false
+		})
+	}
+
+	err := workflowsEvalsResultsListCmd.RunE(workflowsEvalsResultsListCmd, []string{"wfevalrun_123"})
+	if err == nil {
+		t.Fatal("expected before/after mutual exclusion error")
+	}
+	if !strings.Contains(err.Error(), "--before and --after are mutually exclusive") {
+		t.Fatalf("error %q does not contain before/after message", err.Error())
 	}
 }
 
@@ -2309,5 +2481,143 @@ func TestWorkflowsEvalsUpdateEqualsPreservesExistingPath(t *testing.T) {
 	cond, _ := patchAssertion["condition"].(map[string]any)
 	if cond == nil || cond["expected"] != "New Vendor" {
 		t.Fatalf("update did not apply new expected value; condition=%v", cond)
+	}
+}
+
+// TestValidateWorkflowEvalSourceRejectsUnknownKeys guards the documented
+// extra="forbid" contract on the eval source/target value objects. The CLI
+// decodes source/target into typed structs, and the server's nested source
+// variants are deliberately loose, so a typo'd field (e.g. "step" for
+// "step_id") would otherwise be silently dropped end-to-end — the eval would
+// pin to an auto-resolved step instead of the one the user named, with no
+// error. The create help promises these are "rejected with 'Extra inputs are
+// not permitted'", so the local validators must enforce it.
+func TestValidateWorkflowEvalSourceRejectsUnknownKeys(t *testing.T) {
+	cases := []struct {
+		name      string
+		source    map[string]any
+		wantError string // substring; "" means the source must validate cleanly
+	}{
+		{
+			name:   "run_step valid with optional step_id",
+			source: map[string]any{"type": "run_step", "run_id": "run_1", "step_id": "step_1"},
+		},
+		{
+			name:   "run_step valid without step_id",
+			source: map[string]any{"type": "run_step", "run_id": "run_1"},
+		},
+		{
+			name:      "run_step typo step instead of step_id",
+			source:    map[string]any{"type": "run_step", "run_id": "run_1", "step": "step_1"},
+			wantError: "step",
+		},
+		{
+			name:      "run_step unknown key",
+			source:    map[string]any{"type": "run_step", "run_id": "run_1", "bogus_extra": 123},
+			wantError: "bogus_extra",
+		},
+		{
+			name:   "manual valid",
+			source: map[string]any{"type": "manual", "handle_inputs": map[string]any{}},
+		},
+		{
+			name:      "manual unknown key",
+			source:    map[string]any{"type": "manual", "handle_inputs": map[string]any{}, "extra": true},
+			wantError: "extra",
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := validateWorkflowEvalSource(tc.source)
+			if tc.wantError == "" {
+				if err != nil {
+					t.Fatalf("expected valid source, got error: %v", err)
+				}
+				return
+			}
+			if err == nil {
+				t.Fatalf("expected error mentioning %q, got nil", tc.wantError)
+			}
+			if !strings.Contains(err.Error(), tc.wantError) {
+				t.Fatalf("error %q does not mention %q", err.Error(), tc.wantError)
+			}
+		})
+	}
+}
+
+func TestValidateWorkflowEvalTargetRejectsUnknownKeys(t *testing.T) {
+	if err := validateWorkflowEvalTarget(map[string]any{"type": "block", "block_id": "blk_1"}); err != nil {
+		t.Fatalf("expected valid target, got error: %v", err)
+	}
+	err := validateWorkflowEvalTarget(map[string]any{"type": "block", "block_id": "blk_1", "junk": 1})
+	if err == nil {
+		t.Fatal("expected error for unknown target key, got nil")
+	}
+	if !strings.Contains(err.Error(), "junk") {
+		t.Fatalf("error %q does not mention the offending key", err.Error())
+	}
+}
+
+// TestWorkflowEvalRunTerminalErrorFailsOnNonPassingAssertions guards that
+// `workflows evals runs create --wait` exits non-zero when a completed run has
+// failed or blocked assertions, so CI can gate a build on a detected regression
+// (not only on lifecycle error/cancelled/timeout).
+func TestWorkflowEvalRunTerminalErrorFailsOnNonPassingAssertions(t *testing.T) {
+	completed := func(passed, failed, blocked int) *retab.WorkflowEvalRun {
+		return &retab.WorkflowEvalRun{
+			ID:        "wfevalrun_x",
+			Lifecycle: retab.WorkflowEvalRunStatusFromCompletedWorkflowEvalRun(retab.CompletedWorkflowEvalRun{}),
+			Counts: &retab.BlockEvalBatchExecutionCounts{
+				Outcome: &retab.BlockEvalOutcomeCounts{Passed: &passed, Failed: &failed, Blocked: &blocked},
+			},
+		}
+	}
+	completedWithChildLifecycle := func(errored, cancelled int) *retab.WorkflowEvalRun {
+		return &retab.WorkflowEvalRun{
+			ID:        "wfevalrun_child_lifecycle",
+			Lifecycle: retab.WorkflowEvalRunStatusFromCompletedWorkflowEvalRun(retab.CompletedWorkflowEvalRun{}),
+			Counts: &retab.BlockEvalBatchExecutionCounts{
+				LifecycleCounts: &retab.BlockEvalLifecycleCounts{Error: &errored, Cancelled: &cancelled},
+			},
+		}
+	}
+	cases := []struct {
+		name    string
+		run     *retab.WorkflowEvalRun
+		wantErr bool
+	}{
+		{name: "all passed", run: completed(8, 0, 0), wantErr: false},
+		{name: "some failed", run: completed(7, 1, 0), wantErr: true},
+		{name: "some blocked", run: completed(7, 0, 1), wantErr: true},
+		{name: "failed and blocked", run: completed(5, 2, 1), wantErr: true},
+		{name: "child eval error", run: completedWithChildLifecycle(1, 0), wantErr: true},
+		{name: "child eval cancelled", run: completedWithChildLifecycle(0, 1), wantErr: true},
+		{
+			name: "completed with no counts is success",
+			run: &retab.WorkflowEvalRun{
+				ID:        "wfevalrun_y",
+				Lifecycle: retab.WorkflowEvalRunStatusFromCompletedWorkflowEvalRun(retab.CompletedWorkflowEvalRun{}),
+			},
+			wantErr: false,
+		},
+		{
+			name: "error lifecycle still fails",
+			run: &retab.WorkflowEvalRun{
+				ID:        "wfevalrun_z",
+				Lifecycle: retab.WorkflowEvalRunStatusFromErrorWorkflowEvalRun(retab.ErrorWorkflowEvalRun{}),
+			},
+			wantErr: true,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := workflowEvalRunTerminalError(tc.run)
+			if tc.wantErr && err == nil {
+				t.Fatalf("expected non-zero exit error, got nil")
+			}
+			if !tc.wantErr && err != nil {
+				t.Fatalf("expected success, got error: %v", err)
+			}
+		})
 	}
 }

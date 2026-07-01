@@ -1,6 +1,6 @@
 load("@aspect_bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 load("@aspect_bazel_lib//lib:run_binary.bzl", "run_binary")
-load("//tools/bazel:defs.bzl", "MANUAL_LOCAL_TAGS", "PYTHON_VENV_TAGS")
+load("//factory/bazel:defs.bzl", "MANUAL_LOCAL_TAGS", "PYTHON_VENV_TAGS")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -16,7 +16,7 @@ filegroup(
 
 sh_test(
     name = "format_check",
-    srcs = ["//tools/bazel:run_python_sdk.sh"],
+    srcs = ["//factory/bazel:run_python_sdk.sh"],
     args = ["format_check"],
     data = [":sources"],
     tags = MANUAL_LOCAL_TAGS + PYTHON_VENV_TAGS,
@@ -24,7 +24,7 @@ sh_test(
 
 sh_test(
     name = "lint",
-    srcs = ["//tools/bazel:run_python_sdk.sh"],
+    srcs = ["//factory/bazel:run_python_sdk.sh"],
     args = ["lint"],
     data = [":sources"],
     tags = MANUAL_LOCAL_TAGS + PYTHON_VENV_TAGS,
@@ -32,7 +32,7 @@ sh_test(
 
 sh_test(
     name = "test",
-    srcs = ["//tools/bazel:run_python_sdk.sh"],
+    srcs = ["//factory/bazel:run_python_sdk.sh"],
     args = ["test"],
     data = [":sources"],
     tags = MANUAL_LOCAL_TAGS + PYTHON_VENV_TAGS,
@@ -41,7 +41,7 @@ sh_test(
 
 sh_test(
     name = "test_local",
-    srcs = ["//tools/bazel:run_python_sdk.sh"],
+    srcs = ["//factory/bazel:run_python_sdk.sh"],
     args = ["test_local"],
     data = [":sources"],
     tags = MANUAL_LOCAL_TAGS + PYTHON_VENV_TAGS,
@@ -50,27 +50,27 @@ sh_test(
 
 # Hermetic ruff step for the sandboxed Python SDK drift check.
 #
-# The generator (//.oagen-workspace/retab-gen:generated_python_sdk_raw) emits an
+# The generator (//factory/generators/oagen/retab-gen:generated_python_sdk_raw) emits an
 # UNFORMATTED Python tree (retab/resources/** + retab/types/** + manifest). ruff
 # is not in the oagen generator closure (it is a self-contained native binary,
 # not a requirements.txt pin), so this step formats the raw tree with the
-# lockfile-pinned, vendored ruff binary via //tools/bazel/ruff_sdk_tree --
+# lockfile-pinned, vendored ruff binary via //factory/bazel/ruff_sdk_tree --
 # mirroring how the Node SDK reformats with its own vendored prettier and the Go
 # SDK with gofmt. The ruff binary is passed as a run_binary src + first arg so
-# host-platform selection stays at the //tools/bazel/ruff_sdk_tree:ruff alias.
+# host-platform selection stays at the //factory/bazel/ruff_sdk_tree:ruff alias.
 run_binary(
     name = "generated_python_sdk_formatted",
     srcs = [
-        "//.oagen-workspace/retab-gen:generated_python_sdk_raw",
-        "//tools/bazel/ruff_sdk_tree:ruff",
+        "//factory/generators/oagen/retab-gen:generated_python_sdk_raw",
+        "//factory/bazel/ruff_sdk_tree:ruff",
     ],
     args = [
-        "$(execpath //tools/bazel/ruff_sdk_tree:ruff)",
-        "$(execpath //.oagen-workspace/retab-gen:generated_python_sdk_raw)",
+        "$(execpath //factory/bazel/ruff_sdk_tree:ruff)",
+        "$(execpath //factory/generators/oagen/retab-gen:generated_python_sdk_raw)",
         "$@",
     ],
     out_dirs = ["generated-python-formatted"],
-    tool = "//tools/bazel/ruff_sdk_tree:format_python_sdk_tree",
+    tool = "//factory/bazel/ruff_sdk_tree:format_python_sdk_tree",
 )
 
 # Stage the committed Python SDK generated paths into a single TreeArtifact so

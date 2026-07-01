@@ -40,8 +40,7 @@ readonly class ReviewEvaluation implements \JsonSerializable
         public ?\DateTimeImmutable $reviewedAt = null,
         /** The operation that produced this artifact */
         public string $operation = 'review_trigger_evaluation',
-    ) {
-    }
+    ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -61,7 +60,7 @@ readonly class ReviewEvaluation implements \JsonSerializable
             runId: $data['run_id'],
             stepId: $data['step_id'],
             createdAt: new \DateTimeImmutable($data['created_at']),
-            evaluations: isset($data['evaluations']) ? array_map(fn ($item) => ConditionEvaluationResult::fromArray($item), $data['evaluations']) : null,
+            evaluations: isset($data['evaluations']) ? array_map(fn($item) => ConditionEvaluationResult::fromArray($item), $data['evaluations']) : null,
             selectedHandles: $data['selected_handles'] ?? null,
             matchedBranchId: $data['matched_branch_id'] ?? null,
             matchedConditionIds: $data['matched_condition_ids'] ?? null,
@@ -83,7 +82,7 @@ readonly class ReviewEvaluation implements \JsonSerializable
             'run_id' => $this->runId,
             'step_id' => $this->stepId,
             'created_at' => $this->createdAt->format(\DateTimeInterface::RFC3339_EXTENDED),
-            'evaluations' => $this->evaluations !== null ? array_map(fn ($item) => $item->toArray(), $this->evaluations) : null,
+            'evaluations' => $this->evaluations !== null ? array_map(fn($item) => $item->toArray(), $this->evaluations) : null,
             'selected_handles' => $this->selectedHandles,
             'matched_branch_id' => $this->matchedBranchId,
             'matched_condition_ids' => $this->matchedConditionIds,
