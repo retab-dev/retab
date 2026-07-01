@@ -322,6 +322,89 @@ func TestRenderAPIErrorForCLIFormatsFlatValidationEnvelope(t *testing.T) {
 	}
 }
 
+// Regression: the Workflow Evals create call hits a server that routes
+// /v1/workflows/evals but does not register POST there yet (405, Allow omits
+// POST). The raw envelope rendered "405 — 405 method not allowed", which reads
+// like a broken CLI. The renderer now explains it's a client-ahead-of-server
+// rollout and names the endpoint without leaking the host or query string.
+func TestRenderAPIErrorForCLIExplains405AsNotEnabled(t *testing.T) {
+	cmd := commandWithDebugFlagForTest(t, false)
+	apiErr := &retab.APIError{
+		StatusCode: http.StatusMethodNotAllowed,
+		Message:    "405 method not allowed",
+		Method:     http.MethodPost,
+		URL:        "https://api.retab.com/v1/workflows/evals?workflow_id=wrk_1",
+		RequestID:  "req_123",
+		Body:       "405 method not allowed",
+	}
+
+	got := renderAPIErrorForCLI(cmd, apiErr)
+
+	for _, want := range []string{
+		"405 — This operation is not available on this environment yet.",
+		"POST /v1/workflows/evals",
+		"not be enabled on this environment yet",
+		"Request-ID: req_123",
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("rendered 405 should contain %q:\n%s", want, got)
+		}
+	}
+	// The query string and host are raw HTTP detail — keep them hidden, like the
+	// other non-debug renders. The redundant raw body must not leak either.
+	for _, raw := range []string{"workflow_id=wrk_1", "api.retab.com", "405 method not allowed"} {
+		if strings.Contains(got, raw) {
+			t.Fatalf("non-debug 405 render should hide %q:\n%s", raw, got)
+		}
+	}
+}
+
+// --debug must still win: a 405 dumps the full wire envelope, not the friendly
+// summary, so operators can inspect the Allow header and request URL.
+func TestRenderAPIErrorForCLI405DebugKeepsRawEnvelope(t *testing.T) {
+	cmd := commandWithDebugFlagForTest(t, true)
+	apiErr := &retab.APIError{
+		StatusCode: http.StatusMethodNotAllowed,
+		Message:    "405 method not allowed",
+		Method:     http.MethodPost,
+		URL:        "https://api.retab.com/v1/workflows/evals",
+		Body:       "405 method not allowed",
+	}
+
+	got := renderAPIErrorForCLI(cmd, apiErr)
+
+	if strings.Contains(got, "not available on this environment") {
+		t.Fatalf("--debug 405 should show the raw envelope, not the summary:\n%s", got)
+	}
+	for _, want := range []string{"URL:", "/v1/workflows/evals", "Body:"} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("--debug 405 render should include raw HTTP detail %q:\n%s", want, got)
+		}
+	}
+}
+
+// A 404 "Workflow not found" is intentionally left as-is: a genuinely mistyped
+// workflow id produces the same status, so it must not be reworded as a
+// not-enabled rollout gap.
+func TestRenderAPIErrorForCLI404NotRewordedAsNotEnabled(t *testing.T) {
+	cmd := commandWithDebugFlagForTest(t, false)
+	apiErr := &retab.APIError{
+		StatusCode: http.StatusNotFound,
+		Message:    "Workflow not found",
+		Method:     http.MethodGet,
+		URL:        "https://api.retab.com/v1/workflows/evals?workflow_id=wrk_1",
+	}
+
+	got := renderAPIErrorForCLI(cmd, apiErr)
+
+	if !strings.Contains(got, "404 — Workflow not found") {
+		t.Fatalf("404 should render its server message verbatim:\n%s", got)
+	}
+	if strings.Contains(got, "not available on this environment") {
+		t.Fatalf("404 must not be reworded as a not-enabled rollout gap:\n%s", got)
+	}
+}
+
 func commandWithDebugFlagForTest(t *testing.T, debug bool) *cobra.Command {
 	t.Helper()
 	root := &cobra.Command{Use: "retab"}

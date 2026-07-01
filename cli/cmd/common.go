@@ -125,6 +125,9 @@ func renderAPIErrorForCLI(cmd *cobra.Command, apiErr *retab.APIError) string {
 	if debug, _ := cmd.Root().PersistentFlags().GetBool("debug"); debug {
 		return apiErr.String()
 	}
+	if msg := renderNotDeployedEndpointForCLI(apiErr); msg != "" {
+		return msg
+	}
 	if validationLines := formatValidationErrorLines(apiErr.Message); len(validationLines) > 0 {
 		lines := []string{fmt.Sprintf("%d — Invalid request.", apiErr.StatusCode)}
 		lines = append(lines, validationLines...)
@@ -145,6 +148,60 @@ func renderAPIErrorForCLI(cmd *cobra.Command, apiErr *retab.APIError) string {
 		lines = append(lines, "  Request-ID: "+apiErr.RequestID)
 	}
 	return strings.Join(lines, "\n")
+}
+
+// renderNotDeployedEndpointForCLI recognizes the signature of a client that has
+// outrun the server rollout: a 405 Method Not Allowed. The CLI only ever sends
+// the HTTP method its generated command is defined with, so a 405 never means
+// "you used the wrong verb" — it means the server routes the path but does not
+// serve this method for this organization/environment yet. The Workflow Evals
+// endpoints are the motivating case: the collection route returns 405 for POST
+// (Allow: OPTIONS, GET, DELETE, PATCH) while the CLI and SDKs already ship the
+// create call. The raw "405 — 405 method not allowed" reads like a broken CLI;
+// this explains that the endpoint simply isn't enabled here yet.
+//
+// Returns "" for any other status so the caller falls back to normal rendering.
+// The 404 "Workflow not found" the same rollout produces is deliberately left
+// alone: an actually-mistyped workflow id yields the identical 404, so rewording
+// it as "not enabled" would mislead the far more common case.
+func renderNotDeployedEndpointForCLI(apiErr *retab.APIError) string {
+	if apiErr.StatusCode != http.StatusMethodNotAllowed {
+		return ""
+	}
+	lines := []string{
+		fmt.Sprintf("%d — This operation is not available on this environment yet.", apiErr.StatusCode),
+	}
+	if endpoint := describeAPIEndpoint(apiErr); endpoint != "" {
+		lines = append(lines, "  Endpoint: "+endpoint)
+	}
+	lines = append(lines,
+		"  The server routes this path but does not serve this method here, which",
+		"  usually means the CLI/SDK is ahead of the server for this organization or",
+		"  environment. Make sure `retab` is up to date; if it persists, the feature",
+		"  may not be enabled on this environment yet — contact Retab support.")
+	if apiErr.RequestID != "" {
+		lines = append(lines, "  Request-ID: "+apiErr.RequestID)
+	}
+	return strings.Join(lines, "\n")
+}
+
+// describeAPIEndpoint renders "METHOD /path" from an APIError, dropping the host
+// and query string so the message names the endpoint without leaking the base
+// URL or query parameters (consistent with the non-debug renderer hiding raw
+// HTTP detail). Returns "" when neither field is populated.
+func describeAPIEndpoint(apiErr *retab.APIError) string {
+	pathPart := apiErr.URL
+	if parsed, err := url.Parse(apiErr.URL); err == nil && parsed.Path != "" {
+		pathPart = parsed.Path
+	}
+	switch {
+	case apiErr.Method != "" && pathPart != "":
+		return apiErr.Method + " " + pathPart
+	case pathPart != "":
+		return pathPart
+	default:
+		return ""
+	}
 }
 
 func usefulAPIErrorDetail(details map[string]any) string {
