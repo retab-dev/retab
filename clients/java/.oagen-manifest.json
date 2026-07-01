@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "java",
-  "generatedAt": "2026-07-01T11:01:07.085Z",
+  "generatedAt": "2026-07-01T18:24:17.965Z",
   "files": [
     "build.gradle.kts",
     "checkstyle.xml",
