@@ -63,7 +63,7 @@ func runWorkflowsBlocksRunsList(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	}
-	params := workflowBlockRunsListParams(cmd, workflowID, blockID)
+	params := workflowBlockRunsListParams(cmd, blockID)
 	result, err := client.Workflows.Steps.List(ctx, params)
 	if err != nil {
 		return err
@@ -71,19 +71,16 @@ func runWorkflowsBlocksRunsList(cmd *cobra.Command, args []string) error {
 	return printBlockRunsListResult(cmd, result)
 }
 
-func workflowBlockRunsListParams(cmd *cobra.Command, workflowID, blockID string) *retab.WorkflowStepsListParams {
+func workflowBlockRunsListParams(cmd *cobra.Command, blockID string) *retab.WorkflowStepsListParams {
 	params := &retab.WorkflowStepsListParams{
 		PaginationParams: collectListParams(cmd),
 		BlockID:          ptr(blockID),
-	}
-	if workflowID != "" {
-		params.WorkflowID = ptr(workflowID)
 	}
 	if runID, _ := cmd.Flags().GetString("run-id"); strings.TrimSpace(runID) != "" {
 		params.RunID = ptr(strings.TrimSpace(runID))
 	}
 	if status, _ := cmd.Flags().GetString("status"); strings.TrimSpace(status) != "" {
-		params.Status = []retab.WorkflowStepsStatus{retab.WorkflowStepsStatus(strings.TrimSpace(status))}
+		params.Status = []string{strings.TrimSpace(status)}
 	}
 	return params
 }

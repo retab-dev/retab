@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "rust",
-  "generatedAt": "2026-06-30T22:56:51.494Z",
+  "generatedAt": "2026-07-01T11:01:18.327Z",
   "files": [
     "Cargo.toml",
     "LICENSE-MIT",
@@ -122,8 +122,6 @@
     "src/enums/workflow_runs_order.rs",
     "src/enums/workflow_runs_status.rs",
     "src/enums/workflow_runs_trigger_type.rs",
-    "src/enums/workflow_steps_order.rs",
-    "src/enums/workflow_steps_status.rs",
     "src/enums/workflow_table_aggregation_function.rs",
     "src/enums/workflow_table_filter_operator.rs",
     "src/enums/workflow_table_sort_direction.rs",

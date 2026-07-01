@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "php",
-  "generatedAt": "2026-06-30T22:56:49.255Z",
+  "generatedAt": "2026-07-01T11:01:15.861Z",
   "files": [
     "composer.json",
     "lib/Client.php",
@@ -329,7 +329,6 @@
     "lib/Resource/WorkflowRunStep.php",
     "lib/Resource/WorkflowRunsStatus.php",
     "lib/Resource/WorkflowRunsTriggerType.php",
-    "lib/Resource/WorkflowStepsStatus.php",
     "lib/Resource/WorkflowTable.php",
     "lib/Resource/WorkflowTableAggregationFunction.php",
     "lib/Resource/WorkflowTableAggregationRequest.php",

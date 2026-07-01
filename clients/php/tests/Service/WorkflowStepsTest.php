@@ -17,19 +17,17 @@ class WorkflowStepsTest extends TestCase
     {
         $fixture = $this->loadFixture('list_workflow_run_step');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflows()->steps()->list(runId: 'test_value', workflowId: 'test_value', blockId: 'test_value', stepId: 'test_value', blockType: [], status: [], before: 'test_value', after: 'test_value', order: \Retab\Resource\EditsOrder::Asc, limit: 1);
+        $result = $client->workflows()->steps()->list(runId: 'test_value', blockId: 'test_value', stepId: 'test_value', blockType: [], status: [], before: 'test_value', after: 'test_value', limit: 1);
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());
         $this->assertStringEndsWith('v1/workflows/steps', $request->getUri()->getPath());
         parse_str($request->getUri()->getQuery(), $query);
         $this->assertSame('test_value', $query['run_id']);
-        $this->assertSame('test_value', $query['workflow_id']);
         $this->assertSame('test_value', $query['block_id']);
         $this->assertSame('test_value', $query['step_id']);
         $this->assertSame('test_value', $query['before']);
         $this->assertSame('test_value', $query['after']);
-        $this->assertSame('asc', $query['order']);
         $this->assertArrayHasKey('limit', $query);
     }
 
