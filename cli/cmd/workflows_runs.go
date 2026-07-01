@@ -699,6 +699,47 @@ func resolveWorkflowRunDocumentReferences(cmd *cobra.Command, documents map[stri
 	return nil
 }
 
+// workflowRunDocumentFileID reports the stored file id of a by-reference
+// document descriptor, and false when the descriptor is not a bare file-id
+// reference. A descriptor that already carries a url or inline content is
+// url/data-backed and must be sent as-is, so those short-circuit to false —
+// only a {id}-shaped map (no url, no content) needs resolving into MIMEData.
+func workflowRunDocumentFileID(document any) (string, bool) {
+	switch value := document.(type) {
+	case map[string]any:
+		if s, _ := value["url"].(string); s != "" {
+			return "", false
+		}
+		if s, _ := value["content"].(string); s != "" {
+			return "", false
+		}
+		id, _ := value["id"].(string)
+		return id, id != ""
+	case map[string]string:
+		if value["url"] != "" || value["content"] != "" {
+			return "", false
+		}
+		return value["id"], value["id"] != ""
+	default:
+		return "", false
+	}
+}
+
+// workflowRunDocumentFilename returns the caller-supplied filename on a document
+// descriptor, or "" when absent. It is used to preserve the original filename
+// after a file id is resolved into a fresh signed URL (which carries no name).
+func workflowRunDocumentFilename(document any) string {
+	switch value := document.(type) {
+	case map[string]any:
+		name, _ := value["filename"].(string)
+		return name
+	case map[string]string:
+		return value["filename"]
+	default:
+		return ""
+	}
+}
+
 func resolveWorkflowRunDocumentReference(cmd *cobra.Command, document any) (any, bool, error) {
 	id, content, mimeType, filename, hasURL := workflowRunDocumentReferenceParts(document)
 	if hasURL {
