@@ -590,6 +590,53 @@ func TestInferFileMIMEDataDirectory(t *testing.T) {
 	}
 }
 
+func TestInferFileMIMEDataPrefersDocumentExtensionMIME(t *testing.T) {
+	dir := t.TempDir()
+	cases := []struct {
+		name     string
+		filename string
+		data     []byte
+		wantMIME string
+	}{
+		{
+			name:     "csv",
+			filename: "invoice.csv",
+			data:     []byte("field,value\ninvoice_number,INV-123\n"),
+			wantMIME: "text/csv",
+		},
+		{
+			name:     "docx",
+			filename: "contract.docx",
+			data:     []byte("PK\x03\x04docx-like zip bytes"),
+			wantMIME: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+		},
+		{
+			name:     "xlsx",
+			filename: "sheet.xlsx",
+			data:     []byte("PK\x03\x04xlsx-like zip bytes"),
+			wantMIME: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			path := filepath.Join(dir, tc.filename)
+			if err := os.WriteFile(path, tc.data, 0o600); err != nil {
+				t.Fatal(err)
+			}
+			mimeData, err := inferFileMIMEData(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if mimeData.MIMEType != "" {
+				t.Fatalf("MIMEType = %q, want empty for URL-backed MIMEData", mimeData.MIMEType)
+			}
+			if !strings.HasPrefix(mimeData.URL, "data:"+tc.wantMIME+";base64,") {
+				t.Fatalf("URL media type = %q, want data:%s;base64,...", mimeData.URL, tc.wantMIME)
+			}
+		})
+	}
+}
+
 // resolveDocument with --file pointing at a directory must surface the
 // same clear error rather than the cryptic MIME message.
 func TestResolveDocumentFileIsDirectory(t *testing.T) {

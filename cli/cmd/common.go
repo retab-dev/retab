@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"mime"
 	"mime/multipart"
 	"net/http"
 	"net/http/httputil"
@@ -1576,7 +1577,63 @@ func inferFileMIMEData(path string) (retab.MIMEData, error) {
 	if info.IsDir() {
 		return retab.MIMEData{}, fmt.Errorf("not a file (is a directory): %s", path)
 	}
-	return retab.InferMIMEData(path)
+	mimeData, err := retab.InferMIMEData(path)
+	if err != nil {
+		return retab.MIMEData{}, err
+	}
+	if byExt := mimeTypeFromExtension(path); byExt != "" {
+		mimeData = forceMIMEDataType(mimeData, byExt)
+	}
+	return mimeData, nil
+}
+
+func mimeTypeFromExtension(filePath string) string {
+	ext := strings.ToLower(filepath.Ext(filePath))
+	if ext == "" {
+		return ""
+	}
+	switch ext {
+	case ".csv":
+		return "text/csv"
+	case ".tsv":
+		return "text/tab-separated-values"
+	case ".eml":
+		return "message/rfc822"
+	case ".docx":
+		return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+	case ".xlsx":
+		return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+	case ".xlsm":
+		return "application/vnd.ms-excel.sheet.macroEnabled.12"
+	}
+	byExt := mime.TypeByExtension(ext)
+	if byExt == "" {
+		return ""
+	}
+	if i := strings.IndexByte(byExt, ';'); i >= 0 {
+		byExt = strings.TrimSpace(byExt[:i])
+	}
+	return byExt
+}
+
+func forceMIMEDataType(mimeData retab.MIMEData, mimeType string) retab.MIMEData {
+	if mimeType == "" {
+		return mimeData
+	}
+	if strings.HasPrefix(mimeData.URL, "data:") {
+		if comma := strings.IndexByte(mimeData.URL, ','); comma >= 0 {
+			header := mimeData.URL[:comma]
+			suffix := mimeData.URL[comma:]
+			if semi := strings.IndexByte(header, ';'); semi >= 0 {
+				mimeData.URL = "data:" + mimeType + header[semi:] + suffix
+			} else {
+				mimeData.URL = "data:" + mimeType + suffix
+			}
+		}
+		return mimeData
+	}
+	mimeData.MIMEType = mimeType
+	return mimeData
 }
 
 // resolveDocument turns the document flags into a value the SDK can marshal.

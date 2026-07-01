@@ -10,7 +10,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"mime"
 	"net/http"
 	"net/url"
 	"os"
@@ -433,29 +432,15 @@ func resolveUploadMIMEType(serverMIMEType, uploadPath, detectedContentType strin
 	if serverMIMEType != "" {
 		return serverMIMEType
 	}
-	if ext := filepath.Ext(uploadPath); ext != "" {
-		if byExt := mime.TypeByExtension(ext); byExt != "" {
-			if i := strings.IndexByte(byExt, ';'); i >= 0 {
-				byExt = strings.TrimSpace(byExt[:i])
-			}
-			if byExt != "" {
-				return byExt
-			}
-		}
+	if byExt := mimeTypeFromExtension(uploadPath); byExt != "" {
+		return byExt
 	}
 	return detectedContentType
 }
 
 func detectUploadContentType(uploadPath string, data []byte) string {
-	if ext := filepath.Ext(uploadPath); ext != "" {
-		if byExt := mime.TypeByExtension(ext); byExt != "" {
-			if i := strings.IndexByte(byExt, ';'); i >= 0 {
-				byExt = strings.TrimSpace(byExt[:i])
-			}
-			if byExt != "" {
-				return byExt
-			}
-		}
+	if byExt := mimeTypeFromExtension(uploadPath); byExt != "" {
+		return byExt
 	}
 	return http.DetectContentType(data)
 }
