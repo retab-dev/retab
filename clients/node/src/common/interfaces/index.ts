@@ -31,6 +31,4 @@ export * from './workflow-runs-exclude-status.interface.js';
 export * from './workflow-runs-order.interface.js';
 export * from './workflow-runs-status.interface.js';
 export * from './workflow-runs-trigger-type.interface.js';
-export * from './workflow-steps-order.interface.js';
-export * from './workflow-steps-status.interface.js';
 export * from './workflows-order.interface.js';

@@ -141,8 +141,8 @@ func TestWorkflowsBlocksRunsVerifiesWorkflowScopedBlock(t *testing.T) {
 			if r.URL.Query().Get("block_id") != "blk_extract" {
 				t.Fatalf("steps query = %s, want block_id=blk_extract", r.URL.RawQuery)
 			}
-			if r.URL.Query().Get("workflow_id") != "wf_123" {
-				t.Fatalf("steps query = %s, want workflow_id=wf_123", r.URL.RawQuery)
+			if r.URL.Query().Has("workflow_id") {
+				t.Fatalf("steps query = %s, did not expect workflow_id", r.URL.RawQuery)
 			}
 			writeBlockRunsTestResponse(t, w)
 		default:

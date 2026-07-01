@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "java",
-  "generatedAt": "2026-06-30T22:56:40.600Z",
+  "generatedAt": "2026-07-01T11:01:07.085Z",
   "files": [
     "build.gradle.kts",
     "checkstyle.xml",
@@ -428,7 +428,6 @@
     "src/main/java/com/retab/types/WorkflowRunsExcludeStatus.java",
     "src/main/java/com/retab/types/WorkflowRunsStatus.java",
     "src/main/java/com/retab/types/WorkflowRunsTriggerType.java",
-    "src/main/java/com/retab/types/WorkflowStepsStatus.java",
     "src/main/java/com/retab/types/WorkflowTableAggregationFunction.java",
     "src/main/java/com/retab/types/WorkflowTableFilterOperator.java",
     "src/main/java/com/retab/types/WorkflowTableValidationColumnRuleType.java",

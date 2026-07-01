@@ -12,40 +12,34 @@ module Retab
 
     # List Workflow Run Steps
     # @param run_id [String, nil] Optional workflow run ID filter.
-    # @param workflow_id [String, nil]
     # @param block_id [String, nil] Optional logical block ID filter.
     # @param step_id [String, nil] Optional step ID filter.
     # @param block_type [Array<String>, nil] Optional block type filter. Repeat the query parameter for multiple values.
-    # @param status [Array<Retab::Types::WorkflowStepsStatus>, nil] Optional step lifecycle status filter. Repeat the query parameter for multiple values.
+    # @param status [Array<String>, nil] Optional step lifecycle status filter. Repeat the query parameter for multiple values.
     # @param before [String, nil] Step id cursor: return the page before this id (mutually exclusive with `after`).
     # @param after [String, nil] Step id cursor: return the page after this id (mutually exclusive with `before`).
-    # @param order [Retab::Types::WorkflowStepsOrder, nil]
     # @param limit [Integer, nil] Maximum number of steps to return per page (1-1000). Each step hydrates its handle payloads from the artifact store, so raise it deliberately for larger pages and use cursor pagination for the rest.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::PaginatedList<Retab::WorkflowRunStep>]
     def list(
       run_id: nil,
-      workflow_id: nil,
       block_id: nil,
       step_id: nil,
       block_type: nil,
       status: nil,
       before: nil,
       after: nil,
-      order: "asc",
       limit: 20,
       request_options: {}
     )
       params = {
         "run_id" => run_id,
-        "workflow_id" => workflow_id,
         "block_id" => block_id,
         "step_id" => step_id,
         "block_type" => block_type,
         "status" => status,
         "before" => before,
         "after" => after,
-        "order" => order,
         "limit" => limit
       }.compact
       response = @client.request(
@@ -58,14 +52,12 @@ module Retab
       fetch_next = -> (cursor) {
         list(
           run_id: run_id,
-          workflow_id: workflow_id,
           block_id: block_id,
           step_id: step_id,
           block_type: block_type,
           status: status,
           before: before,
           after: cursor,
-          order: order,
           limit: limit,
           request_options: request_options
         )
@@ -75,13 +67,11 @@ module Retab
         model: Retab::WorkflowRunStep,
         filters: {
           run_id: run_id,
-          workflow_id: workflow_id,
           block_id: block_id,
           step_id: step_id,
           block_type: block_type,
           status: status,
           before: before,
-          order: order,
           limit: limit
         },
         fetch_next: fetch_next
