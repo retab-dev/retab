@@ -24,11 +24,11 @@ import (
 // keep the user from publishing — the publish call itself will surface any
 // real auth/server failure with its own error.
 func warnIfEmptyWorkflowOnPublish(ctx context.Context, client *retab.Client, workflowID string, w io.Writer) {
-	blocks, err := client.Workflows.Blocks.List(ctx, &retab.WorkflowBlocksListParams{WorkflowID: workflowID})
+	blocks, err := listAllWorkflowBlocks(ctx, client, workflowID)
 	if err != nil {
 		return
 	}
-	if !isEffectivelyEmptyDraft(blocks.Data) {
+	if !isEffectivelyEmptyDraft(blocks) {
 		return
 	}
 	_, _ = fmt.Fprintln(w, "warning: workflow has only a start_document block — publishing an empty workflow.")

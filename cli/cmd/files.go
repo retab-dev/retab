@@ -111,6 +111,9 @@ need.`,
 		if v, _ := cmd.Flags().GetString("to-date"); v != "" {
 			params.ToDate = ptr(v)
 		}
+		if err := validateListDateRange(cmd); err != nil {
+			return err
+		}
 		result, err := client.Files.List(ctx, &params)
 		if err != nil {
 			return err

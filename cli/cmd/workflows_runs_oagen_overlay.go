@@ -96,11 +96,18 @@ func parseWorkflowRunConfigSource(value string) (string, error) {
 	}
 }
 
+// These allowlists must stay in sync with the SDK enums the flags map into
+// (WorkflowExportPayloadRequestExcludeStatus / ...TriggerType in
+// clients/go/enums.go). Omitting a valid value makes the CLI's client-side
+// validator stricter than the API, rejecting a legitimate filter before the
+// request is ever sent.
 var allowedWorkflowRunStatuses = map[string]bool{
 	"pending":         true,
+	"queued":          true,
 	"running":         true,
 	"completed":       true,
 	"error":           true,
+	"failed":          true,
 	"awaiting_review": true,
 	"cancelled":       true,
 }
@@ -110,6 +117,7 @@ var allowedWorkflowRunTriggerTypes = map[string]bool{
 	"api":      true,
 	"schedule": true,
 	"webhook":  true,
+	"email":    true,
 	"restart":  true,
 }
 
@@ -118,8 +126,8 @@ var allowedWorkflowRunExportSources = map[string]bool{
 	"inputs":  true,
 }
 
-const workflowRunStatusValues = "pending, running, completed, error, awaiting_review, cancelled"
-const workflowRunTriggerTypeValues = "manual, api, schedule, webhook, restart"
+const workflowRunStatusValues = "pending, queued, running, completed, error, failed, awaiting_review, cancelled"
+const workflowRunTriggerTypeValues = "manual, api, schedule, webhook, email, restart"
 const workflowRunExportSourceValues = "outputs, inputs"
 
 func validateWorkflowRunsListFilters(cmd *cobra.Command) error {

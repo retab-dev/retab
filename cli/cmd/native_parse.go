@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"archive/zip"
+	"bytes"
 	"context"
 	"encoding/csv"
 	"encoding/xml"
@@ -169,7 +170,11 @@ func parseTextFile(path string) (*ParseResult, error) {
 	if err != nil {
 		return nil, fmt.Errorf("read %s: %w", path, err)
 	}
-	text := string(data)
+	// Strip a leading BOM / decode UTF-16, matching readJSON/readTextFileOrStdin.
+	// Windows tooling (PowerShell `Out-File -Encoding utf8`, default `>` redirect)
+	// produces these; without normalization a parsed .txt/.md/.json keeps a stray
+	// U+FEFF on its first line or is fully garbled.
+	text := string(normalizeInputBytes(data))
 	return &ParseResult{
 		TotalPages: 1,
 		Pages:      []ParsedPage{{Page: 1, Text: text}},
@@ -177,12 +182,13 @@ func parseTextFile(path string) (*ParseResult, error) {
 }
 
 func parseCSVFile(path string) (*ParseResult, error) {
-	f, err := os.Open(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("read %s: %w", path, err)
 	}
-	defer func() { _ = f.Close() }()
-	reader := csv.NewReader(f)
+	// Normalize BOM/UTF-16 before parsing so a Windows-authored CSV/TSV doesn't
+	// glue a stray BOM onto the first header cell (or arrive UTF-16-garbled).
+	reader := csv.NewReader(bytes.NewReader(normalizeInputBytes(data)))
 	reader.FieldsPerRecord = -1 // ragged rows are fine
 	reader.LazyQuotes = true
 	if strings.EqualFold(filepath.Ext(path), ".tsv") {
@@ -346,24 +352,47 @@ func parseXLSXFile(path string) (*ParseResult, error) {
 // an unbounded per-row slice allocation.
 const maxExcelColumns = 16384
 
+// maxExcelRows is Excel's hard row limit (1,048,576). Rows whose r attribute
+// exceeds it are dropped so a crafted/garbage .xlsx (e.g. a single row at
+// r="999999999") cannot drive an unbounded padding allocation.
+const maxExcelRows = 1048576
+
 func parseSheetRows(f *zip.File, shared *xlsxSharedStrings) ([][]string, error) {
 	var sx xlsxSheetXML
 	if err := unmarshalZip(f, &sx); err != nil {
 		return nil, err
 	}
-	var rows [][]string
+	// Place rows by their r attribute so omitted (empty) rows keep their
+	// spreadsheet position, mirroring the per-column gap handling below.
+	// Sparse sheets routinely skip empty rows in sheetData, so honoring r is
+	// what keeps reported coordinates (e.g. "B5") aligned with the UI.
+	rowByNum := map[int][]string{}
+	maxRow := 0
+	implicit := 0 // last assigned row number, for rows missing the r attribute
 	for _, row := range sx.Rows {
 		// Place cells by their column ref so gaps stay aligned.
 		maxCol := 0
+		// implicitCol tracks the last placed column so a cell whose `r`
+		// attribute is omitted lands in the next column, mirroring the
+		// implicit-row handling below. The OOXML spec makes the cell `r`
+		// optional (an absent ref means "the column after the previous
+		// cell"); some writers omit it entirely. Without this, every such
+		// cell resolved to column 0 and was dropped, so a sheet written
+		// without cell refs parsed as completely empty.
+		implicitCol := 0
 		cells := map[int]string{}
 		for _, c := range row.Cells {
 			col := 0
 			if m := cellRefPattern.FindStringSubmatch(c.R); m != nil {
 				col = colIndex(m[1])
 			}
-			if col == 0 || col > maxExcelColumns {
+			if col <= 0 {
+				col = implicitCol + 1
+			}
+			if col > maxExcelColumns {
 				continue
 			}
+			implicitCol = col
 			value := c.V
 			switch c.T {
 			case "s":
@@ -386,7 +415,22 @@ func parseSheetRows(f *zip.File, shared *xlsxSharedStrings) ([][]string, error) 
 		for col, v := range cells {
 			rowSlice[col-1] = v
 		}
-		rows = append(rows, rowSlice)
+		rowNum := row.R
+		if rowNum <= 0 {
+			rowNum = implicit + 1
+		}
+		if rowNum > maxExcelRows {
+			continue
+		}
+		implicit = rowNum
+		rowByNum[rowNum] = rowSlice
+		if rowNum > maxRow {
+			maxRow = rowNum
+		}
+	}
+	rows := make([][]string, maxRow)
+	for n, rowSlice := range rowByNum {
+		rows[n-1] = rowSlice
 	}
 	return rows, nil
 }

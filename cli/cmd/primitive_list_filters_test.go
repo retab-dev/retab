@@ -16,10 +16,12 @@ func TestPrimitiveListCommandsForwardFilterFlags(t *testing.T) {
 		cmd  *cobra.Command
 		path string
 	}{
+		{name: "extractions", cmd: extractionsListCmd, path: "/v1/extractions"},
 		{name: "parses", cmd: parsesListCmd, path: "/v1/parses"},
 		{name: "edits", cmd: editsListCmd, path: "/v1/edits"},
 		{name: "classifications", cmd: classificationsListCmd, path: "/v1/classifications"},
 		{name: "splits", cmd: splitsListCmd, path: "/v1/splits"},
+		{name: "partitions", cmd: partitionsListCmd, path: "/v1/partitions"},
 	}
 
 	for _, tc := range cases {

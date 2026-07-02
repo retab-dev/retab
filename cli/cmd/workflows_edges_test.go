@@ -108,6 +108,59 @@ func TestWorkflowsEdgesCreateResolvesSourceStartAliasBeforeGeneratingID(t *testi
 	}
 }
 
+// TestWorkflowsEdgesCreateResolvesStartAliasAcrossBlockPages guards the
+// auto-resolve path against first-page-only block scans: the lone
+// start_document block lives on page 2, behind an `after` cursor. A
+// single-page scan would see only the page-1 extract block and fail with "no
+// start_document block"; walking all pages must resolve `start` to the page-2
+// block id.
+func TestWorkflowsEdgesCreateResolvesStartAliasAcrossBlockPages(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var posted map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/workflows/blocks" && r.URL.Query().Get("workflow_id") == "wf_123":
+			w.Header().Set("Content-Type", "application/json")
+			if r.URL.Query().Get("after") == "" {
+				_, _ = w.Write([]byte(`{"data":[{"id":"extract_1","type":"extract"}],"list_metadata":{"after":"cursor1"}}`))
+				return
+			}
+			_, _ = w.Write([]byte(`{"data":[{"id":"blk_page_two_start","type":"start_document"}],"list_metadata":{}}`))
+		case r.Method == http.MethodPost && r.URL.Path == "/v1/workflows/edges" && r.URL.RawQuery == "":
+			if err := json.NewDecoder(r.Body).Decode(&posted); err != nil {
+				t.Fatalf("decode request: %v", err)
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"id":"edge_created","workflow_id":"wf_123","source_block":"blk_page_two_start","target_block":"extract_1"}`))
+		default:
+			t.Fatalf("unexpected request: %s %s?%s", r.Method, r.URL.Path, r.URL.RawQuery)
+		}
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	resetWorkflowEdgesCreateFlags(t)
+	if err := workflowsEdgesCreateCmd.Flags().Set("source-block", "start"); err != nil {
+		t.Fatal(err)
+	}
+	if err := workflowsEdgesCreateCmd.Flags().Set("target-block", "extract_1"); err != nil {
+		t.Fatal(err)
+	}
+
+	var err error
+	captureStd(t, func() {
+		err = workflowsEdgesCreateCmd.RunE(workflowsEdgesCreateCmd, []string{"wf_123"})
+	})
+	if err != nil {
+		t.Fatalf("RunE: %v", err)
+	}
+	if got := posted["source_block"]; got != "blk_page_two_start" {
+		t.Fatalf("source_block = %v, want blk_page_two_start (start_document on page 2)", got)
+	}
+}
+
 func TestWorkflowsEdgesGetHonorsTableOutputFallback(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())

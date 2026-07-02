@@ -145,6 +145,10 @@ Page by partition id with ` + "`--before`" + ` / ` + "`--after`" + `, cap page s
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
 		params := retab.PartitionsListParams{PaginationParams: collectListParams(cmd)}
+		if err := validateListDateRange(cmd); err != nil {
+			return err
+		}
+		params.Filename, params.FromDate, params.ToDate = collectFileDateListFilters(cmd)
 		result, err := client.Partitions.List(ctx, &params)
 		if err != nil {
 			return err

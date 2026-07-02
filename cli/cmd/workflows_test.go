@@ -246,6 +246,36 @@ func TestMergeWorkflowBlockConfigPreservesExistingConfig(t *testing.T) {
 	}
 }
 
+func TestMergeWorkflowBlockConfigNullDeletesKey(t *testing.T) {
+	existing := map[string]any{
+		"model":  "retab-small",
+		"review": map[string]any{"predicate": map[string]any{"kind": "always"}},
+		"nested": map[string]any{"keep": "yes", "drop": 1},
+	}
+	patch := map[string]any{
+		"review": nil,                         // RFC 7396: delete the key
+		"nested": map[string]any{"drop": nil}, // delete a nested key
+	}
+
+	merged := mergeWorkflowBlockConfig(existing, patch)
+	if _, ok := merged["review"]; ok {
+		t.Fatalf("review should have been deleted: %#v", merged)
+	}
+	if merged["model"] != "retab-small" {
+		t.Fatalf("model should be preserved: %#v", merged)
+	}
+	nested, ok := merged["nested"].(map[string]any)
+	if !ok {
+		t.Fatalf("nested should be preserved: %#v", merged)
+	}
+	if _, ok := nested["drop"]; ok {
+		t.Fatalf("nested.drop should have been deleted: %#v", nested)
+	}
+	if nested["keep"] != "yes" {
+		t.Fatalf("nested.keep should be preserved: %#v", nested)
+	}
+}
+
 func TestWorkflowsBlocksGetUsesBlockEndpoint(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())

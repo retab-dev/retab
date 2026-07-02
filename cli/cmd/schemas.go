@@ -3,12 +3,15 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
+	"time"
 
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
@@ -51,6 +54,19 @@ pass, the more general the resulting schema. The output is a JSON Schema
 suitable for ` + "`retab extractions create --json-schema-file`" + ` — save it,
 review it, edit it by hand if you want tighter typing, and commit it
 alongside your code.
+
+Steer the result with ` + "`--instructions`" + ` (or ` + "`--instructions-file`" + ` /
+` + "`-`" + ` for stdin) to constrain scope, nullability, naming, types, etc.
+Lower ` + "`--image-resolution-dpi`" + ` to reduce per-page work — useful when a
+long or heavily-instructed generation would otherwise exceed the server's
+processing budget.
+
+Generation is served by an internal service that can intermittently exceed
+its own deadline (a transient "context deadline exceeded" failure). The CLI
+resubmits automatically — tune with ` + "`--max-retries`" + ` /
+` + "`--retry-delay-ms`" + `. Each attempt waits up to ` + "`--timeout-seconds`" + `,
+so pair a shorter timeout with more retries to abandon a stuck job and
+resubmit sooner.
 
 ` + "`--format`" + ` and ` + "`--output`" + ` look similar but control different things:
 
@@ -158,41 +174,184 @@ alongside your code.
 		if model, _ := cmd.Flags().GetString("model"); model != "" {
 			params.Model = ptr(model)
 		}
+		// Natural-language guidance for the generator. Accept it inline
+		// (--instructions) or from a file/stdin (--instructions-file), since
+		// useful prompts are often long and awkward as a shell argument. The
+		// two are mutually exclusive to avoid an ambiguous precedence rule.
+		instr, _ := cmd.Flags().GetString("instructions")
+		instrFile, _ := cmd.Flags().GetString("instructions-file")
+		if instr != "" && instrFile != "" {
+			return fmt.Errorf("--instructions and --instructions-file are mutually exclusive")
+		}
+		if instrFile != "" {
+			text, err := readTextFileOrStdin(instrFile)
+			if err != nil {
+				return fmt.Errorf("--instructions-file: %w", err)
+			}
+			instr = text
+		}
+		if instr != "" {
+			params.Instructions = ptr(instr)
+		}
+		// Render DPI sent to the model. Lower values reduce the work the
+		// generator does per page, which is the practical lever for keeping a
+		// long/instructed generation within the server's processing budget.
+		if dpi, _ := cmd.Flags().GetInt("image-resolution-dpi"); dpi > 0 {
+			params.ImageResolutionDpi = ptr(dpi)
+		}
 		background, _ := cmd.Flags().GetBool("background")
 		if background {
 			params.Background = ptr(true)
 		}
-		result, err := client.Schemas.Generate(ctx, params)
-		if err != nil {
-			return err
+		// Schema generation is served by an internal orchestrator that
+		// intermittently exceeds its own deadline (surfaced as a "context
+		// deadline exceeded" terminal failure) — especially for instructed or
+		// multi-page jobs. A resubmit usually lands, so retry the whole
+		// generation on transient server failures. Non-transient failures
+		// (validation, auth, a genuine schema error) are returned immediately.
+		maxRetries, _ := cmd.Flags().GetInt("max-retries")
+		if maxRetries < 0 {
+			maxRetries = 0
 		}
-
-		// Synchronous (default): the response already carries the inferred schema.
-		if !background {
-			return writeGeneratedSchema(cmd.OutOrStdout(), result, format)
+		retryDelay := 3 * time.Second
+		if ms, _ := cmd.Flags().GetInt("retry-delay-ms"); ms > 0 {
+			retryDelay = time.Duration(ms) * time.Millisecond
 		}
-		// Background without --wait: the server returns a queued envelope with no
-		// schema yet, so print the record (id + status) for the caller to poll.
 		wait, _ := cmd.Flags().GetBool("wait")
-		if !wait {
-			return printJSON(result)
-		}
-		// Background with --wait: poll the queued generation to a terminal status,
-		// then emit the schema (honouring --format) exactly like a sync run.
-		pollInterval, timeout := primitiveWaitDurations(cmd)
-		final, waitErr := waitForPrimitive(ctx, cmd, schemaGenerationWaitSpec, result.ID, pollInterval, timeout)
-		if waitErr != nil {
-			if final != nil {
-				_ = printJSON(final)
+		// Bound each attempt's submission by --timeout-seconds so a stuck
+		// synchronous generation is abandoned and resubmitted (the behaviour
+		// the help text promises) instead of blocking on the SDK client's long
+		// default timeout — otherwise the retry logic above never engages for
+		// the common, non-background case. The --background enqueue returns
+		// well within this budget; the --wait poll is bounded separately by
+		// primitiveWaitDurations below.
+		_, attemptTimeout := primitiveWaitDurations(cmd)
+
+		var lastErr error
+		for attempt := 0; attempt <= maxRetries; attempt++ {
+			if attempt > 0 {
+				fmt.Fprintf(cmd.ErrOrStderr(),
+					"schema generation: transient server failure, retrying (attempt %d/%d)...\n",
+					attempt+1, maxRetries+1)
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				case <-time.After(retryDelay):
+				}
 			}
-			return waitErr
+
+			genCtx, genCancel := context.WithTimeout(ctx, attemptTimeout)
+			result, err := client.Schemas.Generate(genCtx, params)
+			genCancel()
+			if err != nil {
+				lastErr = err
+				// Don't resubmit once the user interrupts (parent ctx done);
+				// only our per-attempt deadline or a transient server failure
+				// should trigger a retry.
+				if ctx.Err() == nil && isTransientGenFailure(err.Error()) {
+					continue
+				}
+				return err
+			}
+
+			// Synchronous (default): the response already carries the inferred
+			// schema — unless the server recorded a terminal failure inline.
+			if !background {
+				m, _ := primitiveMap(result)
+				if termErr := primitiveTerminalError(schemaGenerationWaitSpec, m); termErr != nil {
+					lastErr = termErr
+					if isTransientGenFailure(genFailureDetail(m)) {
+						continue
+					}
+					return termErr
+				}
+				return writeGeneratedSchema(cmd.OutOrStdout(), result, format)
+			}
+
+			// Background without --wait: nothing to retry on yet — the outcome
+			// is unknown. Print the queued record (id + status) for the caller
+			// to poll.
+			if !wait {
+				return printJSON(result)
+			}
+
+			// Background with --wait: poll to a terminal status, then resubmit
+			// the whole job if it failed transiently.
+			pollInterval, timeout := primitiveWaitDurations(cmd)
+			final, waitErr := waitForPrimitive(ctx, cmd, schemaGenerationWaitSpec, result.ID, pollInterval, timeout)
+			if waitErr != nil {
+				lastErr = waitErr
+				if isTransientGenFailure(waitErr.Error()) {
+					continue
+				}
+				if final != nil {
+					_ = printJSON(final)
+				}
+				return waitErr
+			}
+			if termErr := primitiveTerminalError(schemaGenerationWaitSpec, final); termErr != nil {
+				lastErr = termErr
+				if isTransientGenFailure(genFailureDetail(final)) {
+					continue
+				}
+				_ = printJSON(final)
+				return termErr
+			}
+			return writeSchemaFromMap(cmd.OutOrStdout(), final, format)
 		}
-		if termErr := primitiveTerminalError(schemaGenerationWaitSpec, final); termErr != nil {
-			_ = printJSON(final)
-			return termErr
-		}
-		return writeSchemaFromMap(cmd.OutOrStdout(), final, format)
+		return fmt.Errorf("schema generation failed after %d attempt(s); last error: %w", maxRetries+1, lastErr)
 	}),
+}
+
+// genFailureDetail pulls the server-recorded error.message out of a terminal
+// generation record, so transient-failure detection can inspect the real cause
+// (primitiveTerminalError only reports the status, not the detail).
+func genFailureDetail(rec map[string]any) string {
+	if rec == nil {
+		return ""
+	}
+	e, ok := rec["error"].(map[string]any)
+	if !ok {
+		return ""
+	}
+	msg, _ := e["message"].(string)
+	return msg
+}
+
+// transientGenTokenRE matches short or numeric transient-failure signals that
+// must stand alone to count. Word boundaries keep them from false-positiving on
+// substrings of an arbitrary server message — e.g. "value 1503" must not match
+// the HTTP 503 signal, and an id/word containing "eof" must not match EOF — which
+// would otherwise trigger a wasteful resubmit of a genuinely terminal failure.
+var transientGenTokenRE = regexp.MustCompile(`\b(50[234]|eof|timeouts?)\b`)
+
+// isTransientGenFailure reports whether a schema-generation failure looks
+// retryable. The dominant case is the backend's own "context deadline
+// exceeded" when its orchestrator service is slow; the rest are the usual
+// transient HTTP/network signals. These are resubmitted rather than surfaced
+// as a one-off hiccup. An empty detail is treated as non-transient so genuine
+// (undescribed) failures are not retried blindly. Multi-word phrases are
+// specific enough to match anywhere; short/numeric tokens must match on a word
+// boundary so they don't fire on coincidental substrings of a server message.
+func isTransientGenFailure(detail string) bool {
+	d := strings.ToLower(detail)
+	if strings.TrimSpace(d) == "" {
+		return false
+	}
+	for _, phrase := range []string{
+		"context deadline exceeded",
+		"deadline exceeded",
+		"timed out",
+		"temporarily unavailable",
+		"service unavailable",
+		"connection reset",
+		"connection refused",
+	} {
+		if strings.Contains(d, phrase) {
+			return true
+		}
+	}
+	return transientGenTokenRE.MatchString(d)
 }
 
 var schemasGetCmd = &cobra.Command{
@@ -278,6 +437,11 @@ func init() {
 	schemasGenerateCmd.Flags().StringArray("file-id", nil, "Retab file id (repeatable)")
 	schemasGenerateCmd.Flags().String("documents-file", "", "JSON array of documents (or - for stdin)")
 	schemasGenerateCmd.Flags().String("model", "", "model identifier")
+	schemasGenerateCmd.Flags().String("instructions", "", "natural-language guidance for the generated schema")
+	schemasGenerateCmd.Flags().String("instructions-file", "", "read schema instructions from a file (or - for stdin)")
+	schemasGenerateCmd.Flags().Int("image-resolution-dpi", 0, "render DPI sent to the model (lower = less work per page; helps long/instructed generations finish in time)")
+	schemasGenerateCmd.Flags().Int("max-retries", 3, "resubmit the generation this many times on transient server failures (e.g. orchestrator deadline)")
+	schemasGenerateCmd.Flags().Int("retry-delay-ms", 3000, "delay between retries in milliseconds")
 	schemasGenerateCmd.Flags().String("format", "schema", "output format: schema | json")
 	// Async surface, matching `extractions create` / `edits create`: --background
 	// queues the generation server-side; --wait blocks until it finishes.
@@ -287,6 +451,13 @@ func init() {
 	schemasCmd.AddCommand(schemasGenerateCmd)
 	schemasCmd.AddCommand(schemasGetCmd)
 	schemasCmd.AddCommand(schemasCancelCmd)
-	schemasCmd.AddCommand(primitiveWaitCommand(schemaGenerationWaitSpec))
+	// Register the wait subcommand together with its --poll-interval-ms /
+	// --timeout-seconds tuning flags, exactly as every other primitive does.
+	// Without addPrimitiveWaitTuningFlags the flags shown in the command's own
+	// help/Example are unknown flags, and primitiveWaitDurations silently pins
+	// `schemas wait` to the hard-coded defaults with no way to tune them.
+	schemasWaitCmd := primitiveWaitCommand(schemaGenerationWaitSpec)
+	addPrimitiveWaitTuningFlags(schemasWaitCmd, false)
+	schemasCmd.AddCommand(schemasWaitCmd)
 	rootCmd.AddCommand(schemasCmd)
 }

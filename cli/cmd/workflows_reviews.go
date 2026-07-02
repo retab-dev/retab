@@ -1010,14 +1010,24 @@ func resolveReviewDecisionVersionID(ctx context.Context, client *retab.Client, c
 	if err != nil {
 		return "", err
 	}
-	if len(versions.Data) == 0 {
-		return "", fmt.Errorf("review %s has no versions to act on", reviewID)
-	}
-	latest := versions.Data[0]
-	for _, v := range versions.Data[1:] {
-		if v.CreatedAt.After(latest.CreatedAt) {
+	// Scan every page, not just the first: List returns a single page and the
+	// server's default ordering / page size are not guaranteed, so the most
+	// recently created version may live on a later page. AutoPaging walks all
+	// pages so the latest-by-CreatedAt pick stays correct even when a review
+	// has accumulated more versions than one page holds.
+	var latest retab.ReviewVersion
+	found := false
+	if err := versions.AutoPaging(ctx, func(v retab.ReviewVersion) error {
+		if !found || v.CreatedAt.After(latest.CreatedAt) {
 			latest = v
+			found = true
 		}
+		return nil
+	}); err != nil {
+		return "", err
+	}
+	if !found {
+		return "", fmt.Errorf("review %s has no versions to act on", reviewID)
 	}
 	return latest.ID, nil
 }

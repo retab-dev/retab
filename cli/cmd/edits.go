@@ -159,6 +159,9 @@ from a specific template. Page by edit id with ` + "`--before`" + ` /
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
 		params := retab.EditsListParams{PaginationParams: collectListParams(cmd)}
+		if err := validateListDateRange(cmd); err != nil {
+			return err
+		}
 		params.Filename, params.FromDate, params.ToDate = collectFileDateListFilters(cmd)
 		if templateID, _ := cmd.Flags().GetString("template-id"); templateID != "" {
 			params.TemplateID = ptr(templateID)

@@ -103,6 +103,63 @@ func TestParseCSVFile(t *testing.T) {
 	}
 }
 
+// Regression: a .txt/.md/.json authored on Windows carries a UTF-8 BOM
+// (PowerShell `Out-File -Encoding utf8`) or is UTF-16 LE (default `>` redirect).
+// parseTextFile read raw bytes and skipped the normalization that readJSON and
+// readTextFileOrStdin already apply, so `files parse`/`grep`/`inspect` surfaced
+// the first line with a stray U+FEFF (or fully garbled for UTF-16).
+func TestParseTextFile_NormalizesBOMAndUTF16(t *testing.T) {
+	dir := t.TempDir()
+
+	utf8BOM := filepath.Join(dir, "utf8bom.txt")
+	if err := os.WriteFile(utf8BOM, append([]byte{0xEF, 0xBB, 0xBF}, []byte("hello\nworld\n")...), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	res, err := loadParse(context.Background(), utf8BOM, kindText, "", defaultParseOptions(), false)
+	if err != nil {
+		t.Fatalf("loadParse: %v", err)
+	}
+	if res.Pages[0].Text != "hello\nworld\n" {
+		t.Fatalf("utf-8 BOM text = %q, want clean", res.Pages[0].Text)
+	}
+
+	utf16LE := filepath.Join(dir, "utf16le.txt")
+	raw := []byte{0xFF, 0xFE}
+	for _, r := range "hello\nworld\n" {
+		raw = append(raw, byte(r), 0x00)
+	}
+	if err := os.WriteFile(utf16LE, raw, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	res, err = loadParse(context.Background(), utf16LE, kindText, "", defaultParseOptions(), false)
+	if err != nil {
+		t.Fatalf("loadParse: %v", err)
+	}
+	if res.Pages[0].Text != "hello\nworld\n" {
+		t.Fatalf("utf-16 LE text = %q, want decoded", res.Pages[0].Text)
+	}
+}
+
+// Regression: a Windows-authored CSV with a UTF-8 BOM used to glue the BOM onto
+// the first header cell (U+FEFF prefix on "name"), corrupting grep
+// matches and inspect --cells anchors against column A row 1.
+func TestParseCSVFile_NormalizesBOM(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "data.csv")
+	body := append([]byte{0xEF, 0xBB, 0xBF}, []byte("name,amount\nACME,42000\n")...)
+	if err := os.WriteFile(path, body, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	res, err := loadParse(context.Background(), path, kindCSV, "", defaultParseOptions(), false)
+	if err != nil {
+		t.Fatalf("loadParse: %v", err)
+	}
+	want := [][]string{{"name", "amount"}, {"ACME", "42000"}}
+	if !reflect.DeepEqual(res.Sheets[0].Rows, want) {
+		t.Fatalf("rows = %v, want %v (BOM should be stripped from first cell)", res.Sheets[0].Rows, want)
+	}
+}
+
 func TestParseXLSXFile(t *testing.T) {
 	path := writeTestXLSX(t)
 	res, err := loadParse(context.Background(), path, kindSpreadsheet, "", defaultParseOptions(), false)
@@ -119,6 +176,80 @@ func TestParseXLSXFile(t *testing.T) {
 	// A1=Item B1=Cost ; A2=Rent B2=1200
 	if len(s.Rows) < 2 || s.Rows[0][0] != "Item" || s.Rows[1][1] != "1200" {
 		t.Fatalf("unexpected rows: %v", s.Rows)
+	}
+}
+
+// Sparse sheets omit empty rows in sheetData (e.g. r="1" then r="4"). The
+// parser must honor the row's r attribute so reported coordinates stay aligned
+// with the spreadsheet UI — mirroring the per-column gap handling. Before the
+// fix, rows were appended in document order and a value physically in row 4 was
+// reported as row 2.
+func TestParseXLSXFileHonorsSparseRowNumbers(t *testing.T) {
+	path := writeSparseTestXLSX(t)
+	res, err := loadParse(context.Background(), path, kindSpreadsheet, "", defaultParseOptions(), false)
+	if err != nil {
+		t.Fatalf("loadParse: %v", err)
+	}
+	if len(res.Sheets) != 1 {
+		t.Fatalf("want 1 sheet, got %d", len(res.Sheets))
+	}
+	rows := res.Sheets[0].Rows
+	// A1=Item B1=Cost ; rows 2 and 3 are absent; A4=Rent B4=1200.
+	if len(rows) != 4 {
+		t.Fatalf("want 4 rows (positions preserved through the gap), got %d: %v", len(rows), rows)
+	}
+	if rows[0][0] != "Item" || rows[0][1] != "Cost" {
+		t.Errorf("row 1 = %v, want [Item Cost]", rows[0])
+	}
+	if len(rows[1]) != 0 || len(rows[2]) != 0 {
+		t.Errorf("rows 2-3 should be empty, got %v / %v", rows[1], rows[2])
+	}
+	if len(rows[3]) < 2 || rows[3][0] != "Rent" || rows[3][1] != "1200" {
+		t.Fatalf("row 4 = %v, want [Rent 1200]", rows[3])
+	}
+
+	// The grep anchor must report the spreadsheet row (4), not the dense index.
+	matcher, err := buildMatcher("Rent", false, false)
+	if err != nil {
+		t.Fatalf("buildMatcher: %v", err)
+	}
+	var got *Anchor
+	grepSheets(res, kindSpreadsheet, matcher, 0, func(m grepMatch) bool {
+		a := m.Anchor
+		got = &a
+		return false
+	})
+	if got == nil {
+		t.Fatal("expected a grep match for Rent")
+	}
+	if got.Row != 4 || got.Coordinate != "A4" {
+		t.Errorf("anchor = row %d coord %q, want row 4 coord A4", got.Row, got.Coordinate)
+	}
+}
+
+// The OOXML cell `r` attribute is optional: an absent ref means "the column
+// after the previous cell". Some writers omit it entirely. Before the fix
+// every such cell resolved to column 0 and was dropped, so a sheet written
+// without cell refs parsed as completely empty. The parser must place
+// ref-less cells in document order, mirroring the implicit-row handling.
+func TestParseXLSXFileHonorsImplicitCellRefs(t *testing.T) {
+	path := writeImplicitRefTestXLSX(t)
+	res, err := loadParse(context.Background(), path, kindSpreadsheet, "", defaultParseOptions(), false)
+	if err != nil {
+		t.Fatalf("loadParse: %v", err)
+	}
+	if len(res.Sheets) != 1 {
+		t.Fatalf("want 1 sheet, got %d", len(res.Sheets))
+	}
+	rows := res.Sheets[0].Rows
+	if len(rows) != 2 {
+		t.Fatalf("want 2 rows, got %d: %v", len(rows), rows)
+	}
+	if len(rows[0]) < 2 || rows[0][0] != "Item" || rows[0][1] != "Cost" {
+		t.Fatalf("row 1 = %v, want [Item Cost]", rows[0])
+	}
+	if len(rows[1]) < 2 || rows[1][0] != "Rent" || rows[1][1] != "1200" {
+		t.Fatalf("row 2 = %v, want [Rent 1200]", rows[1])
 	}
 }
 
@@ -725,6 +856,97 @@ func writeTestXLSX(t *testing.T) string {
   <sheetData>
     <row r="1"><c r="A1" t="s"><v>0</v></c><c r="B1" t="s"><v>1</v></c></row>
     <row r="2"><c r="A2" t="s"><v>2</v></c><c r="B2"><v>1200</v></c></row>
+  </sheetData>
+</worksheet>`)
+	if err := zw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, buf.Bytes(), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	return path
+}
+
+func writeSparseTestXLSX(t *testing.T) string {
+	t.Helper()
+	dir := t.TempDir()
+	path := filepath.Join(dir, "sparse.xlsx")
+	var buf bytes.Buffer
+	zw := zip.NewWriter(&buf)
+	add := func(name, content string) {
+		w, err := zw.Create(name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := w.Write([]byte(content)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	add("xl/workbook.xml", `<?xml version="1.0"?>
+<workbook xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <sheets><sheet name="Budget" sheetId="1" r:id="rId1"/></sheets>
+</workbook>`)
+	add("xl/_rels/workbook.xml.rels", `<?xml version="1.0"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Target="worksheets/sheet1.xml"/>
+</Relationships>`)
+	add("xl/sharedStrings.xml", `<?xml version="1.0"?>
+<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <si><t>Item</t></si><si><t>Cost</t></si><si><t>Rent</t></si>
+</sst>`)
+	// Rows 2 and 3 are omitted, as real spreadsheets do for empty rows.
+	add("xl/worksheets/sheet1.xml", `<?xml version="1.0"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <sheetData>
+    <row r="1"><c r="A1" t="s"><v>0</v></c><c r="B1" t="s"><v>1</v></c></row>
+    <row r="4"><c r="A4" t="s"><v>2</v></c><c r="B4"><v>1200</v></c></row>
+  </sheetData>
+</worksheet>`)
+	if err := zw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, buf.Bytes(), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	return path
+}
+
+// writeImplicitRefTestXLSX builds a sheet whose cells omit the optional `r`
+// attribute (only the rows carry `r`). Column position is then implied by
+// document order: first <c> = column A, next = column B, etc.
+func writeImplicitRefTestXLSX(t *testing.T) string {
+	t.Helper()
+	dir := t.TempDir()
+	path := filepath.Join(dir, "implicit.xlsx")
+	var buf bytes.Buffer
+	zw := zip.NewWriter(&buf)
+	add := func(name, content string) {
+		w, err := zw.Create(name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := w.Write([]byte(content)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	add("xl/workbook.xml", `<?xml version="1.0"?>
+<workbook xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <sheets><sheet name="Budget" sheetId="1" r:id="rId1"/></sheets>
+</workbook>`)
+	add("xl/_rels/workbook.xml.rels", `<?xml version="1.0"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Target="worksheets/sheet1.xml"/>
+</Relationships>`)
+	add("xl/sharedStrings.xml", `<?xml version="1.0"?>
+<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <si><t>Item</t></si><si><t>Cost</t></si><si><t>Rent</t></si>
+</sst>`)
+	// Cells carry no r attribute; column is implied by order.
+	add("xl/worksheets/sheet1.xml", `<?xml version="1.0"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <sheetData>
+    <row r="1"><c t="s"><v>0</v></c><c t="s"><v>1</v></c></row>
+    <row r="2"><c t="s"><v>2</v></c><c><v>1200</v></c></row>
   </sheetData>
 </worksheet>`)
 	if err := zw.Close(); err != nil {

@@ -200,6 +200,10 @@ to walk backwards. Filter by arbitrary tags set at create time with
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
 		params := retab.ExtractionsListParams{PaginationParams: collectListParams(cmd)}
+		if err := validateListDateRange(cmd); err != nil {
+			return err
+		}
+		params.Filename, params.FromDate, params.ToDate = collectFileDateListFilters(cmd)
 		metaPairs, _ := cmd.Flags().GetStringArray("metadata")
 		md, err := parseKVStringList(metaPairs)
 		if err != nil {

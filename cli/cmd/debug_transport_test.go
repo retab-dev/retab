@@ -15,6 +15,35 @@ import (
 // token) MUST be redacted. The unredacted version is a leak — bug reports
 // get pasted into chat, GitHub issues, screenshots.
 
+// Regression: the secrets-path redaction guard matched only "/secrets/" (with a
+// trailing slash), so a body on the bare collection path "/v1/secrets" (e.g. a
+// POST create whose body carries the secret value) fell through to the field
+// redactor — which has no "value" field — and would dump the secret in clear.
+// Both the collection path and its sub-resources must be redacted wholesale,
+// without matching unrelated paths like "/v1/secretsfoo".
+func TestRedactSensitiveDebugBody_BareSecretsCollectionPath(t *testing.T) {
+	body := []byte(`{"name":"prod-openai","value":"supersecret-value"}`)
+	cases := []struct {
+		path     string
+		redacted bool
+	}{
+		{"/v1/secrets", true},
+		{"/v1/secrets/prod-openai", true},
+		{"/v1/secrets/prod-openai/value", true},
+		{"/v1/secretsfoo", false}, // unrelated resource: must NOT be blanket-redacted
+	}
+	for _, tc := range cases {
+		got := string(redactSensitiveDebugBody(body, "application/json", tc.path))
+		isRedacted := got == "[REDACTED]"
+		if isRedacted != tc.redacted {
+			t.Fatalf("path %q: redacted=%v want %v (got %q)", tc.path, isRedacted, tc.redacted, got)
+		}
+		if tc.path == "/v1/secrets" && strings.Contains(got, "supersecret-value") {
+			t.Fatalf("secret value leaked on %q: %s", tc.path, got)
+		}
+	}
+}
+
 func TestDebugTransport_RedactsAuthorizationAPIKey(t *testing.T) {
 	// Stand up a noop upstream that just answers 200.
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {

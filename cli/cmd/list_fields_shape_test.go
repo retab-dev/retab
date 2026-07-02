@@ -42,6 +42,7 @@ func TestListCommandsRunERejectsBeforeAndAfterTogether(t *testing.T) {
 	}{
 		{"workflows list", workflowsListCmd, nil},
 		{"workflows runs list", workflowsRunsListCmd, nil},
+		{"workflows experiments list", workflowsExperimentsListCmd, []string{"wf_123"}},
 		{"workflows experiments runs list", workflowsExperimentsRunsListCmd, nil},
 		{"workflows evals runs list", workflowsEvalsRunsListCmd, nil},
 	}

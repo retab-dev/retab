@@ -732,6 +732,126 @@ func TestWriteAuthStatusTable_ExpiresAtAsTimeValue(t *testing.T) {
 	}
 }
 
+// Regression: a config can carry a leftover legacy api_key alongside a
+// higher-precedence access_token (resolveCredential ranks access_token first,
+// matching the `source` switch in authStatusCmd). `auth status` must preview
+// only the credential it actually resolves — previewing the unused api_key made
+// the human view print "Logged in as <api-key>" while Source said access_token,
+// pointing the user at a credential the CLI never sends.
+func TestAuthStatus_AccessTokenWinsHidesLeftoverAPIKeyPreview(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "")
+	t.Setenv("RETAB_NO_UPDATE_NOTIFIER", "1")
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"authenticated": true, "auth_method": "bearer_token"}`))
+	}))
+	defer server.Close()
+
+	if err := saveConfig(retabConfig{
+		BaseURL:     server.URL,
+		AccessToken: "acctk_live_token",
+		APIKey:      "sk_live_leftover",
+	}); err != nil {
+		t.Fatalf("saveConfig: %v", err)
+	}
+
+	var outBuf, errBuf bytes.Buffer
+	rootCmd.SetOut(&outBuf)
+	rootCmd.SetErr(&errBuf)
+	t.Cleanup(func() {
+		rootCmd.SetArgs(nil)
+		rootCmd.SetOut(nil)
+		rootCmd.SetErr(nil)
+		for _, name := range []string{"output", "api-key", "base-url"} {
+			_ = rootCmd.PersistentFlags().Set(name, "")
+		}
+	})
+
+	if err := ExecuteArgs([]string{"auth", "status", "--json"}); err != nil {
+		t.Fatalf("auth status: %v\nstdout:\n%s\nstderr:\n%s", err, outBuf.String(), errBuf.String())
+	}
+
+	var got map[string]any
+	if err := json.Unmarshal(outBuf.Bytes(), &got); err != nil {
+		t.Fatalf("auth status output not JSON: %v\n%s", err, outBuf.String())
+	}
+	if _, ok := got["api_key_preview"]; ok {
+		t.Errorf("api_key_preview must be absent when access_token is the resolved credential, got:\n%s", outBuf.String())
+	}
+	if got["source"] != "~/.retab/config.json (access_token)" {
+		t.Errorf("source = %#v, want ~/.retab/config.json (access_token)", got["source"])
+	}
+	if preview, _ := got["access_token_preview"].(string); preview == "" {
+		t.Errorf("access_token_preview should be present, got:\n%s", outBuf.String())
+	}
+}
+
+// Regression: a CLI authenticated purely through a stored environment profile
+// (no top-level api_key / access_token / oauth) used to be reported as NOT
+// authenticated by `auth status` — its hand-rolled source switch ignored the
+// default_environment profile that resolveCredential resolves and the probe
+// actually uses. The command short-circuited to "run retab auth login" without
+// even probing, which is exactly the "why is the wrong account being used?"
+// case the command exists to answer.
+func TestAuthStatus_DefaultEnvironmentProfileIsAuthenticated(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "")
+	t.Setenv("RETAB_NO_UPDATE_NOTIFIER", "1")
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"authenticated": true, "auth_method": "api_key"}`))
+	}))
+	defer server.Close()
+
+	if err := saveConfig(retabConfig{
+		BaseURL:            server.URL,
+		DefaultEnvironment: "staging",
+		Environments: map[string]*environmentProfile{
+			"staging": {APIKey: "rt_test_stagingkey0123456789abcdef"},
+		},
+	}); err != nil {
+		t.Fatalf("saveConfig: %v", err)
+	}
+
+	var outBuf, errBuf bytes.Buffer
+	rootCmd.SetOut(&outBuf)
+	rootCmd.SetErr(&errBuf)
+	t.Cleanup(func() {
+		rootCmd.SetArgs(nil)
+		rootCmd.SetOut(nil)
+		rootCmd.SetErr(nil)
+		for _, name := range []string{"output", "api-key", "base-url", "env"} {
+			_ = rootCmd.PersistentFlags().Set(name, "")
+		}
+		_ = rootCmd.PersistentFlags().Set("live", "false")
+	})
+
+	if err := ExecuteArgs([]string{"auth", "status", "--json"}); err != nil {
+		t.Fatalf("auth status: %v\nstdout:\n%s\nstderr:\n%s", err, outBuf.String(), errBuf.String())
+	}
+
+	var got map[string]any
+	if err := json.Unmarshal(outBuf.Bytes(), &got); err != nil {
+		t.Fatalf("auth status output not JSON: %v\n%s", err, outBuf.String())
+	}
+	if got["authenticated"] != true {
+		t.Errorf("authenticated = %#v, want true (profile credential):\n%s", got["authenticated"], outBuf.String())
+	}
+	if got["source"] != "~/.retab/config.json (env: staging)" {
+		t.Errorf("source = %#v, want ~/.retab/config.json (env: staging)", got["source"])
+	}
+	if got["valid"] != true {
+		t.Errorf("valid = %#v, want true (probe should have run):\n%s", got["valid"], outBuf.String())
+	}
+	if preview, _ := got["api_key_preview"].(string); preview == "" {
+		t.Errorf("api_key_preview should preview the profile key, got:\n%s", outBuf.String())
+	}
+	if _, ok := got["hint"]; ok {
+		t.Errorf("authenticated status must not carry the login hint, got:\n%s", outBuf.String())
+	}
+}
+
 func TestWriteAuthStatusTable_NotLoggedIn(t *testing.T) {
 	var buf bytes.Buffer
 	payload := map[string]any{
@@ -766,6 +886,43 @@ func TestWriteAuthStatus_OutputTableRoutesToTable(t *testing.T) {
 	}
 	if strings.Contains(out, "{") {
 		t.Errorf("--output table should not emit JSON braces, got:\n%s", out)
+	}
+}
+
+// Regression: `--output csv` is a globally-valid value, but auth status used
+// to hard-error on it ("invalid --output value") because its resolver only
+// knew json/table/auto. csv must resolve and render the same fields as the
+// table, comma-separated, rather than erroring or silently downgrading to JSON.
+func TestResolveAuthOutputFormat_AcceptsCSV(t *testing.T) {
+	root := &cobra.Command{Use: "retab"}
+	root.PersistentFlags().String("output", "csv", "")
+	child := &cobra.Command{Use: "status"}
+	root.AddCommand(child)
+
+	format, err := resolveAuthOutputFormat(child)
+	if err != nil {
+		t.Fatalf("resolveAuthOutputFormat(csv): unexpected error %v", err)
+	}
+	if format != OutputCSV {
+		t.Fatalf("resolveAuthOutputFormat(csv) = %q, want csv", format)
+	}
+}
+
+func TestWriteAuthStatus_OutputCSVRoutesToCSV(t *testing.T) {
+	var buf bytes.Buffer
+	payload := sampleAuthStatus()
+	if err := writeAuthStatusWithFormat(&buf, payload, false, OutputCSV); err != nil {
+		t.Fatalf("writeAuthStatusWithFormat: %v", err)
+	}
+	out := buf.String()
+	if !strings.HasPrefix(out, "FIELD,VALUE") {
+		t.Errorf("--output csv should start with a FIELD,VALUE header, got:\n%s", out)
+	}
+	if !strings.Contains(out, "AUTHENTICATED,true") {
+		t.Errorf("--output csv should emit the AUTHENTICATED row, got:\n%s", out)
+	}
+	if strings.Contains(out, "{") {
+		t.Errorf("--output csv should not fall back to JSON, got:\n%s", out)
 	}
 }
 

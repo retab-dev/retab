@@ -249,8 +249,8 @@ func runTableCSVUpload(cmd *cobra.Command, method string, path string, filePath 
 }
 
 func printTableMutationResult(cmd *cobra.Command, result any) error {
-	if tableSelected(cmd) {
-		return renderTableCommandResult(result)
+	if format := tableOutputFormat(cmd); format == OutputTable || format == OutputCSV {
+		return renderTableCommandResult(format, result)
 	}
 	table, ok, err := singleTableMutationResult(result)
 	if err != nil {
@@ -299,31 +299,50 @@ func runTableDownload(cmd *cobra.Command, tableID string) error {
 }
 
 func printTableCommandResult(cmd *cobra.Command, result any) error {
-	if tableSelected(cmd) {
-		return renderTableCommandResult(result)
+	if format := tableOutputFormat(cmd); format == OutputTable || format == OutputCSV {
+		return renderTableCommandResult(format, result)
 	}
 	return printJSON(tableCommandResultForPrint(result))
 }
 
-func renderTableCommandResult(result any) error {
+// tableOutputFormat resolves the root --output flag for the table commands,
+// which share a custom multi-shape renderer rather than the generic
+// RenderList path. It defaults to JSON (the historical default) on any
+// resolution error so the commands degrade to machine-readable output.
+func tableOutputFormat(cmd *cobra.Command) OutputFormat {
+	var w io.Writer
+	if cmd != nil {
+		w = cmd.OutOrStdout()
+	}
+	format, err := ResolveOutputFormat(cmd, w)
+	if err != nil {
+		return OutputJSON
+	}
+	return format
+}
+
+func renderTableCommandResult(format OutputFormat, result any) error {
 	normalized, err := normalizeTableCommandResult(result)
 	if err != nil {
 		return err
 	}
 	if tables, ok := mapSliceValue(normalized["tables"]); ok {
-		return renderTableMetadataRows(tables)
+		return renderTableMetadataRows(format, tables)
 	}
 	if table, ok := mapValue(normalized["table"]); ok {
-		return renderTableMetadataRows([]map[string]any{table})
+		return renderTableMetadataRows(format, []map[string]any{table})
 	}
 	if diagnostics, ok := mapSliceValue(normalized["diagnostics"]); ok {
-		return renderTableValidationRows(normalized, diagnostics)
+		return renderTableValidationRows(format, normalized, diagnostics)
 	}
 	if columns, ok := mapSliceValue(normalized["columns"]); ok {
 		if looksLikeProfileColumns(columns) {
-			return renderTableProfileRows(columns)
+			return renderTableProfileRows(format, columns)
 		}
-		return renderTableSchemaRows(columns)
+		return renderTableSchemaRows(format, columns)
+	}
+	if format == OutputCSV {
+		return printResultCSV(result)
 	}
 	return printResultTable(result)
 }
@@ -363,7 +382,7 @@ func tableCommandResultForPrint(result any) any {
 	}
 }
 
-func renderTableMetadataRows(rows []map[string]any) error {
+func renderTableMetadataRows(format OutputFormat, rows []map[string]any) error {
 	columns := []TableColumn{
 		tableMapColumn("id", "id"),
 		tableMapColumn("name", "name"),
@@ -378,10 +397,10 @@ func renderTableMetadataRows(rows []map[string]any) error {
 		},
 		tableMapColumn("updated_at", "updated_at"),
 	}
-	return renderMapRowsTable(rows, columns)
+	return renderMapRowsTable(format, rows, columns)
 }
 
-func renderTableSchemaRows(rows []map[string]any) error {
+func renderTableSchemaRows(format OutputFormat, rows []map[string]any) error {
 	columns := []TableColumn{
 		tableMapColumn("name", "name"),
 		{
@@ -402,10 +421,10 @@ func renderTableSchemaRows(rows []map[string]any) error {
 		tableMapColumn("unique", "unique"),
 		tableMapColumn("sample_values", "sample_values"),
 	}
-	return renderMapRowsTable(rows, columns)
+	return renderMapRowsTable(format, rows, columns)
 }
 
-func renderTableProfileRows(rows []map[string]any) error {
+func renderTableProfileRows(format OutputFormat, rows []map[string]any) error {
 	columns := []TableColumn{
 		tableMapColumn("name", "name"),
 		{
@@ -423,16 +442,17 @@ func renderTableProfileRows(rows []map[string]any) error {
 		tableMapColumn("max", "max"),
 		tableMapColumn("samples", "sample_values"),
 	}
-	return renderMapRowsTable(rows, columns)
+	return renderMapRowsTable(format, rows, columns)
 }
 
-func renderTableValidationRows(result map[string]any, diagnostics []map[string]any) error {
+func renderTableValidationRows(format OutputFormat, result map[string]any, diagnostics []map[string]any) error {
 	if len(diagnostics) == 0 {
 		status := "ok"
 		if hasErrors, ok := result["has_errors"].(bool); ok && hasErrors {
 			status = "error"
 		}
 		return renderMapRowsTable(
+			format,
 			[]map[string]any{{
 				"table_id":    result["table_id"],
 				"status":      status,
@@ -451,11 +471,12 @@ func renderTableValidationRows(result map[string]any, diagnostics []map[string]a
 		tableMapColumn("rule", "rule"),
 		tableMapColumn("message", "message"),
 	}
-	return renderMapRowsTable(diagnostics, columns)
+	return renderMapRowsTable(format, diagnostics, columns)
 }
 
 func renderTableDeleteResult(tableID string) error {
 	return renderMapRowsTable(
+		OutputTable,
 		[]map[string]any{{
 			"id":     tableID,
 			"status": "deleted",
@@ -494,21 +515,29 @@ func renderDownloadedCSVTable(body []byte) error {
 	for _, header := range headers {
 		columns = append(columns, tableMapColumn(header, header))
 	}
-	return renderMapRowsTable(rows, columns)
+	return renderMapRowsTable(OutputTable, rows, columns)
 }
 
 func normalizeCSVHeaders(headers []string) []string {
-	seen := map[string]int{}
+	used := map[string]bool{}
 	normalized := make([]string, 0, len(headers))
 	for index, header := range headers {
 		name := strings.TrimSpace(header)
 		if name == "" {
 			name = fmt.Sprintf("column_%d", index+1)
 		}
-		seen[name]++
-		if seen[name] > 1 {
-			name = fmt.Sprintf("%s_%d", name, seen[name])
+		// Disambiguate duplicates, but keep probing suffixes until the result
+		// is genuinely unused — a one-shot `name_N` can itself collide with an
+		// existing header (e.g. ["a","a","a_2"] -> "a_2" twice), and these
+		// names become map keys downstream where a collision silently drops a
+		// column's data.
+		if used[name] {
+			base := name
+			for n := 2; used[name]; n++ {
+				name = fmt.Sprintf("%s_%d", base, n)
+			}
 		}
+		used[name] = true
 		normalized = append(normalized, name)
 	}
 	if len(normalized) == 0 {
@@ -517,10 +546,13 @@ func normalizeCSVHeaders(headers []string) []string {
 	return normalized
 }
 
-func renderMapRowsTable(rows []map[string]any, columns []TableColumn) error {
+func renderMapRowsTable(format OutputFormat, rows []map[string]any, columns []TableColumn) error {
 	tabulableRows := make([]any, 0, len(rows))
 	for _, row := range rows {
 		tabulableRows = append(tabulableRows, row)
+	}
+	if format == OutputCSV {
+		return renderAutoCSV(os.Stdout, tabulableRows, columns)
 	}
 	return renderAutoTableWithEmptyHint(os.Stdout, tabulableRows, columns, os.Stdout)
 }
@@ -867,6 +899,12 @@ func renderWorkflowTableRowsCSV(result *retab.WorkflowTableRowsResponse, options
 		return err
 	}
 	for _, row := range result.Rows {
+		if row == nil {
+			// result.Rows is []*WorkflowTableRow; a null array element decodes
+			// to a nil pointer. The table renderer and workflowTableColumnNames
+			// both guard this — mirror them so the CSV path can't panic.
+			continue
+		}
 		record := []string{}
 		if options.ShowRowID {
 			record = append(record, row.ID)
@@ -966,7 +1004,11 @@ func workflowTableCellNeedsJSON(value any) bool {
 
 func cleanWorkflowTableCell(value string, options tableQueryRenderOptions) string {
 	cleaned := strings.Join(strings.Fields(value), " ")
-	if options.NoTruncate {
+	// CSV output must be a faithful, re-importable table (see
+	// workflowTableCellText): truncating a long cell to "<prefix>..." would
+	// silently corrupt the value on round-trip, so width limits apply only to
+	// the human-readable table grid.
+	if options.NoTruncate || options.CSV {
 		return cleaned
 	}
 	maxCellWidth := options.MaxWidth

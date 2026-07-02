@@ -35,6 +35,7 @@ func TestListCommandsDeclareBeforeAfterMutuallyExclusive(t *testing.T) {
 	}{
 		{"workflows list", workflowsListCmd},
 		{"workflows runs list", workflowsRunsListCmd},
+		{"workflows experiments list", workflowsExperimentsListCmd},
 		{"workflows experiments runs list", workflowsExperimentsRunsListCmd},
 		{"workflows evals runs list", workflowsEvalsRunsListCmd},
 	}

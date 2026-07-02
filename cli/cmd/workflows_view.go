@@ -69,18 +69,18 @@ map. This is a human-oriented view for terminal inspection.`,
 		if err != nil {
 			return err
 		}
-		blocks, err := client.Workflows.Blocks.List(ctx, &retab.WorkflowBlocksListParams{WorkflowID: args[0]})
+		blocks, err := listAllWorkflowBlocks(ctx, client, args[0])
 		if err != nil {
 			return err
 		}
-		edges, err := client.Workflows.Edges.List(ctx, &retab.WorkflowEdgesListParams{WorkflowID: args[0]})
+		edges, err := listAllWorkflowEdges(ctx, client, args[0])
 		if err != nil {
 			return err
 		}
 		graph := &workflowGraph{
 			Workflow: *workflow,
-			Blocks:   blocks.Data,
-			Edges:    edges.Data,
+			Blocks:   blocks,
+			Edges:    edges,
 		}
 		if workflowViewWantsJSON(cmd) {
 			return printJSON(workflowGraphJSON{

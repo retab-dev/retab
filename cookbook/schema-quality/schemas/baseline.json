@@ -1,0 +1,134 @@
+{
+  "X-SchemaType": "generic",
+  "additionalProperties": false,
+  "description": "Schema for structured extraction of key fields from business invoices, including parties, dates, line items, and totals.",
+  "properties": {
+    "buyer_company": {
+      "description": "Customer company or organization name (free-text).",
+      "type": "string"
+    },
+    "buyer_name": {
+      "description": "Billed-to contact name (free-text).",
+      "type": "string"
+    },
+    "currency": {
+      "description": "Currency code used on the invoice (free-text, e.g. EUR).",
+      "type": "string"
+    },
+    "customer_code": {
+      "description": "Customer reference or account code (free-text).",
+      "type": "string"
+    },
+    "discount_amount": {
+      "description": "Discount amount applied to the invoice.",
+      "type": "number"
+    },
+    "due_date": {
+      "description": "Payment due date in ISO-8601 format.",
+      "type": "string"
+    },
+    "invoice_date": {
+      "description": "Invoice date in ISO-8601 format.",
+      "type": "string"
+    },
+    "invoice_number": {
+      "description": "Invoice reference number (free-text).",
+      "type": "string"
+    },
+    "line_items": {
+      "description": "Invoice line items.",
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "description": "Line total amount.",
+            "type": "number"
+          },
+          "description": {
+            "description": "Item or service description (free-text).",
+            "type": "string"
+          },
+          "line_number": {
+            "description": "Line number unique within the invoice, used to align item rows.",
+            "type": "integer"
+          },
+          "quantity": {
+            "description": "Quantity billed.",
+            "type": "number"
+          },
+          "unit_price": {
+            "description": "Unit price for the line item.",
+            "type": "number"
+          }
+        },
+        "required": [
+          "line_number",
+          "description",
+          "quantity",
+          "unit_price",
+          "amount"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "purchase_order_number": {
+      "description": "Purchase order reference number (free-text).",
+      "type": "string"
+    },
+    "seller_address": {
+      "description": "Supplier postal address (free-text).",
+      "type": "string"
+    },
+    "seller_name": {
+      "description": "Supplier or issuer name (free-text).",
+      "type": "string"
+    },
+    "seller_vat_number": {
+      "description": "Supplier VAT or tax registration number (free-text).",
+      "type": "string"
+    },
+    "subtotal_amount": {
+      "description": "Subtotal before discounts and taxes.",
+      "type": "number"
+    },
+    "tax_amount": {
+      "description": "Tax amount charged.",
+      "type": "number"
+    },
+    "tax_name": {
+      "description": "Tax label as shown on the invoice (free-text).",
+      "type": "string"
+    },
+    "tax_rate": {
+      "description": "Tax rate or percentage applied.",
+      "type": "number"
+    },
+    "total_amount": {
+      "description": "Final total amount due.",
+      "type": "number"
+    }
+  },
+  "required": [
+    "invoice_number",
+    "invoice_date",
+    "due_date",
+    "currency",
+    "seller_name",
+    "seller_address",
+    "seller_vat_number",
+    "buyer_name",
+    "buyer_company",
+    "customer_code",
+    "purchase_order_number",
+    "line_items",
+    "subtotal_amount",
+    "discount_amount",
+    "tax_name",
+    "tax_rate",
+    "tax_amount",
+    "total_amount"
+  ],
+  "title": "Invoice Extraction Schema",
+  "type": "object"
+}

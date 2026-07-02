@@ -757,6 +757,77 @@ func TestWorkflowsRunsCreateResolvesStartAliasFromDocumentsFile(t *testing.T) {
 	}
 }
 
+// TestWorkflowsRunsCreateResolvesStartAliasAcrossBlockPages guards the
+// document-alias resolver against first-page-only block scans: the
+// start_document block lives on page 2, behind an `after` cursor, while page 1
+// holds only an unrelated extract block. A single-page scan would never see
+// the start block and leak the friendly "start" alias into the request body;
+// walking all pages must resolve it to the page-2 block id.
+func TestWorkflowsRunsCreateResolvesStartAliasAcrossBlockPages(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var postedDocuments map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/workflows/blocks" && r.URL.Query().Get("workflow_id") == "wf_123":
+			if r.URL.Query().Get("after") == "" {
+				_ = json.NewEncoder(w).Encode(map[string]any{
+					"data":          []map[string]any{{"id": "extract", "type": "extract", "label": "Extract"}},
+					"list_metadata": map[string]any{"after": "cursor1"},
+				})
+				return
+			}
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"data":          []map[string]any{{"id": "block_generated", "type": "start_document", "label": "Document"}},
+				"list_metadata": map[string]any{},
+			})
+		case r.Method == http.MethodPost && r.URL.Path == "/v1/workflows/runs":
+			var body map[string]any
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+				t.Fatalf("decode request body: %v", err)
+			}
+			postedDocuments, _ = body["documents"].(map[string]any)
+			_ = json.NewEncoder(w).Encode(map[string]any{"id": "run_123", "status": "running"})
+		default:
+			t.Fatalf("unexpected request %s %s?%s", r.Method, r.URL.Path, r.URL.RawQuery)
+		}
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	docsPath := filepath.Join(t.TempDir(), "documents.json")
+	if err := os.WriteFile(
+		docsPath,
+		[]byte(`{"start":{"filename":"invoice.pdf","url":"https://example.com/invoice.pdf"}}`),
+		0o600,
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	cmd := &cobra.Command{Use: "eval-run-create", RunE: workflowsRunsCreateCmd.RunE}
+	cmd.Flags().String("version", "", "")
+	cmd.Flags().String("documents-file", "", "")
+	cmd.Flags().StringArray("document", nil, "")
+	cmd.Flags().StringArray("document-file", nil, "")
+	cmd.Flags().StringArray("document-url", nil, "")
+	cmd.Flags().String("json-inputs-file", "", "")
+	if err := cmd.Flags().Set("documents-file", docsPath); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := cmd.RunE(cmd, []string{"wf_123"}); err != nil {
+		t.Fatalf("runs create: %v", err)
+	}
+	if _, ok := postedDocuments["block_generated"]; !ok {
+		t.Fatalf("documents posted under keys %#v, want block_generated (start_document on page 2)", keysOfAnyMap(postedDocuments))
+	}
+	if _, ok := postedDocuments["start"]; ok {
+		t.Fatalf("friendly alias leaked into request body: %#v", postedDocuments)
+	}
+}
+
 func TestWorkflowsRunsCreateResolvesDeclarativeDocumentSourceIDFromDocumentsFile(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
@@ -1400,6 +1471,44 @@ func TestWorkflowsRunsCommandsRejectInvalidEnumFiltersBeforeRequest(t *testing.T
 	}
 }
 
+// Regression: the hand-maintained enum allowlists used to omit valid server-side
+// values (status: queued/failed, trigger-type: email), making the CLI's
+// client-side validator STRICTER than the API and rejecting a legitimate filter
+// before the request was ever sent. The allowlists must accept every value the
+// SDK enum (WorkflowExportPayloadRequestExcludeStatus / ...TriggerType) allows.
+func TestWorkflowsRunsCommandsAcceptAllSDKEnumFilters(t *testing.T) {
+	cases := []struct {
+		name  string
+		flag  string
+		value string
+	}{
+		{name: "status queued", flag: "status", value: "queued"},
+		{name: "status failed", flag: "status", value: "failed"},
+		{name: "exclude-status queued", flag: "exclude-status", value: "queued"},
+		{name: "exclude-status failed", flag: "exclude-status", value: "failed"},
+		{name: "trigger-type email", flag: "trigger-type", value: "email"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			for _, cmd := range []*cobra.Command{workflowsRunsListCmd, workflowsRunsExportCmd} {
+				if err := cmd.Flags().Set(tc.flag, tc.value); err != nil {
+					t.Fatal(err)
+				}
+			}
+			t.Cleanup(func() {
+				resetWorkflowRunsFlag(t, workflowsRunsListCmd, tc.flag)
+				resetWorkflowRunsFlag(t, workflowsRunsExportCmd, tc.flag)
+			})
+			if err := validateWorkflowRunsListFilters(workflowsRunsListCmd); err != nil {
+				t.Fatalf("list rejected valid --%s=%s: %v", tc.flag, tc.value, err)
+			}
+			if err := validateWorkflowRunsExportFilters(workflowsRunsExportCmd); err != nil {
+				t.Fatalf("export rejected valid --%s=%s: %v", tc.flag, tc.value, err)
+			}
+		})
+	}
+}
+
 func TestWorkflowsRunsRestartCreatesFreshRunFromSourceInputs(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
@@ -2010,6 +2119,58 @@ func TestWorkflowsRunsExportRawFlagWritesPlainCSVToStdout(t *testing.T) {
 	for _, leak := range []string{`"csv_data"`, `"rows"`, `"columns"`} {
 		if strings.Contains(stdout, leak) {
 			t.Fatalf("--raw stdout leaked JSON envelope key %q:\n%s", leak, stdout)
+		}
+	}
+}
+
+func TestWorkflowsRunsExportOutputCSVWritesPlainCSVToStdout(t *testing.T) {
+	// Regression: ``runs export --output csv`` (an explicit, valid global
+	// output value) fell through to printResult and emitted the JSON envelope
+	// instead of the CSV the user asked for — only --raw / table / a TTY
+	// triggered the raw dump. ``--output csv`` must behave like --raw here.
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"csv_data": "id;name\nrun_123;Alice\nrun_456;Bob",
+			"rows":     2,
+			"columns":  2,
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := rootCmd.PersistentFlags().Set("output", "csv"); err != nil {
+		t.Fatalf("set --output csv: %v", err)
+	}
+	t.Cleanup(func() { _ = rootCmd.PersistentFlags().Set("output", "") })
+
+	flags := map[string]string{
+		"workflow-id": "wf_123",
+		"block-id":    "blk_123",
+	}
+	for flag, value := range flags {
+		if err := workflowsRunsExportCmd.Flags().Set(flag, value); err != nil {
+			t.Fatalf("set --%s: %v", flag, err)
+		}
+		t.Cleanup(func() { resetWorkflowRunsFlag(t, workflowsRunsExportCmd, flag) })
+	}
+
+	var runErr error
+	stdout, stderr := captureStd(t, func() {
+		runErr = workflowsRunsExportCmd.RunE(workflowsRunsExportCmd, nil)
+	})
+	if runErr != nil {
+		t.Fatalf("runs export --output csv: %v\nstderr:\n%s", runErr, stderr)
+	}
+	if !strings.HasPrefix(stdout, "id;name\nrun_123;Alice\nrun_456;Bob") {
+		t.Fatalf("--output csv stdout should be the unwrapped CSV body, got:\n%q", stdout)
+	}
+	for _, leak := range []string{`"csv_data"`, `"rows"`, `"columns"`} {
+		if strings.Contains(stdout, leak) {
+			t.Fatalf("--output csv stdout leaked JSON envelope key %q:\n%s", leak, stdout)
 		}
 	}
 }
@@ -2767,5 +2928,30 @@ func TestWorkflowsRunsWaitHelpMentionsCancelledNonZeroExit(t *testing.T) {
 	help := workflowsRunsWaitCmd.Long
 	if !strings.Contains(help, "`error`/`cancelled` or the timeout") {
 		t.Fatalf("wait help should mention cancelled runs exit non-zero:\n%s", help)
+	}
+}
+
+func TestShouldDumpRawExportCSV(t *testing.T) {
+	cases := []struct {
+		name   string
+		raw    bool
+		format string
+		isTTY  bool
+		want   bool
+	}{
+		{"default on TTY -> raw CSV", false, "", true, true},
+		{"explicit auto on TTY -> raw CSV (regression)", false, "auto", true, true},
+		{"auto when piped -> JSON envelope", false, "auto", false, false},
+		{"default when piped -> JSON envelope", false, "", false, false},
+		{"explicit json on TTY -> JSON envelope", false, "json", true, false},
+		{"explicit csv when piped -> raw CSV", false, "csv", false, true},
+		{"explicit table -> raw CSV", false, "table", false, true},
+		{"--raw forces raw CSV", true, "json", false, true},
+	}
+	for _, c := range cases {
+		if got := shouldDumpRawExportCSV(c.raw, c.format, c.isTTY); got != c.want {
+			t.Errorf("%s: shouldDumpRawExportCSV(%v,%q,%v)=%v want %v",
+				c.name, c.raw, c.format, c.isTTY, got, c.want)
+		}
 	}
 }

@@ -134,11 +134,18 @@ func parseWorkflowRunConfigSource(value string) (string, error) {
 	}
 }
 
+// These allowlists must stay in sync with the SDK enums the flags map into
+// (WorkflowExportPayloadRequestExcludeStatus / ...TriggerType in
+// clients/go/enums.go). Omitting a valid value makes the CLI's client-side
+// validator stricter than the API, rejecting a legitimate filter before the
+// request is ever sent. (Kept identical to the oagen overlay variant.)
 var allowedWorkflowRunStatuses = map[string]bool{
 	"pending":         true,
+	"queued":          true,
 	"running":         true,
 	"completed":       true,
 	"error":           true,
+	"failed":          true,
 	"awaiting_review": true,
 	"cancelled":       true,
 }
@@ -148,6 +155,7 @@ var allowedWorkflowRunTriggerTypes = map[string]bool{
 	"api":      true,
 	"schedule": true,
 	"webhook":  true,
+	"email":    true,
 	"restart":  true,
 }
 
@@ -156,8 +164,8 @@ var allowedWorkflowRunExportSources = map[string]bool{
 	"inputs":  true,
 }
 
-const workflowRunStatusValues = "pending, running, completed, error, awaiting_review, cancelled"
-const workflowRunTriggerTypeValues = "manual, api, schedule, webhook, restart"
+const workflowRunStatusValues = "pending, queued, running, completed, error, failed, awaiting_review, cancelled"
+const workflowRunTriggerTypeValues = "manual, api, schedule, webhook, email, restart"
 const workflowRunExportSourceValues = "outputs, inputs"
 
 func validateWorkflowRunsListFilters(cmd *cobra.Command) error {
@@ -483,6 +491,26 @@ removed in a future release.`,
 				return err
 			}
 		}
+		// Resolve any remaining file-id document inputs (id references supplied
+		// via --documents-file) into URL-backed MIMEData. --document-id is
+		// resolved above; this covers the descriptor-map form. The workflow-runs
+		// route accepts MIMEData only — a bare {id,...} body is rejected (422).
+		if req.Documents != nil {
+			for key, doc := range req.Documents {
+				fileID, ok := workflowRunDocumentFileID(doc)
+				if !ok {
+					continue
+				}
+				resolved, err := resolveFileIDToMIMEDataWithClient(ctx, client, fileID)
+				if err != nil {
+					return fmt.Errorf("documents[%q]: resolving file id %s: %w", key, fileID, err)
+				}
+				if name := workflowRunDocumentFilename(doc); name != "" {
+					resolved.Filename = name
+				}
+				req.Documents[key] = resolved
+			}
+		}
 		if req.JSONInputs != nil {
 			req.JSONInputs, err = resolveWorkflowRunJSONInputAliases(ctx, client, args[0], req.JSONInputs)
 			if err != nil {
@@ -671,6 +699,47 @@ func resolveWorkflowRunDocumentReferences(cmd *cobra.Command, documents map[stri
 	return nil
 }
 
+// workflowRunDocumentFileID reports the stored file id of a by-reference
+// document descriptor, and false when the descriptor is not a bare file-id
+// reference. A descriptor that already carries a url or inline content is
+// url/data-backed and must be sent as-is, so those short-circuit to false —
+// only a {id}-shaped map (no url, no content) needs resolving into MIMEData.
+func workflowRunDocumentFileID(document any) (string, bool) {
+	switch value := document.(type) {
+	case map[string]any:
+		if s, _ := value["url"].(string); s != "" {
+			return "", false
+		}
+		if s, _ := value["content"].(string); s != "" {
+			return "", false
+		}
+		id, _ := value["id"].(string)
+		return id, id != ""
+	case map[string]string:
+		if value["url"] != "" || value["content"] != "" {
+			return "", false
+		}
+		return value["id"], value["id"] != ""
+	default:
+		return "", false
+	}
+}
+
+// workflowRunDocumentFilename returns the caller-supplied filename on a document
+// descriptor, or "" when absent. It is used to preserve the original filename
+// after a file id is resolved into a fresh signed URL (which carries no name).
+func workflowRunDocumentFilename(document any) string {
+	switch value := document.(type) {
+	case map[string]any:
+		name, _ := value["filename"].(string)
+		return name
+	case map[string]string:
+		return value["filename"]
+	default:
+		return ""
+	}
+}
+
 func resolveWorkflowRunDocumentReference(cmd *cobra.Command, document any) (any, bool, error) {
 	id, content, mimeType, filename, hasURL := workflowRunDocumentReferenceParts(document)
 	if hasURL {
@@ -743,13 +812,6 @@ func workflowRunDocumentsRequestBody(documents map[string]any) (map[string]map[s
 
 func workflowRunDocumentRequestBody(blockID string, document any) (map[string]string, error) {
 	switch value := document.(type) {
-	case retab.FileRef:
-		return workflowRunFileRefRequestBody(blockID, value), nil
-	case *retab.FileRef:
-		if value == nil {
-			return nil, fmt.Errorf("workflow run document %s must not be nil", blockID)
-		}
-		return workflowRunFileRefRequestBody(blockID, *value), nil
 	case retab.MIMEData:
 		return workflowRunMIMEDataRequestBody(blockID, value), nil
 	case *retab.MIMEData:
@@ -760,8 +822,11 @@ func workflowRunDocumentRequestBody(blockID string, document any) (map[string]st
 	case map[string]string:
 		return normalizeWorkflowRunDocumentRequestBody(blockID, value), nil
 	case map[string]any:
+		// The workflow-runs route accepts MIMEData only; file ids are resolved
+		// to a download URL before reaching here (see resolveFileIDToMIMEData*),
+		// so "id" is intentionally not copied into the request body.
 		descriptor := map[string]string{}
-		for _, key := range []string{"id", "filename", "url", "content", "mime_type"} {
+		for _, key := range []string{"filename", "url", "content", "mime_type"} {
 			raw, ok := value[key]
 			if !ok {
 				continue
@@ -782,23 +847,6 @@ func workflowRunDocumentRequestBody(blockID string, document any) (map[string]st
 		}
 		return workflowRunMIMEDataRequestBody(blockID, mimeData), nil
 	}
-}
-
-func workflowRunFileRefRequestBody(blockID string, ref retab.FileRef) map[string]string {
-	descriptor := map[string]string{}
-	if ref.ID != "" {
-		descriptor["id"] = ref.ID
-	}
-	if ref.Filename != "" {
-		descriptor["filename"] = ref.Filename
-	}
-	if ref.Content != "" {
-		descriptor["content"] = ref.Content
-	}
-	if ref.MIMEType != "" {
-		descriptor["mime_type"] = ref.MIMEType
-	}
-	return normalizeWorkflowRunDocumentRequestBody(blockID, descriptor)
 }
 
 func workflowRunMIMEDataRequestBody(blockID string, mimeData retab.MIMEData) map[string]string {
@@ -840,13 +888,19 @@ func resolveWorkflowRunDocumentAliases(
 	if len(documents) == 0 {
 		return documents, nil
 	}
-	blocks, err := client.Workflows.Blocks.List(ctx, &retab.WorkflowBlocksListParams{WorkflowID: workflowID})
+	// Always list the workflow's blocks before resolving keys. An earlier
+	// optimization skipped this when every key already looked like a canonical
+	// "block_..." id, but that is unsound now that a "block_" key can be a
+	// declarative_source_block_id alias (e.g. "block_document" -> the generated
+	// start_document block): the client cannot tell an alias from a real id
+	// without the block list, so it must always resolve.
+	blocks, err := listAllWorkflowBlocks(ctx, client, workflowID)
 	if err != nil {
 		return nil, fmt.Errorf("resolve workflow run document aliases: %w", err)
 	}
 	blockIDs := map[string]bool{}
 	var startDocumentBlocks []retab.WorkflowBlock
-	for _, block := range blocks.Data {
+	for _, block := range blocks {
 		blockIDs[block.ID] = true
 		if isStartDocumentBlock(block) {
 			startDocumentBlocks = append(startDocumentBlocks, block)
@@ -902,13 +956,13 @@ func resolveWorkflowRunJSONInputAliases(
 	if len(inputs) == 0 {
 		return inputs, nil
 	}
-	blocks, err := client.Workflows.Blocks.List(ctx, &retab.WorkflowBlocksListParams{WorkflowID: workflowID})
+	blocks, err := listAllWorkflowBlocks(ctx, client, workflowID)
 	if err != nil {
 		return nil, fmt.Errorf("resolve --json-inputs-file aliases: %w", err)
 	}
 	blockIDs := map[string]bool{}
 	var startJSONBlocks []retab.WorkflowBlock
-	for _, block := range blocks.Data {
+	for _, block := range blocks {
 		blockIDs[block.ID] = true
 		if block.Type == "start_json" {
 			startJSONBlocks = append(startJSONBlocks, block)
@@ -1446,7 +1500,7 @@ also configurable.`,
 		if f := cmd.Root().PersistentFlags().Lookup("output"); f != nil {
 			outFormat = f.Value.String()
 		}
-		if raw || outFormat == "table" || (outFormat == "" && term.IsTerminal(int(os.Stdout.Fd()))) {
+		if shouldDumpRawExportCSV(raw, outFormat, term.IsTerminal(int(os.Stdout.Fd()))) {
 			if result != nil {
 				_, err := os.Stdout.WriteString(result.CsvData)
 				if err == nil && !strings.HasSuffix(result.CsvData, "\n") {
@@ -1457,6 +1511,23 @@ also configurable.`,
 		}
 		return printResult(cmd, result)
 	}),
+}
+
+// shouldDumpRawExportCSV reports whether `runs export` should emit the raw CSV
+// bytes instead of the JSON envelope. Raw output is chosen for --raw, an
+// explicit table/csv format, or the auto-detect default on a TTY. Both "" and
+// "auto" mean auto-detect (--output accepts "auto" as an explicit synonym for
+// the default), so both must consult the TTY — checking only "" let an explicit
+// `--output auto` fall through to the JSON envelope.
+func shouldDumpRawExportCSV(raw bool, outFormat string, isTTY bool) bool {
+	switch outFormat {
+	case "table", string(OutputCSV):
+		return true
+	}
+	if raw {
+		return true
+	}
+	return (outFormat == "" || outFormat == "auto") && isTTY
 }
 
 func nonBlankStringArrayFlag(cmd *cobra.Command, flagName string) ([]string, error) {

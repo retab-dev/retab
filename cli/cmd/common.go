@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -24,11 +25,53 @@ import (
 	"sync"
 	"syscall"
 	"time"
+	"unicode/utf16"
 
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 )
+
+// listAllWorkflowBlocks returns every block for a workflow, walking all pages
+// via AutoPaging. Block-resolution callers (start/alias/target-handle
+// resolution) must see the full set: Blocks.List returns a single page and the
+// server's default ordering / page size are not guaranteed, so a block on a
+// later page would otherwise be invisible — producing wrong alias resolution,
+// false "no/ambiguous start_document block" errors, or unresolved handles. Same
+// failure mode as the review-version resolver, which already auto-pages.
+func listAllWorkflowBlocks(ctx context.Context, client *retab.Client, workflowID string) ([]retab.WorkflowBlock, error) {
+	page, err := client.Workflows.Blocks.List(ctx, &retab.WorkflowBlocksListParams{WorkflowID: workflowID})
+	if err != nil {
+		return nil, err
+	}
+	var blocks []retab.WorkflowBlock
+	if err := page.AutoPaging(ctx, func(b retab.WorkflowBlock) error {
+		blocks = append(blocks, b)
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+	return blocks, nil
+}
+
+// listAllWorkflowEdges returns every edge for a workflow, walking all pages via
+// AutoPaging. The graph view must aggregate the complete edge set: a first-page
+// scan would render a truncated graph and could flag genuinely-connected blocks
+// as disconnected. Same rationale as listAllWorkflowBlocks.
+func listAllWorkflowEdges(ctx context.Context, client *retab.Client, workflowID string) ([]retab.WorkflowEdgeDoc, error) {
+	page, err := client.Workflows.Edges.List(ctx, &retab.WorkflowEdgesListParams{WorkflowID: workflowID})
+	if err != nil {
+		return nil, err
+	}
+	var edges []retab.WorkflowEdgeDoc
+	if err := page.AutoPaging(ctx, func(e retab.WorkflowEdgeDoc) error {
+		edges = append(edges, e)
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+	return edges, nil
+}
 
 // runE wraps a command body so APIErrors render as concise user-facing
 // messages by default and as full HTTP diagnostics with --debug. Other errors
@@ -83,6 +126,9 @@ func renderAPIErrorForCLI(cmd *cobra.Command, apiErr *retab.APIError) string {
 	if debug, _ := cmd.Root().PersistentFlags().GetBool("debug"); debug {
 		return apiErr.String()
 	}
+	if msg := renderNotDeployedEndpointForCLI(apiErr); msg != "" {
+		return msg
+	}
 	if validationLines := formatValidationErrorLines(apiErr.Message); len(validationLines) > 0 {
 		lines := []string{fmt.Sprintf("%d — Invalid request.", apiErr.StatusCode)}
 		lines = append(lines, validationLines...)
@@ -103,6 +149,60 @@ func renderAPIErrorForCLI(cmd *cobra.Command, apiErr *retab.APIError) string {
 		lines = append(lines, "  Request-ID: "+apiErr.RequestID)
 	}
 	return strings.Join(lines, "\n")
+}
+
+// renderNotDeployedEndpointForCLI recognizes the signature of a client that has
+// outrun the server rollout: a 405 Method Not Allowed. The CLI only ever sends
+// the HTTP method its generated command is defined with, so a 405 never means
+// "you used the wrong verb" — it means the server routes the path but does not
+// serve this method for this organization/environment yet. The Workflow Evals
+// endpoints are the motivating case: the collection route returns 405 for POST
+// (Allow: OPTIONS, GET, DELETE, PATCH) while the CLI and SDKs already ship the
+// create call. The raw "405 — 405 method not allowed" reads like a broken CLI;
+// this explains that the endpoint simply isn't enabled here yet.
+//
+// Returns "" for any other status so the caller falls back to normal rendering.
+// The 404 "Workflow not found" the same rollout produces is deliberately left
+// alone: an actually-mistyped workflow id yields the identical 404, so rewording
+// it as "not enabled" would mislead the far more common case.
+func renderNotDeployedEndpointForCLI(apiErr *retab.APIError) string {
+	if apiErr.StatusCode != http.StatusMethodNotAllowed {
+		return ""
+	}
+	lines := []string{
+		fmt.Sprintf("%d — This operation is not available on this environment yet.", apiErr.StatusCode),
+	}
+	if endpoint := describeAPIEndpoint(apiErr); endpoint != "" {
+		lines = append(lines, "  Endpoint: "+endpoint)
+	}
+	lines = append(lines,
+		"  The server routes this path but does not serve this method here, which",
+		"  usually means the CLI/SDK is ahead of the server for this organization or",
+		"  environment. Make sure `retab` is up to date; if it persists, the feature",
+		"  may not be enabled on this environment yet — contact Retab support.")
+	if apiErr.RequestID != "" {
+		lines = append(lines, "  Request-ID: "+apiErr.RequestID)
+	}
+	return strings.Join(lines, "\n")
+}
+
+// describeAPIEndpoint renders "METHOD /path" from an APIError, dropping the host
+// and query string so the message names the endpoint without leaking the base
+// URL or query parameters (consistent with the non-debug renderer hiding raw
+// HTTP detail). Returns "" when neither field is populated.
+func describeAPIEndpoint(apiErr *retab.APIError) string {
+	pathPart := apiErr.URL
+	if parsed, err := url.Parse(apiErr.URL); err == nil && parsed.Path != "" {
+		pathPart = parsed.Path
+	}
+	switch {
+	case apiErr.Method != "" && pathPart != "":
+		return apiErr.Method + " " + pathPart
+	case pathPart != "":
+		return pathPart
+	default:
+		return ""
+	}
 }
 
 func usefulAPIErrorDetail(details map[string]any) string {
@@ -262,12 +362,8 @@ func newClient(cmd *cobra.Command) (*retab.Client, error) {
 	// uses httputil so headers + body land in a copy-pasteable format
 	// (curl-equivalent). Bodies stay in memory; for large uploads this
 	// adds RAM pressure — that's fine for a debugging flag.
-	authHTTPClient := http.DefaultClient
-	if debug, _ := cmd.Root().PersistentFlags().GetBool("debug"); debug {
-		authHTTPClient = &http.Client{
-			Timeout:   60 * time.Second,
-			Transport: &debugTransport{wrapped: http.DefaultTransport},
-		}
+	authHTTPClient := debugHTTPClient(cmd)
+	if authHTTPClient != http.DefaultClient {
 		opts = append(opts, retab.WithHTTPClient(authHTTPClient))
 	}
 
@@ -500,6 +596,48 @@ func buildCLIRequestURL(baseURL string, requestPath string, query url.Values) (*
 	return requestURL, nil
 }
 
+// debugHTTPClient returns an *http.Client that dumps wire-level request and
+// response traffic to stderr when --debug is set, or http.DefaultClient
+// otherwise. The 30-minute timeout matches the SDK's default client
+// (clients/go/retab.go) so long-running calls (e.g. schema generation) aren't
+// silently killed only under --debug. Centralizing this here keeps newClient
+// and the raw cli*Request helpers from each re-deriving the same block.
+func debugHTTPClient(cmd *cobra.Command) *http.Client {
+	if debug, _ := cmd.Root().PersistentFlags().GetBool("debug"); debug {
+		return &http.Client{
+			Timeout:   30 * time.Minute,
+			Transport: &debugTransport{wrapped: http.DefaultTransport},
+		}
+	}
+	return http.DefaultClient
+}
+
+// resolveCLIRequestAuth resolves the API key / bearer token pair for the raw
+// cli*Request helpers and enforces the shared "no credentials configured"
+// guard. Exactly one of apiKey / bearerToken is non-empty on success, matching
+// the precedence newClient documents. Folding the three identical credential
+// preambles into one resolver guarantees they can't drift apart.
+func resolveCLIRequestAuth(
+	ctx context.Context,
+	cmd *cobra.Command,
+	cred resolvedCredential,
+	cfg retabConfig,
+	baseURL string,
+	httpClient *http.Client,
+) (apiKey string, bearerToken string, err error) {
+	apiKey = cred.APIKey
+	if apiKey == "" {
+		bearerToken, err = bearerTokenForCredential(ctx, cmd, cfg, baseURL, cred, httpClient)
+		if err != nil {
+			return "", "", err
+		}
+	}
+	if apiKey == "" && bearerToken == "" {
+		return "", "", fmt.Errorf("no credentials configured. Run `retab auth login` or set RETAB_API_KEY")
+	}
+	return apiKey, bearerToken, nil
+}
+
 func cliJSONRequest(cmd *cobra.Command, method string, requestPath string, query url.Values, body any) (any, error) {
 	var result any
 	if err := cliJSONRequestInto(cmd, method, requestPath, query, body, &result); err != nil {
@@ -516,29 +654,14 @@ func cliJSONRequestInto(cmd *cobra.Command, method string, requestPath string, q
 	if baseURL == "" {
 		baseURL = defaultAPIBaseURL
 	}
-
-	httpClient := http.DefaultClient
-	if debug, _ := cmd.Root().PersistentFlags().GetBool("debug"); debug {
-		httpClient = &http.Client{
-			Timeout:   60 * time.Second,
-			Transport: &debugTransport{wrapped: http.DefaultTransport},
-		}
-	}
+	httpClient := debugHTTPClient(cmd)
 
 	ctx, cancel := ctxFor(cmd)
 	defer cancel()
 
-	apiKey := cred.APIKey
-	var bearerToken string
-	if apiKey == "" {
-		token, err := bearerTokenForCredential(ctx, cmd, cfg, baseURL, cred, httpClient)
-		if err != nil {
-			return err
-		}
-		bearerToken = token
-	}
-	if apiKey == "" && bearerToken == "" {
-		return fmt.Errorf("no credentials configured. Run `retab auth login` or set RETAB_API_KEY")
+	apiKey, bearerToken, err := resolveCLIRequestAuth(ctx, cmd, cred, cfg, baseURL, httpClient)
+	if err != nil {
+		return err
 	}
 
 	return doCLIJSONRequest(ctx, httpClient, baseURL, method, requestPath, query, body, apiKey, bearerToken, result)
@@ -559,29 +682,14 @@ func cliRawRequestBytes(
 	if baseURL == "" {
 		baseURL = defaultAPIBaseURL
 	}
-
-	httpClient := http.DefaultClient
-	if debug, _ := cmd.Root().PersistentFlags().GetBool("debug"); debug {
-		httpClient = &http.Client{
-			Timeout:   60 * time.Second,
-			Transport: &debugTransport{wrapped: http.DefaultTransport},
-		}
-	}
+	httpClient := debugHTTPClient(cmd)
 
 	ctx, cancel := ctxFor(cmd)
 	defer cancel()
 
-	apiKey := cred.APIKey
-	var bearerToken string
-	if apiKey == "" {
-		token, err := bearerTokenForCredential(ctx, cmd, cfg, baseURL, cred, httpClient)
-		if err != nil {
-			return nil, err
-		}
-		bearerToken = token
-	}
-	if apiKey == "" && bearerToken == "" {
-		return nil, fmt.Errorf("no credentials configured. Run `retab auth login` or set RETAB_API_KEY")
+	apiKey, bearerToken, err := resolveCLIRequestAuth(ctx, cmd, cred, cfg, baseURL, httpClient)
+	if err != nil {
+		return nil, err
 	}
 
 	return doCLIRawRequest(ctx, httpClient, baseURL, method, requestPath, query, body, accept, apiKey, bearerToken)
@@ -604,29 +712,14 @@ func cliMultipartRequestInto(
 	if baseURL == "" {
 		baseURL = defaultAPIBaseURL
 	}
-
-	httpClient := http.DefaultClient
-	if debug, _ := cmd.Root().PersistentFlags().GetBool("debug"); debug {
-		httpClient = &http.Client{
-			Timeout:   60 * time.Second,
-			Transport: &debugTransport{wrapped: http.DefaultTransport},
-		}
-	}
+	httpClient := debugHTTPClient(cmd)
 
 	ctx, cancel := ctxFor(cmd)
 	defer cancel()
 
-	apiKey := cred.APIKey
-	var bearerToken string
-	if apiKey == "" {
-		token, err := bearerTokenForCredential(ctx, cmd, cfg, baseURL, cred, httpClient)
-		if err != nil {
-			return err
-		}
-		bearerToken = token
-	}
-	if apiKey == "" && bearerToken == "" {
-		return fmt.Errorf("no credentials configured. Run `retab auth login` or set RETAB_API_KEY")
+	apiKey, bearerToken, err := resolveCLIRequestAuth(ctx, cmd, cred, cfg, baseURL, httpClient)
+	if err != nil {
+		return err
 	}
 
 	var body bytes.Buffer
@@ -962,6 +1055,64 @@ func printNDJSON(v any) error {
 	return enc.Encode(v)
 }
 
+// normalizeInputBytes converts raw bytes read from a file or stdin into clean
+// UTF-8. It transparently strips a leading byte-order mark and decodes UTF-16
+// content — the two encodings Windows tooling silently produces. PowerShell's
+// `Out-File -Encoding utf8` prepends a UTF-8 BOM, and its default `>` redirection
+// writes UTF-16 LE; without this normalization a perfectly valid JSON file fails
+// to parse with "invalid character 'ï'", and free-text inputs keep stray BOM
+// bytes. Content without a recognized BOM is returned unchanged.
+func normalizeInputBytes(raw []byte) []byte {
+	switch {
+	case len(raw) >= 3 && raw[0] == 0xEF && raw[1] == 0xBB && raw[2] == 0xBF:
+		return raw[3:] // UTF-8 BOM
+	case len(raw) >= 2 && raw[0] == 0xFF && raw[1] == 0xFE:
+		return decodeUTF16(raw[2:], binary.LittleEndian)
+	case len(raw) >= 2 && raw[0] == 0xFE && raw[1] == 0xFF:
+		return decodeUTF16(raw[2:], binary.BigEndian)
+	default:
+		return raw
+	}
+}
+
+// decodeUTF16 decodes BOM-stripped UTF-16 bytes (in the given byte order) to
+// UTF-8. A stray trailing byte from a truncated code unit is dropped rather than
+// failing the read.
+func decodeUTF16(b []byte, order binary.ByteOrder) []byte {
+	if len(b)%2 != 0 {
+		b = b[:len(b)-1]
+	}
+	u16 := make([]uint16, len(b)/2)
+	for i := range u16 {
+		u16[i] = order.Uint16(b[i*2:])
+	}
+	return []byte(string(utf16.Decode(u16)))
+}
+
+// readTextFileOrStdin reads raw UTF-8 text from path, or stdin when path is
+// "-". Trailing whitespace/newlines are trimmed so a file authored in an
+// editor (which appends a final newline) and an inline flag behave the same.
+// Unlike readJSON it does not parse the content — it's for free-text inputs
+// such as schema-generation instructions.
+func readTextFileOrStdin(path string) (string, error) {
+	var raw []byte
+	var err error
+	if path == "-" {
+		raw, err = io.ReadAll(os.Stdin)
+	} else {
+		raw, err = os.ReadFile(path)
+	}
+	if err != nil {
+		return "", err
+	}
+	raw = normalizeInputBytes(raw)
+	text := strings.TrimSpace(string(raw))
+	if text == "" {
+		return "", fmt.Errorf("empty text input")
+	}
+	return text, nil
+}
+
 // readJSON reads JSON from path, or stdin when path is "-" or empty.
 func readJSON(path string) (any, error) {
 	var raw []byte
@@ -974,6 +1125,7 @@ func readJSON(path string) (any, error) {
 	if err != nil {
 		return nil, err
 	}
+	raw = normalizeInputBytes(raw)
 	if len(strings.TrimSpace(string(raw))) == 0 {
 		return nil, fmt.Errorf("empty JSON input")
 	}
@@ -1507,6 +1659,18 @@ func collectFileDateListFilters(cmd *cobra.Command) (filename, fromDate, toDate 
 	return filename, fromDate, toDate
 }
 
+// validateListDateRange rejects a reversed --from-date / --to-date pair on the
+// file-shaped list commands, matching the check `workflows runs list` already
+// performs. Without it a swapped pair silently returns the empty set —
+// indistinguishable from "nothing matched", a common "where did my items go?"
+// trap. Safe to call unconditionally: validateDateRange returns nil when either
+// bound is empty or not a plain date (e.g. an RFC3339 timestamp).
+func validateListDateRange(cmd *cobra.Command) error {
+	fromDate, _ := cmd.Flags().GetString("from-date")
+	toDate, _ := cmd.Flags().GetString("to-date")
+	return validateDateRange("from-date", "to-date", fromDate, toDate)
+}
+
 func getIntFlagOrDefault(cmd *cobra.Command, name string, defaultValue int) int {
 	if !cmd.Flags().Changed(name) {
 		return defaultValue
@@ -1739,12 +1903,26 @@ func resolveFileIDToMIMEData(cmd *cobra.Command, fileID string) (retab.MIMEData,
 	}
 	ctx, cancel := ctxFor(cmd)
 	defer cancel()
-	link, err := client.Files.GetDownloadLink(ctx, fileID)
+	mimeData, err := resolveFileIDToMIMEDataWithClient(ctx, client, fileID)
 	if err != nil {
 		return retab.MIMEData{}, fmt.Errorf("resolving --file-id %s: %w", fileID, err)
 	}
+	return mimeData, nil
+}
+
+// resolveFileIDToMIMEDataWithClient resolves a stored file id into MIMEData
+// populated with a filename + a fresh signed download URL, reusing a client and
+// context the caller already holds. The workflow-runs and single-document
+// routes accept MIMEData only — a bare FileRef{id} body is rejected (422) — so
+// every file-id input is resolved here before it is sent. Callers add their own
+// flag/field context to the returned error.
+func resolveFileIDToMIMEDataWithClient(ctx context.Context, client *retab.Client, fileID string) (retab.MIMEData, error) {
+	link, err := client.Files.GetDownloadLink(ctx, fileID)
+	if err != nil {
+		return retab.MIMEData{}, err
+	}
 	if link.DownloadURL == "" {
-		return retab.MIMEData{}, fmt.Errorf("--file-id %s: server returned no download URL", fileID)
+		return retab.MIMEData{}, fmt.Errorf("server returned no download URL")
 	}
 	if link.MIMEData != nil && link.MIMEData.URL != "" {
 		if link.MIMEData.Filename == "" {
@@ -1998,7 +2176,12 @@ func redactSensitiveDebugBody(body []byte, contentType, path string) []byte {
 	if len(body) == 0 {
 		return body
 	}
-	if strings.Contains(path, "/secrets/") {
+	// Redact any secrets-resource body wholesale. Match both the collection
+	// path (".../secrets", e.g. POST create whose body carries a value) and any
+	// sub-resource (".../secrets/<name>[/value]"). The trailing-slash-only check
+	// missed the bare collection path, which would dump a create body in clear.
+	// HasSuffix/"/secrets/" avoids matching unrelated paths like "/secretsfoo".
+	if strings.Contains(path, "/secrets/") || strings.HasSuffix(path, "/secrets") {
 		return []byte("[REDACTED]")
 	}
 	if !strings.Contains(strings.ToLower(contentType), "json") {

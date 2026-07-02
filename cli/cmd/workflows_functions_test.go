@@ -100,6 +100,41 @@ func TestHydrateFunctionBundleWritesLocalMountsWithoutMutatingConfigMounts(t *te
 	}
 }
 
+// Regression: function hydrate keyed the generated .env files by each secret's
+// display `name` instead of its `env` field. When the two differ, the runtime
+// (which reads the secret via its env-var name) saw no value, and --fill-secrets
+// (which keys by env) appended a duplicate line. The sibling api_call hydrate
+// already keys by env; function hydrate must match.
+func TestHydrateFunctionBundleEnvFilesKeyedByEnvNotName(t *testing.T) {
+	dir := t.TempDir()
+	config := map[string]any{
+		"mounts": map[string]any{
+			"secrets": []any{
+				map[string]any{"name": "prod-openai-key", "env": "OPENAI_API_KEY"},
+			},
+		},
+	}
+	if err := writeJSONFile(filepath.Join(dir, "mounts.json"), config["mounts"]); err != nil {
+		t.Fatalf("write mounts.json: %v", err)
+	}
+	if err := hydrateFunctionBundle(dir, config, nil, false); err != nil {
+		t.Fatalf("hydrate: %v", err)
+	}
+	for _, name := range []string{".env.example", ".env.local"} {
+		raw, err := os.ReadFile(filepath.Join(dir, name))
+		if err != nil {
+			t.Fatalf("read %s: %v", name, err)
+		}
+		content := string(raw)
+		if !strings.Contains(content, "OPENAI_API_KEY=") {
+			t.Fatalf("%s should be keyed by the env var OPENAI_API_KEY, got:\n%s", name, content)
+		}
+		if strings.Contains(content, "prod-openai-key") {
+			t.Fatalf("%s leaked the secret display name instead of the env var, got:\n%s", name, content)
+		}
+	}
+}
+
 func TestHydrateFunctionBundleWritesTinyRunPyAndRuntimeSupport(t *testing.T) {
 	dir := t.TempDir()
 	config := map[string]any{

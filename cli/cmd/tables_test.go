@@ -239,6 +239,34 @@ func tableFixture() map[string]any {
 	}
 }
 
+// normalizeCSVHeaders must never emit the same name twice — the names become
+// map keys when CSV rows are rendered as a table, so a collision silently drops
+// a column's data. A one-shot `name_N` suffix can itself collide with an
+// existing header (["a","a","a_2"] -> "a_2" twice); the disambiguator has to
+// keep probing until the result is genuinely unused.
+func TestNormalizeCSVHeadersAreUnique(t *testing.T) {
+	cases := [][]string{
+		{"a", "a", "a_2"},
+		{"a", "a", "a"},
+		{"a", "a_2", "a"},
+		{"", "", "column_1"},
+		{"x", "y", "z"},
+	}
+	for _, headers := range cases {
+		got := normalizeCSVHeaders(headers)
+		if len(got) != len(headers) {
+			t.Fatalf("normalizeCSVHeaders(%v) length = %d, want %d (%v)", headers, len(got), len(headers), got)
+		}
+		seen := map[string]bool{}
+		for _, name := range got {
+			if seen[name] {
+				t.Fatalf("normalizeCSVHeaders(%v) produced duplicate %q: %v", headers, name, got)
+			}
+			seen[name] = true
+		}
+	}
+}
+
 func TestTablesDoNotExposeCellLevelMutationCommands(t *testing.T) {
 	for _, path := range [][]string{
 		{"tables", "columns"},
@@ -722,6 +750,50 @@ func TestTablesQueryCSVOutputAndRowMetadata(t *testing.T) {
 	}
 	if !strings.Contains(stderr, "showing 1 of 1 rows") {
 		t.Fatalf("missing summary footer: %q", stderr)
+	}
+}
+
+// Regression: CSV is meant to be a faithful, re-importable table, but the
+// cell renderer applied the table grid's --max-width truncation (default 96)
+// to CSV too — silently rewriting any long cell to "<prefix>..." and breaking
+// round-trips. CSV must emit the full value regardless of --max-width.
+func TestTablesQueryCSVDoesNotTruncateLongCells(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	longNote := strings.Repeat("abcd ", 40) // 200 chars, well past the 96 default
+	longNote = strings.TrimSpace(longNote)
+	expected := strings.Join(strings.Fields(longNote), " ")
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"table_id": "tbl_long",
+			"columns":  []map[string]any{{"name": "note"}},
+			"rows": []map[string]any{
+				{"id": "r0", "position": 0, "data": map[string]any{"note": longNote}},
+			},
+			"row_count":          1,
+			"filtered_row_count": 1,
+			"offset":             0,
+			"limit":              1,
+			"has_more":           false,
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	stdout, _ := captureStd(t, func() {
+		if err := runRootForTest(t, "tables", "query", "tbl_long", "--output", "csv"); err != nil {
+			t.Fatalf("tables query: %v", err)
+		}
+	})
+
+	if !strings.Contains(stdout, expected) {
+		t.Fatalf("CSV cell should be the full untruncated value, got:\n%s", stdout)
+	}
+	if strings.Contains(stdout, "...") {
+		t.Fatalf("CSV must not truncate long cells with an ellipsis, got:\n%s", stdout)
 	}
 }
 
