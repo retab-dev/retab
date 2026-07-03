@@ -1658,6 +1658,46 @@ type QueuedWorkflowExperimentResult = QueuedBlockExecutionLifecycle
 // QueuedWorkflowExperimentRun is an alias for QueuedBlockExecutionLifecycle.
 type QueuedWorkflowExperimentRun = QueuedBlockExecutionLifecycle
 
+// ReconstructDocumentRef represents a reconstruct document ref.
+type ReconstructDocumentRef struct {
+	Filename string  `json:"filename"`
+	ID       string  `json:"id"`
+	MIMEType *string `json:"mime_type,omitempty"`
+}
+
+// ReconstructEnrichedRow represents a reconstruct enriched row.
+type ReconstructEnrichedRow struct {
+	Cells []string `json:"cells"`
+}
+
+// ReconstructEnrichedTable represents a reconstruct enriched table.
+type ReconstructEnrichedTable struct {
+	Csv    string                    `json:"csv"`
+	Header []string                  `json:"header"`
+	Label  string                    `json:"label"`
+	Rows   []*ReconstructEnrichedRow `json:"rows"`
+}
+
+// ReconstructEnrichmentOptions represents a reconstruct enrichment options.
+type ReconstructEnrichmentOptions struct {
+	FillKeySpans    *bool `json:"fill_key_spans,omitempty"`
+	FlattenHeader   *bool `json:"flatten_header,omitempty"`
+	PromoteSections *bool `json:"promote_sections,omitempty"`
+}
+
+// ReconstructResponse represents a reconstruct response.
+type ReconstructResponse struct {
+	Tables []*ReconstructEnrichedTable `json:"tables"`
+}
+
+// ReconstructSubdocument represents a reconstruct subdocument.
+type ReconstructSubdocument struct {
+	Enrichment   *ReconstructEnrichmentOptions `json:"enrichment,omitempty"`
+	Name         string                        `json:"name"`
+	PartitionKey *string                       `json:"partition_key,omitempty"`
+	Regions      []*SheetRegion                `json:"regions"`
+}
+
 // ResultFileRef is an alias for BlockExecFileRef.
 type ResultFileRef = BlockExecFileRef
 
@@ -1885,6 +1925,17 @@ type SecretValueResponse struct {
 	Secret SecretValue `json:"secret"`
 }
 
+// SheetRegion represents a sheet region.
+type SheetRegion struct {
+	ColEnd     *int   `json:"col_end,omitempty"`
+	ColStart   *int   `json:"col_start,omitempty"`
+	HeaderRows []int  `json:"header_rows,omitempty"`
+	RowEnd     int    `json:"row_end"`
+	RowStart   int    `json:"row_start"`
+	SheetIndex int    `json:"sheet_index"`
+	SheetName  string `json:"sheet_name"`
+}
+
 // SimilarityGteCondition represents a similarity gte condition.
 type SimilarityGteCondition struct {
 	Kind      *string                       `json:"kind,omitempty"`
@@ -1972,7 +2023,8 @@ type SplitResult struct {
 	// Name is the name of the subdocument
 	Name string `json:"name"`
 	// Pages is the pages of the subdocument (1-indexed)
-	Pages []int `json:"pages"`
+	Pages   []int          `json:"pages"`
+	Regions []*SheetRegion `json:"regions,omitempty"`
 }
 
 // SplitSubdocumentLikelihood represents a split subdocument likelihood.

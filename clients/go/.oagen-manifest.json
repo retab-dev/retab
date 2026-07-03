@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "go",
-  "generatedAt": "2026-07-01T11:01:00.239Z",
+  "generatedAt": "2026-07-03T16:52:47.486Z",
   "files": [
     "classifications.go",
     "compat.go",
@@ -238,6 +238,10 @@
     },
     "POST /v1/splits": {
       "sdkMethod": "Create",
+      "service": "splits"
+    },
+    "POST /v1/splits/reconstruct": {
+      "sdkMethod": "CreateReconstruct",
       "service": "splits"
     },
     "GET /v1/splits/{split_id}": {

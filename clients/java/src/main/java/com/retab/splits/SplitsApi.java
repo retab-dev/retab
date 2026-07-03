@@ -6,6 +6,10 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.retab.RetabClient;
 import com.retab.models.MimeData;
+import com.retab.models.ReconstructDocumentRef;
+import com.retab.models.ReconstructRequest;
+import com.retab.models.ReconstructResponse;
+import com.retab.models.ReconstructSubdocument;
 import com.retab.models.Split;
 import com.retab.models.SplitRequest;
 import com.retab.models.Subdocument;
@@ -139,6 +143,41 @@ public final class SplitsApi {
       return null;
     }
     return client.getObjectMapper().readValue(response.body(), Split.class);
+  }
+
+  public ReconstructResponse createReconstruct(ReconstructRequest request)
+      throws IOException, InterruptedException {
+    return createReconstruct(
+        request == null ? null : request.getDocument(),
+        request == null ? null : request.getSubdocuments());
+  }
+
+  public ReconstructResponse createReconstruct(
+      ReconstructDocumentRef document, List<ReconstructSubdocument> subdocuments)
+      throws IOException, InterruptedException {
+    String path = "/v1/splits/reconstruct";
+    StringBuilder query = new StringBuilder();
+    URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
+    Map<String, Object> body = new LinkedHashMap<>();
+    body.put("document", document);
+    body.put("subdocuments", subdocuments);
+    String requestBody = client.getObjectMapper().writeValueAsString(body);
+    HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);
+    HttpRequest.Builder requestBuilder =
+        HttpRequest.newBuilder(uri)
+            .header("Accept", "application/json")
+            .header("Authorization", "Bearer " + client.getApiKey());
+    requestBuilder.header("Content-Type", "application/json");
+    HttpRequest httpRequest = requestBuilder.method("POST", publisher).build();
+    HttpResponse<String> response =
+        client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
+    if (response.statusCode() < 200 || response.statusCode() >= 300) {
+      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
+    }
+    if (response.body() == null || response.body().isBlank()) {
+      return null;
+    }
+    return client.getObjectMapper().readValue(response.body(), ReconstructResponse.class);
   }
 
   public Split get(String splitId) throws IOException, InterruptedException {

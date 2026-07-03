@@ -17,6 +17,7 @@ import com.retab.types.SortOrder;
 import com.retab.workflowartifacts.WorkflowArtifactsApi;
 import com.retab.workflowblocks.WorkflowBlocksApi;
 import com.retab.workflowedges.WorkflowEdgesApi;
+import com.retab.workflowevals.WorkflowEvalsApi;
 import com.retab.workflowexperiments.WorkflowExperimentsApi;
 import com.retab.workflowreviews.WorkflowReviewsApi;
 import com.retab.workflowruns.WorkflowRunsApi;
@@ -53,6 +54,10 @@ public final class WorkflowsApi {
 
   public WorkflowEdgesApi edges() {
     return new WorkflowEdgesApi(client);
+  }
+
+  public WorkflowEvalsApi evals() {
+    return new WorkflowEvalsApi(client);
   }
 
   public WorkflowExperimentsApi experiments() {

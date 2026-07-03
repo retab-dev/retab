@@ -103,6 +103,23 @@ func (s *SplitService) Create(ctx context.Context, params *SplitsCreateParams, o
 	return &result, nil
 }
 
+// SplitsCreateReconstructParams contains the parameters for CreateReconstruct.
+type SplitsCreateReconstructParams struct {
+	Document     ReconstructDocumentRef    `json:"document" url:"-"`
+	Subdocuments []*ReconstructSubdocument `json:"subdocuments" url:"-"`
+}
+
+// CreateReconstruct reconstruct Split
+// Reconstruct each named subdocument of a stored spreadsheet into an enriched, partition-ready table: one flat complete header, the key carried on every row, section banners promoted to a column, and wide size-matrices melted. Returns the enriched tables (header + rows + clean CSV) for hand-off to extraction.
+func (s *SplitService) CreateReconstruct(ctx context.Context, params *SplitsCreateReconstructParams, opts ...RequestOption) (*ReconstructResponse, error) {
+	var result ReconstructResponse
+	_, err := s.client.request(ctx, "POST", "/v1/splits/reconstruct", nil, params, &result, opts)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
 // SplitsGetParams contains the parameters for Get.
 type SplitsGetParams struct {
 	// IncludeOutput is when false, returns a cheap status-only projection (no output), served from cache for in-flight background runs.

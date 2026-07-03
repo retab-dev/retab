@@ -14,7 +14,7 @@ from retab.types.pagination import AsyncPaginatedList, PaginatedList, Pagination
 from retab.utils.mime import prepare_mime_document
 from retab.types.classifications import SplitsStatus
 from retab.types.mime import FileRef, MIMEData
-from retab.types.splits import Split, SplitRequest, Subdocument
+from retab.types.splits import ReconstructDocumentRef, ReconstructRequest, ReconstructResponse, ReconstructSubdocument, Split, SplitRequest, Subdocument
 
 
 def _coerce_mime_document_input(document: Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl) -> dict[str, Any]:
@@ -126,6 +126,16 @@ class SplitsMixin:
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/splits", params=params or None, data=data)
 
+    def prepare_create_reconstruct(self, document: ReconstructDocumentRef, subdocuments: list[ReconstructSubdocument], **extra_params: Any) -> PreparedRequest:
+        """Reconstruct Split Reconstruct each named subdocument of a stored spreadsheet into an enriched, partition-ready table: one flat complete header, the key carried on every row, section banners promoted to a column, and wide size-matrices melted. Returns the enriched tables (header + rows + clean CSV) for hand-off to extraction."""
+        params: dict[str, Any] = {}
+        if extra_params:
+            params.update(extra_params)
+        params = {k: v for k, v in params.items() if v is not None}
+        payload = ReconstructRequest(document=cast(Any, document), subdocuments=cast(Any, subdocuments))
+        data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
+        return PreparedRequest(method="POST", url="/v1/splits/reconstruct", params=params or None, data=data)
+
     def prepare_get(self, split_id: str, include_output: bool | None = True, **extra_params: Any) -> PreparedRequest:
         """Get Split Retrieve a split. Fetches a single split by its `split_id` within the authenticated environment and returns the full `Split` including its `output` page assignments. Responds with `404` if no split with that id exists."""
         params: dict[str, Any] = {
@@ -205,6 +215,12 @@ class Splits(SyncAPIResource, SplitsMixin):
         response = self._client._prepared_request(prepared_request)
         return Split.model_validate(response)
 
+    def create_reconstruct(self, document: ReconstructDocumentRef, subdocuments: list[ReconstructSubdocument], **extra_params: Any) -> ReconstructResponse:
+        """Reconstruct Split Reconstruct each named subdocument of a stored spreadsheet into an enriched, partition-ready table: one flat complete header, the key carried on every row, section banners promoted to a column, and wide size-matrices melted. Returns the enriched tables (header + rows + clean CSV) for hand-off to extraction."""
+        prepared_request = self.prepare_create_reconstruct(document=document, subdocuments=subdocuments, **extra_params)
+        response = self._client._prepared_request(prepared_request)
+        return ReconstructResponse.model_validate(response)
+
     def get(self, split_id: str, include_output: bool | None = True, **extra_params: Any) -> Split:
         """Get Split Retrieve a split. Fetches a single split by its `split_id` within the authenticated environment and returns the full `Split` including its `output` page assignments. Responds with `404` if no split with that id exists."""
         prepared_request = self.prepare_get(split_id, include_output=include_output, **extra_params)
@@ -272,6 +288,12 @@ class AsyncSplits(AsyncAPIResource, SplitsMixin):
         )
         response = await self._client._prepared_request(prepared_request)
         return Split.model_validate(response)
+
+    async def create_reconstruct(self, document: ReconstructDocumentRef, subdocuments: list[ReconstructSubdocument], **extra_params: Any) -> ReconstructResponse:
+        """Reconstruct Split Reconstruct each named subdocument of a stored spreadsheet into an enriched, partition-ready table: one flat complete header, the key carried on every row, section banners promoted to a column, and wide size-matrices melted. Returns the enriched tables (header + rows + clean CSV) for hand-off to extraction."""
+        prepared_request = self.prepare_create_reconstruct(document=document, subdocuments=subdocuments, **extra_params)
+        response = await self._client._prepared_request(prepared_request)
+        return ReconstructResponse.model_validate(response)
 
     async def get(self, split_id: str, include_output: bool | None = True, **extra_params: Any) -> Split:
         """Get Split Retrieve a split. Fetches a single split by its `split_id` within the authenticated environment and returns the full `Split` including its `output` page assignments. Responds with `404` if no split with that id exists."""

@@ -36,6 +36,71 @@ class SplitRequest(BaseModel):
     )
 
 
+class ReconstructDocumentRef(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    filename: str
+    id: str
+    mime_type: str | None = None
+
+
+class ReconstructEnrichedRow(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    cells: list[str]
+
+
+class ReconstructEnrichedTable(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    csv: str
+    header: list[str]
+    label: str
+    rows: list[ReconstructEnrichedRow]
+
+
+class ReconstructEnrichmentOptions(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    fill_key_spans: bool | None = None
+    flatten_header: bool | None = None
+    promote_sections: bool | None = None
+
+
+class ReconstructRequest(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    document: ReconstructDocumentRef
+    subdocuments: list[ReconstructSubdocument]
+
+
+class ReconstructResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    tables: list[ReconstructEnrichedTable]
+
+
+class ReconstructSubdocument(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    enrichment: ReconstructEnrichmentOptions | None = None
+    name: str
+    partition_key: str | None = None
+    regions: list[SheetRegion]
+
+
+class SheetRegion(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    col_end: int | None = None
+    col_start: int | None = None
+    header_rows: list[int] | None = Field(default=[])
+    row_end: int
+    row_start: int
+    sheet_index: int
+    sheet_name: str
+
+
 class Split(BaseModel):
     """A split result: a document divided into its constituent `subdocuments`."""
 
@@ -73,6 +138,7 @@ class SplitResult(BaseModel):
 
     name: str = Field(..., description="The name of the subdocument")
     pages: list[int] = Field(..., description="The pages of the subdocument (1-indexed)")
+    regions: list[SheetRegion] | None = Field(default=[])
 
 
 class SplitSubdocumentLikelihood(BaseModel):
@@ -99,6 +165,14 @@ class Subdocument(BaseModel):
 # annotations` and a referenced symbol comes from another
 # generated module via a TYPE_CHECKING-guarded import.
 SplitRequest.model_rebuild()
+ReconstructDocumentRef.model_rebuild()
+ReconstructEnrichedRow.model_rebuild()
+ReconstructEnrichedTable.model_rebuild()
+ReconstructEnrichmentOptions.model_rebuild()
+ReconstructRequest.model_rebuild()
+ReconstructResponse.model_rebuild()
+ReconstructSubdocument.model_rebuild()
+SheetRegion.model_rebuild()
 Split.model_rebuild()
 SplitConsensus.model_rebuild()
 SplitResult.model_rebuild()

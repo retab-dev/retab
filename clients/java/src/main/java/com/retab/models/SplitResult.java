@@ -11,13 +11,16 @@ import java.util.List;
 public final class SplitResult {
   private final String name;
   private final List<Long> pages;
+  private final List<SheetRegion> regions;
 
   @JsonCreator
   public SplitResult(
       @JsonProperty(value = "name", required = true) String name,
-      @JsonProperty(value = "pages", required = true) List<Long> pages) {
+      @JsonProperty(value = "pages", required = true) List<Long> pages,
+      @JsonProperty(value = "regions", required = false) List<SheetRegion> regions) {
     this.name = name;
     this.pages = pages;
+    this.regions = regions;
   }
 
   @JsonProperty("name")
@@ -28,5 +31,10 @@ public final class SplitResult {
   @JsonProperty("pages")
   public List<Long> getPages() {
     return pages;
+  }
+
+  @JsonProperty("regions")
+  public List<SheetRegion> getRegions() {
+    return regions;
   }
 }

@@ -4,8 +4,22 @@ import type { Retab } from '../retab.js';
 import { PaginatedList } from '../_pagination.js';
 import { coerceMimeData, type DocumentInput } from '../runtime/mime.js';
 import type { SplitsStatus } from '../common/interfaces/index.js';
-import type { Split, SplitResponse, Subdocument } from '../splits/interfaces/index.js';
-import { deserializeSplit, serializeSubdocument } from '../splits/interfaces/index.js';
+import type {
+  ReconstructDocumentRef,
+  ReconstructResponse,
+  ReconstructResponseResponse,
+  ReconstructSubdocument,
+  Split,
+  SplitResponse,
+  Subdocument,
+} from '../splits/interfaces/index.js';
+import {
+  deserializeReconstructResponse,
+  deserializeSplit,
+  serializeReconstructDocumentRef,
+  serializeReconstructSubdocument,
+  serializeSubdocument,
+} from '../splits/interfaces/index.js';
 
 export class Splits {
   constructor(private readonly client: Retab) {}
@@ -67,6 +81,24 @@ export class Splits {
       body: body,
     });
     return deserializeSplit(__wire);
+  }
+
+  /** Reconstruct Split */
+  async create_reconstruct(
+    document: ReconstructDocumentRef,
+    subdocuments: ReconstructSubdocument[]
+  ): Promise<ReconstructResponse> {
+    const body = {
+      document: serializeReconstructDocumentRef(document),
+      subdocuments: subdocuments.map((__i) => serializeReconstructSubdocument(__i)),
+    };
+    const __wire = await this.client.request<ReconstructResponseResponse>({
+      method: 'POST',
+      path: '/v1/splits/reconstruct',
+      query: undefined,
+      body: body,
+    });
+    return deserializeReconstructResponse(__wire);
   }
 
   /** Get Split */

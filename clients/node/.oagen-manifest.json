@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "node",
-  "generatedAt": "2026-07-01T11:01:01.233Z",
+  "generatedAt": "1970-01-01T00:00:00.000Z",
   "files": [
     "src/_pagination.ts",
     "src/classifications/classifications.ts",
@@ -120,6 +120,14 @@
     "src/secrets/interfaces/set-secret-request.interface.ts",
     "src/secrets/secrets.ts",
     "src/splits/interfaces/index.ts",
+    "src/splits/interfaces/reconstruct-document-ref.interface.ts",
+    "src/splits/interfaces/reconstruct-enriched-row.interface.ts",
+    "src/splits/interfaces/reconstruct-enriched-table.interface.ts",
+    "src/splits/interfaces/reconstruct-enrichment-options.interface.ts",
+    "src/splits/interfaces/reconstruct-request.interface.ts",
+    "src/splits/interfaces/reconstruct-response.interface.ts",
+    "src/splits/interfaces/reconstruct-subdocument.interface.ts",
+    "src/splits/interfaces/sheet-region.interface.ts",
     "src/splits/interfaces/split-consensus.interface.ts",
     "src/splits/interfaces/split-request.interface.ts",
     "src/splits/interfaces/split-result.interface.ts",
