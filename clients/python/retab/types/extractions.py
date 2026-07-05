@@ -92,20 +92,22 @@ class ExtractionConsensus(BaseModel):
 class SourcesResponse(BaseModel):
     """An extraction's output annotated with the source that backs each value.
 
-    Returned when fetching the sources for an extraction. Carries the source
-    `file` and its detected `document_type`, the original `extraction` output,
-    and a parallel `sources` tree where each leaf is a `{value, source}` object
-    locating the value in the document (a page region for PDFs, a cell for
-    spreadsheets, a text span for plain text, and so on)."""
+    Returned when fetching the sources for an extraction. Carries the canonical
+    `source_document` and its detected `document_type`, the original `extraction`
+    output, and a parallel `sources` tree where each leaf is a `{value, source}`
+    object locating the value in the document (a page region for PDFs, a cell for
+    spreadsheets, a text span for plain text, and so on). The legacy `file` field is
+    kept as an alias of `source_document` for compatibility."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     object: Literal["extraction.sources"] = Field(default="extraction.sources")
     extraction_id: str = Field(..., description="ID of the extraction")
-    document_type: SourcesResponseDocumentType = Field(..., description="Detected document type of the source file")
-    file: FileRef = Field(..., description="File metadata (id, filename, mime_type)")
+    document_type: SourcesResponseDocumentType = Field(..., description="Detected document type of the source document")
+    file: FileRef = Field(..., description="Compatibility alias for source_document.")
+    source_document: FileRef = Field(..., description="Canonical source document metadata (id, filename, mime_type).")
     extraction: dict[str, Any] = Field(..., description="Original extraction output")
-    sources: dict[str, Any] = Field(..., description="Same shape as extraction but leaves are {value, source} objects")
+    sources: dict[str, Any] = Field(..., description="Same shape as extraction but leaves are {value, source} objects. Non-null source entries include file_id.")
 
 
 # Resolve forward references (Pydantic v2). Safe no-op when
