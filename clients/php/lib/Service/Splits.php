@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Service;
 
+use Retab\Resource\ReconstructResponse;
 use Retab\Resource\Split;
 
 class Splits
@@ -110,6 +111,33 @@ class Splits
             options: $options,
         );
         return Split::fromArray($response);
+    }
+
+    /**
+     * Reconstruct Split
+     *
+     * Reconstruct each named subdocument of a stored spreadsheet into an enriched, partition-ready table: one flat complete header, the key carried on every row, section banners promoted to a column, and wide size-matrices melted. Returns the enriched tables (header + rows + clean CSV) for hand-off to extraction.
+     * @param \Retab\Resource\ReconstructDocumentRef $document
+     * @param array<\Retab\Resource\ReconstructSubdocument> $subdocuments
+     * @return \Retab\Resource\ReconstructResponse
+     * @throws \Retab\Exception\RetabException
+     */
+    public function createReconstruct(
+        \Retab\Resource\ReconstructDocumentRef $document,
+        array $subdocuments,
+        ?\Retab\RequestOptions $options = null,
+    ): \Retab\Resource\ReconstructResponse {
+        $body = [
+            'document' => $document,
+            'subdocuments' => $subdocuments,
+        ];
+        $response = $this->client->request(
+            method: 'POST',
+            path: 'v1/splits/reconstruct',
+            body: $body,
+            options: $options,
+        );
+        return ReconstructResponse::fromArray($response);
     }
 
     /**

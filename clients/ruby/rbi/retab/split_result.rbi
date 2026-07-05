@@ -21,6 +21,12 @@ module Retab
     sig { params(value: T::Array[Integer]).returns(T::Array[Integer]) }
     def pages=(value); end
 
+    sig { returns(T.nilable(T::Array[Retab::SheetRegion])) }
+    def regions; end
+
+    sig { params(value: T.nilable(T::Array[Retab::SheetRegion])).returns(T.nilable(T::Array[Retab::SheetRegion])) }
+    def regions=(value); end
+
     sig { returns(T::Hash[Symbol, T.untyped]) }
     def to_h; end
 

@@ -83,6 +83,23 @@ impl CreateParams {
 }
 
 #[derive(Debug, Clone, Serialize)]
+pub struct CreateReconstructParams {
+    /// Request body sent with this call.
+    ///
+    /// Required.
+    #[serde(skip)]
+    pub body: ReconstructRequest,
+}
+
+impl CreateReconstructParams {
+    /// Construct a new `CreateReconstructParams` with the required fields set.
+    #[allow(deprecated)]
+    pub fn new(body: ReconstructRequest) -> Self {
+        Self { body }
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
 pub struct GetParams {
     /// When false, returns a cheap status-only projection (no output), served from cache for in-flight background runs.
     ///
@@ -145,6 +162,29 @@ impl<'a> SplitsApi<'a> {
         options: Option<&crate::RequestOptions>,
     ) -> Result<Split, Error> {
         let path = "/v1/splits".to_string();
+        let method = http::Method::POST;
+        self.client
+            .request_with_body_opts(method, &path, &params, Some(&params.body), options)
+            .await
+    }
+
+    /// Reconstruct Split
+    ///
+    /// Reconstruct each named subdocument of a stored spreadsheet into an enriched, partition-ready table: one flat complete header, the key carried on every row, section banners promoted to a column, and wide size-matrices melted. Returns the enriched tables (header + rows + clean CSV) for hand-off to extraction.
+    pub async fn create_reconstruct(
+        &self,
+        params: CreateReconstructParams,
+    ) -> Result<ReconstructResponse, Error> {
+        self.create_reconstruct_with_options(params, None).await
+    }
+
+    /// Variant of [`Self::create_reconstruct`] that accepts per-request [`crate::RequestOptions`].
+    pub async fn create_reconstruct_with_options(
+        &self,
+        params: CreateReconstructParams,
+        options: Option<&crate::RequestOptions>,
+    ) -> Result<ReconstructResponse, Error> {
+        let path = "/v1/splits/reconstruct".to_string();
         let method = http::Method::POST;
         self.client
             .request_with_body_opts(method, &path, &params, Some(&params.body), options)

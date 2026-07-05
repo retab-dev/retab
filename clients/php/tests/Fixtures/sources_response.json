@@ -7,6 +7,11 @@
     "filename": "Test",
     "mime_type": "test_mime_type"
   },
+  "source_document": {
+    "id": "01234",
+    "filename": "Test",
+    "mime_type": "test_mime_type"
+  },
   "extraction": {
     "key": {}
   },

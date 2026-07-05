@@ -127,6 +127,7 @@
     "profile_table",
     "publish_workflow",
     "query_table",
+    "reconstruct_split",
     "reject_review",
     "replace_table",
     "restore_block_version",

@@ -1,0 +1,31 @@
+{
+  "document": {
+    "filename": "Test",
+    "id": "01234",
+    "mime_type": "test_mime_type"
+  },
+  "subdocuments": [
+    {
+      "enrichment": {
+        "fill_key_spans": true,
+        "flatten_header": true,
+        "promote_sections": true
+      },
+      "name": "Test",
+      "partition_key": "test_partition_key",
+      "regions": [
+        {
+          "col_end": 1,
+          "col_start": 1,
+          "header_rows": [
+            1
+          ],
+          "row_end": 1,
+          "row_start": 1,
+          "sheet_index": 1,
+          "sheet_name": "Test"
+        }
+      ]
+    }
+  ]
+}

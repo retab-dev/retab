@@ -1,0 +1,18 @@
+{
+  "tables": [
+    {
+      "csv": "test_csv",
+      "header": [
+        "test_header"
+      ],
+      "label": "test_label",
+      "rows": [
+        {
+          "cells": [
+            "test_cells"
+          ]
+        }
+      ]
+    }
+  ]
+}

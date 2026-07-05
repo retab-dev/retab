@@ -1892,6 +1892,7 @@ class ModelRoundTripTest < Minitest::Test
       "extraction_id" => "stub",
       "document_type" => "stub",
       "file" => {},
+      "source_document" => {},
       "extraction" => {},
       "sources" => {}
     }
@@ -2585,6 +2586,92 @@ class ModelRoundTripTest < Minitest::Test
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
+  def test_reconstruct_document_ref_round_trip
+    fixture = {
+      "filename" => "stub",
+      "id" => "stub",
+      "mime_type" => "stub"
+    }
+    model = Retab::ReconstructDocumentRef.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["filename"], json[:filename])
+    assert_equal(fixture["id"], json[:id])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_reconstruct_enriched_row_round_trip
+    fixture = {
+      "cells" => []
+    }
+    model = Retab::ReconstructEnrichedRow.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_reconstruct_enriched_table_round_trip
+    fixture = {
+      "csv" => "stub",
+      "header" => [],
+      "label" => "stub",
+      "rows" => []
+    }
+    model = Retab::ReconstructEnrichedTable.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["csv"], json[:csv])
+    assert_equal(fixture["label"], json[:label])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_reconstruct_enrichment_options_round_trip
+    fixture = {
+      "fill_key_spans" => nil,
+      "flatten_header" => nil,
+      "promote_sections" => nil
+    }
+    model = Retab::ReconstructEnrichmentOptions.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_reconstruct_request_round_trip
+    fixture = {
+      "document" => {},
+      "subdocuments" => []
+    }
+    model = Retab::ReconstructRequest.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_reconstruct_response_round_trip
+    fixture = {
+      "tables" => []
+    }
+    model = Retab::ReconstructResponse.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_reconstruct_subdocument_round_trip
+    fixture = {
+      "enrichment" => {},
+      "name" => "stub",
+      "partition_key" => nil,
+      "regions" => []
+    }
+    model = Retab::ReconstructSubdocument.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["name"], json[:name])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
   def test_reject_review_request_round_trip
     fixture = {
       "version_id" => "stub",
@@ -3009,6 +3096,26 @@ class ModelRoundTripTest < Minitest::Test
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
+  def test_sheet_region_round_trip
+    fixture = {
+      "col_end" => nil,
+      "col_start" => nil,
+      "header_rows" => [],
+      "row_end" => 1,
+      "row_start" => 1,
+      "sheet_index" => 1,
+      "sheet_name" => "stub"
+    }
+    model = Retab::SheetRegion.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["row_end"], json[:row_end])
+    assert_equal(fixture["row_start"], json[:row_start])
+    assert_equal(fixture["sheet_index"], json[:sheet_index])
+    assert_equal(fixture["sheet_name"], json[:sheet_name])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
   def test_similarity_gte_condition_round_trip
     fixture = {
       "kind" => "similarity_gte",
@@ -3097,7 +3204,8 @@ class ModelRoundTripTest < Minitest::Test
   def test_split_result_round_trip
     fixture = {
       "name" => "stub",
-      "pages" => []
+      "pages" => [],
+      "regions" => []
     }
     model = Retab::SplitResult.new(fixture.to_json)
     json = model.to_h

@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "dotnet",
-  "generatedAt": "2026-07-01T11:01:05.364Z",
+  "generatedAt": "2026-07-05T22:52:23.558Z",
   "files": [
     "README.md",
     "Retab.csproj",
@@ -159,6 +159,12 @@
     "src/Entities/PublishWorkflowRequest.cs",
     "src/Entities/QueryWorkflowTableRequest.cs",
     "src/Entities/QueuedBlockExecutionLifecycle.cs",
+    "src/Entities/ReconstructDocumentRef.cs",
+    "src/Entities/ReconstructEnrichedRow.cs",
+    "src/Entities/ReconstructEnrichedTable.cs",
+    "src/Entities/ReconstructEnrichmentOptions.cs",
+    "src/Entities/ReconstructResponse.cs",
+    "src/Entities/ReconstructSubdocument.cs",
     "src/Entities/RetabUsage.cs",
     "src/Entities/Review.cs",
     "src/Entities/ReviewAllOf.cs",
@@ -188,6 +194,7 @@
     "src/Entities/SecretResponse.cs",
     "src/Entities/SecretValue.cs",
     "src/Entities/SecretValueResponse.cs",
+    "src/Entities/SheetRegion.cs",
     "src/Entities/SimilarityGteCondition.cs",
     "src/Entities/SkippedBlockExecutionLifecycle.cs",
     "src/Entities/SourcesResponse.cs",
@@ -559,6 +566,10 @@
     },
     "POST /v1/splits": {
       "sdkMethod": "CreateAsync",
+      "service": "splits"
+    },
+    "POST /v1/splits/reconstruct": {
+      "sdkMethod": "CreateReconstructAsync",
       "service": "splits"
     },
     "GET /v1/splits/{split_id}": {

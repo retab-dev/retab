@@ -11,6 +11,9 @@ pub struct SplitResult {
     pub name: String,
     /// The pages of the subdocument (1-indexed)
     pub pages: Vec<i64>,
+    /// Defaults to `[]`.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub regions: Option<Vec<SheetRegion>>,
 }
 impl SplitResult {
     /// Construct a new `SplitResult` with the required fields set.
@@ -19,6 +22,7 @@ impl SplitResult {
         Self {
             name: name.into(),
             pages,
+            regions: Default::default(),
         }
     }
 }

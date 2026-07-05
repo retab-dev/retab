@@ -14,6 +14,7 @@ public final class SourcesResponse {
   private final String extractionId;
   private final SourcesResponseDocumentType documentType;
   private final FileRef file;
+  private final FileRef sourceDocument;
   private final Map<String, Object> extraction;
   private final Map<String, Object> sources;
 
@@ -24,12 +25,14 @@ public final class SourcesResponse {
       @JsonProperty(value = "document_type", required = true)
           SourcesResponseDocumentType documentType,
       @JsonProperty(value = "file", required = true) FileRef file,
+      @JsonProperty(value = "source_document", required = true) FileRef sourceDocument,
       @JsonProperty(value = "extraction", required = true) Map<String, Object> extraction,
       @JsonProperty(value = "sources", required = true) Map<String, Object> sources) {
     this.objectType = objectType != null ? objectType : "extraction.sources";
     this.extractionId = extractionId;
     this.documentType = documentType;
     this.file = file;
+    this.sourceDocument = sourceDocument;
     this.extraction = extraction;
     this.sources = sources;
   }
@@ -52,6 +55,11 @@ public final class SourcesResponse {
   @JsonProperty("file")
   public FileRef getFile() {
     return file;
+  }
+
+  @JsonProperty("source_document")
+  public FileRef getSourceDocument() {
+    return sourceDocument;
   }
 
   @JsonProperty("extraction")

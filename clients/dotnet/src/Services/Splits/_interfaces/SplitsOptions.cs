@@ -44,6 +44,15 @@ namespace Retab
 
     }
 
+    /// <summary>Request options for <see cref="SplitsService.CreateReconstructAsync"/>: Reconstruct Split</summary>
+    public class SplitsCreateReconstructOptions : BaseOptions
+    {
+        public ReconstructDocumentRef Document { get; set; } = default!;
+
+        public List<ReconstructSubdocument> Subdocuments { get; set; } = default!;
+
+    }
+
     /// <summary>Request options for <see cref="SplitsService.GetAsync"/>: Get Split</summary>
     public class SplitsGetOptions : BaseOptions
     {

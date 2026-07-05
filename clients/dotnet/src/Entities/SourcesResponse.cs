@@ -6,11 +6,12 @@ namespace Retab
 
     /// <summary>An extraction's output annotated with the source that backs each value.</summary>
     /// <remarks>
-    /// Returned when fetching the sources for an extraction. Carries the source
-    /// `file` and its detected `document_type`, the original `extraction` output,
-    /// and a parallel `sources` tree where each leaf is a `{value, source}` object
-    /// locating the value in the document (a page region for PDFs, a cell for
-    /// spreadsheets, a text span for plain text, and so on).
+    /// Returned when fetching the sources for an extraction. Carries the canonical
+    /// `source_document` and its detected `document_type`, the original `extraction`
+    /// output, and a parallel `sources` tree where each leaf is a `{value, source}`
+    /// object locating the value in the document (a page region for PDFs, a cell for
+    /// spreadsheets, a text span for plain text, and so on). The legacy `file` field is
+    /// kept as an alias of `source_document` for compatibility.
     /// </remarks>
     public class SourcesResponse
     {
@@ -19,18 +20,21 @@ namespace Retab
         /// <summary>ID of the extraction</summary>
         public string ExtractionId { get; set; } = default!;
 
-        /// <summary>Detected document type of the source file</summary>
+        /// <summary>Detected document type of the source document</summary>
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
         [STJS.JsonIgnore(Condition = STJS.JsonIgnoreCondition.WhenWritingDefault)]
         public SourcesResponseDocumentType DocumentType { get; set; }
 
-        /// <summary>File metadata (id, filename, mime_type)</summary>
+        /// <summary>Compatibility alias for source_document.</summary>
         public BlockExecFileRef File { get; set; } = default!;
+
+        /// <summary>Canonical source document metadata (id, filename, mime_type).</summary>
+        public BlockExecFileRef SourceDocument { get; set; } = default!;
 
         /// <summary>Original extraction output</summary>
         public Dictionary<string, object> Extraction { get; set; } = default!;
 
-        /// <summary>Same shape as extraction but leaves are {value, source} objects</summary>
+        /// <summary>Same shape as extraction but leaves are {value, source} objects. Non-null source entries include file_id.</summary>
         public Dictionary<string, object> Sources { get; set; } = default!;
 
         /// <summary>

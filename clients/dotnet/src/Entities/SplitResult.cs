@@ -11,6 +11,7 @@ namespace Retab
 
         /// <summary>The pages of the subdocument (1-indexed)</summary>
         public List<long> Pages { get; set; } = default!;
+        public List<SheetRegion>? Regions { get; set; }
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

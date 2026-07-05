@@ -7,12 +7,14 @@ module Retab
 
     HASH_ATTRS = {
       name: :name,
-      pages: :pages
+      pages: :pages,
+      regions: :regions
     }.freeze
 
     attr_accessor(
       :name,
-      :pages
+      :pages,
+      :regions
     )
 
     def initialize(json)
@@ -20,6 +22,7 @@ module Retab
       hash = self.class.normalize(json)
       @name = hash[:name]
       @pages = (hash[:pages] || [])
+      @regions = (hash[:regions] || []).map { |item| item ? Retab::SheetRegion.new(item) : nil }
     end
   end
 end

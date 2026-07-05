@@ -40,6 +40,15 @@ module Retab
 
     sig do
       params(
+        document: Retab::ReconstructDocumentRef,
+        subdocuments: T::Array[Retab::ReconstructSubdocument],
+        request_options: T::Hash[Symbol, T.untyped]
+      ).returns(Retab::ReconstructResponse)
+    end
+    def create_reconstruct(document:, subdocuments:, request_options:); end
+
+    sig do
+      params(
         split_id: String,
         include_output: T.nilable(T::Boolean),
         request_options: T::Hash[Symbol, T.untyped]

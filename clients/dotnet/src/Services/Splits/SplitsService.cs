@@ -73,6 +73,25 @@ namespace Retab
             return this.CreateAsync(options, requestOptions, cancellationToken);
         }
 
+        /// <summary>Reconstruct Split</summary>
+        /// <remarks>
+        /// Reconstruct each named subdocument of a stored spreadsheet into an enriched, partition-ready table: one flat complete header, the key carried on every row, section banners promoted to a column, and wide size-matrices melted. Returns the enriched tables (header + rows + clean CSV) for hand-off to extraction.
+        /// </remarks>
+        /// <param name="options">Request options.</param>
+        /// <param name="requestOptions">Per-request configuration overrides.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The <see cref="ReconstructResponse"/> result.</returns>
+        public virtual async Task<ReconstructResponse> CreateReconstructAsync(SplitsCreateReconstructOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return await this.PostAsync<ReconstructResponse>("/v1/splits/reconstruct", options, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Compatibility wrapper for <see cref="CreateReconstructAsync"/>.</summary>
+        public virtual Task<ReconstructResponse> CreateReconstruct(SplitsCreateReconstructOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return this.CreateReconstructAsync(options, requestOptions, cancellationToken);
+        }
+
         /// <summary>Get Split</summary>
         /// <remarks>
         /// Retrieve a split.

@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "rust",
-  "generatedAt": "2026-07-01T11:01:18.327Z",
+  "generatedAt": "2026-07-05T22:53:04.174Z",
   "files": [
     "Cargo.toml",
     "LICENSE-MIT",
@@ -317,6 +317,13 @@
     "src/models/queued_workflow_eval_run.rs",
     "src/models/queued_workflow_experiment_result.rs",
     "src/models/queued_workflow_experiment_run.rs",
+    "src/models/reconstruct_document_ref.rs",
+    "src/models/reconstruct_enriched_row.rs",
+    "src/models/reconstruct_enriched_table.rs",
+    "src/models/reconstruct_enrichment_options.rs",
+    "src/models/reconstruct_request.rs",
+    "src/models/reconstruct_response.rs",
+    "src/models/reconstruct_subdocument.rs",
     "src/models/reject_review_request.rs",
     "src/models/replace_workflow_table_upload_request.rs",
     "src/models/result_file_ref.rs",
@@ -355,6 +362,7 @@
     "src/models/secret_value.rs",
     "src/models/secret_value_response.rs",
     "src/models/set_secret_request.rs",
+    "src/models/sheet_region.rs",
     "src/models/similarity_gte_condition.rs",
     "src/models/skipped_block_execution_lifecycle.rs",
     "src/models/skipped_step_lifecycle.rs",
@@ -684,6 +692,10 @@
     },
     "POST /v1/splits": {
       "sdkMethod": "create",
+      "service": "splits"
+    },
+    "POST /v1/splits/reconstruct": {
+      "sdkMethod": "create_reconstruct",
       "service": "splits"
     },
     "GET /v1/splits/{split_id}": {

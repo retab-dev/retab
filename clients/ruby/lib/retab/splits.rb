@@ -124,6 +124,36 @@ module Retab
       result
     end
 
+    # Reconstruct Split
+    # @param document [Retab::ReconstructDocumentRef]
+    # @param subdocuments [Array<Retab::ReconstructSubdocument>]
+    # @param request_options [Hash] (see Retab::Types::RequestOptions)
+    # @return [Retab::ReconstructResponse]
+    def create_reconstruct(
+      document:,
+      subdocuments:,
+      request_options: {}
+    )
+      body = {
+        "document" => document,
+        "subdocuments" => subdocuments
+      }
+      response = @client.request(
+        method: :post,
+        path: "/v1/splits/reconstruct",
+        auth: true,
+        body: body,
+        request_options: request_options
+      )
+      result = Retab::ReconstructResponse.new(response.body)
+      result.last_response = Retab::Types::ApiResponse.new(
+        http_status: response.code.to_i,
+        http_headers: response.each_header.to_h,
+        request_id: response["x-request-id"]
+      )
+      result
+    end
+
     # Get Split
     # @param split_id [String]
     # @param include_output [Boolean, nil] When false, returns a cheap status-only projection (no output), served from cache for in-flight background runs.

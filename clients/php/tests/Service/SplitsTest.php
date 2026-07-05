@@ -47,6 +47,18 @@ class SplitsTest extends TestCase
         $this->assertStringEndsWith('v1/splits', $request->getUri()->getPath());
     }
 
+    public function testCreateReconstruct(): void
+    {
+        $fixture = $this->loadFixture('reconstruct_response');
+        $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
+        $result = $client->splits()->createReconstruct(document: \Retab\Resource\ReconstructDocumentRef::fromArray($this->loadFixture('reconstruct_document_ref')), subdocuments: []);
+        $this->assertInstanceOf(\Retab\Resource\ReconstructResponse::class, $result);
+        $this->assertIsArray($result->toArray());
+        $request = $this->getLastRequest();
+        $this->assertSame('POST', $request->getMethod());
+        $this->assertStringEndsWith('v1/splits/reconstruct', $request->getUri()->getPath());
+    }
+
     public function testGet(): void
     {
         $fixture = $this->loadFixture('split');

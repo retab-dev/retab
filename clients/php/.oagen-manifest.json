@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "php",
-  "generatedAt": "2026-07-01T11:01:15.861Z",
+  "generatedAt": "2026-07-05T22:52:54.935Z",
   "files": [
     "composer.json",
     "lib/Client.php",
@@ -211,6 +211,13 @@
     "lib/Resource/QueuedWorkflowEvalRun.php",
     "lib/Resource/QueuedWorkflowExperimentResult.php",
     "lib/Resource/QueuedWorkflowExperimentRun.php",
+    "lib/Resource/ReconstructDocumentRef.php",
+    "lib/Resource/ReconstructEnrichedRow.php",
+    "lib/Resource/ReconstructEnrichedTable.php",
+    "lib/Resource/ReconstructEnrichmentOptions.php",
+    "lib/Resource/ReconstructRequest.php",
+    "lib/Resource/ReconstructResponse.php",
+    "lib/Resource/ReconstructSubdocument.php",
     "lib/Resource/RejectReviewRequest.php",
     "lib/Resource/ReplaceWorkflowTableUploadRequest.php",
     "lib/Resource/ResultFileRef.php",
@@ -253,6 +260,7 @@
     "lib/Resource/SecretValue.php",
     "lib/Resource/SecretValueResponse.php",
     "lib/Resource/SetSecretRequest.php",
+    "lib/Resource/SheetRegion.php",
     "lib/Resource/SimilarityGteCondition.php",
     "lib/Resource/SimilarityGteConditionMethod.php",
     "lib/Resource/SkippedBlockExecutionLifecycle.php",
@@ -585,6 +593,13 @@
     "tests/Fixtures/queued_workflow_eval_run.json",
     "tests/Fixtures/queued_workflow_experiment_result.json",
     "tests/Fixtures/queued_workflow_experiment_run.json",
+    "tests/Fixtures/reconstruct_document_ref.json",
+    "tests/Fixtures/reconstruct_enriched_row.json",
+    "tests/Fixtures/reconstruct_enriched_table.json",
+    "tests/Fixtures/reconstruct_enrichment_options.json",
+    "tests/Fixtures/reconstruct_request.json",
+    "tests/Fixtures/reconstruct_response.json",
+    "tests/Fixtures/reconstruct_subdocument.json",
     "tests/Fixtures/reject_review_request.json",
     "tests/Fixtures/replace_workflow_table_upload_request.json",
     "tests/Fixtures/result_file_ref.json",
@@ -623,6 +638,7 @@
     "tests/Fixtures/secret_value.json",
     "tests/Fixtures/secret_value_response.json",
     "tests/Fixtures/set_secret_request.json",
+    "tests/Fixtures/sheet_region.json",
     "tests/Fixtures/similarity_gte_condition.json",
     "tests/Fixtures/skipped_block_execution_lifecycle.json",
     "tests/Fixtures/skipped_step_lifecycle.json",
@@ -927,6 +943,10 @@
     },
     "POST /v1/splits": {
       "sdkMethod": "create",
+      "service": "splits"
+    },
+    "POST /v1/splits/reconstruct": {
+      "sdkMethod": "createReconstruct",
       "service": "splits"
     },
     "GET /v1/splits/{split_id}": {

@@ -10,6 +10,7 @@ module Retab
       extraction_id: :extraction_id,
       document_type: :document_type,
       file: :file,
+      source_document: :source_document,
       extraction: :extraction,
       sources: :sources
     }.freeze
@@ -19,6 +20,7 @@ module Retab
       :extraction_id,
       :document_type,
       :file,
+      :source_document,
       :extraction,
       :sources
     )
@@ -30,6 +32,7 @@ module Retab
       @extraction_id = hash[:extraction_id]
       @document_type = hash[:document_type]
       @file = hash[:file] ? Retab::FileRef.new(hash[:file]) : nil
+      @source_document = hash[:source_document] ? Retab::FileRef.new(hash[:source_document]) : nil
       @extraction = hash[:extraction] || {}
       @sources = hash[:sources] || {}
     end

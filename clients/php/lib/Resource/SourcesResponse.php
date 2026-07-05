@@ -9,11 +9,12 @@ namespace Retab\Resource;
 /**
  * An extraction's output annotated with the source that backs each value.
  *
- * Returned when fetching the sources for an extraction. Carries the source
- * `file` and its detected `document_type`, the original `extraction` output,
- * and a parallel `sources` tree where each leaf is a `{value, source}` object
- * locating the value in the document (a page region for PDFs, a cell for
- * spreadsheets, a text span for plain text, and so on).
+ * Returned when fetching the sources for an extraction. Carries the canonical
+ * `source_document` and its detected `document_type`, the original `extraction`
+ * output, and a parallel `sources` tree where each leaf is a `{value, source}`
+ * object locating the value in the document (a page region for PDFs, a cell for
+ * spreadsheets, a text span for plain text, and so on). The legacy `file` field is
+ * kept as an alias of `source_document` for compatibility.
  */
 readonly class SourcesResponse implements \JsonSerializable
 {
@@ -22,17 +23,19 @@ readonly class SourcesResponse implements \JsonSerializable
     public function __construct(
         /** ID of the extraction */
         public string $extractionId,
-        /** Detected document type of the source file */
+        /** Detected document type of the source document */
         public SourcesResponseDocumentType $documentType,
-        /** File metadata (id, filename, mime_type) */
+        /** Compatibility alias for source_document. */
         public FileRef $file,
+        /** Canonical source document metadata (id, filename, mime_type). */
+        public FileRef $sourceDocument,
         /**
          * Original extraction output
          * @var array<string, mixed>
          */
         public array $extraction,
         /**
-         * Same shape as extraction but leaves are {value, source} objects
+         * Same shape as extraction but leaves are {value, source} objects. Non-null source entries include file_id.
          * @var array<string, mixed>
          */
         public array $sources,
@@ -46,6 +49,7 @@ readonly class SourcesResponse implements \JsonSerializable
             'extraction_id',
             'document_type',
             'file',
+            'source_document',
             'extraction',
             'sources',
         ] as $__required) {
@@ -57,6 +61,7 @@ readonly class SourcesResponse implements \JsonSerializable
             extractionId: $data['extraction_id'],
             documentType: SourcesResponseDocumentType::from($data['document_type']),
             file: FileRef::fromArray($data['file']),
+            sourceDocument: FileRef::fromArray($data['source_document']),
             extraction: $data['extraction'],
             sources: $data['sources'],
             object: $data['object'] ?? 'extraction.sources',
@@ -70,6 +75,7 @@ readonly class SourcesResponse implements \JsonSerializable
             'extraction_id' => $this->extractionId,
             'document_type' => $this->documentType->value,
             'file' => $this->file->toArray(),
+            'source_document' => $this->sourceDocument->toArray(),
             'extraction' => $this->extraction,
             'sources' => $this->sources,
             'object' => $this->object,

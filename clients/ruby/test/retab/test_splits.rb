@@ -27,6 +27,13 @@ class SplitsTest < Minitest::Test
     refute_nil(result)
   end
 
+  def test_create_reconstruct_returns_expected_result
+    stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/splits/reconstruct(\?|\z)})
+      .to_return(body: "{}", status: 200)
+    result = @client.splits.create_reconstruct(document: {}, subdocuments: [{}])
+    refute_nil(result)
+  end
+
   def test_get_returns_expected_result
     stub_request(:get, %r{\Ahttps://api\.retab\.com/v1/splits/stub(\?|\z)})
       .to_return(body: "{}", status: 200)
@@ -56,6 +63,12 @@ class SplitsTest < Minitest::Test
       verb: :post,
       url: %r{\Ahttps://api\.retab\.com/v1/splits(\?|\z)},
       args: {document: {filename: "stub.pdf", url: "data:application/pdf;base64,c3R1Yg=="}, subdocuments: [{}]}
+    },
+    {
+      name: :create_reconstruct,
+      verb: :post,
+      url: %r{\Ahttps://api\.retab\.com/v1/splits/reconstruct(\?|\z)},
+      args: {document: {}, subdocuments: [{}]}
     },
     {name: :get, verb: :get, url: %r{\Ahttps://api\.retab\.com/v1/splits/stub(\?|\z)}, args: {split_id: "stub"}},
     {name: :delete, verb: :delete, url: %r{\Ahttps://api\.retab\.com/v1/splits/stub(\?|\z)}, args: {split_id: "stub"}},

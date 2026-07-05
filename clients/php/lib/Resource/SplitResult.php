@@ -18,6 +18,8 @@ readonly class SplitResult implements \JsonSerializable
          * @var array<int>
          */
         public array $pages,
+        /** @var array<\Retab\Resource\SheetRegion>|null */
+        public ?array $regions = null,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -34,6 +36,7 @@ readonly class SplitResult implements \JsonSerializable
         return new self(
             name: $data['name'],
             pages: $data['pages'],
+            regions: isset($data['regions']) ? array_map(fn($item) => SheetRegion::fromArray($item), $data['regions']) : null,
         );
     }
 
@@ -43,6 +46,7 @@ readonly class SplitResult implements \JsonSerializable
         return [
             'name' => $this->name,
             'pages' => $this->pages,
+            'regions' => $this->regions !== null ? array_map(fn($item) => $item->toArray(), $this->regions) : null,
         ];
     }
 }
