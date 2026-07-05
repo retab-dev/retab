@@ -6,12 +6,11 @@ use super::*;
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
 /// An extraction's output annotated with the source that backs each value.
-/// Returned when fetching the sources for an extraction. Carries the canonical
-/// `source_document` and its detected `document_type`, the original `extraction`
-/// output, and a parallel `sources` tree where each leaf is a `{value, source}`
-/// object locating the value in the document (a page region for PDFs, a cell for
-/// spreadsheets, a text span for plain text, and so on). The legacy `file` field is
-/// kept as an alias of `source_document` for compatibility.
+/// Returned when fetching the sources for an extraction. Carries the source `file`
+/// and its detected `document_type`, the original `extraction` output, and a
+/// parallel `sources` tree where each leaf is a `{value, source}` object locating
+/// the value in the document (a page region for PDFs, a cell for spreadsheets, a
+/// text span for plain text, and so on).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SourcesResponse {
     /// Defaults to `extraction.sources`.
@@ -19,12 +18,10 @@ pub struct SourcesResponse {
     pub object: Option<String>,
     /// ID of the extraction
     pub extraction_id: String,
-    /// Detected document type of the source document
+    /// Detected document type of the source file
     pub document_type: SourcesResponseDocumentType,
-    /// Compatibility alias for source_document.
+    /// Source file metadata (id, filename, mime_type).
     pub file: FileRef,
-    /// Canonical source document metadata (id, filename, mime_type).
-    pub source_document: FileRef,
     /// Original extraction output
     pub extraction: std::collections::HashMap<String, serde_json::Value>,
     /// Same shape as extraction but leaves are {value, source} objects. Non-null source entries include file_id.
@@ -37,7 +34,6 @@ impl SourcesResponse {
         extraction_id: impl Into<String>,
         document_type: SourcesResponseDocumentType,
         file: FileRef,
-        source_document: FileRef,
         extraction: std::collections::HashMap<String, serde_json::Value>,
         sources: std::collections::HashMap<String, serde_json::Value>,
     ) -> Self {
@@ -46,7 +42,6 @@ impl SourcesResponse {
             extraction_id: extraction_id.into(),
             document_type,
             file,
-            source_document,
             extraction,
             sources,
         }

@@ -1892,7 +1892,6 @@ class ModelRoundTripTest < Minitest::Test
       "extraction_id" => "stub",
       "document_type" => "stub",
       "file" => {},
-      "source_document" => {},
       "extraction" => {},
       "sources" => {}
     }

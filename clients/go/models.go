@@ -1160,22 +1160,19 @@ type ExtractionConsensus struct {
 }
 
 // SourcesResponse an extraction's output annotated with the source that backs each value.
-// Returned when fetching the sources for an extraction. Carries the canonical
-// `source_document` and its detected `document_type`, the original `extraction`
-// output, and a parallel `sources` tree where each leaf is a `{value, source}`
-// object locating the value in the document (a page region for PDFs, a cell for
-// spreadsheets, a text span for plain text, and so on). The legacy `file` field is
-// kept as an alias of `source_document` for compatibility.
+// Returned when fetching the sources for an extraction. Carries the source `file`
+// and its detected `document_type`, the original `extraction` output, and a
+// parallel `sources` tree where each leaf is a `{value, source}` object locating
+// the value in the document (a page region for PDFs, a cell for spreadsheets, a
+// text span for plain text, and so on).
 type SourcesResponse struct {
 	Object *string `json:"object,omitempty"`
 	// ExtractionID is id of the extraction
 	ExtractionID string `json:"extraction_id"`
-	// DocumentType is detected document type of the source document
+	// DocumentType is detected document type of the source file
 	DocumentType SourcesResponseDocumentType `json:"document_type"`
-	// File is compatibility alias for source_document.
+	// File is source file metadata (id, filename, mime_type).
 	File FileRef `json:"file"`
-	// SourceDocument is canonical source document metadata (id, filename, mime_type).
-	SourceDocument FileRef `json:"source_document"`
 	// Extraction is original extraction output
 	Extraction map[string]interface{} `json:"extraction"`
 	// Sources is same shape as extraction but leaves are {value, source} objects. Non-null source entries include file_id.

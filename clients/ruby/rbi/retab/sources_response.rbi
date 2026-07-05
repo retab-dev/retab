@@ -33,12 +33,6 @@ module Retab
     sig { params(value: Retab::FileRef).returns(Retab::FileRef) }
     def file=(value); end
 
-    sig { returns(Retab::FileRef) }
-    def source_document; end
-
-    sig { params(value: Retab::FileRef).returns(Retab::FileRef) }
-    def source_document=(value); end
-
     sig { returns(T::Hash[String, T.untyped]) }
     def extraction; end
 

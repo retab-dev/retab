@@ -19,12 +19,10 @@ export interface SourcesResponse {
   object: 'extraction.sources';
   /** ID of the extraction */
   extractionId: string;
-  /** Detected document type of the source document */
+  /** Detected document type of the source file */
   documentType: SourcesResponseDocumentType;
-  /** Compatibility alias for source_document. */
+  /** Source file metadata (id, filename, mime_type). */
   file: FileRef;
-  /** Canonical source document metadata (id, filename, mime_type). */
-  sourceDocument: FileRef;
   /** Original extraction output */
   extraction: Record<string, unknown>;
   /** Same shape as extraction but leaves are {value, source} objects. Non-null source entries include file_id. */
@@ -36,7 +34,6 @@ export interface SourcesResponseResponse {
   extraction_id: string;
   document_type: SourcesResponseDocumentType;
   file: FileRefResponse;
-  source_document: FileRefResponse;
   extraction: Record<string, unknown>;
   sources: Record<string, unknown>;
 }
@@ -46,7 +43,6 @@ export const ZSourcesResponse = z.object({
   extractionId: z.string(),
   documentType: ZSourcesResponseDocumentType,
   file: ZFileRef,
-  sourceDocument: ZFileRef,
   extraction: z.record(z.string(), z.unknown()),
   sources: z.record(z.string(), z.unknown()),
 }) as z.ZodType<SourcesResponse>;
@@ -57,7 +53,6 @@ export function deserializeSourcesResponse(wire: SourcesResponseResponse): Sourc
     extractionId: wire['extraction_id'],
     documentType: wire['document_type'],
     file: deserializeFileRef(wire['file']),
-    sourceDocument: deserializeFileRef(wire['source_document']),
     extraction: wire['extraction'],
     sources: wire['sources'],
   };
@@ -69,7 +64,6 @@ export function serializeSourcesResponse(domain: SourcesResponse): SourcesRespon
     extraction_id: domain['extractionId'],
     document_type: domain['documentType'],
     file: serializeFileRef(domain['file']),
-    source_document: serializeFileRef(domain['sourceDocument']),
     extraction: domain['extraction'],
     sources: domain['sources'],
   };
