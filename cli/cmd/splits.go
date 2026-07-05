@@ -3,6 +3,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -261,6 +262,108 @@ cancelled and the API returns an error.`,
 	}),
 }
 
+var splitsReconstructCmd = &cobra.Command{
+	Use:   "reconstruct",
+	Short: "Reconstruct split spreadsheet regions",
+	Long: `Reconstruct named spreadsheet regions into enriched tables.
+
+The request body is a JSON object with ` + "`document`" + ` and ` + "`subdocuments`" + ` fields.
+Use this for stored spreadsheets whose sections should become clean,
+partition-ready CSV tables.`,
+	Example: `  cat > reconstruct.json <<'JSON'
+  {
+    "document": {
+      "id": "file_abc123",
+      "filename": "orders.xlsx",
+      "mime_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    },
+    "subdocuments": [{
+      "name": "orders",
+      "partition_key": "order_id",
+      "regions": [{
+        "sheet_name": "Orders",
+        "sheet_index": 0,
+        "row_start": 1,
+        "row_end": 25,
+        "header_rows": [1]
+      }]
+    }]
+  }
+  JSON
+  retab splits reconstruct --request-file ./reconstruct.json`,
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		requestFile, _ := cmd.Flags().GetString("request-file")
+		if requestFile == "" {
+			return fmt.Errorf("--request-file is required")
+		}
+		raw, err := readJSONMap(requestFile)
+		if err != nil {
+			return fmt.Errorf("--request-file: %w", err)
+		}
+		var params retab.SplitsCreateReconstructParams
+		if err := decodeSplitsReconstructRequest(raw, &params); err != nil {
+			return err
+		}
+		if err := validateSplitsReconstructRequest(&params); err != nil {
+			return err
+		}
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		result, err := client.Splits.CreateReconstruct(ctx, &params)
+		if err != nil {
+			return err
+		}
+		return printJSON(result)
+	}),
+}
+
+func decodeSplitsReconstructRequest(raw map[string]any, out *retab.SplitsCreateReconstructParams) error {
+	encoded, err := json.Marshal(raw)
+	if err != nil {
+		return fmt.Errorf("--request-file: %w", err)
+	}
+	if err := json.Unmarshal(encoded, out); err != nil {
+		return fmt.Errorf("--request-file: %w", err)
+	}
+	return nil
+}
+
+func validateSplitsReconstructRequest(params *retab.SplitsCreateReconstructParams) error {
+	if strings.TrimSpace(params.Document.ID) == "" {
+		return fmt.Errorf("--request-file.document.id is required")
+	}
+	if strings.TrimSpace(params.Document.Filename) == "" {
+		return fmt.Errorf("--request-file.document.filename is required")
+	}
+	if len(params.Subdocuments) == 0 {
+		return fmt.Errorf("--request-file.subdocuments must contain at least one subdocument")
+	}
+	for i, subdocument := range params.Subdocuments {
+		if subdocument == nil {
+			return fmt.Errorf("--request-file.subdocuments[%d] must be a JSON object", i)
+		}
+		if strings.TrimSpace(subdocument.Name) == "" {
+			return fmt.Errorf("--request-file.subdocuments[%d].name is required", i)
+		}
+		if len(subdocument.Regions) == 0 {
+			return fmt.Errorf("--request-file.subdocuments[%d].regions must contain at least one region", i)
+		}
+		for j, region := range subdocument.Regions {
+			if region == nil {
+				return fmt.Errorf("--request-file.subdocuments[%d].regions[%d] must be a JSON object", i, j)
+			}
+			if strings.TrimSpace(region.SheetName) == "" {
+				return fmt.Errorf("--request-file.subdocuments[%d].regions[%d].sheet_name is required", i, j)
+			}
+		}
+	}
+	return nil
+}
+
 func init() {
 	addDocumentFlags(splitsCreateCmd)
 	splitsCreateCmd.Flags().String("subdocuments-file", "", "JSON array of subdocuments (name, description, allow_multiple_instances) (required)")
@@ -275,10 +378,12 @@ func init() {
 
 	addListFlags(splitsListCmd, false)
 	splitsDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
+	splitsReconstructCmd.Flags().String("request-file", "", "JSON request body with document and subdocuments (or - for stdin) (required)")
+	_ = splitsReconstructCmd.MarkFlagRequired("request-file")
 
 	splitsWaitCmd := primitiveWaitCommand(splitWaitSpec)
 	addPrimitiveWaitTuningFlags(splitsWaitCmd, false)
 
-	splitsCmd.AddCommand(splitsCreateCmd, splitsGetCmd, splitsListCmd, splitsDeleteCmd, splitsCancelCmd, splitsWaitCmd)
+	splitsCmd.AddCommand(splitsCreateCmd, splitsGetCmd, splitsListCmd, splitsDeleteCmd, splitsCancelCmd, splitsReconstructCmd, splitsWaitCmd)
 	rootCmd.AddCommand(splitsCmd)
 }

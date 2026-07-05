@@ -248,7 +248,7 @@ var workflowsExperimentsCreateCmd = &cobra.Command{
 	Use:   "create <workflow-id> [flags]",
 	Short: "Create an experiment",
 	Long: `Create an experiment scoped to one block. Provide the input
-documents in one of two ways:
+documents in one or both of two ways:
 
   ` + "`--captures-file`" + `  — a JSON array of
   ` + `{"run_id": ..., "step_id": ...}` + ` entries pointing at
@@ -299,14 +299,6 @@ After creation, create a run with
 				return err
 			}
 			req.Name = &trimmedName
-			// --captures-file and --documents-file are described in the help
-			// text as alternatives ("Provide the input documents in one of two
-			// ways"). Reject the combination client-side before any file I/O
-			// or network call so users don't silently get only one of the two
-			// sources used.
-			if err := validateMutuallyExclusiveChangedFlags(cmd, "captures-file", "documents-file"); err != nil {
-				return err
-			}
 			if cmd.Flags().Changed("n-consensus") {
 				v, _ := cmd.Flags().GetInt("n-consensus")
 				n := retab.CreateExperimentRequestNConsensus(v)

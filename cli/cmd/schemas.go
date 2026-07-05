@@ -57,9 +57,6 @@ alongside your code.
 
 Steer the result with ` + "`--instructions`" + ` (or ` + "`--instructions-file`" + ` /
 ` + "`-`" + ` for stdin) to constrain scope, nullability, naming, types, etc.
-Lower ` + "`--image-resolution-dpi`" + ` to reduce per-page work — useful when a
-long or heavily-instructed generation would otherwise exceed the server's
-processing budget.
 
 Generation is served by an internal service that can intermittently exceed
 its own deadline (a transient "context deadline exceeded" failure). The CLI
@@ -192,12 +189,6 @@ resubmit sooner.
 		}
 		if instr != "" {
 			params.Instructions = ptr(instr)
-		}
-		// Render DPI sent to the model. Lower values reduce the work the
-		// generator does per page, which is the practical lever for keeping a
-		// long/instructed generation within the server's processing budget.
-		if dpi, _ := cmd.Flags().GetInt("image-resolution-dpi"); dpi > 0 {
-			params.ImageResolutionDpi = ptr(dpi)
 		}
 		background, _ := cmd.Flags().GetBool("background")
 		if background {
@@ -439,7 +430,6 @@ func init() {
 	schemasGenerateCmd.Flags().String("model", "", "model identifier")
 	schemasGenerateCmd.Flags().String("instructions", "", "natural-language guidance for the generated schema")
 	schemasGenerateCmd.Flags().String("instructions-file", "", "read schema instructions from a file (or - for stdin)")
-	schemasGenerateCmd.Flags().Int("image-resolution-dpi", 0, "render DPI sent to the model (lower = less work per page; helps long/instructed generations finish in time)")
 	schemasGenerateCmd.Flags().Int("max-retries", 3, "resubmit the generation this many times on transient server failures (e.g. orchestrator deadline)")
 	schemasGenerateCmd.Flags().Int("retry-delay-ms", 3000, "delay between retries in milliseconds")
 	schemasGenerateCmd.Flags().String("format", "schema", "output format: schema | json")

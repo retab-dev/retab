@@ -245,23 +245,18 @@ func TestSchemasGenerateBackgroundSendsFlagAndPrintsRecord(t *testing.T) {
 	}
 }
 
-// TestSchemasGenerateForwardsInstructionsAndDPI pins that --instructions and
-// --image-resolution-dpi are wired into the request body (the SDK supported
-// them before the CLI exposed them).
-func TestSchemasGenerateForwardsInstructionsAndDPI(t *testing.T) {
+// TestSchemasGenerateForwardsInstructions pins that --instructions is wired
+// into the request body.
+func TestSchemasGenerateForwardsInstructions(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
 
 	var gotInstr atomic.Value
-	var gotDPI atomic.Int64
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var body map[string]any
 		_ = json.NewDecoder(r.Body).Decode(&body)
 		if s, ok := body["instructions"].(string); ok {
 			gotInstr.Store(s)
-		}
-		if d, ok := body["image_resolution_dpi"].(float64); ok {
-			gotDPI.Store(int64(d))
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{"json_schema": map[string]any{"type": "object"}})
@@ -277,12 +272,8 @@ func TestSchemasGenerateForwardsInstructionsAndDPI(t *testing.T) {
 	if err := schemasGenerateCmd.Flags().Set("instructions", "Only model deeds; nullable optionals."); err != nil {
 		t.Fatal(err)
 	}
-	if err := schemasGenerateCmd.Flags().Set("image-resolution-dpi", "96"); err != nil {
-		t.Fatal(err)
-	}
 	t.Cleanup(func() {
 		_ = schemasGenerateCmd.Flags().Set("instructions", "")
-		_ = schemasGenerateCmd.Flags().Set("image-resolution-dpi", "0")
 		if slice, ok := schemasGenerateCmd.Flags().Lookup("url").Value.(interface{ Replace([]string) error }); ok {
 			_ = slice.Replace(nil)
 		}
@@ -295,9 +286,6 @@ func TestSchemasGenerateForwardsInstructionsAndDPI(t *testing.T) {
 	}
 	if got, _ := gotInstr.Load().(string); got != "Only model deeds; nullable optionals." {
 		t.Fatalf("instructions not forwarded, got %q", got)
-	}
-	if gotDPI.Load() != 96 {
-		t.Fatalf("image_resolution_dpi not forwarded, got %d", gotDPI.Load())
 	}
 }
 

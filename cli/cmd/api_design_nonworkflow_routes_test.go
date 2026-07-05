@@ -206,6 +206,9 @@ func nonWorkflowCLIClientCallRouteContracts() map[string][]cliRouteContract {
 		"Splits.CreateCancel": {
 			{method: http.MethodPost, path: "/splits/{split_id}/cancel"},
 		},
+		"Splits.CreateReconstruct": {
+			{method: http.MethodPost, path: "/splits/reconstruct"},
+		},
 		"Splits.Delete": {
 			{method: http.MethodDelete, path: "/splits/{split_id}"},
 		},

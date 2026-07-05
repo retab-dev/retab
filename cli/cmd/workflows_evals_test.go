@@ -1163,8 +1163,7 @@ func TestWorkflowsExperimentsCreateRejectsInvalidDocumentInputsBeforeRequest(t *
 				}
 				// Reset the value AND the Changed bit. Cobra's Set("")
 				// keeps Changed=true, which would otherwise leak into the
-				// next subtest and trip the captures-vs-documents mutual
-				// exclusion check.
+				// next subtest.
 				flagName := name
 				t.Cleanup(func() {
 					_ = workflowsExperimentsCreateCmd.Flags().Set(flagName, "")
@@ -1191,19 +1190,35 @@ func TestWorkflowsExperimentsCreateRejectsInvalidDocumentInputsBeforeRequest(t *
 	}
 }
 
-// TestWorkflowsExperimentsCreateRejectsBothSourceFlagsTogether pins the
-// mutual-exclusion contract between --captures-file and --documents-file.
-// The help text describes them as alternatives ("Provide the input
-// documents in one of two ways"), so passing both must fail client-side
-// before any file I/O or network call.
-func TestWorkflowsExperimentsCreateRejectsBothSourceFlagsTogether(t *testing.T) {
+// TestWorkflowsExperimentsCreateForwardsCaptureAndDocumentFiles pins that
+// capture-file and explicit-document sources can be combined. The API accepts
+// both arrays in one create request, and the CLI must not reject the richer
+// document set client-side.
+func TestWorkflowsExperimentsCreateForwardsCaptureAndDocumentFiles(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	var body map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		hits.Add(1)
-		http.Error(w, "server should not be reached", http.StatusInternalServerError)
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows/experiments" {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatalf("decode request body: %v", err)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"id":             "exp_123",
+			"workflow_id":    "wf_123",
+			"block_id":       "blk_123",
+			"block_type":     "extract",
+			"n_consensus":    3,
+			"document_count": 2,
+			"name":           "experiment",
+			"status":         "draft",
+		})
 	}))
 	defer server.Close()
 	t.Setenv("RETAB_API_BASE_URL", server.URL)
@@ -1237,28 +1252,34 @@ func TestWorkflowsExperimentsCreateRejectsBothSourceFlagsTogether(t *testing.T) 
 		_ = workflowsExperimentsCreateCmd.Flags().Set("documents-file", "")
 		// Cobra's Set("") keeps Changed=true; clear it so neighbour tests
 		// don't see stale "changed" state.
-		for _, name := range []string{"captures-file", "documents-file"} {
+		for _, name := range []string{"block-id", "name", "captures-file", "documents-file"} {
 			if f := workflowsExperimentsCreateCmd.Flags().Lookup(name); f != nil {
 				f.Changed = false
 			}
 		}
 	})
 
-	var err error
-	_, stderr := captureStd(t, func() {
-		err = workflowsExperimentsCreateCmd.RunE(workflowsExperimentsCreateCmd, []string{"wf_123"})
+	stdout, stderr := captureStd(t, func() {
+		if err := workflowsExperimentsCreateCmd.RunE(workflowsExperimentsCreateCmd, []string{"wf_123"}); err != nil {
+			t.Fatalf("experiments create: %v", err)
+		}
 	})
-	if err == nil {
-		t.Fatal("expected mutual-exclusion error for --captures-file and --documents-file")
+	if stderr != "" {
+		t.Fatalf("unexpected stderr: %q", stderr)
 	}
-	if !strings.Contains(stderr, "--captures-file") || !strings.Contains(stderr, "--documents-file") {
-		t.Fatalf("stderr %q does not mention both flag names", stderr)
+	if !strings.Contains(stdout, `"id": "exp_123"`) {
+		t.Fatalf("expected experiment response on stdout, got:\n%s", stdout)
 	}
-	if !strings.Contains(stderr, "cannot be used together") {
-		t.Fatalf("stderr %q does not match expected mutual-exclusion wording", stderr)
+	if got := hits.Load(); got != 1 {
+		t.Fatalf("server was hit %d time(s), want 1", got)
 	}
-	if got := hits.Load(); got != 0 {
-		t.Fatalf("server was hit %d time(s), want 0", got)
+	captures, ok := body["document_captures"].([]any)
+	if !ok || len(captures) != 1 {
+		t.Fatalf("document_captures = %#v, want one capture", body["document_captures"])
+	}
+	documents, ok := body["documents"].([]any)
+	if !ok || len(documents) != 1 {
+		t.Fatalf("documents = %#v, want one explicit document", body["documents"])
 	}
 }
 
@@ -1281,9 +1302,8 @@ func TestWorkflowsExperimentsCreateReadsDocumentFilesBeforeCredentials(t *testin
 		_ = workflowsExperimentsCreateCmd.Flags().Set("block-id", "")
 		_ = workflowsExperimentsCreateCmd.Flags().Set("name", "")
 		_ = workflowsExperimentsCreateCmd.Flags().Set("captures-file", "")
-		// Cobra's Set("") keeps Changed=true; clear it so the captures
-		// vs. documents mutual-exclusion check in neighbour tests does
-		// not see stale "changed" state.
+		// Cobra's Set("") keeps Changed=true; clear it so neighbour tests
+		// do not see stale "changed" state.
 		if f := workflowsExperimentsCreateCmd.Flags().Lookup("captures-file"); f != nil {
 			f.Changed = false
 		}
