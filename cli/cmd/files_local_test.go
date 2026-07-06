@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -337,7 +338,7 @@ func TestSnippetCountsRunesNotBytes(t *testing.T) {
 	// Each "é" is two UTF-8 bytes. Match "X" so the context window must reach
 	// across the accented run; contextChars is a character count, so 3 chars of
 	// context on each side must pull in three "é" runes, not one-and-a-half.
-	text := "éééXééé"      // bytes: 6 + 1 + 6 = 13
+	text := "éééXééé"                     // bytes: 6 + 1 + 6 = 13
 	start := strings.IndexByte(text, 'X') // byte offset of the match
 	got := snippet(text, start, start+1, 3)
 	if got != "éééXééé" {
@@ -601,6 +602,13 @@ func TestLitCLIParseArgs(t *testing.T) {
 }
 
 func TestLitCLIParseSurfacesOCRFailureOnSuccessfulExit(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		// The fake lit binary below is a #!/bin/sh script; Windows cannot exec
+		// an extension-less shell script, so this OCR-diagnostic check is
+		// POSIX-only. The litCLI stderr-surfacing logic it exercises is
+		// platform-independent and covered on the Unix CI runners.
+		t.Skip("fake lit is a POSIX shell script; not executable on Windows")
+	}
 	dir := t.TempDir()
 	fakeLit := filepath.Join(dir, "lit")
 	script := `#!/bin/sh
