@@ -20,14 +20,62 @@ type cliRouteContract struct {
 	path   string
 }
 
+// approvedWorkflowCLINonReferenceRoutes are workflow routes the CLI intentionally
+// exposes ahead of the public OpenAPI reference. The evals surface is wired
+// through the CLI + generated SDKs before its endpoints are published in the
+// reference; drop entries here once the routes ship (the test below fails if a
+// route lands in OpenAPI while still listed here, so the list can't go stale).
+var approvedWorkflowCLINonReferenceRoutes = map[string]bool{
+	"POST /v1/workflows/evals":                      true,
+	"GET /v1/workflows/evals":                       true,
+	"GET /v1/workflows/evals/{eval_id}":             true,
+	"PATCH /v1/workflows/evals/{eval_id}":           true,
+	"DELETE /v1/workflows/evals/{eval_id}":          true,
+	"POST /v1/workflows/evals/runs":                 true,
+	"GET /v1/workflows/evals/runs":                  true,
+	"GET /v1/workflows/evals/runs/{run_id}":         true,
+	"POST /v1/workflows/evals/runs/{run_id}/cancel": true,
+	"GET /v1/workflows/evals/results":               true,
+	"GET /v1/workflows/evals/results/{result_id}":   true,
+}
+
+// workflowRoutePathApproved reports whether any method of the given "/v1"-prefixed
+// path is in approvedWorkflowCLINonReferenceRoutes, so the route-string loop below
+// honors the same allowlist as the method+path loop.
+func workflowRoutePathApproved(openAPIPath string) bool {
+	for key := range approvedWorkflowCLINonReferenceRoutes {
+		if strings.HasSuffix(key, " "+openAPIPath) {
+			return true
+		}
+	}
+	return false
+}
+
 func TestWorkflowCLIDesignContractMatchesOpenAPI(t *testing.T) {
 	openAPI := loadCLIOpenAPIContract(t)
+	used := map[string]bool{}
 	for _, route := range workflowCLIRouteContract() {
+		key := cliHTTPRouteKey(route)
+		if approvedWorkflowCLINonReferenceRoutes[key] {
+			used[key] = true
+			if cliOpenAPIHasRoute(openAPI, route) {
+				t.Fatalf("%s is now in OpenAPI; remove it from approvedWorkflowCLINonReferenceRoutes", key)
+			}
+			continue
+		}
 		assertCLIOpenAPIRoute(t, openAPI, route)
+	}
+	for key := range approvedWorkflowCLINonReferenceRoutes {
+		if !used[key] {
+			t.Fatalf("approved workflow CLI non-reference route %s is stale; no workflow route contract uses it", key)
+		}
 	}
 
 	for _, path := range extractCLIWorkflowRouteStrings(readCLISource(t)) {
 		openAPIPath := "/v1" + path
+		if workflowRoutePathApproved(openAPIPath) {
+			continue
+		}
 		if _, ok := openAPI.Paths[openAPIPath]; !ok {
 			t.Fatalf("CLI route string %s is missing from OpenAPI contract", path)
 		}
