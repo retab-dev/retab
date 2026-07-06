@@ -132,7 +132,18 @@ func validateHelpCommandPath(args []string) error {
 		}
 		sub := findCommandByNameOrAlias(current, arg)
 		if sub == nil {
-			return fmt.Errorf("unknown command %q for %q", arg, current.CommandPath())
+			// No matching subcommand. If `current` is a group router (it still
+			// has real subcommands), this token is a genuine unknown subcommand
+			// and must fail even with --help present, so a typo like
+			// `retab workflows nope --help` doesn't silently dump help. But if
+			// `current` is a leaf command (no subcommands of its own), the token
+			// is a positional argument — e.g. the id in
+			// `retab parses get <id> --help` — and cobra's native --help should
+			// render the leaf's help instead of erroring.
+			if current.HasAvailableSubCommands() {
+				return fmt.Errorf("unknown command %q for %q", arg, current.CommandPath())
+			}
+			return nil
 		}
 		current = sub
 	}

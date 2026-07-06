@@ -83,6 +83,25 @@ func TestUnknownRootCommandStillFails(t *testing.T) {
 	}
 }
 
+func TestLeafHelpAfterPositionalArgSucceeds(t *testing.T) {
+	// `retab <leaf> <id> --help` must print the leaf's help and exit 0, not
+	// error with `unknown command "<id>"`. The pre-Execute help-path walk used
+	// to treat the positional id as a subcommand of a leaf and reject it.
+	cases := [][]string{
+		{"workflows", "get", "wf_123", "--help"},
+		{"parses", "get", "some_id", "--help"},
+		{"parses", "wait", "some_id", "-h"},
+		{"splits", "delete", "split_x", "--help"},
+	}
+	for _, args := range cases {
+		t.Run(strings.Join(args, " "), func(t *testing.T) {
+			if err := runRootForTest(t, args...); err != nil {
+				t.Fatalf("retab %s: leaf help after a positional arg should not error, got: %v", strings.Join(args, " "), err)
+			}
+		})
+	}
+}
+
 func TestBareRouterPrintsHelpWithoutError(t *testing.T) {
 	// A router invoked with no subcommand should still print help and
 	// exit 0 — only *unknown* subcommands are an error.

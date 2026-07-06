@@ -268,6 +268,21 @@ func selectSheet(cmd *cobra.Command, result *ParseResult, kind docKind) (SheetDa
 // region (all 1-based, inclusive) from rows, padding short rows with empty
 // strings so the result is rectangular.
 func sliceCells(rows [][]string, startCol, startRow, endCol, endRow int) [][]string {
+	// Clamp the column span to Excel's real maximum width (XFD = 16384).
+	// Without this, a range like `--cells A1:ZZZZZZ1` (ZZZZZZ ≈ column
+	// 321,272,406) drives a multi-gigabyte rectangular allocation of empty
+	// padding cells — an effective out-of-memory DoS from a single flag. Real
+	// spreadsheets never exceed maxExcelColumns and the xlsx parser already
+	// enforces the same cap, so this changes no legitimate result. minMax
+	// guarantees startCol <= endCol, and capping both at the same ceiling keeps
+	// that invariant (so the width below is never negative). Mirrors the row
+	// dimension, which is already clipped to len(rows) below.
+	if startCol > maxExcelColumns {
+		startCol = maxExcelColumns
+	}
+	if endCol > maxExcelColumns {
+		endCol = maxExcelColumns
+	}
 	var out [][]string
 	for r := startRow; r <= endRow; r++ {
 		if r-1 >= len(rows) {

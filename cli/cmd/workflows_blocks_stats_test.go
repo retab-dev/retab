@@ -504,6 +504,34 @@ func workflowStatsFixture(workflowID string) map[string]any {
 	}
 }
 
+func TestWorkflowStatsTopBucketPicksMaxCountNotFirst(t *testing.T) {
+	// The distribution is intentionally NOT sorted by count descending; the
+	// TOP_FORMAT / PAGES column must still surface the most frequent bucket
+	// rather than blindly rendering element [0].
+	row := map[string]any{
+		"dist": []any{
+			map[string]any{"bucket": "png", "count": 3},
+			map[string]any{"bucket": "pdf", "count": 9},
+			map[string]any{"bucket": "tiff", "count": 5},
+		},
+	}
+	if got := workflowStatsTopBucketCell(row, "dist"); got != "pdf (9)" {
+		t.Fatalf("workflowStatsTopBucketCell = %q, want %q", got, "pdf (9)")
+	}
+
+	// Counts decoded from JSON arrive as float64 — max-selection must work for
+	// that shape too.
+	rowF := map[string]any{
+		"dist": []any{
+			map[string]any{"bucket": "a", "count": float64(2)},
+			map[string]any{"bucket": "b", "count": float64(8)},
+		},
+	}
+	if got := workflowStatsTopBucketCell(rowF, "dist"); got != "b (8)" {
+		t.Fatalf("workflowStatsTopBucketCell (float) = %q, want %q", got, "b (8)")
+	}
+}
+
 func classifierBlockStatsFixture(workflowID string, blockID string) map[string]any {
 	return map[string]any{
 		"block_id":     blockID,
