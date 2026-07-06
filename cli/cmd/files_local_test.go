@@ -553,6 +553,32 @@ func TestSliceCells(t *testing.T) {
 	}
 }
 
+func TestSliceCellsClampsHugeColumnSpan(t *testing.T) {
+	// A pathological column upper bound (e.g. --cells A1:ZZZZZZ1, column
+	// ~321M) must not drive a multi-GB rectangular allocation. The span is
+	// clamped to Excel's max width (16384), so each emitted row holds at most
+	// that many cells regardless of the requested endCol.
+	rows := [][]string{{"a1", "b1"}}
+	got := sliceCells(rows, 1, 1, 500_000_000, 1) // A1:<absurd>1
+	if len(got) != 1 {
+		t.Fatalf("sliceCells rows = %d, want 1", len(got))
+	}
+	if w := len(got[0]); w != maxExcelColumns {
+		t.Fatalf("sliceCells row width = %d, want clamp to %d", w, maxExcelColumns)
+	}
+	// Real data is preserved at the front; the rest is empty padding.
+	if got[0][0] != "a1" || got[0][1] != "b1" || got[0][2] != "" {
+		t.Fatalf("sliceCells lost/garbled leading cells: %v...", got[0][:3])
+	}
+
+	// A start column past the cap must not panic on the width calculation and
+	// yields a bounded (single-column) empty slice.
+	got = sliceCells(rows, 500_000_000, 1, 600_000_000, 1)
+	if len(got) != 1 || len(got[0]) != 1 || got[0][0] != "" {
+		t.Fatalf("sliceCells out-of-range span = %v, want one empty cell", got)
+	}
+}
+
 // --- litCLI argv construction ----------------------------------------------
 
 func TestLitCLIParseArgs(t *testing.T) {

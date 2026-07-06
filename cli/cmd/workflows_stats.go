@@ -174,9 +174,22 @@ func workflowStatsTopBucketCell(row any, key string) string {
 	if rv.Len() == 0 {
 		return ""
 	}
-	first := rv.Index(0).Interface()
-	bucket := workflowStatsCell(first, "bucket")
-	count := workflowStatsCell(first, "count")
+	// Pick the bucket with the highest count rather than trusting the slice to
+	// already be sorted by count descending. The column header is TOP_FORMAT /
+	// PAGES, so it must show the most frequent bucket regardless of the order
+	// the server returns the distribution in. When the server already sorts by
+	// count desc this selects index 0 as before; ties keep the earlier bucket.
+	topIdx := 0
+	topCount, haveTop := statsBucketCount(rv.Index(0).Interface())
+	for i := 1; i < rv.Len(); i++ {
+		c, ok := statsBucketCount(rv.Index(i).Interface())
+		if ok && (!haveTop || c > topCount) {
+			topIdx, topCount, haveTop = i, c, true
+		}
+	}
+	top := rv.Index(topIdx).Interface()
+	bucket := workflowStatsCell(top, "bucket")
+	count := workflowStatsCell(top, "count")
 	if bucket == "" {
 		return ""
 	}
@@ -184,6 +197,33 @@ func workflowStatsTopBucketCell(row any, key string) string {
 		return bucket
 	}
 	return bucket + " (" + count + ")"
+}
+
+// statsBucketCount extracts a distribution bucket's numeric count so the
+// TOP_* columns can select the most frequent bucket. Returns false when the
+// count field is absent or non-numeric (bucket shape from either the typed
+// struct, where count is an int, or a decoded JSON map, where it is a float64).
+func statsBucketCount(bucket any) (float64, bool) {
+	value, ok := rowField(bucket, "count")
+	if !ok || value == nil {
+		return 0, false
+	}
+	rv := reflect.ValueOf(value)
+	for rv.Kind() == reflect.Pointer || rv.Kind() == reflect.Interface {
+		if rv.IsNil() {
+			return 0, false
+		}
+		rv = rv.Elem()
+	}
+	switch rv.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return float64(rv.Int()), true
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return float64(rv.Uint()), true
+	case reflect.Float32, reflect.Float64:
+		return rv.Float(), true
+	}
+	return 0, false
 }
 
 func workflowStatsBucketCountCell(value any) string {
