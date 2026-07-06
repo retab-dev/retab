@@ -486,7 +486,14 @@ func resolvedAuthStatusBaseURL(cmd *cobra.Command, cfg retabConfig) (string, err
 		return "", err
 	}
 	if baseURL == "" {
+		// Fall back to the persisted config value. Validate it too: a
+		// hand-edited config with a malformed base_url (e.g. missing scheme)
+		// would otherwise skip the check the flag/env paths get and resurface
+		// later as a cryptic net/http "unsupported protocol scheme" error.
 		baseURL = cfg.BaseURL
+		if err := validateBaseURL(baseURL); err != nil {
+			return "", fmt.Errorf("base_url in config is invalid: %w", err)
+		}
 	}
 	if baseURL == "" {
 		baseURL = defaultAPIBaseURL

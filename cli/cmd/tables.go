@@ -1102,10 +1102,14 @@ func parseTableWhereFlag(raw string) (map[string]any, error) {
 			return nil, fmt.Errorf("--where %q must be COLUMN %s VALUE", raw, operator)
 		}
 		normalizedOperator := normalizeTableOperator(operator)
+		whereValue, err := tableWhereValue(normalizedOperator, value)
+		if err != nil {
+			return nil, fmt.Errorf("--where %q: %w", raw, err)
+		}
 		return map[string]any{
 			"column":   column,
 			"operator": normalizedOperator,
-			"value":    tableWhereValue(normalizedOperator, value),
+			"value":    whereValue,
 		}, nil
 	}
 	for _, candidate := range []struct {
@@ -1139,21 +1143,30 @@ func normalizeTableOperator(operator string) string {
 	return strings.ReplaceAll(operator, "-", "_")
 }
 
-func tableWhereValue(operator string, value string) any {
+func tableWhereValue(operator string, value string) (any, error) {
 	switch operator {
 	case "in", "not_in":
-		return splitCommaList(value)
+		return splitCommaList(value), nil
 	case "between":
+		// "between" needs exactly two non-empty bounds. Split on ".." (range
+		// form) or "," (list form), then validate both branches the same way.
+		// Without the arity/emptiness check, a one-sided ("100..", "..200"),
+		// single ("100"), or over-long ("1..2..3", "1,2,3") input would send a
+		// malformed value the server rejects with an opaque 400.
+		var lo, hi string
 		if strings.Contains(value, "..") {
-			parts := strings.SplitN(value, "..", 2)
-			return []any{coerceTableScalarValue(parts[0]), coerceTableScalarValue(parts[1])}
+			if parts := strings.Split(value, ".."); len(parts) == 2 {
+				lo, hi = strings.TrimSpace(parts[0]), strings.TrimSpace(parts[1])
+			}
+		} else if parts := splitCommaList(value); len(parts) == 2 {
+			lo, hi = parts[0], parts[1]
 		}
-		parts := splitCommaList(value)
-		if len(parts) == 2 {
-			return []any{coerceTableScalarValue(parts[0]), coerceTableScalarValue(parts[1])}
+		if lo == "" || hi == "" {
+			return nil, fmt.Errorf("operator \"between\" requires two values: use \"A..B\" or \"A,B\"")
 		}
+		return []any{coerceTableScalarValue(lo), coerceTableScalarValue(hi)}, nil
 	}
-	return coerceTableScalarValue(value)
+	return coerceTableScalarValue(value), nil
 }
 
 func coerceTableScalarValue(raw string) any {

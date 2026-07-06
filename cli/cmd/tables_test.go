@@ -267,6 +267,38 @@ func TestNormalizeCSVHeadersAreUnique(t *testing.T) {
 	}
 }
 
+func TestParseTableWhereBetweenRequiresTwoValues(t *testing.T) {
+	// A well-formed range parses to a two-element value array.
+	for _, raw := range []string{"amount between 100..200", "amount between 100,200"} {
+		filter, err := parseTableWhereFlag(raw)
+		if err != nil {
+			t.Fatalf("parseTableWhereFlag(%q) unexpected error: %v", raw, err)
+		}
+		vals, ok := filter["value"].([]any)
+		if !ok || len(vals) != 2 {
+			t.Fatalf("parseTableWhereFlag(%q) value = %#v, want a 2-element array", raw, filter["value"])
+		}
+	}
+
+	// Malformed ranges must all be rejected with a clear error instead of
+	// silently sending a bare/one-sided value the server rejects with a 400:
+	// a single value, too many comma values, a one-sided range, and an
+	// over-long range.
+	for _, raw := range []string{
+		"amount between 100",
+		"amount between 100,200,300",
+		"amount between 100..",
+		"amount between ..200",
+		"amount between 1..2..3",
+	} {
+		if _, err := parseTableWhereFlag(raw); err == nil {
+			t.Fatalf("parseTableWhereFlag(%q) = nil error, want a two-values-required error", raw)
+		} else if !strings.Contains(err.Error(), "two values") {
+			t.Fatalf("parseTableWhereFlag(%q) error = %q, want it to mention two values", raw, err.Error())
+		}
+	}
+}
+
 func TestTablesDoNotExposeCellLevelMutationCommands(t *testing.T) {
 	for _, path := range [][]string{
 		{"tables", "columns"},

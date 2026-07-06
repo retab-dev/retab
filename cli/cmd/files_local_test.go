@@ -333,6 +333,22 @@ func TestSnippet(t *testing.T) {
 	}
 }
 
+func TestSnippetCountsRunesNotBytes(t *testing.T) {
+	// Each "é" is two UTF-8 bytes. Match "X" so the context window must reach
+	// across the accented run; contextChars is a character count, so 3 chars of
+	// context on each side must pull in three "é" runes, not one-and-a-half.
+	text := "éééXééé"      // bytes: 6 + 1 + 6 = 13
+	start := strings.IndexByte(text, 'X') // byte offset of the match
+	got := snippet(text, start, start+1, 3)
+	if got != "éééXééé" {
+		t.Fatalf("snippet counted bytes not runes: got %q, want %q", got, "éééXééé")
+	}
+	// Two characters of context stops after two é on each side.
+	if got := snippet(text, start, start+1, 2); got != "ééXéé" {
+		t.Fatalf("snippet(2) = %q, want %q", got, "ééXéé")
+	}
+}
+
 func TestFlattenWhitespace(t *testing.T) {
 	// Context windows pull in newlines; the table view must collapse them so a
 	// match stays on one row instead of wrapping and breaking alignment.
