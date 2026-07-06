@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/spf13/cobra"
 )
@@ -264,31 +265,24 @@ func lineColAt(text string, off int) (line, col int) {
 }
 
 // snippet returns contextChars of context on each side of [start,end), clamped
-// to the text bounds and trimmed to rune boundaries so multibyte characters
-// aren't split.
+// to the text bounds. contextChars counts whole characters (runes), not bytes,
+// matching the flag's documented unit — walking rune-by-rune also guarantees
+// the window edges land on rune boundaries so multibyte characters aren't split.
 func snippet(text string, start, end, contextChars int) string {
 	if contextChars <= 0 {
 		return text[start:end]
 	}
-	lo := start - contextChars
-	if lo < 0 {
-		lo = 0
+	lo := start
+	for n := 0; n < contextChars && lo > 0; n++ {
+		_, size := utf8.DecodeLastRuneInString(text[:lo])
+		lo -= size
 	}
-	hi := end + contextChars
-	if hi > len(text) {
-		hi = len(text)
+	hi := end
+	for n := 0; n < contextChars && hi < len(text); n++ {
+		_, size := utf8.DecodeRuneInString(text[hi:])
+		hi += size
 	}
-	lo = alignRuneStart(text, lo)
-	hi = alignRuneStart(text, hi)
 	return strings.TrimSpace(text[lo:hi])
-}
-
-// alignRuneStart moves i backward to the nearest UTF-8 rune boundary.
-func alignRuneStart(s string, i int) int {
-	for i > 0 && i < len(s) && (s[i]&0xC0) == 0x80 {
-		i--
-	}
-	return i
 }
 
 // boundingBoxForMatch finds the page text_items whose concatenated text covers
