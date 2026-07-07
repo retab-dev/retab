@@ -167,17 +167,21 @@ func inlineEvalTarget(cmd *cobra.Command) (map[string]any, bool) {
 }
 
 // inlineEvalSource builds a run_step source from --run-id (and optional
-// --step-id). Returns (nil, false) when --run-id was not supplied.
-func inlineEvalSource(cmd *cobra.Command) (map[string]any, bool) {
+// --step-id). Returns (nil, false, nil) when --run-id was not supplied;
+// a --step-id without --run-id is an error rather than silently dropped.
+func inlineEvalSource(cmd *cobra.Command) (map[string]any, bool, error) {
 	runID, _ := cmd.Flags().GetString("run-id")
 	if strings.TrimSpace(runID) == "" {
-		return nil, false
+		if stepID, _ := cmd.Flags().GetString("step-id"); strings.TrimSpace(stepID) != "" {
+			return nil, false, fmt.Errorf("--step-id requires --run-id (the step is pinned within that run)")
+		}
+		return nil, false, nil
 	}
 	source := map[string]any{"type": "run_step", "run_id": runID}
 	if stepID, _ := cmd.Flags().GetString("step-id"); strings.TrimSpace(stepID) != "" {
 		source["step_id"] = stepID
 	}
-	return source, true
+	return source, true, nil
 }
 
 // inlineEvalAssertion builds an `equals` assertion from --output-handle-id /
@@ -491,7 +495,10 @@ After creation, run with ` + "`workflows evals runs create`" + `.`,
 		// Each component may be supplied as a JSON file OR via the inline
 		// flag form — but not both for the same component.
 		inlineTarget, inlineTargetSet := inlineEvalTarget(cmd)
-		inlineSource, inlineSourceSet := inlineEvalSource(cmd)
+		inlineSource, inlineSourceSet, err := inlineEvalSource(cmd)
+		if err != nil {
+			return err
+		}
 		inlineAssertion, inlineAssertionSet, err := inlineEvalAssertion(cmd)
 		if err != nil {
 			return err
@@ -735,7 +742,10 @@ flaky runs.`,
 		// The assertion and source may each be supplied as a JSON file OR via the
 		// same inline flag form `evals create` accepts (mutually exclusive per
 		// component, enforced by resolveEvalComponent).
-		inlineSource, inlineSourceSet := inlineEvalSource(cmd)
+		inlineSource, inlineSourceSet, err := inlineEvalSource(cmd)
+		if err != nil {
+			return err
+		}
 		// Detect inline assertion flags and enforce --equals (the expected value)
 		// without building the full assertion here — the update path merges inline
 		// overrides onto the existing assertion below, so we must not synthesize a

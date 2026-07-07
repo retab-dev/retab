@@ -433,9 +433,9 @@ for conditional JSON routes. If a route omits ` + "`handle_key`" + `, Retab
 derives one from the human label by lowercasing it and replacing spaces with
 hyphens.
 
-For ` + "`--source-block start`" + ` or ` + "`--target-block start`" + `, ` + "`start_document`" + `
+For ` + "`--source-block start`" + ` or ` + "`--target-block start`" + `, ` + "`start`" + `
 is an alias for the workflow's single block of type ` + "`start_document`" + ` unless a
-block with id ` + "`start_document`" + ` already exists. For ` + "`--target-handle`" + `,
+block with id ` + "`start`" + ` already exists. For ` + "`--target-handle`" + `,
 you may pass the friendly input name from the block config, such as
 ` + "`document`" + `. The CLI resolves ` + "`document`" + ` to
 ` + "`input-file-document`" + ` for extract/classifier blocks and
@@ -549,11 +549,11 @@ func rewrapAutoEdgeIDConflict(err error, req retab.WorkflowEdgesCreateParams, id
 	}
 	src := req.SourceBlock
 	if req.SourceHandle != nil && *req.SourceHandle != "" {
-		src = fmt.Sprintf("%s[:%s]", req.SourceBlock, *req.SourceHandle)
+		src = fmt.Sprintf("%s[%s]", req.SourceBlock, *req.SourceHandle)
 	}
 	tgt := req.TargetBlock
 	if req.TargetHandle != nil && *req.TargetHandle != "" {
-		tgt = fmt.Sprintf("%s[:%s]", req.TargetBlock, *req.TargetHandle)
+		tgt = fmt.Sprintf("%s[%s]", req.TargetBlock, *req.TargetHandle)
 	}
 	apiErr.Message = fmt.Sprintf(
 		"an edge from %s to %s already exists (auto-generated edge id collided)",

@@ -171,10 +171,16 @@ func productionGate(cmd *cobra.Command, decider confirmDecider) error {
 
 func expectedEnvironmentForSafety(cmd *cobra.Command, cfg retabConfig, cred resolvedCredential, baseURL string) string {
 	expected := cred.ExpectedEnvironment
-	if expected != slugProduction || cred.OAuth == nil {
+	if cred.OAuth == nil {
 		return expected
 	}
 
+	// An explicit --environment-id flag / RETAB_ENVIRONMENT_ID env var routes
+	// the request regardless of the persisted session environment, so the gate
+	// must judge the override — in both directions: a production session
+	// pointed at a non-production environment disengages the gate, and a
+	// non-production session pointed at production (or an unprovable
+	// environment) engages it.
 	environmentID, source := selectedEnvironmentIDWithSource(cmd, cfg)
 	if !isExplicitEnvironmentSelector(source) || strings.TrimSpace(environmentID) == "" {
 		return expected

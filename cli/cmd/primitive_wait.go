@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -170,7 +171,11 @@ func waitForPrimitive(
 		// restarting) and retried until the primitive reaches a terminal status or
 		// the overall timeout elapses — rather than aborting the wait on the first
 		// blip. A genuinely persistent error surfaces when the timeout fires.
-		result, err := cliJSONRequest(cmd, http.MethodGet, primitiveGetPath(spec, id), nil, nil)
+		// The deadline ctx must bound the request itself, not just the sleep
+		// between polls: a server that accepts the connection but never
+		// responds would otherwise hang the wait forever.
+		var result any
+		err := cliJSONRequestIntoCtx(ctx, cmd, http.MethodGet, primitiveGetPath(spec, id), nil, nil, &result)
 		if err != nil {
 			lastErr = err
 		} else if current, perr := primitiveMap(result); perr != nil {
@@ -188,6 +193,9 @@ func waitForPrimitive(
 			timer.Stop()
 			if lastErr != nil {
 				return last, fmt.Errorf("gave up waiting for %s %s after repeated poll errors: %w", spec.singular, id, lastErr)
+			}
+			if errors.Is(ctx.Err(), context.Canceled) {
+				return last, fmt.Errorf("wait for %s %s interrupted: %w", spec.singular, id, ctx.Err())
 			}
 			return last, fmt.Errorf("timed out waiting for %s %s: %w", spec.singular, id, ctx.Err())
 		case <-timer.C:

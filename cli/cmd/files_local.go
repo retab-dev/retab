@@ -157,6 +157,11 @@ func tableSelected(cmd *cobra.Command) bool {
 	return format == OutputTable
 }
 
+// maxPageSpecPages bounds how many pages a --render page spec may select.
+// Render caps output at 3 pages anyway; this guard only exists to reject
+// absurd ranges before they are materialized in memory.
+const maxPageSpecPages = 10000
+
 // parsePageList parses a comma/range page spec ("1,3,5-7") into a sorted,
 // de-duplicated 1-based page slice. Used by `files inspect --render`. Returns
 // an error on malformed input or a zero/negative page.
@@ -184,6 +189,12 @@ func parsePageList(spec string) ([]int, error) {
 				if !seen[p] {
 					seen[p] = true
 					pages = append(pages, p)
+				}
+				// Bound the expansion before allocating: a spec like
+				// "1-2000000000" would otherwise materialize billions of map
+				// entries before any downstream page-count check runs.
+				if len(pages) > maxPageSpecPages {
+					return nil, fmt.Errorf("page spec %q selects more than %d pages", spec, maxPageSpecPages)
 				}
 			}
 			continue

@@ -1072,6 +1072,35 @@ func copyMap(input map[string]any) map[string]any {
 	return out
 }
 
+// indexASCIIFold returns the byte index of the first occurrence of the
+// all-ASCII needle in s, comparing ASCII letters case-insensitively. Byte
+// offsets refer to s itself, so they are always safe to slice with.
+func indexASCIIFold(s, needle string) int {
+	if len(needle) == 0 {
+		return 0
+	}
+	for i := 0; i+len(needle) <= len(s); i++ {
+		match := true
+		for j := 0; j < len(needle); j++ {
+			a, b := s[i+j], needle[j]
+			if 'A' <= a && a <= 'Z' {
+				a += 'a' - 'A'
+			}
+			if 'A' <= b && b <= 'Z' {
+				b += 'a' - 'A'
+			}
+			if a != b {
+				match = false
+				break
+			}
+		}
+		if match {
+			return i
+		}
+	}
+	return -1
+}
+
 func parseTableWhereFlag(raw string) (map[string]any, error) {
 	trimmed := strings.TrimSpace(raw)
 	if trimmed == "" {
@@ -1092,7 +1121,11 @@ func parseTableWhereFlag(raw string) (map[string]any, error) {
 	}
 	for _, operator := range []string{"not-contains", "not_contains", "starts-with", "starts_with", "ends-with", "ends_with", "not-in", "not_in", "between", "contains", "gte", "lte", "ne", "gt", "lt", "eq", "in"} {
 		needle := " " + operator + " "
-		index := strings.Index(strings.ToLower(trimmed), needle)
+		// Search case-insensitively on the original string: indexing into
+		// trimmed with an offset found in ToLower(trimmed) is wrong when
+		// lowercasing changes byte length (e.g. U+0130 "İ" or U+212A "K"
+		// in a column name shifts every later byte offset).
+		index := indexASCIIFold(trimmed, needle)
 		if index < 0 {
 			continue
 		}

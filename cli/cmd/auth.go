@@ -357,7 +357,7 @@ compact human block for interactive terminals).`,
 		case cfg.APIKey != "":
 			source = "~/.retab/config.json (api_key)"
 		}
-		baseURL, err := resolvedAuthStatusBaseURL(cmd, cfg)
+		baseURL, err := resolvedAuthStatusBaseURL(cmd, cfg, profileCred)
 		if err != nil {
 			return err
 		}
@@ -473,7 +473,7 @@ func authStatusSelectedProfile(envFlag string, live bool, cfg retabConfig) (stri
 	return "", nil
 }
 
-func resolvedAuthStatusBaseURL(cmd *cobra.Command, cfg retabConfig) (string, error) {
+func resolvedAuthStatusBaseURL(cmd *cobra.Command, cfg retabConfig, profile *environmentProfile) (string, error) {
 	flagBaseURL, _ := cmd.Root().PersistentFlags().GetString("base-url")
 	baseURL := flagBaseURL
 	if baseURL == "" {
@@ -484,6 +484,15 @@ func resolvedAuthStatusBaseURL(cmd *cobra.Command, cfg retabConfig) (string, err
 	}
 	if err := validateBaseURL(baseURL); err != nil {
 		return "", err
+	}
+	if baseURL == "" && profile != nil && profile.BaseURL != "" {
+		// The selected environment profile pins a base URL; the probe
+		// (resolveBaseURL) uses it, so report the same URL we contact —
+		// not the top-level config/default one.
+		baseURL = profile.BaseURL
+		if err := validateBaseURL(baseURL); err != nil {
+			return "", fmt.Errorf("base_url in environment profile is invalid: %w", err)
+		}
 	}
 	if baseURL == "" {
 		// Fall back to the persisted config value. Validate it too: a
