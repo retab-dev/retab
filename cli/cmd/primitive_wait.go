@@ -191,7 +191,9 @@ func waitForPrimitive(
 		select {
 		case <-ctx.Done():
 			timer.Stop()
-			if lastErr != nil {
+			// A poll error caused by the deadline/interrupt itself is not a
+			// server problem — fall through to the timeout/interrupt wording.
+			if lastErr != nil && !errors.Is(lastErr, context.Canceled) && !errors.Is(lastErr, context.DeadlineExceeded) {
 				return last, fmt.Errorf("gave up waiting for %s %s after repeated poll errors: %w", spec.singular, id, lastErr)
 			}
 			if errors.Is(ctx.Err(), context.Canceled) {

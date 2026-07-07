@@ -187,12 +187,19 @@ func expectedEnvironmentForSafety(cmd *cobra.Command, cfg retabConfig, cred reso
 	}
 
 	environmentType, ok := lookupEnvironmentTypeForSafety(cmd, cred, baseURL, environmentID)
-	if ok && environmentType == cliEnvironmentTypeNonProduction {
-		return ""
+	if ok {
+		if environmentType == cliEnvironmentTypeNonProduction {
+			return ""
+		}
+		// The override provably points at production: gate, regardless of
+		// the persisted session environment.
+		return slugProduction
 	}
-	// Fail safe: if an explicit override cannot be proven non-production,
-	// keep the production confirmation gate engaged.
-	return slugProduction
+	// Lookup failed (network blip, token scope, ...): fall back to the
+	// session's own expectation. A production session stays gated
+	// (fail safe); a non-production session is not hard-blocked in CI by
+	// a transient lookup error.
+	return expected
 }
 
 func isExplicitEnvironmentSelector(source string) bool {

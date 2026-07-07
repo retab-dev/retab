@@ -357,7 +357,14 @@ compact human block for interactive terminals).`,
 		case cfg.APIKey != "":
 			source = "~/.retab/config.json (api_key)"
 		}
-		baseURL, err := resolvedAuthStatusBaseURL(cmd, cfg, profileCred)
+		// The profile's pinned base_url only routes the probe when the profile
+		// is the credential resolveCredential actually selects — an --api-key
+		// flag or RETAB_API_KEY env outranks it and probes the top-level URL.
+		probeProfile := profileCred
+		if flagKey != "" || envKey != "" {
+			probeProfile = nil
+		}
+		baseURL, err := resolvedAuthStatusBaseURL(cmd, cfg, probeProfile)
 		if err != nil {
 			return err
 		}
