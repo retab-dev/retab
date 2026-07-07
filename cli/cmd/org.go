@@ -326,7 +326,7 @@ The argument accepts either an organization id (org_...) or a name; run
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
 
-		baseURL, err := resolvedAuthStatusBaseURL(cmd, cfg)
+		baseURL, err := resolvedAuthStatusBaseURL(cmd, cfg, nil)
 		if err != nil {
 			return err
 		}

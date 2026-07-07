@@ -389,8 +389,15 @@ Before publishing, the CLI warns when the draft appears empty (a draft with only
 		if !force {
 			warnIfEmptyWorkflowOnPublish(ctx, client, args[0], cmd.ErrOrStderr())
 		}
+		// Only send description when the flag was passed: the field is
+		// *string with omitempty precisely so "no description" reaches the
+		// server as absent rather than as an explicit empty string.
+		publishBody := retab.PublishWorkflowRequest{}
+		if cmd.Flags().Changed("description") {
+			publishBody.Description = ptr(description)
+		}
 		result, err := client.Workflows.Publish(ctx, args[0], &retab.WorkflowsPublishParams{
-			Body: retab.PublishWorkflowRequest{Description: ptr(description)},
+			Body: publishBody,
 		})
 		if err != nil {
 			return err

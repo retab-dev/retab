@@ -71,6 +71,7 @@ var workflowsFunctionsHydrateCmd = &cobra.Command{
 		files := []string{
 			"input.py",
 			"output.py",
+			"models.py",
 			"run.py",
 			".env.example",
 			".env.local",
@@ -1183,8 +1184,16 @@ function walkInputs(rawInputs, recursive) {
 }
 
 function outputStem(inputPath) {
-  const parsed = path.parse(inputPath);
-  return parsed.name;
+  // Mirror the Python runtime: keep the input's directory structure relative
+  // to the bundle dir (the cwd) so same-named inputs in different folders
+  // don't collide on outputs/<name>.out.json. Inputs outside the bundle fall
+  // back to the bare basename.
+  const resolved = path.resolve(inputPath);
+  const rel = path.relative(process.cwd(), resolved);
+  const parsed = (rel === "" || rel.startsWith("..") || path.isAbsolute(rel))
+    ? path.parse(path.basename(resolved))
+    : path.parse(rel);
+  return path.join(parsed.dir, parsed.name);
 }
 
 async function runOne({ bundleDir, transform, inputPath, outDir, traceDir }) {
@@ -1241,6 +1250,7 @@ export async function main(argv = process.argv.slice(2)) {
       } catch (error) {
         failed = true;
         const tracePath = path.join(traceDir, outputStem(inputPath) + ".trace.json");
+        fs.mkdirSync(path.dirname(tracePath), { recursive: true });
         fs.writeFileSync(tracePath, JSON.stringify({ input: inputPath, ok: false, error: error.message }, null, 2) + "\n", "utf8");
         console.log(JSON.stringify({ input: inputPath, ok: false, error: error.message }));
       }

@@ -630,7 +630,7 @@ func TestResolvedAuthStatusBaseURLDefaultsToProduction(t *testing.T) {
 	cmd := &cobra.Command{}
 	cmd.PersistentFlags().String("base-url", "", "")
 
-	got, err := resolvedAuthStatusBaseURL(cmd, retabConfig{})
+	got, err := resolvedAuthStatusBaseURL(cmd, retabConfig{}, nil)
 	if err != nil {
 		t.Fatalf("resolvedAuthStatusBaseURL: %v", err)
 	}

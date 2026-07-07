@@ -529,8 +529,18 @@ func writeParseCache(key string, result *ParseResult) {
 	if err != nil {
 		return
 	}
-	tmp := filepath.Join(dir, key+".json.tmp")
-	if err := os.WriteFile(tmp, data, 0o644); err != nil {
+	// Unique temp name per writer: two concurrent CLI invocations computing
+	// the same cache key must not interleave writes to a shared .tmp path,
+	// which could install a truncated JSON entry.
+	tmpFile, err := os.CreateTemp(dir, key+"-*.tmp")
+	if err != nil {
+		return
+	}
+	tmp := tmpFile.Name()
+	_, writeErr := tmpFile.Write(data)
+	closeErr := tmpFile.Close()
+	if writeErr != nil || closeErr != nil {
+		_ = os.Remove(tmp)
 		return
 	}
 	if err := os.Rename(tmp, filepath.Join(dir, key+".json")); err != nil {

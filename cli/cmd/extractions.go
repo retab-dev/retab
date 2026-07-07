@@ -5,6 +5,7 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
@@ -161,17 +162,37 @@ Flags and document/schema resolution are identical to
 		if err != nil {
 			return err
 		}
-		client, err := newClient(cmd)
+		// The generated SDK's CreateStream discards the response body, so the
+		// CLI streams the endpoint itself: POST the create body with
+		// stream=true and copy each event line to stdout as it arrives.
+		doc, err := retab.InferMIMEData(req.Document)
 		if err != nil {
-			return err
+			return fmt.Errorf("invalid document: %w", err)
 		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		result, err := client.Extractions.Create(ctx, &req)
-		if err != nil {
-			return err
+		body := map[string]any{
+			"document":    doc,
+			"json_schema": req.JSONSchema,
+			"stream":      true,
 		}
-		return printNDJSON(result)
+		if req.Model != nil {
+			body["model"] = *req.Model
+		}
+		if req.Instructions != nil {
+			body["instructions"] = *req.Instructions
+		}
+		if req.NConsensus != nil {
+			body["n_consensus"] = *req.NConsensus
+		}
+		if req.Metadata != nil {
+			body["metadata"] = *req.Metadata
+		}
+		if len(req.AdditionalMessages) > 0 {
+			body["additional_messages"] = req.AdditionalMessages
+		}
+		if req.BustCache != nil {
+			body["bust_cache"] = *req.BustCache
+		}
+		return cliStreamLinesRequest(cmd, http.MethodPost, "/v1/extractions/stream", nil, body, cmd.OutOrStdout())
 	}),
 }
 

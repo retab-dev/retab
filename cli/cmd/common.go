@@ -647,6 +647,16 @@ func cliJSONRequest(cmd *cobra.Command, method string, requestPath string, query
 }
 
 func cliJSONRequestInto(cmd *cobra.Command, method string, requestPath string, query url.Values, body any, result any) error {
+	ctx, cancel := ctxFor(cmd)
+	defer cancel()
+	return cliJSONRequestIntoCtx(ctx, cmd, method, requestPath, query, body, result)
+}
+
+// cliJSONRequestIntoCtx is cliJSONRequestInto with a caller-supplied context.
+// Use it when the caller owns a deadline (e.g. wait loops driven by
+// --timeout-seconds) that must bound the in-flight HTTP request itself, not
+// just the sleep between polls.
+func cliJSONRequestIntoCtx(ctx context.Context, cmd *cobra.Command, method string, requestPath string, query url.Values, body any, result any) error {
 	cred, baseURL, cfg, err := resolveCLIRequest(cmd)
 	if err != nil {
 		return err
@@ -655,9 +665,6 @@ func cliJSONRequestInto(cmd *cobra.Command, method string, requestPath string, q
 		baseURL = defaultAPIBaseURL
 	}
 	httpClient := debugHTTPClient(cmd)
-
-	ctx, cancel := ctxFor(cmd)
-	defer cancel()
 
 	apiKey, bearerToken, err := resolveCLIRequestAuth(ctx, cmd, cred, cfg, baseURL, httpClient)
 	if err != nil {
@@ -693,6 +700,77 @@ func cliRawRequestBytes(
 	}
 
 	return doCLIRawRequest(ctx, httpClient, baseURL, method, requestPath, query, body, accept, apiKey, bearerToken)
+}
+
+// cliStreamLinesRequest POSTs body to requestPath and copies each non-empty
+// line of the response body to out as it arrives. The server's streaming
+// endpoints emit line-delimited JSON; lines are passed through verbatim so
+// the output is valid NDJSON. A leading SSE "data: " prefix is stripped
+// defensively in case a proxy re-frames the stream.
+func cliStreamLinesRequest(cmd *cobra.Command, method string, requestPath string, query url.Values, body any, out io.Writer) error {
+	cred, baseURL, cfg, err := resolveCLIRequest(cmd)
+	if err != nil {
+		return err
+	}
+	if baseURL == "" {
+		baseURL = defaultAPIBaseURL
+	}
+	httpClient := debugHTTPClient(cmd)
+
+	ctx, cancel := ctxFor(cmd)
+	defer cancel()
+
+	apiKey, bearerToken, err := resolveCLIRequestAuth(ctx, cmd, cred, cfg, baseURL, httpClient)
+	if err != nil {
+		return err
+	}
+
+	bodyBytes, err := json.Marshal(body)
+	if err != nil {
+		return fmt.Errorf("encode request body: %w", err)
+	}
+	requestURL, err := buildCLIRequestURL(baseURL, requestPath, query)
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequestWithContext(ctx, method, requestURL.String(), bytes.NewReader(bodyBytes))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "*/*")
+	if bearerToken != "" {
+		req.Header.Set("Authorization", "Bearer "+bearerToken)
+	} else {
+		req.Header.Set("Authorization", "Bearer "+apiKey)
+	}
+	if httpClient == nil {
+		httpClient = http.DefaultClient
+	}
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		respBody, _ := io.ReadAll(resp.Body)
+		return retab.ParseAPIError(resp, respBody)
+	}
+	scanner := bufio.NewScanner(resp.Body)
+	// Individual events can be large (a full partial-extraction snapshot);
+	// allow lines well beyond the 64 KiB bufio default.
+	scanner.Buffer(make([]byte, 64*1024), 16*1024*1024)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		line = strings.TrimPrefix(line, "data: ")
+		if line == "" {
+			continue
+		}
+		if _, err := fmt.Fprintln(out, line); err != nil {
+			return err
+		}
+	}
+	return scanner.Err()
 }
 
 func cliMultipartRequestInto(

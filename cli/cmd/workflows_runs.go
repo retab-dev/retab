@@ -381,6 +381,7 @@ removed in a future release.`,
 		// overwrites the earlier one in req.Documents, producing surprising
 		// "which one won?" behavior and (when the URL was the loser) a
 		// 500 from the document-fetch path. Flag the conflict up-front.
+		urlKeys := map[string]bool{}
 		for _, raw := range urlFlags {
 			key, _, ok := splitKV(raw)
 			if !ok {
@@ -390,6 +391,10 @@ removed in a future release.`,
 			if key == "" {
 				continue
 			}
+			if urlKeys[key] {
+				return fmt.Errorf("block %q passed twice via --document-url; each block id must appear at most once", key)
+			}
+			urlKeys[key] = true
 			if _, conflict := fileEntries[key]; conflict {
 				return fmt.Errorf(
 					"block %q has both --document and --document-url; pass exactly one source per block",
@@ -435,6 +440,10 @@ removed in a future release.`,
 				if !ok || strings.TrimSpace(key) == "" || rawURL == "" {
 					return fmt.Errorf("--document-url expects block-id=url, got %q", raw)
 				}
+				// Trim the key like the conflict pre-pass does: an untrimmed
+				// key would dodge the duplicate/overlap checks above and then
+				// fail (or misroute) alias resolution downstream.
+				key = strings.TrimSpace(key)
 				// Server requires `filename` on every document descriptor;
 				// derive from URL path's last segment (same rule applied
 				// across single-document commands in common.go).
