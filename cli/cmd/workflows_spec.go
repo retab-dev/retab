@@ -304,6 +304,9 @@ draft in place instead of creating a new one. ` + "`--to`" + ` and
 Legacy specs that explicitly include ` + "`metadata.id`" + ` are accepted for
 backward compatibility, but the id is ignored when applying.
 
+Applies to the workflow DRAFT only — the published (live) version is unchanged
+until you run ` + "`retab workflows publish <workflow-id>`" + `.
+
 Mutating. Before applying, the command runs ` + "`spec plan`" + ` and
 inspects the destroy count. When the plan would delete one or more
 resources (blocks, edges, or the workflow itself) the command pauses to
@@ -386,8 +389,23 @@ Plans with no deletions apply immediately, no extra prompt.`,
 		if err := failIfSpecValidationInvalid(applyResponseAsResource(result)); err != nil {
 			return err
 		}
+		if to != "" {
+			printDraftPublishHint(cmd, to)
+		}
 		return printResult(cmd, result)
 	}),
+}
+
+// printDraftPublishHint reminds the user that spec apply / restore updated the
+// DRAFT only, and points at the command that makes it live. Written to stderr so
+// it never pollutes the JSON result on stdout (safe in scripts/pipes).
+func printDraftPublishHint(cmd *cobra.Command, workflowID string) {
+	if workflowID == "" {
+		return
+	}
+	fmt.Fprintf(cmd.ErrOrStderr(),
+		"note: this updated the workflow draft; the published (live) version is unchanged. Run \"retab workflows publish %s\" to release it.\n",
+		workflowID)
 }
 
 var workflowsSpecApplyToCmd = &cobra.Command{
@@ -401,6 +419,9 @@ comes from the URL argument, not from ` + "`metadata.id`" + ` in the YAML.
 
 Mutating. This updates the workflow in place and may create, update, or delete
 child resources to match the submitted spec.
+
+Applies to the DRAFT only — run ` + "`retab workflows publish <workflow-id>`" + ` to
+release it as a live version.
 
 Before applying, the command runs a plan and gates destructive changes with
 the same ` + "`--yes`" + ` contract as ` + "`spec apply`" + `.`,
@@ -437,6 +458,7 @@ the same ` + "`--yes`" + ` contract as ` + "`spec apply`" + `.`,
 		if err := failIfSpecValidationInvalid(applyResponseAsResource(result)); err != nil {
 			return err
 		}
+		printDraftPublishHint(cmd, args[0])
 		return printResult(cmd, result)
 	}),
 }

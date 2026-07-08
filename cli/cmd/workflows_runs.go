@@ -282,6 +282,11 @@ editable draft without publishing it first (handy for iterating on a
 workflow before it has a published version). Inspect the resulting run with
 ` + "`workflows runs get`" + ` or ` + "`workflows steps list`" + `.
 
+Note: ` + "`runs create`" + ` executes the WHOLE graph, including side-effecting
+tail blocks (e.g. an ` + "`api_call`" + ` that POSTs to an external system). To
+test one block's draft config in isolation against a prior run's inputs — without
+running downstream blocks — use ` + "`workflows blocks executions create <run-id> --block-id <id>`" + ` instead.
+
 The legacy ` + "`--document-file BLOCK=PATH`" + ` spelling is still
 accepted as a deprecated alias for ` + "`--document`" + ` and will be
 removed in a future release.`,
@@ -1577,7 +1582,7 @@ func init() {
 	workflowsRunsListCmd.Flags().String("trigger-type", "", "filter by trigger type")
 	workflowsRunsListCmd.Flags().Var(&rfc3339FlagValue{}, "from-date", "filter from this date (YYYY-MM-DD or RFC3339)")
 	workflowsRunsListCmd.Flags().Var(&rfc3339FlagValue{}, "to-date", "filter to this date (YYYY-MM-DD or RFC3339)")
-	workflowsRunsListCmd.Flags().String("search", "", "search query")
+	workflowsRunsListCmd.Flags().String("search", "", "search by run id (partial match) — does NOT match document filenames")
 	workflowsRunsListCmd.Flags().Var(newEnumStringFlagValue("--sort-by", "timing.created_at", "timing.started_at"), "sort-by", "sort field: timing.created_at | timing.started_at")
 	workflowsRunsListCmd.Flags().String("before", "", "run id: return items before this id (mutually exclusive with --after)")
 	workflowsRunsListCmd.Flags().String("after", "", "run id: return items after this id (mutually exclusive with --before)")

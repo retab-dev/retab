@@ -147,7 +147,10 @@ var workflowsVersionsRestoreCmd = &cobra.Command{
 	Short: "Restore a workflow version into the draft",
 	Long: `Restore an immutable workflow graph version into the workflow's current draft.
 This overwrites the editable draft graph with a fresh draft created from the
-selected version. Pass ` + "`--yes`" + ` to confirm.`,
+selected version. Pass ` + "`--yes`" + ` to confirm.
+
+Restores into the DRAFT only — run ` + "`retab workflows publish <workflow-id>`" + ` to
+make the restored graph the live version.`,
 	Args: cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		if err := confirmDestructive(cmd, "workflow draft", fmt.Sprintf("%s from %s", args[0], args[1])); err != nil {
@@ -167,6 +170,7 @@ selected version. Pass ` + "`--yes`" + ` to confirm.`,
 		if err != nil {
 			return err
 		}
+		printDraftPublishHint(cmd, args[0])
 		return printResult(cmd, result)
 	}),
 }

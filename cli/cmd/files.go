@@ -170,6 +170,17 @@ func resourceCell(row any, key string) string {
 	return stringifyCell(value)
 }
 
+// filesGetFlagErrorHint rewrites the confusing "unknown shorthand flag: 'o'"
+// that `files get` produces (it has no -o; that lives on `files download`) into
+// guidance pointing at the command that actually writes file bytes. Other flag
+// errors pass through unchanged.
+func filesGetFlagErrorHint(err error) error {
+	if err != nil && strings.Contains(err.Error(), "'o'") {
+		return fmt.Errorf("%w\n`files get` prints metadata JSON only (no -o). To save the file's bytes to a path, use: retab files download <file-id> -o <path>", err)
+	}
+	return err
+}
+
 var filesGetCmd = &cobra.Command{
 	Use:   "get <file-id>",
 	Short: "Get a file by id",
@@ -888,6 +899,13 @@ func init() {
 	_ = filesCreateUploadCmd.MarkFlagRequired("size-bytes")
 
 	filesCompleteUploadCmd.Flags().Var(&sha256FlagValue{}, "sha256", "sha256 hex digest (optional)")
+
+	// `files get` prints metadata JSON only, so it has no `-o` (that lives on
+	// `files download`). The raw cobra "unknown shorthand flag: 'o'" is
+	// confusing here — rewrite it to point at the command that does write bytes.
+	filesGetCmd.SetFlagErrorFunc(func(c *cobra.Command, err error) error {
+		return filesGetFlagErrorHint(err)
+	})
 
 	filesCmd.AddCommand(filesListCmd, filesGetCmd, filesUploadCmd, filesDownloadLinkCmd, filesDownloadCmd, filesCreateUploadCmd, filesCompleteUploadCmd)
 	rootCmd.AddCommand(filesCmd)

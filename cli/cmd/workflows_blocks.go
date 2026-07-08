@@ -681,7 +681,7 @@ duplicate block ids.`,
 		req.WorkflowID = workflowID
 		result, err := client.Workflows.Blocks.Update(ctx, blockID, &req)
 		if err != nil {
-			return err
+			return hintInvalidConfigFields(err, mergeConfigPath != "")
 		}
 		return printResult(cmd, result)
 	}),
