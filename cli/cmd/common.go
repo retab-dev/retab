@@ -2370,3 +2370,69 @@ func confirmDeleted(kind, id string) {
 	}
 	fmt.Fprintf(os.Stderr, "deleted %s: %s\n", kind, id)
 }
+
+// apiErrorWithStatus returns the *retab.APIError in err's chain when its
+// StatusCode equals code, or nil otherwise. Used to make error handling react
+// to specific HTTP statuses without string-matching.
+func apiErrorWithStatus(err error, code int) *retab.APIError {
+	var apiErr *retab.APIError
+	if errors.As(err, &apiErr) && apiErr.StatusCode == code {
+		return apiErr
+	}
+	return nil
+}
+
+// deleteRetryBaseDelay is the first backoff step for deleteWithRetryOn404 (it
+// then doubles). A var so tests can shrink it.
+var deleteRetryBaseDelay = 500 * time.Millisecond
+
+// deleteWithRetryOn404 runs fn, retrying a bounded number of times while it
+// returns a 404 APIError. This smooths over a read-after-write lag where a
+// just-created resource can briefly 404 on DELETE before it becomes
+// addressable. A persistent 404 (e.g. a mistyped id) still surfaces after the
+// retries, and any non-404 error fails fast. DELETE is idempotent, so retrying
+// is safe.
+func deleteWithRetryOn404(ctx context.Context, fn func() error) error {
+	const maxAttempts = 3
+	var err error
+	for attempt := 0; attempt < maxAttempts; attempt++ {
+		if err = fn(); err == nil {
+			return nil
+		}
+		if apiErrorWithStatus(err, http.StatusNotFound) == nil {
+			return err // not a 404 — do not retry
+		}
+		if attempt == maxAttempts-1 {
+			break
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(time.Duration(1<<attempt) * deleteRetryBaseDelay): // 1x, 2x
+		}
+	}
+	return err
+}
+
+// hintInvalidConfigFields augments a 422 "Invalid config fields" error with an
+// actionable tip. The usual cause is a legacy field still stored on the block
+// (valid when it was set, since rejected by the server schema): re-validation
+// of the merged config then blocks an otherwise-unrelated update. Errors that
+// don't match are returned unchanged.
+func hintInvalidConfigFields(err error, wasMerge bool) error {
+	apiErr := apiErrorWithStatus(err, http.StatusUnprocessableEntity)
+	if apiErr == nil {
+		return err
+	}
+	if !strings.Contains(strings.ToLower(apiErr.Message+" "+apiErr.Body), "invalid config fields") {
+		return err
+	}
+	tip := "\n\nTip: the stored block config contains a field the current server schema no longer " +
+		"accepts (it was valid when set). Re-validation of the merged config is what blocks this update. "
+	if wasMerge {
+		tip += `Drop the offending field by adding it with a null value to your patch (RFC 7396), e.g. {"<field>": null}.`
+	} else {
+		tip += `Drop the offending field by omitting it from your --config-file replacement.`
+	}
+	return fmt.Errorf("%w%s", err, tip)
+}

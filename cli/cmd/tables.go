@@ -204,7 +204,14 @@ var tablesValidateCmd = &cobra.Command{
 var tablesReplaceCmd = &cobra.Command{
 	Use:   "replace <table-id>",
 	Short: "Replace a table CSV",
-	Args:  cobra.ExactArgs(1),
+	Long: `Replace all rows of a table with a new CSV.
+
+By default the existing column types are preserved (the command reads the
+table's current schema and reuses it), so string columns such as zero-padded
+codes are not silently re-inferred into numbers. Pass ` + "`--preserve-schema=false`" + `
+to let the server re-infer types from the CSV, or ` + "`--column-schema-overrides`" + `
+to set them explicitly (which also disables the preserve step).`,
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		file, err := requireNonBlankFlag(cmd, "file")
 		if err != nil {
@@ -214,11 +221,113 @@ var tablesReplaceCmd = &cobra.Command{
 		if err := addColumnSchemaOverridesField(cmd, fields); err != nil {
 			return err
 		}
+		// Preserve the table's existing column types by default so a re-uploaded
+		// CSV doesn't get its columns re-inferred — which silently coerces
+		// zero-padded string codes (e.g. "0000511029") to integers and drops the
+		// leading zeros. Skipped when the user passed explicit
+		// --column-schema-overrides, or --preserve-schema=false. Best effort: on
+		// any lookup failure, fall back to the server's re-inference (prior
+		// behavior) with a warning rather than blocking the replace.
+		if _, explicit := fields["column_schema_overrides"]; !explicit {
+			if preserve, _ := cmd.Flags().GetBool("preserve-schema"); preserve {
+				overrides, err := preservedSchemaOverrides(cmd, args[0], file)
+				if err != nil {
+					fmt.Fprintf(cmd.ErrOrStderr(), "warning: could not read current table schema to preserve column types (%v); the server will re-infer types from the CSV. Pass --preserve-schema=false to silence, or --column-schema-overrides to set them explicitly.\n", err)
+				} else if overrides != "" {
+					fields["column_schema_overrides"] = overrides
+				}
+			}
+		}
 		if err := runTableCSVUpload(cmd, http.MethodPut, "/v1/tables/"+url.PathEscape(args[0]), file, fields); err != nil {
 			return err
 		}
 		return nil
 	}),
+}
+
+// preservedSchemaOverrides fetches a table's current column schema and returns a
+// column_schema_overrides JSON object (column name -> JSON schema) restricted to
+// the columns that also appear in the replacement CSV header. It lets `tables
+// replace` keep existing column types instead of letting the server re-infer
+// them from the CSV. Returns "" (no overrides) when the schema is empty/new, has
+// no overlap with the CSV, or the CSV header can't be read — callers then fall
+// back to the server's re-inference.
+func preservedSchemaOverrides(cmd *cobra.Command, tableID string, csvPath string) (string, error) {
+	csvCols, err := replaceCSVHeaderColumns(csvPath)
+	if err != nil {
+		return "", err
+	}
+	if len(csvCols) == 0 {
+		// stdin ("-") or an empty/unreadable header: can't safely restrict
+		// overrides to the CSV's columns, so skip preservation.
+		return "", nil
+	}
+	inCSV := make(map[string]bool, len(csvCols))
+	for _, c := range csvCols {
+		inCSV[c] = true
+	}
+
+	var resp struct {
+		Columns []struct {
+			Name       string          `json:"name"`
+			JSONSchema json.RawMessage `json:"json_schema"`
+		} `json:"columns"`
+	}
+	if err := cliJSONRequestInto(cmd, http.MethodGet, "/v1/tables/"+url.PathEscape(tableID)+"/schema", nil, nil, &resp); err != nil {
+		return "", err
+	}
+	overrides := map[string]json.RawMessage{}
+	for _, col := range resp.Columns {
+		if col.Name == "" || len(col.JSONSchema) == 0 || !inCSV[col.Name] {
+			continue
+		}
+		overrides[col.Name] = col.JSONSchema
+	}
+	if len(overrides) == 0 {
+		return "", nil
+	}
+	b, err := json.Marshal(overrides)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
+}
+
+// replaceCSVHeaderColumns reads just the header row of a CSV file and returns its
+// column names. Delimiter is auto-detected (',' or ';') to match how the table
+// backend parses uploads. Returns (nil, nil) for stdin ("-") or an unset path,
+// since the header can't be peeked without consuming the upload stream.
+func replaceCSVHeaderColumns(path string) ([]string, error) {
+	if path == "" || path == "-" {
+		return nil, nil
+	}
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	buf := make([]byte, 65536)
+	n, err := f.Read(buf)
+	if err != nil && err != io.EOF {
+		return nil, err
+	}
+	s := string(buf[:n])
+	if i := strings.IndexByte(s, '\n'); i >= 0 {
+		s = s[:i]
+	}
+	line := strings.TrimRight(strings.TrimPrefix(s, "\ufeff"), "\r")
+	if strings.TrimSpace(line) == "" {
+		return nil, nil
+	}
+	delim := ","
+	if strings.Count(line, ";") > strings.Count(line, ",") {
+		delim = ";"
+	}
+	cols := make([]string, 0)
+	for _, c := range strings.Split(line, delim) {
+		cols = append(cols, strings.TrimSpace(strings.Trim(c, "\"")))
+	}
+	return cols, nil
 }
 
 // addColumnSchemaOverridesField validates the --column-schema-overrides flag (a
@@ -1387,6 +1496,7 @@ func init() {
 	tablesReplaceCmd.Flags().String("file", "", "CSV file path (required)")
 	_ = tablesReplaceCmd.MarkFlagRequired("file")
 	tablesReplaceCmd.Flags().String("column-schema-overrides", "", "JSON column schema overrides")
+	tablesReplaceCmd.Flags().Bool("preserve-schema", true, "keep the table's existing column types instead of re-inferring them from the CSV (prevents zero-padded codes from being coerced to numbers); ignored when --column-schema-overrides is set")
 	tablesListCmd.Flags().String("project-id", "", "project whose tables to list (required)")
 	_ = tablesListCmd.MarkFlagRequired("project-id")
 

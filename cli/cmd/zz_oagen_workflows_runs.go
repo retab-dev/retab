@@ -425,7 +425,7 @@ func init() {
 	workflowsRunsListCmd.Flags().String("trigger-type", "", "filter by trigger type")
 	workflowsRunsListCmd.Flags().Var(&dateFlagValue{}, "from-date", "filter from this YYYY-MM-DD date")
 	workflowsRunsListCmd.Flags().Var(&dateFlagValue{}, "to-date", "filter to this YYYY-MM-DD date")
-	workflowsRunsListCmd.Flags().String("search", "", "search query")
+	workflowsRunsListCmd.Flags().String("search", "", "search by run id (partial match) — does NOT match document filenames")
 	workflowsRunsListCmd.Flags().Var(newEnumStringFlagValue("--sort-by", "timing.created_at", "timing.started_at"), "sort-by", "sort field: timing.created_at | timing.started_at")
 	workflowsRunsListCmd.Flags().String("before", "", "run id: return items before this id (mutually exclusive with --after)")
 	workflowsRunsListCmd.Flags().String("after", "", "run id: return items after this id (mutually exclusive with --before)")
