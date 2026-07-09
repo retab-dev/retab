@@ -58,6 +58,38 @@ func TestExperimentHandleInputsFromMapKeepsJSONDescriptors(t *testing.T) {
 	}
 }
 
+// A raw JSON document is allowed to carry a top-level "type" field whose value
+// is neither "file" nor "json" (e.g. a document classified as {"type":"invoice"}).
+// It must pass through as raw JSON data, not be rejected as an unsupported
+// handle input type.
+func TestExperimentHandleInputsFromMapAllowsRawTypeField(t *testing.T) {
+	inputs, err := experimentHandleInputsFromMap(map[string]any{
+		"input-json-0": map[string]any{
+			"type":   "invoice",
+			"amount": 100,
+		},
+	})
+	if err != nil {
+		t.Fatalf("experimentHandleInputsFromMap: %v", err)
+	}
+	got := inputs["input-json-0"]
+	if got.Type() != "json" {
+		t.Fatalf("input type = %q, want json", got.Type())
+	}
+	jsonInput, err := got.AsJSONHandleInput()
+	if err != nil {
+		t.Fatalf("AsJSONHandleInput: %v", err)
+	}
+	if jsonInput.Data == nil {
+		t.Fatal("data is nil; raw document with a type field was dropped")
+	}
+	// Data round-trips through JSON, so numbers decode back as float64.
+	obj, ok := (*jsonInput.Data).(map[string]any)
+	if !ok || obj["type"] != "invoice" || obj["amount"] != float64(100) {
+		t.Fatalf("raw data not preserved: %#v", jsonInput.Data)
+	}
+}
+
 func TestExperimentHandleInputsFromMapRejectsMalformedFileDescriptor(t *testing.T) {
 	_, err := experimentHandleInputsFromMap(map[string]any{
 		"input-file-document": map[string]any{

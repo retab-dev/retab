@@ -322,7 +322,12 @@ func notifierSkippableCommand(args []string) bool {
 			continue
 		}
 		switch a {
-		case updateDaemonCommand, "update", "completion", "version":
+		case updateDaemonCommand, "update", "completion", "version",
+			// cobra's hidden completion drivers — invoked on every shell tab,
+			// their stdout must stay machine-clean and a stderr notice would
+			// flash mid-completion. The user-facing `completion` subcommand
+			// above generates the script; these run the actual completions.
+			cobra.ShellCompRequestCmd, cobra.ShellCompNoDescRequestCmd:
 			return true
 		}
 		return false

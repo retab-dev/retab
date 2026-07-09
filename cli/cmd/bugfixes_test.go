@@ -115,7 +115,9 @@ func TestNotifierSkippableCommand(t *testing.T) {
 		{"version"},
 		{"update"},
 		{"completion", "bash"},
-		{"--global-flag", "completion"}, // value-less flags are skipped over
+		{"__complete", "files", "get", ""}, // cobra's hidden completion driver
+		{"__completeNoDesc", "workflows"},   // no-description variant
+		{"--global-flag", "completion"},     // value-less flags are skipped over
 		{"--version"},
 		{"-v"},
 	}
