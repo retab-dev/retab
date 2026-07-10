@@ -38,7 +38,7 @@ var usagePrimitivesCmd = &cobra.Command{
 	Use:   "primitives",
 	Short: "Per-operation usage export (credits and pages per primitive execution)",
 	Long: `List one usage row per primitive execution (extraction, classify, split, parse,
-edit, schema_generation …): the operation, its origin identifiers (workflow, run,
+edit, partition, schema_generation …): the operation, its origin identifiers (workflow, run,
 project, block), lifecycle status, deduplicated page count, and credit spend.
 
 This is the per-operation grain of the usage export — the list form of the usage
@@ -159,7 +159,7 @@ func init() {
 	usagePrimitivesCmd.Flags().String("project-id", "", "filter to executions owned by a single project id")
 	usagePrimitivesCmd.Flags().String("run-id", "", "filter to a single workflow run id (origin run)")
 	usagePrimitivesCmd.Flags().String("block-id", "", "filter to a single workflow block id (origin block)")
-	usagePrimitivesCmd.Flags().String("operation", "", "filter by operation (extraction, classify, split, parse, edit, schema_generation)")
+	usagePrimitivesCmd.Flags().String("operation", "", "filter by operation (extraction, classify, split, parse, edit, partition, schema_generation)")
 	usagePrimitivesCmd.Flags().String("status", "", "filter by execution lifecycle status")
 	usagePrimitivesCmd.Flags().StringArray("metadata", nil, "filter by metadata key=value (repeatable; pairs AND together)")
 	usagePrimitivesCmd.Flags().String("from-date", "", "inclusive created_at lower bound (YYYY-MM-DD, UTC)")
