@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 )
@@ -20,7 +21,6 @@ func usagePrimitivesFixture() usagePrimitiveListResponse {
 				RunID:                "run_123",
 				ProjectID:            "proj_123",
 				BlockID:              "block_123",
-				SourceType:           "project",
 				Status:               "completed",
 				ResourceKind:         "schema",
 				CreatedAt:            &created,
@@ -122,6 +122,73 @@ func TestUsagePrimitivesForwardsFilterFlags(t *testing.T) {
 		if !strings.Contains(gotQuery, want) {
 			t.Fatalf("query = %s, want %s", gotQuery, want)
 		}
+	}
+}
+
+func TestUsagePrimitivesForwardsMetadataFilter(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var gotQuery url.Values
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotQuery = r.URL.Query()
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(usagePrimitivesFixture())
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := usagePrimitivesCmd.Flags().Set("metadata", "tenant=acme"); err != nil {
+		t.Fatalf("set --metadata tenant: %v", err)
+	}
+	if err := usagePrimitivesCmd.Flags().Set("metadata", "tier=gold"); err != nil {
+		t.Fatalf("set --metadata tier: %v", err)
+	}
+	t.Cleanup(func() { _ = usagePrimitivesCmd.Flags().Set("metadata", "") })
+
+	captureStd(t, func() {
+		if err := usagePrimitivesCmd.RunE(usagePrimitivesCmd, nil); err != nil {
+			t.Fatalf("usage primitives: %v", err)
+		}
+	})
+
+	// The repeatable key=value pairs are forwarded as a single JSON object under
+	// the `metadata` query param, matching the server's parsePrimitiveUsageMetadata
+	// contract (a JSON object of string key/value pairs, ANDed together).
+	raw := gotQuery.Get("metadata")
+	if raw == "" {
+		t.Fatalf("metadata query param missing; query = %v", gotQuery)
+	}
+	var parsed map[string]string
+	if err := json.Unmarshal([]byte(raw), &parsed); err != nil {
+		t.Fatalf("metadata=%q is not a JSON object: %v", raw, err)
+	}
+	if parsed["tenant"] != "acme" || parsed["tier"] != "gold" {
+		t.Fatalf("metadata object = %v, want {tenant:acme, tier:gold}", parsed)
+	}
+}
+
+func TestUsagePrimitivesRejectsMalformedMetadataPair(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Fatalf("HTTP should not be reached on a malformed --metadata pair, got %s %s", r.Method, r.URL.Path)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := usagePrimitivesCmd.Flags().Set("metadata", "novalue"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = usagePrimitivesCmd.Flags().Set("metadata", "") })
+
+	var runErr error
+	captureStd(t, func() {
+		runErr = usagePrimitivesCmd.RunE(usagePrimitivesCmd, nil)
+	})
+	if runErr == nil || !strings.Contains(runErr.Error(), "key=value") {
+		t.Fatalf("expected key=value error, got %v", runErr)
 	}
 }
 

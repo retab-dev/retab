@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -19,7 +20,6 @@ type usagePrimitiveRecord struct {
 	RunID                string  `json:"run_id,omitempty"`
 	ProjectID            string  `json:"project_id,omitempty"`
 	BlockID              string  `json:"block_id,omitempty"`
-	SourceType           string  `json:"source_type,omitempty"`
 	Status               string  `json:"status"`
 	ResourceKind         string  `json:"resource_kind,omitempty"`
 	CreatedAt            *string `json:"created_at,omitempty"`
@@ -47,9 +47,9 @@ and environment, and confidential-safe like ` + "`usage runs`" + `: it never exp
 model names, token counts, provider/API dollar costs, request metadata, or
 document content.
 
-Filter by workflow, project, run, operation, lifecycle status, and created_at
-date range. Page by execution id with ` + "`--before`" + ` / ` + "`--after`" + `, cap the
-page size with ` + "`--limit`" + ` (1-100).`,
+Filter by workflow, project, run, block, operation, lifecycle status, metadata,
+and created_at date range. Page by execution id with ` + "`--before`" + ` / ` + "`--after`" + `,
+cap the page size with ` + "`--limit`" + ` (1-100).`,
 	Example: `  # Most recent 50 operations' usage
   retab usage primitives --limit 50
 
@@ -59,6 +59,9 @@ page size with ` + "`--limit`" + ` (1-100).`,
 
   # One workflow's classify operations
   retab usage primitives --workflow-id wf_abc123 --operation classify
+
+  # Filter by user-defined metadata (repeat --metadata to AND pairs)
+  retab usage primitives --metadata tenant=acme --metadata tier=gold
 
   # Walk pages from a known execution id
   retab usage primitives --after pexec_xyz789 --limit 100`,
@@ -95,6 +98,17 @@ func runUsagePrimitivesList(cmd *cobra.Command, _ []string) error {
 	addOptionalUsageQuery(cmd, query, "before", "before")
 	addOptionalUsageQuery(cmd, query, "after", "after")
 	addOptionalUsageQuery(cmd, query, "order", "order")
+	if metaPairs, _ := cmd.Flags().GetStringArray("metadata"); len(metaPairs) > 0 {
+		md, err := parseKVStringList(metaPairs)
+		if err != nil {
+			return err
+		}
+		raw, err := json.Marshal(md)
+		if err != nil {
+			return err
+		}
+		query.Set("metadata", string(raw))
+	}
 	if fromDate != "" {
 		query.Set("from_date", fromDate)
 	}
@@ -147,6 +161,7 @@ func init() {
 	usagePrimitivesCmd.Flags().String("block-id", "", "filter to a single workflow block id (origin block)")
 	usagePrimitivesCmd.Flags().String("operation", "", "filter by operation (extraction, classify, split, parse, edit, schema_generation)")
 	usagePrimitivesCmd.Flags().String("status", "", "filter by execution lifecycle status")
+	usagePrimitivesCmd.Flags().StringArray("metadata", nil, "filter by metadata key=value (repeatable; pairs AND together)")
 	usagePrimitivesCmd.Flags().String("from-date", "", "inclusive created_at lower bound (YYYY-MM-DD, UTC)")
 	usagePrimitivesCmd.Flags().String("to-date", "", "inclusive created_at upper bound (YYYY-MM-DD, UTC)")
 	usagePrimitivesCmd.Flags().String("before", "", "execution id: return items before this id (mutually exclusive with --after)")
