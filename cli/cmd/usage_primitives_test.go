@@ -144,7 +144,13 @@ func TestUsagePrimitivesForwardsMetadataFilter(t *testing.T) {
 	if err := usagePrimitivesCmd.Flags().Set("metadata", "tier=gold"); err != nil {
 		t.Fatalf("set --metadata tier: %v", err)
 	}
-	t.Cleanup(func() { _ = usagePrimitivesCmd.Flags().Set("metadata", "") })
+	t.Cleanup(func() {
+		f := usagePrimitivesCmd.Flags().Lookup("metadata")
+		if sv, ok := f.Value.(interface{ Replace([]string) error }); ok {
+			_ = sv.Replace(nil)
+		}
+		f.Changed = false
+	})
 
 	captureStd(t, func() {
 		if err := usagePrimitivesCmd.RunE(usagePrimitivesCmd, nil); err != nil {
@@ -181,7 +187,13 @@ func TestUsagePrimitivesRejectsMalformedMetadataPair(t *testing.T) {
 	if err := usagePrimitivesCmd.Flags().Set("metadata", "novalue"); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = usagePrimitivesCmd.Flags().Set("metadata", "") })
+	t.Cleanup(func() {
+		f := usagePrimitivesCmd.Flags().Lookup("metadata")
+		if sv, ok := f.Value.(interface{ Replace([]string) error }); ok {
+			_ = sv.Replace(nil)
+		}
+		f.Changed = false
+	})
 
 	var runErr error
 	captureStd(t, func() {
