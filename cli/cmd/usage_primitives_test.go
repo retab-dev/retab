@@ -83,6 +83,7 @@ func TestUsagePrimitivesForwardsFilterFlags(t *testing.T) {
 		"workflow-id": "wf_123",
 		"project-id":  "proj_123",
 		"run-id":      "run_123",
+		"block-id":    "block_123",
 		"operation":   "extraction",
 		"status":      "completed",
 		"from-date":   "2026-06-01",
@@ -110,6 +111,7 @@ func TestUsagePrimitivesForwardsFilterFlags(t *testing.T) {
 		"workflow_id=wf_123",
 		"project_id=proj_123",
 		"run_id=run_123",
+		"block_id=block_123",
 		"operation=extraction",
 		"status=completed",
 		"from_date=2026-06-01",
@@ -144,7 +146,7 @@ func TestUsagePrimitivesTableExposesUsageColumnsOnly(t *testing.T) {
 			t.Fatalf("usage primitives: %v", err)
 		}
 	})
-	for _, want := range []string{"EXECUTION_ID", "OPERATION", "WORKFLOW", "PROJECT", "STATUS", "PAGES", "CREDITS", "pexec_abc123", "extraction", "12.5"} {
+	for _, want := range []string{"EXECUTION_ID", "OPERATION", "WORKFLOW", "BLOCK", "PROJECT", "STATUS", "PAGES", "CREDITS", "pexec_abc123", "extraction", "block_123", "12.5"} {
 		if !strings.Contains(stdout, want) {
 			t.Fatalf("stdout missing %q:\n%s", want, stdout)
 		}

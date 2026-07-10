@@ -89,6 +89,7 @@ func runUsagePrimitivesList(cmd *cobra.Command, _ []string) error {
 	addOptionalUsageQuery(cmd, query, "workflow-id", "workflow_id")
 	addOptionalUsageQuery(cmd, query, "project-id", "project_id")
 	addOptionalUsageQuery(cmd, query, "run-id", "run_id")
+	addOptionalUsageQuery(cmd, query, "block-id", "block_id")
 	addOptionalUsageQuery(cmd, query, "operation", "operation")
 	addOptionalUsageQuery(cmd, query, "status", "status")
 	addOptionalUsageQuery(cmd, query, "before", "before")
@@ -115,6 +116,7 @@ var usagePrimitiveColumns = []TableColumn{
 	{Header: "EXECUTION_ID", Extract: func(row any) string { return usagePrimitiveCell(row, "primitive_execution_id") }},
 	{Header: "OPERATION", Extract: func(row any) string { return usagePrimitiveCell(row, "operation") }},
 	{Header: "WORKFLOW", Extract: func(row any) string { return usagePrimitiveCell(row, "workflow_id") }},
+	{Header: "BLOCK", Extract: func(row any) string { return usagePrimitiveCell(row, "block_id") }},
 	{Header: "PROJECT", Extract: func(row any) string { return usagePrimitiveCell(row, "project_id") }},
 	{Header: "STATUS", Extract: func(row any) string { return usagePrimitiveCell(row, "status") }},
 	{Header: "CREATED_AT", Extract: func(row any) string { return usagePrimitiveCell(row, "created_at") }},
@@ -142,6 +144,7 @@ func init() {
 	usagePrimitivesCmd.Flags().String("workflow-id", "", "filter to a single workflow id (origin workflow)")
 	usagePrimitivesCmd.Flags().String("project-id", "", "filter to executions owned by a single project id")
 	usagePrimitivesCmd.Flags().String("run-id", "", "filter to a single workflow run id (origin run)")
+	usagePrimitivesCmd.Flags().String("block-id", "", "filter to a single workflow block id (origin block)")
 	usagePrimitivesCmd.Flags().String("operation", "", "filter by operation (extraction, classify, split, parse, edit, schema_generation)")
 	usagePrimitivesCmd.Flags().String("status", "", "filter by execution lifecycle status")
 	usagePrimitivesCmd.Flags().String("from-date", "", "inclusive created_at lower bound (YYYY-MM-DD, UTC)")
