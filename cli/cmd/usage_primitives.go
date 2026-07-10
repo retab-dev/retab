@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -49,7 +50,12 @@ document content.
 
 Filter by workflow, project, run, block, operation, lifecycle status, metadata,
 and created_at date range. Page by execution id with ` + "`--before`" + ` / ` + "`--after`" + `,
-cap the page size with ` + "`--limit`" + ` (1-100).`,
+cap the page size with ` + "`--limit`" + ` (1-100).
+
+By default the export is scoped to the environment of the authenticated
+credential; use the global ` + "`--environment-id`" + ` flag (or RETAB_ENVIRONMENT_ID,
+or the stored config default) to report on another environment within your
+organization.`,
 	Example: `  # Most recent 50 operations' usage
   retab usage primitives --limit 50
 
@@ -64,7 +70,10 @@ cap the page size with ` + "`--limit`" + ` (1-100).`,
   retab usage primitives --metadata tenant=acme --metadata tier=gold
 
   # Walk pages from a known execution id
-  retab usage primitives --after pexec_xyz789 --limit 100`,
+  retab usage primitives --after pexec_xyz789 --limit 100
+
+  # Report on a specific environment in your organization
+  retab --environment-id env_abc123 usage primitives --limit 50`,
 	Args: cobra.NoArgs,
 	RunE: runE(runUsagePrimitivesList),
 }
@@ -89,6 +98,13 @@ func runUsagePrimitivesList(cmd *cobra.Command, _ []string) error {
 	}
 
 	query := url.Values{}
+	// Forward the CLI's selected environment (global --environment-id flag,
+	// RETAB_ENVIRONMENT_ID, or the stored config default) as the environment_id
+	// scope argument. Empty → the server falls back to the credential's environment.
+	cfg, _ := loadConfig()
+	if envID := selectedEnvironmentID(cmd, cfg); strings.TrimSpace(envID) != "" {
+		query.Set("environment_id", strings.TrimSpace(envID))
+	}
 	addOptionalUsageQuery(cmd, query, "workflow-id", "workflow_id")
 	addOptionalUsageQuery(cmd, query, "project-id", "project_id")
 	addOptionalUsageQuery(cmd, query, "run-id", "run_id")

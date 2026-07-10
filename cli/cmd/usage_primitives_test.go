@@ -102,12 +102,20 @@ func TestUsagePrimitivesForwardsFilterFlags(t *testing.T) {
 		}
 	})
 
+	// The environment scope is the CLI's global --environment-id selection,
+	// forwarded as the environment_id query argument.
+	if err := rootCmd.PersistentFlags().Set("environment-id", "env_123"); err != nil {
+		t.Fatalf("set --environment-id: %v", err)
+	}
+	t.Cleanup(func() { _ = rootCmd.PersistentFlags().Set("environment-id", "") })
+
 	captureStd(t, func() {
 		if err := usagePrimitivesCmd.RunE(usagePrimitivesCmd, nil); err != nil {
 			t.Fatalf("usage primitives: %v", err)
 		}
 	})
 	for _, want := range []string{
+		"environment_id=env_123",
 		"workflow_id=wf_123",
 		"project_id=proj_123",
 		"run_id=run_123",
