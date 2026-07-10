@@ -12,6 +12,7 @@ import (
 	"io/fs"
 	"mime"
 	"mime/multipart"
+	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -88,6 +89,10 @@ func runE(fn func(cmd *cobra.Command, args []string) error) func(cmd *cobra.Comm
 			fmt.Fprintln(os.Stderr, renderAPIErrorForCLI(cmd, apiErr))
 			return errSilent
 		}
+		if msg := renderUnreachableServerForCLI(err); msg != "" {
+			fmt.Fprintln(os.Stderr, msg)
+			return renderedError{err: err}
+		}
 		if msg := renderConnectionDropForCLI(err); msg != "" {
 			fmt.Fprintln(os.Stderr, msg)
 			return renderedError{err: err}
@@ -121,6 +126,93 @@ func renderConnectionDropForCLI(err error) string {
 	}
 	return "error: upstream server closed the connection unexpectedly — the request likely crashed server-side. Retry, and if it persists check the server logs."
 }
+
+// renderUnreachableServerForCLI replaces bare net/http dial failures — the
+// shape `Post "http://localhost:4000/...": dial tcp ...: connect: connection
+// refused` (or `... no such host`) — with an actionable message. These appear
+// when the API base URL points at nothing listening (the local dev server is
+// down, or a wrong/typo'd --base-url), and the raw Go error buries what to do
+// next under transport noise. The failure is at connection-establishment time
+// (net.OpError Op=="dial"), which distinguishes "server not reachable" from
+// "server crashed mid-response" (renderConnectionDropForCLI, an EOF).
+//
+// Returns an empty string when the error is not a dial failure so the caller
+// falls back to the default `error: <err>` render.
+func renderUnreachableServerForCLI(err error) string {
+	if err == nil {
+		return ""
+	}
+	// DNS failures are checked first and take precedence: a name-resolution
+	// error's text also contains "dial tcp", so the dial-failure heuristic below
+	// would otherwise mislabel a bad host as "connection refused".
+	dnsFailure := isDNSFailure(err)
+	if !dnsFailure && !isDialFailure(err) {
+		return ""
+	}
+	target := unreachableTargetURL(err)
+	where := "the Retab API"
+	if target != "" {
+		where = "the Retab API at " + target
+	}
+	if dnsFailure {
+		return fmt.Sprintf("error: cannot reach %s — host not found. Check --base-url / RETAB_API_BASE_URL (or `retab env`).", where)
+	}
+	return fmt.Sprintf("error: cannot reach %s (connection refused). Is the server running, and is the base URL correct? Check --base-url / RETAB_API_BASE_URL (or `retab env`).", where)
+}
+
+// isDNSFailure reports whether err is a name-resolution failure, detected
+// structurally via net.DNSError (traversed through wrappers) with a substring
+// backstop for flattened transports.
+func isDNSFailure(err error) bool {
+	var dnsErr *net.DNSError
+	if errors.As(err, &dnsErr) {
+		return true
+	}
+	text := err.Error()
+	return strings.Contains(text, "no such host") || strings.Contains(text, "server misbehaving")
+}
+
+// isDialFailure reports whether err is a connection-establishment failure
+// (connection refused, no route to host, network unreachable, dial timeout),
+// detected structurally via net.OpError with Op=="dial" (traversed through the
+// url.Error / bearer-token wrappers by errors.As) with a syscall + substring
+// backstop for transports that flatten the chain.
+func isDialFailure(err error) bool {
+	var opErr *net.OpError
+	if errors.As(err, &opErr) && opErr.Op == "dial" {
+		return true
+	}
+	if errors.Is(err, syscall.ECONNREFUSED) {
+		return true
+	}
+	text := err.Error()
+	for _, needle := range []string{"connection refused", "no route to host", "network is unreachable", "dial tcp"} {
+		if strings.Contains(text, needle) {
+			return true
+		}
+	}
+	return false
+}
+
+// unreachableTargetURL best-effort extracts the scheme://host the request was
+// aimed at: preferring the structured url.Error.URL, else the first URL-looking
+// token in the error text.
+func unreachableTargetURL(err error) string {
+	var urlErr *url.Error
+	if errors.As(err, &urlErr) {
+		if u, perr := url.Parse(urlErr.URL); perr == nil && u.Host != "" {
+			return u.Scheme + "://" + u.Host
+		}
+	}
+	if loc := urlInErrorText.FindString(err.Error()); loc != "" {
+		if u, perr := url.Parse(loc); perr == nil && u.Host != "" {
+			return u.Scheme + "://" + u.Host
+		}
+	}
+	return ""
+}
+
+var urlInErrorText = regexp.MustCompile(`https?://[^"\s]+`)
 
 func renderAPIErrorForCLI(cmd *cobra.Command, apiErr *retab.APIError) string {
 	if debug, _ := cmd.Root().PersistentFlags().GetBool("debug"); debug {

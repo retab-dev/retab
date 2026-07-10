@@ -6,12 +6,15 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
+	"syscall"
 	"testing"
 
 	retab "github.com/retab-dev/retab/clients/go"
@@ -53,6 +56,57 @@ func TestRenderConnectionDropForCLI(t *testing.T) {
 			}
 			if got != "" {
 				t.Fatalf("expected empty string for non-connection-drop error %v, got %q", tc.err, got)
+			}
+		})
+	}
+}
+
+// Regression: when the API base URL points at nothing listening (local dev
+// server down, or a typo'd --base-url), the bare net/http error surface was
+// `error: Post "http://localhost:4000/...": dial tcp ...: connection refused`
+// (or, through the bearer-token resolver, `error: retab: resolve bearer token:
+// Post "...": ... connection refused`). runE now translates any dial failure
+// into an actionable message that names the target and points at the fix.
+func TestRenderUnreachableServerForCLI(t *testing.T) {
+	dialRefused := &url.Error{Op: "Post", URL: "http://localhost:4000/v1/auth/dashboard-context", Err: &net.OpError{Op: "dial", Err: syscall.ECONNREFUSED}}
+	cases := []struct {
+		name       string
+		err        error
+		wantMsg    bool
+		wantTarget string // substring expected in the message when wantMsg
+		wantPhrase string // distinctive phrase expected
+	}{
+		{name: "nil", err: nil, wantMsg: false},
+		{name: "structured dial ECONNREFUSED via url.Error", err: dialRefused, wantMsg: true, wantTarget: "http://localhost:4000", wantPhrase: "connection refused"},
+		{name: "bearer-token wrap around dial error", err: fmt.Errorf("retab: resolve bearer token: %w", dialRefused), wantMsg: true, wantTarget: "http://localhost:4000", wantPhrase: "connection refused"},
+		{name: "flattened substring connection refused", err: errors.New(`Post "http://localhost:4000/v1/workflows": dial tcp [::1]:4000: connect: connection refused`), wantMsg: true, wantTarget: "http://localhost:4000", wantPhrase: "connection refused"},
+		{name: "DNS no such host", err: &url.Error{Op: "Get", URL: "https://api.example.invalid/v1/x", Err: &net.DNSError{Err: "no such host", Name: "api.example.invalid", IsNotFound: true}}, wantMsg: true, wantTarget: "https://api.example.invalid", wantPhrase: "host not found"},
+		{name: "EOF drop is NOT an unreachable error", err: io.EOF, wantMsg: false},
+		{name: "unrelated error stays nil", err: errors.New("validation failed"), wantMsg: false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := renderUnreachableServerForCLI(tc.err)
+			if !tc.wantMsg {
+				if got != "" {
+					t.Fatalf("expected empty string for %v, got %q", tc.err, got)
+				}
+				return
+			}
+			if got == "" {
+				t.Fatalf("expected an unreachable-server message, got empty string")
+			}
+			if !strings.HasPrefix(got, "error: ") {
+				t.Fatalf("message should start with 'error: ', got %q", got)
+			}
+			if !strings.Contains(got, "cannot reach the Retab API") {
+				t.Fatalf("message should name the symptom; got %q", got)
+			}
+			if tc.wantTarget != "" && !strings.Contains(got, tc.wantTarget) {
+				t.Fatalf("message should name the target %q; got %q", tc.wantTarget, got)
+			}
+			if tc.wantPhrase != "" && !strings.Contains(got, tc.wantPhrase) {
+				t.Fatalf("message should contain %q; got %q", tc.wantPhrase, got)
 			}
 		})
 	}
