@@ -11,11 +11,6 @@ import (
 var approvedCLINonWorkflowNonReferenceRoutes = map[string]bool{
 	// SDK conveniences used by CLI commands but not part of the generated
 	// public API reference.
-	//
-	// splits/reconstruct is wired through the SDK + CLI ahead of being
-	// published in the public OpenAPI reference; drop this entry once the
-	// route ships (the test below fails if it lands in OpenAPI first).
-	"POST /v1/splits/reconstruct": true,
 }
 
 func TestNonWorkflowCLIClientCallsHaveRouteContracts(t *testing.T) {

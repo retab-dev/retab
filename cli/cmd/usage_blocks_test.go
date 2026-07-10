@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/csv"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -30,7 +31,38 @@ func usageBlocksFixture() usageBlockListResponse {
 	}
 }
 
+func isolateUsageBlocksFlags(t *testing.T) {
+	t.Helper()
+	clearUsageBlocksFlags(t)
+	t.Cleanup(func() { clearUsageBlocksFlags(t) })
+}
+
+func clearUsageBlocksFlags(t *testing.T) {
+	t.Helper()
+	for _, name := range []string{"workflow-id", "block-type", "from-date", "to-date", "before", "after", "order"} {
+		flag := usageBlocksCmd.Flags().Lookup(name)
+		if flag == nil {
+			t.Fatalf("missing usage blocks flag --%s", name)
+		}
+		if err := flag.Value.Set(""); err != nil {
+			t.Fatalf("reset --%s: %v", name, err)
+		}
+		flag.Changed = false
+	}
+	flag := usageBlocksCmd.Flags().Lookup("limit")
+	if flag == nil {
+		t.Fatal("missing usage blocks flag --limit")
+	}
+	value, ok := flag.Value.(*boundedIntFlagValue)
+	if !ok {
+		t.Fatalf("--limit value type = %T, want *boundedIntFlagValue", flag.Value)
+	}
+	value.value = ""
+	flag.Changed = false
+}
+
 func TestUsageBlocksUsesHiddenEndpoint(t *testing.T) {
+	isolateUsageBlocksFlags(t)
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
 
@@ -65,6 +97,7 @@ func TestUsageBlocksUsesHiddenEndpoint(t *testing.T) {
 }
 
 func TestUsageBlocksForwardsFilterFlags(t *testing.T) {
+	isolateUsageBlocksFlags(t)
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
 
@@ -90,11 +123,6 @@ func TestUsageBlocksForwardsFilterFlags(t *testing.T) {
 			t.Fatalf("set --%s: %v", k, err)
 		}
 	}
-	t.Cleanup(func() {
-		for k := range set {
-			_ = usageBlocksCmd.Flags().Set(k, "")
-		}
-	})
 
 	captureStd(t, func() {
 		if err := usageBlocksCmd.RunE(usageBlocksCmd, nil); err != nil {
@@ -115,9 +143,157 @@ func TestUsageBlocksForwardsFilterFlags(t *testing.T) {
 	}
 }
 
+func TestUsageBlocksRootCommandDispatchesAndPreservesOpaqueCursor(t *testing.T) {
+	isolateUsageBlocksFlags(t)
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	cursor := "opaque+/= cursor"
+	var sawRequest bool
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet || r.URL.Path != "/v1/usage/blocks" {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+		query := r.URL.Query()
+		if got := query.Get("after"); got != cursor {
+			t.Fatalf("after cursor = %q, want %q (raw query: %s)", got, cursor, r.URL.RawQuery)
+		}
+		if got := query.Get("workflow_id"); got != "wf_trimmed" {
+			t.Fatalf("workflow_id = %q, want trimmed wf_trimmed", got)
+		}
+		if got := query.Get("block_type"); got != "extract" {
+			t.Fatalf("block_type = %q", got)
+		}
+		if got := query.Get("limit"); got != "2" {
+			t.Fatalf("limit = %q", got)
+		}
+		if got := query.Get("order"); got != "desc" {
+			t.Fatalf("order = %q", got)
+		}
+		sawRequest = true
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(usageBlocksFixture())
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	stdout, _ := captureStd(t, func() {
+		if err := runRootForTest(t,
+			"--output", "json",
+			"usage", "blocks",
+			"--workflow-id", "  wf_trimmed  ",
+			"--block-type", "extract",
+			"--after", cursor,
+			"--limit", "2",
+			"--order", "desc",
+		); err != nil {
+			t.Fatalf("root usage blocks: %v", err)
+		}
+	})
+	if !sawRequest {
+		t.Fatal("expected root-dispatched usage blocks request")
+	}
+	if !strings.Contains(stdout, `"block_id": "block_abc123"`) {
+		t.Fatalf("root-dispatched stdout missing block payload:\n%s", stdout)
+	}
+}
+
+func TestUsageBlocksCSVOutputUsesSafeColumnsAndEscapesFormulaCells(t *testing.T) {
+	isolateUsageBlocksFlags(t)
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	last := "2026-07-01T18:00:00Z"
+	response := usageBlockListResponse{
+		Data: []usageBlockRecord{{
+			BlockID:        "=HYPERLINK(\"https://example.invalid\")",
+			WorkflowID:     "wf_csv",
+			BlockType:      "extract",
+			RunCount:       2,
+			ExecutionCount: 3,
+			PageCount:      5,
+			Credits:        7.25,
+			LastActivityAt: &last,
+		}},
+	}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(response)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	stdout, _ := captureStd(t, func() {
+		if err := runRootForTest(t, "--output", "csv", "usage", "blocks"); err != nil {
+			t.Fatalf("usage blocks csv: %v", err)
+		}
+	})
+	rows, err := csv.NewReader(strings.NewReader(stdout)).ReadAll()
+	if err != nil {
+		t.Fatalf("parse csv output: %v\n%s", err, stdout)
+	}
+	if len(rows) != 2 {
+		t.Fatalf("csv rows = %d, want header + one data row:\n%s", len(rows), stdout)
+	}
+	wantHeader := []string{"BLOCK_ID", "WORKFLOW", "TYPE", "RUNS", "EXECS", "PAGES", "CREDITS", "LAST_ACTIVITY"}
+	for i, want := range wantHeader {
+		if rows[0][i] != want {
+			t.Fatalf("header[%d] = %q, want %q; header=%v", i, rows[0][i], want, rows[0])
+		}
+	}
+	if rows[1][0] != "'=HYPERLINK(\"https://example.invalid\")" {
+		t.Fatalf("formula-like block id was not neutralized: %q", rows[1][0])
+	}
+	for _, forbidden := range []string{"FILENAME", "API_COST", "PROVIDER", "MARGIN", "MODEL", "RESULT"} {
+		if strings.Contains(strings.ToUpper(stdout), forbidden) {
+			t.Fatalf("csv output exposed forbidden field %s:\n%s", forbidden, stdout)
+		}
+	}
+}
+
+func TestUsageBlocksRejectsInvalidDateRangeBeforeHTTP(t *testing.T) {
+	isolateUsageBlocksFlags(t)
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+		t.Fatalf("HTTP should not be reached for reversed date range, got %s %s", r.Method, r.URL.Path)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := usageBlocksCmd.Flags().Set("from-date", "2026-07-31"); err != nil {
+		t.Fatalf("set from-date: %v", err)
+	}
+	if err := usageBlocksCmd.Flags().Set("to-date", "2026-07-01"); err != nil {
+		t.Fatalf("set to-date: %v", err)
+	}
+	var runErr error
+	captureStd(t, func() {
+		runErr = usageBlocksCmd.RunE(usageBlocksCmd, nil)
+	})
+	if runErr == nil || !strings.Contains(runErr.Error(), "date range is reversed") {
+		t.Fatalf("expected reversed date range error, got %v", runErr)
+	}
+}
+
+func TestUsageBlocksLimitRejectsOutOfRangeValuesLocally(t *testing.T) {
+	isolateUsageBlocksFlags(t)
+	for _, value := range []string{"0", "101", "-1"} {
+		err := usageBlocksCmd.Flags().Set("limit", value)
+		if err == nil {
+			t.Fatalf("expected --limit=%s to be rejected", value)
+		}
+		if !strings.Contains(err.Error(), "between 1 and 100") {
+			t.Fatalf("--limit=%s error %q does not mention range", value, err.Error())
+		}
+	}
+}
+
 // TestUsageBlocksTableExposesUsageColumnsOnly guards that the table renderer
 // surfaces only the safe usage columns and never a confidential field.
 func TestUsageBlocksTableExposesUsageColumnsOnly(t *testing.T) {
+	isolateUsageBlocksFlags(t)
 	headers := map[string]bool{}
 	for _, col := range usageBlockColumns {
 		headers[col.Header] = true
@@ -134,7 +310,22 @@ func TestUsageBlocksTableExposesUsageColumnsOnly(t *testing.T) {
 	}
 }
 
+func TestUsageBlocksHelpDescribesOpaqueCursors(t *testing.T) {
+	usage := usageBlocksCmd.UsageString()
+	for _, want := range []string{"list_metadata.after", "list_metadata.before", "cursor from list_metadata.after"} {
+		if !strings.Contains(usage, want) {
+			t.Fatalf("usage blocks help missing %q:\n%s", want, usage)
+		}
+	}
+	for _, forbidden := range []string{"block id: return items after", "block id: return items before", "Walk pages from a known block id"} {
+		if strings.Contains(usage, forbidden) {
+			t.Fatalf("usage blocks help still suggests raw block-id cursor %q:\n%s", forbidden, usage)
+		}
+	}
+}
+
 func TestUsageBlocksRejectsBeforeAndAfterTogether(t *testing.T) {
+	isolateUsageBlocksFlags(t)
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("RETAB_API_BASE_URL", "http://127.0.0.1:0")

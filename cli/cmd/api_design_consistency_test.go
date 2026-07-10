@@ -26,7 +26,6 @@ type cliRouteContract struct {
 // reference; drop entries here once the routes ship (the test below fails if a
 // route lands in OpenAPI while still listed here, so the list can't go stale).
 var approvedWorkflowCLINonReferenceRoutes = map[string]bool{
-	"POST /v1/workflows/evals":                      true,
 	"GET /v1/workflows/evals":                       true,
 	"GET /v1/workflows/evals/{eval_id}":             true,
 	"PATCH /v1/workflows/evals/{eval_id}":           true,

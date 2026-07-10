@@ -41,8 +41,10 @@ it is confidential-safe — it never exposes document content, filenames, artifa
 URIs, or provider/API dollar costs. Only workflow blocks appear; standalone
 (API-origin) extractions have no block and are excluded.
 
-Filter by workflow, block type, and activity date range. Page by block id with
-` + "`--before`" + ` / ` + "`--after`" + `, cap the page size with ` + "`--limit`" + ` (1-100).`,
+Filter by workflow, block type, and activity date range. Page with the opaque
+cursors returned in ` + "`list_metadata.before`" + ` / ` + "`list_metadata.after`" + `; block ids are
+not unique enough to use as cursors by themselves. Cap the page size with
+` + "`--limit`" + ` (1-100).`,
 	Example: `  # Every block's usage for one workflow
   retab usage blocks --workflow-id wf_abc123
 
@@ -50,8 +52,8 @@ Filter by workflow, block type, and activity date range. Page by block id with
   retab usage blocks --block-type extract \
     --from-date 2026-06-01 --to-date 2026-06-30 --output csv > blocks.csv
 
-  # Walk pages from a known block id
-  retab usage blocks --after block_xyz789 --limit 100`,
+  # Walk pages using a cursor returned by a previous response
+  retab usage blocks --after <list_metadata.after> --limit 100`,
 	Args: cobra.NoArgs,
 	RunE: runE(runUsageBlocksList),
 }
@@ -130,8 +132,8 @@ func init() {
 	usageBlocksCmd.Flags().String("block-type", "", "filter by block type (e.g. extract, classify, split, parse, edit, partition)")
 	usageBlocksCmd.Flags().String("from-date", "", "inclusive activity lower bound (YYYY-MM-DD, UTC)")
 	usageBlocksCmd.Flags().String("to-date", "", "inclusive activity upper bound (YYYY-MM-DD, UTC)")
-	usageBlocksCmd.Flags().String("before", "", "block id: return items before this id (mutually exclusive with --after)")
-	usageBlocksCmd.Flags().String("after", "", "block id: return items after this id (mutually exclusive with --before)")
+	usageBlocksCmd.Flags().String("before", "", "cursor from list_metadata.before (mutually exclusive with --after)")
+	usageBlocksCmd.Flags().String("after", "", "cursor from list_metadata.after (mutually exclusive with --before)")
 	usageBlocksCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items to return (1-100)")
 	usageBlocksCmd.Flags().Var(&orderFlagValue{}, "order", "asc | desc")
 
