@@ -608,10 +608,16 @@ func waitForWorkflowRunByID(cmd *cobra.Command, id string, initial map[string]an
 			return fmt.Errorf("timed out waiting for workflow run %s: %w", id, ctx.Err())
 		case <-timer.C:
 		}
-		current, err := cliJSONRequest(cmd, http.MethodGet, "/v1/workflows/runs/"+url.PathEscape(id), nil, nil)
-		if err != nil {
+		// Bound the poll GET with the deadline ctx, not just the sleep between
+		// polls: cliJSONRequest would derive a fresh, deadline-less context via
+		// ctxFor, so a server that accepts the connection but never responds
+		// would hang the wait past --timeout-seconds forever. Mirrors
+		// waitForPrimitive, which uses cliJSONRequestIntoCtx for the same reason.
+		var current any
+		if err := cliJSONRequestIntoCtx(ctx, cmd, http.MethodGet, "/v1/workflows/runs/"+url.PathEscape(id), nil, nil, &current); err != nil {
 			return err
 		}
+		var err error
 		if last, err = primitiveMap(current); err != nil {
 			return err
 		}

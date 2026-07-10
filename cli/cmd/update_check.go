@@ -310,7 +310,14 @@ func notifierEnabled(args []string, env func(string) string, currentVersion stri
 // would be noise or recursive: the daemon itself, the version surfaces, and
 // shell-completion output (which must stay machine-clean).
 func notifierSkippableCommand(args []string) bool {
+	skipNext := false
 	for _, a := range args {
+		if skipNext {
+			// This token is the value of a preceding value-taking global flag
+			// (e.g. the `json` in `--output json`), not the subcommand.
+			skipNext = false
+			continue
+		}
 		// `retab --version` / `retab -v` before any subcommand is a version
 		// query. Other flags are skipped — only the first positional token is
 		// the actual subcommand, so a value like `files get version` must not
@@ -319,6 +326,13 @@ func notifierSkippableCommand(args []string) bool {
 			return true
 		}
 		if strings.HasPrefix(a, "-") {
+			// A value-taking global flag in space-separated form (`--output json`,
+			// `--base-url URL`, `--env slug`, …) consumes the next token. Without
+			// skipping it, that value is mistaken for the subcommand — e.g.
+			// `retab --output json version` would fail to match `version` and print
+			// a spurious update notice, and `retab --env update <cmd>` would wrongly
+			// suppress it. `--flag=value` is a single token and needs no skip.
+			skipNext = commandFlagTakesValue(rootCmd, a)
 			continue
 		}
 		switch a {
