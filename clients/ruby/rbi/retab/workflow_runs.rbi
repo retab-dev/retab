@@ -20,6 +20,7 @@ module Retab
         min_duration_ms: T.nilable(Integer),
         max_duration_ms: T.nilable(Integer),
         search: T.nilable(String),
+        metadata: T.nilable(String),
         before: T.nilable(String),
         after: T.nilable(String),
         limit: T.nilable(Integer),
@@ -28,7 +29,7 @@ module Retab
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::PaginatedList[Retab::WorkflowRun])
     end
-    def list(workflow_id:, status:, exclude_status:, trigger_type:, from_date:, to_date:, min_duration_ms:, max_duration_ms:, search:, before:, after:, limit:, order:, sort_by:, request_options:); end
+    def list(workflow_id:, status:, exclude_status:, trigger_type:, from_date:, to_date:, min_duration_ms:, max_duration_ms:, search:, metadata:, before:, after:, limit:, order:, sort_by:, request_options:); end
 
     sig do
       params(

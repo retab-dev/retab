@@ -25,6 +25,7 @@ class WorkflowSteps
      * `run_id` is optional; when omitted the list is scoped to the caller's
      * organization.
      * @param string|null $runId Optional workflow run ID filter.
+     * @param string|null $workflowId
      * @param string|null $blockId Optional logical block ID filter.
      * @param string|null $stepId Optional step ID filter.
      * @param array<string>|null $blockType Optional block type filter. Repeat the query parameter for multiple values.
@@ -37,6 +38,7 @@ class WorkflowSteps
      */
     public function list(
         ?string $runId = null,
+        ?string $workflowId = null,
         ?string $blockId = null,
         ?string $stepId = null,
         ?array $blockType = null,
@@ -48,6 +50,7 @@ class WorkflowSteps
     ): \Retab\PaginatedResponse {
         $query = array_filter([
             'run_id' => $runId,
+            'workflow_id' => $workflowId,
             'block_id' => $blockId,
             'step_id' => $stepId,
             'block_type' => $blockType,

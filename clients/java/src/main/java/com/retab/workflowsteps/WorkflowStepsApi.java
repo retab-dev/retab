@@ -26,11 +26,12 @@ public final class WorkflowStepsApi {
   }
 
   public List<WorkflowRunStep> list() throws IOException, InterruptedException {
-    return list(null, null, null, null, null, null, null, null);
+    return list(null, null, null, null, null, null, null, null, null);
   }
 
   public List<WorkflowRunStep> list(
       String runId,
+      String workflowId,
       String blockId,
       String stepId,
       List<String> blockType,
@@ -42,6 +43,7 @@ public final class WorkflowStepsApi {
     String path = "/v1/workflows/steps";
     StringBuilder query = new StringBuilder();
     appendQueryParam(query, "run_id", runId);
+    appendQueryParam(query, "workflow_id", workflowId);
     appendQueryParam(query, "block_id", blockId);
     appendQueryParam(query, "step_id", stepId);
     appendQueryParam(query, "block_type", blockType);

@@ -17,7 +17,7 @@ class WorkflowRunsTest extends TestCase
     {
         $fixture = $this->loadFixture('list_workflow_run');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflows()->runs()->list(workflowId: 'test_value', status: \Retab\Resource\WorkflowRunsStatus::Pending, excludeStatus: \Retab\Resource\WorkflowRunsStatus::Pending, triggerType: \Retab\Resource\WorkflowRunsTriggerType::Manual, fromDate: 'test_value', toDate: 'test_value', minDurationMs: 1, maxDurationMs: 1, search: 'test_value', before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\EditsOrder::Asc, sortBy: 'test_value');
+        $result = $client->workflows()->runs()->list(workflowId: 'test_value', status: \Retab\Resource\WorkflowRunsStatus::Pending, excludeStatus: \Retab\Resource\WorkflowRunsStatus::Pending, triggerType: \Retab\Resource\WorkflowRunsTriggerType::Manual, fromDate: 'test_value', toDate: 'test_value', minDurationMs: 1, maxDurationMs: 1, search: 'test_value', metadata: 'test_value', before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\EditsOrder::Asc, sortBy: 'test_value');
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());
@@ -32,6 +32,7 @@ class WorkflowRunsTest extends TestCase
         $this->assertArrayHasKey('min_duration_ms', $query);
         $this->assertArrayHasKey('max_duration_ms', $query);
         $this->assertSame('test_value', $query['search']);
+        $this->assertSame('test_value', $query['metadata']);
         $this->assertSame('test_value', $query['before']);
         $this->assertSame('test_value', $query['after']);
         $this->assertArrayHasKey('limit', $query);

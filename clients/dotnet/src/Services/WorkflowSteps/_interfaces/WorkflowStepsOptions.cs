@@ -11,6 +11,8 @@ namespace Retab
         /// <summary>Optional workflow run ID filter.</summary>
         public string? RunId { get; set; }
 
+        public string? WorkflowId { get; set; }
+
         /// <summary>Optional logical block ID filter.</summary>
         public string? BlockId { get; set; }
 

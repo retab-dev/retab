@@ -41,7 +41,8 @@ public final class WorkflowRunsApi {
   }
 
   public List<WorkflowRun> list() throws IOException, InterruptedException {
-    return list(null, null, null, null, null, null, null, null, null, null, null, null, null, null);
+    return list(
+        null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
   }
 
   public List<WorkflowRun> list(
@@ -54,6 +55,7 @@ public final class WorkflowRunsApi {
       Long minDurationMs,
       Long maxDurationMs,
       String search,
+      String metadata,
       String before,
       String after,
       Long limit,
@@ -71,6 +73,7 @@ public final class WorkflowRunsApi {
     appendQueryParam(query, "min_duration_ms", minDurationMs);
     appendQueryParam(query, "max_duration_ms", maxDurationMs);
     appendQueryParam(query, "search", search);
+    appendQueryParam(query, "metadata", metadata);
     appendQueryParam(query, "before", before);
     appendQueryParam(query, "after", after);
     appendQueryParam(query, "limit", limit);

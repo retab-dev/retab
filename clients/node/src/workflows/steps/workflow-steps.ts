@@ -14,6 +14,7 @@ export class WorkflowSteps {
   /** List Workflow Run Steps */
   async list(options?: {
     runId?: string | null | undefined;
+    workflowId?: string | null | undefined;
     blockId?: string | null | undefined;
     stepId?: string | null | undefined;
     blockType?: string[] | null | undefined;
@@ -28,6 +29,7 @@ export class WorkflowSteps {
       path: '/v1/workflows/steps',
       query: {
         run_id: options?.runId,
+        workflow_id: options?.workflowId,
         block_id: options?.blockId,
         step_id: options?.stepId,
         block_type: options?.blockType,

@@ -35,6 +35,9 @@ namespace Retab
         /// <summary>Search by run ID (partial match)</summary>
         public string? Search { get; set; }
 
+        /// <summary>Filter by metadata equality: a JSON object of key/value pairs (e.g. {"tenant":"acme"}). Pairs AND together.</summary>
+        public string? Metadata { get; set; }
+
         public string? SortBy { get; set; }
 
     }

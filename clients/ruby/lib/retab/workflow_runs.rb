@@ -20,6 +20,7 @@ module Retab
     # @param min_duration_ms [Integer, nil] Filter runs with duration >= this value in milliseconds
     # @param max_duration_ms [Integer, nil] Filter runs with duration <= this value in milliseconds
     # @param search [String, nil] Search by run ID (partial match)
+    # @param metadata [String, nil] Filter by metadata equality: a JSON object of key/value pairs (e.g. {"tenant":"acme"}). Pairs AND together.
     # @param before [String, nil]
     # @param after [String, nil]
     # @param limit [Integer, nil] Items per page
@@ -37,6 +38,7 @@ module Retab
       min_duration_ms: nil,
       max_duration_ms: nil,
       search: nil,
+      metadata: nil,
       before: nil,
       after: nil,
       limit: 20,
@@ -54,6 +56,7 @@ module Retab
         "min_duration_ms" => min_duration_ms,
         "max_duration_ms" => max_duration_ms,
         "search" => search,
+        "metadata" => metadata,
         "before" => before,
         "after" => after,
         "limit" => limit,
@@ -78,6 +81,7 @@ module Retab
           min_duration_ms: min_duration_ms,
           max_duration_ms: max_duration_ms,
           search: search,
+          metadata: metadata,
           before: before,
           after: cursor,
           limit: limit,
@@ -99,6 +103,7 @@ module Retab
           min_duration_ms: min_duration_ms,
           max_duration_ms: max_duration_ms,
           search: search,
+          metadata: metadata,
           before: before,
           limit: limit,
           order: order,

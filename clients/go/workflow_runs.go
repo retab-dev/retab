@@ -34,6 +34,8 @@ type WorkflowRunsListParams struct {
 	MaxDurationMs *int `url:"max_duration_ms,omitempty" json:"-"`
 	// Search is search by run ID (partial match)
 	Search *string `url:"search,omitempty" json:"-"`
+	// Metadata is filter by metadata equality: a JSON object of key/value pairs (e.g. {"tenant":"acme"}). Pairs AND together.
+	Metadata *string `url:"metadata,omitempty" json:"-"`
 	// Defaults to "timing.created_at".
 	SortBy *string `url:"sort_by,omitempty" json:"-"`
 }

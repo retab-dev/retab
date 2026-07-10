@@ -225,6 +225,7 @@ func (p WorkflowRunsCreateParams) MarshalJSON() ([]byte, error) {
 		Documents  *WorkflowRunDocuments `json:"documents,omitempty"`
 		JSONInputs *map[string]any       `json:"json_inputs,omitempty"`
 		Version    *string               `json:"version,omitempty"`
+		Metadata   *map[string]string    `json:"metadata,omitempty"`
 	}
 	var documents *WorkflowRunDocuments
 	if p.Documents != nil {
@@ -236,10 +237,20 @@ func (p WorkflowRunsCreateParams) MarshalJSON() ([]byte, error) {
 		value := *p.JSONInputs
 		jsonInputs = &value
 	}
+	// Metadata must be forwarded here explicitly: this custom marshaler (an
+	// @oagen-ignore-file overlay for the documents union) shadows the struct tags
+	// on WorkflowRunsCreateParams, so any new request field has to be threaded
+	// through or it is silently dropped on the wire.
+	var metadata *map[string]string
+	if p.Metadata != nil {
+		value := *p.Metadata
+		metadata = &value
+	}
 	return json.Marshal(workflowRunsCreateRequest{
 		WorkflowID: p.WorkflowID,
 		Documents:  documents,
 		JSONInputs: jsonInputs,
 		Version:    p.Version,
+		Metadata:   metadata,
 	})
 }

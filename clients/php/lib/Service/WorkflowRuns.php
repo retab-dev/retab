@@ -29,6 +29,7 @@ class WorkflowRuns
      * @param int|null $minDurationMs Filter runs with duration >= this value in milliseconds
      * @param int|null $maxDurationMs Filter runs with duration <= this value in milliseconds
      * @param string|null $search Search by run ID (partial match)
+     * @param string|null $metadata Filter by metadata equality: a JSON object of key/value pairs (e.g. {"tenant":"acme"}). Pairs AND together.
      * @param string|null $before
      * @param string|null $after
      * @param int|null $limit Items per page Defaults to 20.
@@ -47,6 +48,7 @@ class WorkflowRuns
         ?int $minDurationMs = null,
         ?int $maxDurationMs = null,
         ?string $search = null,
+        ?string $metadata = null,
         ?string $before = null,
         ?string $after = null,
         ?int $limit = null,
@@ -64,6 +66,7 @@ class WorkflowRuns
             'min_duration_ms' => $minDurationMs,
             'max_duration_ms' => $maxDurationMs,
             'search' => $search,
+            'metadata' => $metadata,
             'before' => $before,
             'after' => $after,
             'limit' => $limit,
