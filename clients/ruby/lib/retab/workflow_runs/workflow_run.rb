@@ -12,7 +12,8 @@ module Retab
       trigger: :trigger,
       lifecycle: :lifecycle,
       timing: :timing,
-      inputs: :inputs
+      inputs: :inputs,
+      metadata: :metadata
     }.freeze
 
     attr_accessor(
@@ -22,7 +23,8 @@ module Retab
       :trigger,
       :lifecycle,
       :timing,
-      :inputs
+      :inputs,
+      :metadata
     )
 
     def initialize(json)
@@ -52,6 +54,7 @@ module Retab
       ) : nil
       @timing = hash[:timing] ? Retab::RunTiming.new(hash[:timing]) : nil
       @inputs = hash[:inputs] ? Retab::RunInputs.new(hash[:inputs]) : nil
+      @metadata = hash[:metadata] || {}
     end
   end
 end

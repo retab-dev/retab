@@ -43,24 +43,6 @@ class DeclarativePlanResourceChangeType(str, Enum):
     FOR_EACH_SENTINEL_END = "for_each_sentinel_end"
 
 
-class WorkflowCapabilities(str, Enum):
-    WORKFLOW_VIEW = "workflow:view"
-    WORKFLOW_EDIT = "workflow:edit"
-    WORKFLOW_RUN = "workflow:run"
-    WORKFLOW_DELETE = "workflow:delete"
-    WORKFLOW_PUBLISH = "workflow:publish"
-    WORKFLOW_REVIEW = "workflow:review"
-    WORKFLOW_MANAGE = "workflow:manage"
-
-
-class WorkflowAuthzStatus(str, Enum):
-    PROVISIONING = "provisioning"
-    READY = "ready"
-    FAILED = "failed"
-    DELETING = "deleting"
-    DELETED = "deleted"
-
-
 class WorkflowConfigBlockType(str, Enum):
     START_DOCUMENT = "start_document"
     START_JSON = "start_json"
@@ -223,8 +205,6 @@ class Workflow(BaseModel):
     published: WorkflowPublished | None = Field(default=None, description="Published workflow metadata when a published version exists")
     created_at: datetime.datetime
     updated_at: datetime.datetime
-    capabilities: list[WorkflowCapabilities] | None = Field(default=None, description="Server-derived permissions for the current actor.")
-    authz_status: WorkflowAuthzStatus | None = Field(default=None, description="Provisioning state of this workflow's WorkOS authorization resource.")
 
 
 class WorkflowBlockPosition(BaseModel):
@@ -565,7 +545,6 @@ __all__ = [
     "Workflow",
     "WorkflowArtifact",
     "WorkflowArtifactOperation",
-    "WorkflowAuthzStatus",
     "WorkflowBlock",
     "WorkflowBlockCreateRequest",
     "WorkflowBlockCreateRequestType",
@@ -574,7 +553,6 @@ __all__ = [
     "WorkflowBlockVersion",
     "WorkflowBlockVersionDiff",
     "WorkflowBlockVersionType",
-    "WorkflowCapabilities",
     "WorkflowConfigBlock",
     "WorkflowConfigBlockType",
     "WorkflowConfigEdge",

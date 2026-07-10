@@ -87,6 +87,7 @@ class WorkflowRuns
      * @param array<string, \Retab\Resource\FileRef|\Retab\Resource\MimeData|\SplFileInfo|string|resource|array{filename?: string, url: string}|array{id: string, filename?: string, mime_type?: string}>|null $documents Mapping of start_document block IDs to their input documents.
      * @param array<string, mixed>|null $jsonInputs Mapping of start-json block IDs to their input JSON data.
      * @param string|null $version Workflow version to run: 'production', 'draft', or a pinned version id like 'ver_...'. Only valid for fresh-run creation.
+     * @param array<string, string>|null $metadata User-defined metadata to associate with this workflow run.
      * @return \Retab\Resource\WorkflowRun
      * @throws \Retab\Exception\RetabException
      */
@@ -95,6 +96,7 @@ class WorkflowRuns
         mixed $documents = null,
         ?array $jsonInputs = null,
         ?string $version = null,
+        ?array $metadata = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\WorkflowRun {
         if ($documents !== null) {
@@ -105,6 +107,7 @@ class WorkflowRuns
             'documents' => $documents,
             'json_inputs' => $jsonInputs,
             'version' => $version,
+            'metadata' => $metadata,
         ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',

@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "node",
-  "generatedAt": "2026-07-05T23:35:15.640Z",
+  "generatedAt": "1970-01-01T00:00:00.000Z",
   "files": [
     "src/_pagination.ts",
     "src/classifications/classifications.ts",
@@ -399,9 +399,7 @@
     "src/workflows/interfaces/index.ts",
     "src/workflows/interfaces/publish-workflow-request.interface.ts",
     "src/workflows/interfaces/update-workflow-request.interface.ts",
-    "src/workflows/interfaces/workflow-authz-status.interface.ts",
     "src/workflows/interfaces/workflow-block-position.interface.ts",
-    "src/workflows/interfaces/workflow-capabilities.interface.ts",
     "src/workflows/interfaces/workflow-config-block-type.interface.ts",
     "src/workflows/interfaces/workflow-config-block.interface.ts",
     "src/workflows/interfaces/workflow-config-edge.interface.ts",

@@ -73,7 +73,7 @@ var commandGroups = []commandGroup{
 		// routes — projects own workflows, secrets are environment-scoped,
 		// members/invitations are org people-management).
 		title:    "Organization",
-		commands: []string{"org", "projects", "secrets", "members", "invitations"},
+		commands: []string{"org", "projects", "secrets", "members", "invitations", "usage"},
 	},
 	{
 		title:    "Account",

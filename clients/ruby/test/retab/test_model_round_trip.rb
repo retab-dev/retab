@@ -1038,7 +1038,8 @@ class ModelRoundTripTest < Minitest::Test
       "workflow_id" => "stub",
       "documents" => {},
       "json_inputs" => {},
-      "version" => "stub"
+      "version" => "stub",
+      "metadata" => nil
     }
     model = Retab::CreateWorkflowRunRequest.new(fixture.to_json)
     json = model.to_h
@@ -3474,9 +3475,7 @@ class ModelRoundTripTest < Minitest::Test
       "project_id" => nil,
       "published" => nil,
       "created_at" => "stub",
-      "updated_at" => "stub",
-      "capabilities" => nil,
-      "authz_status" => nil
+      "updated_at" => "stub"
     }
     model = Retab::Workflow.new(fixture.to_json)
     json = model.to_h
@@ -4083,7 +4082,8 @@ class ModelRoundTripTest < Minitest::Test
       "trigger" => {},
       "lifecycle" => {},
       "timing" => {},
-      "inputs" => {}
+      "inputs" => {},
+      "metadata" => nil
     }
     model = Retab::WorkflowRun.new(fixture.to_json)
     json = model.to_h

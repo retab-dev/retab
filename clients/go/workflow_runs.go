@@ -54,6 +54,8 @@ type WorkflowRunsCreateParams struct {
 	JSONInputs *map[string]interface{} `json:"json_inputs,omitempty" url:"-"`
 	// Version is workflow version to run: 'production', 'draft', or a pinned version id like 'ver_...'. Only valid for fresh-run creation.
 	Version *string `json:"version,omitempty" url:"-"`
+	// Metadata is user-defined metadata to associate with this workflow run.
+	Metadata *map[string]string `json:"metadata,omitempty" url:"-"`
 }
 
 // Create workflow Run

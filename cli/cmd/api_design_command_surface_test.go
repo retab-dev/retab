@@ -27,7 +27,7 @@ func TestAPICommandSurfaceUsesCanonicalResourceActionNames(t *testing.T) {
 		"set": true, "setup": true, "executions": true, "sources": true, "spec": true,
 		"splits": true, "stats": true, "status": true, "steps": true, "stream": true,
 		"switch": true, "sync": true, "tables": true, "templates": true, "evals": true, "update": true,
-		"upload": true, "validate": true, "value": true, "versions": true, "version": true,
+		"upload": true, "usage": true, "validate": true, "value": true, "versions": true, "version": true,
 		"view": true, "wait": true, "which": true, "workflows": true,
 	}
 
@@ -122,7 +122,8 @@ func TestRemovedCommandSurfaceIsAbsent(t *testing.T) {
 
 func TestCoreAPIResourcesExposeExpectedCommandSurface(t *testing.T) {
 	expectedChildren := map[string][]string{
-		"":                              {"auth", "env", "org", "classifications", "edits", "extractions", "files", "invitations", "members", "parses", "partitions", "projects", "schemas", "secrets", "setup", "splits", "sync", "tables", "version", "workflows"},
+		"":                              {"auth", "env", "org", "classifications", "edits", "extractions", "files", "invitations", "members", "parses", "partitions", "projects", "schemas", "secrets", "setup", "splits", "sync", "tables", "usage", "version", "workflows"},
+		"usage":                         {"runs"},
 		"auth":                          {"login", "logout", "status"},
 		"env":                           {"add", "switch", "which", "claim", "list", "get"},
 		"org":                           {"list", "switch"},

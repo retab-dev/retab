@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "rust",
-  "generatedAt": "2026-07-05T23:35:44.124Z",
+  "generatedAt": "2026-07-10T11:26:30.889Z",
   "files": [
     "Cargo.toml",
     "LICENSE-MIT",
@@ -96,12 +96,10 @@
     "src/enums/while_loop_termination_termination_reason.rs",
     "src/enums/workflow_artifact_operation.rs",
     "src/enums/workflow_artifacts_operation.rs",
-    "src/enums/workflow_authz_status.rs",
     "src/enums/workflow_block_create_request_type.rs",
     "src/enums/workflow_block_executions_order.rs",
     "src/enums/workflow_block_type.rs",
     "src/enums/workflow_block_version_type.rs",
-    "src/enums/workflow_capabilities.rs",
     "src/enums/workflow_config_block_type.rs",
     "src/enums/workflow_eval_result_verdict.rs",
     "src/enums/workflow_eval_run_results_order.rs",

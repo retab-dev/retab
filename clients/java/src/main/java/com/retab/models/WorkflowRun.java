@@ -5,6 +5,7 @@ package com.retab.models;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Map;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class WorkflowRun {
@@ -15,6 +16,7 @@ public final class WorkflowRun {
   private final WorkflowRunLifecycle lifecycle;
   private final RunTiming timing;
   private final RunInputs inputs;
+  private final Map<String, String> metadata;
 
   @JsonCreator
   public WorkflowRun(
@@ -24,7 +26,8 @@ public final class WorkflowRun {
       @JsonProperty(value = "trigger", required = true) TriggerInfo trigger,
       @JsonProperty(value = "lifecycle", required = true) WorkflowRunLifecycle lifecycle,
       @JsonProperty(value = "timing", required = true) RunTiming timing,
-      @JsonProperty(value = "inputs", required = false) RunInputs inputs) {
+      @JsonProperty(value = "inputs", required = false) RunInputs inputs,
+      @JsonProperty(value = "metadata", required = false) Map<String, String> metadata) {
     this.id = id;
     this.workflowId = workflowId;
     this.workflowVersionId = workflowVersionId;
@@ -32,6 +35,7 @@ public final class WorkflowRun {
     this.lifecycle = lifecycle;
     this.timing = timing;
     this.inputs = inputs;
+    this.metadata = metadata;
   }
 
   @JsonProperty("id")
@@ -67,5 +71,10 @@ public final class WorkflowRun {
   @JsonProperty("inputs")
   public RunInputs getInputs() {
     return inputs;
+  }
+
+  @JsonProperty("metadata")
+  public Map<String, String> getMetadata() {
+    return metadata;
   }
 }

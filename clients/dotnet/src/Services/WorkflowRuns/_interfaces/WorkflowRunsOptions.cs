@@ -54,6 +54,9 @@ namespace Retab
         /// <summary>Workflow version to run: 'production', 'draft', or a pinned version id like 'ver_...'. Only valid for fresh-run creation.</summary>
         public string? Version { get; set; }
 
+        /// <summary>User-defined metadata to associate with this workflow run.</summary>
+        public Dictionary<string, string>? Metadata { get; set; }
+
     }
 
     /// <summary>Request options for <see cref="WorkflowRunsService.ExportAsync"/>: Get Workflow Export Payload</summary>

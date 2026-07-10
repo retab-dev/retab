@@ -9,14 +9,16 @@ module Retab
       workflow_id: :workflow_id,
       documents: :documents,
       json_inputs: :json_inputs,
-      version: :version
+      version: :version,
+      metadata: :metadata
     }.freeze
 
     attr_accessor(
       :workflow_id,
       :documents,
       :json_inputs,
-      :version
+      :version,
+      :metadata
     )
 
     def initialize(json)
@@ -26,6 +28,7 @@ module Retab
       @documents = hash[:documents] || {}
       @json_inputs = hash[:json_inputs] || {}
       @version = hash[:version].nil? ? "production" : hash[:version]
+      @metadata = hash[:metadata] || {}
     end
   end
 end

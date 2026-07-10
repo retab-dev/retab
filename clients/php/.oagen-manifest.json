@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "php",
-  "generatedAt": "2026-07-05T23:35:39.941Z",
+  "generatedAt": "2026-07-10T11:26:31.337Z",
   "files": [
     "composer.json",
     "lib/Client.php",
@@ -300,7 +300,6 @@
     "lib/Resource/WhileLoopTerminationTerminationReason.php",
     "lib/Resource/Workflow.php",
     "lib/Resource/WorkflowArtifact.php",
-    "lib/Resource/WorkflowAuthzStatus.php",
     "lib/Resource/WorkflowBlock.php",
     "lib/Resource/WorkflowBlockCreateRequest.php",
     "lib/Resource/WorkflowBlockCreateRequestType.php",
@@ -308,7 +307,6 @@
     "lib/Resource/WorkflowBlockType.php",
     "lib/Resource/WorkflowBlockVersion.php",
     "lib/Resource/WorkflowBlockVersionDiff.php",
-    "lib/Resource/WorkflowCapabilities.php",
     "lib/Resource/WorkflowConfigBlock.php",
     "lib/Resource/WorkflowConfigEdge.php",
     "lib/Resource/WorkflowEdgeCreateRequest.php",

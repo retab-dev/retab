@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "dotnet",
-  "generatedAt": "2026-07-05T23:35:20.826Z",
+  "generatedAt": "2026-07-10T11:26:30.850Z",
   "files": [
     "README.md",
     "Retab.csproj",
@@ -294,10 +294,8 @@
     "src/Enums/SubmissionStatus.cs",
     "src/Enums/UpdateWorkflowBlockRequestConfigMode.cs",
     "src/Enums/WhileLoopTerminationTerminationReason.cs",
-    "src/Enums/WorkflowAuthzStatus.cs",
     "src/Enums/WorkflowBlockCreateRequestType.cs",
     "src/Enums/WorkflowBlockType.cs",
-    "src/Enums/WorkflowCapabilities.cs",
     "src/Enums/WorkflowExperimentRunPlanMode.cs",
     "src/Enums/WorkflowExportPayloadRequestExcludeStatus.cs",
     "src/Enums/WorkflowExportPayloadRequestExportSource.cs",

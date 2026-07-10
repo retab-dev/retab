@@ -1,5 +1,6 @@
 namespace Retab
 {
+    using System.Collections.Generic;
 
     /// <summary>A single execution of a workflow.</summary>
     public class WorkflowRun
@@ -26,6 +27,9 @@ namespace Retab
 
         /// <summary>Input payloads supplied at run creation time</summary>
         public RunInputs? Inputs { get; set; }
+
+        /// <summary>User-defined metadata associated with this workflow run.</summary>
+        public Dictionary<string, string>? Metadata { get; set; }
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

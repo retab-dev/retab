@@ -25,6 +25,9 @@ pub struct CreateWorkflowRunRequest {
     /// Defaults to `production`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub version: Option<String>,
+    /// User-defined metadata to associate with this workflow run.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub metadata: Option<std::collections::HashMap<String, String>>,
 }
 impl CreateWorkflowRunRequest {
     /// Construct a new `CreateWorkflowRunRequest` with the required fields set.
@@ -35,6 +38,7 @@ impl CreateWorkflowRunRequest {
             documents: Default::default(),
             json_inputs: Default::default(),
             version: Default::default(),
+            metadata: Default::default(),
         }
     }
 }

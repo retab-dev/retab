@@ -124,6 +124,7 @@ class WorkflowRunsMixin:
         documents: dict[str, FileRef | Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl] | None = None,
         json_inputs: dict[str, Any] | None = None,
         version: str = "production",
+        metadata: dict[str, str] | None = None,
         **extra_params: Any,
     ) -> PreparedRequest:
         """Create Workflow Run Create a fresh workflow run."""
@@ -135,7 +136,7 @@ class WorkflowRunsMixin:
         if documents_payload is not None:
             documents_payload = {__k: _resolve_mime_document_input(__v, (lambda __fid: self._client.files.get_download_link(__fid))) for __k, __v in documents_payload.items()}
         payload = CreateWorkflowRunRequest(
-            workflow_id=cast(Any, workflow_id), documents=cast(Any, documents_payload), json_inputs=cast(Any, json_inputs), version=cast(Any, version)
+            workflow_id=cast(Any, workflow_id), documents=cast(Any, documents_payload), json_inputs=cast(Any, json_inputs), version=cast(Any, version), metadata=cast(Any, metadata)
         )
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/workflows/runs", params=params or None, data=data)
@@ -258,13 +259,14 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
         documents: dict[str, FileRef | Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl] | None = None,
         json_inputs: dict[str, Any] | None = None,
         version: str = "production",
+        metadata: dict[str, str] | None = None,
         **extra_params: Any,
     ) -> WorkflowRun:
         """Create Workflow Run Create a fresh workflow run."""
         documents_coerced: Any = documents
         if documents_coerced is not None:
             documents_coerced = {__k: _resolve_mime_document_input(__v, (lambda __fid: self._client.files.get_download_link(__fid))) for __k, __v in documents_coerced.items()}
-        prepared_request = self.prepare_create(workflow_id=workflow_id, documents=documents_coerced, json_inputs=json_inputs, version=version, **extra_params)
+        prepared_request = self.prepare_create(workflow_id=workflow_id, documents=documents_coerced, json_inputs=json_inputs, version=version, metadata=metadata, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return WorkflowRun.model_validate(response)
 
@@ -373,6 +375,7 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
         documents: dict[str, FileRef | Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl] | None = None,
         json_inputs: dict[str, Any] | None = None,
         version: str = "production",
+        metadata: dict[str, str] | None = None,
         **extra_params: Any,
     ) -> WorkflowRun:
         """Create Workflow Run Create a fresh workflow run."""
@@ -381,7 +384,7 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
             documents_coerced = {
                 __k: await _aresolve_mime_document_input(__v, (lambda __fid: self._client.files.get_download_link(__fid))) for __k, __v in documents_coerced.items()
             }
-        prepared_request = self.prepare_create(workflow_id=workflow_id, documents=documents_coerced, json_inputs=json_inputs, version=version, **extra_params)
+        prepared_request = self.prepare_create(workflow_id=workflow_id, documents=documents_coerced, json_inputs=json_inputs, version=version, metadata=metadata, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return WorkflowRun.model_validate(response)
 

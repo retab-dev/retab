@@ -30,6 +30,8 @@ export interface CreateWorkflowRunRequest {
    * @default "production"
    */
   version?: string;
+  /** User-defined metadata to associate with this workflow run. */
+  metadata?: Record<string, string> | null;
 }
 
 export interface CreateWorkflowRunRequestResponse {
@@ -37,6 +39,7 @@ export interface CreateWorkflowRunRequestResponse {
   documents?: Record<string, MIMEDataResponse>;
   json_inputs?: Record<string, unknown>;
   version?: string;
+  metadata?: Record<string, string> | null;
 }
 
 export const ZCreateWorkflowRunRequest = z.object({
@@ -44,6 +47,7 @@ export const ZCreateWorkflowRunRequest = z.object({
   documents: z.record(z.string(), ZMIMEData).optional(),
   jsonInputs: z.record(z.string(), z.unknown()).optional(),
   version: z.string().optional(),
+  metadata: z.record(z.string(), z.string()).nullable().optional(),
 }) as z.ZodType<CreateWorkflowRunRequest>;
 
 export function deserializeCreateWorkflowRunRequest(
@@ -59,6 +63,7 @@ export function deserializeCreateWorkflowRunRequest(
           ),
     jsonInputs: wire['json_inputs'],
     version: wire['version'],
+    metadata: wire['metadata'],
   };
 }
 
@@ -75,5 +80,6 @@ export function serializeCreateWorkflowRunRequest(
           ),
     json_inputs: domain['jsonInputs'],
     version: domain['version'],
+    metadata: domain['metadata'],
   };
 }

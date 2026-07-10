@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "ruby",
-  "generatedAt": "2026-07-05T23:35:42.624Z",
+  "generatedAt": "1970-01-01T00:00:00.000Z",
   "files": [
     "Gemfile",
     "lib/retab.rb",
@@ -242,12 +242,10 @@
     "lib/retab/types/while_loop_termination_termination_reason.rb",
     "lib/retab/types/workflow_artifact_operation.rb",
     "lib/retab/types/workflow_artifacts_operation.rb",
-    "lib/retab/types/workflow_authz_status.rb",
     "lib/retab/types/workflow_block_create_request_type.rb",
     "lib/retab/types/workflow_block_executions_order.rb",
     "lib/retab/types/workflow_block_type.rb",
     "lib/retab/types/workflow_block_version_type.rb",
-    "lib/retab/types/workflow_capabilities.rb",
     "lib/retab/types/workflow_config_block_type.rb",
     "lib/retab/types/workflow_eval_result_verdict.rb",
     "lib/retab/types/workflow_eval_run_results_order.rb",

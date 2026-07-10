@@ -74,7 +74,8 @@ export class WorkflowRuns {
     workflowId: string,
     documents?: Record<string, DocumentInput>,
     jsonInputs?: Record<string, unknown>,
-    version?: string
+    version?: string,
+    metadata?: Record<string, string> | null
   ): Promise<WorkflowRun> {
     const documentsCoerced =
       documents === undefined
@@ -92,6 +93,7 @@ export class WorkflowRuns {
       documents: documentsCoerced,
       json_inputs: jsonInputs,
       version: version,
+      metadata: metadata,
     };
     const __wire = await this.client.request<WorkflowRunResponse>({
       method: 'POST',

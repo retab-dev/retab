@@ -36,10 +36,11 @@ module Retab
         documents: T.nilable(T::Hash[String, T.any(Retab::MimeData, Retab::FileRef, Pathname, IO, String, T::Hash[Symbol, T.untyped])]),
         json_inputs: T.nilable(T::Hash[String, T.untyped]),
         version: T.nilable(String),
+        metadata: T.nilable(T::Hash[String, String]),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::WorkflowRun)
     end
-    def create(workflow_id:, documents:, json_inputs:, version:, request_options:); end
+    def create(workflow_id:, documents:, json_inputs:, version:, metadata:, request_options:); end
 
     sig do
       params(

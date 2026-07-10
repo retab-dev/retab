@@ -351,6 +351,14 @@ removed in a future release.`,
 			}
 			req.JSONInputs = inputs
 		}
+		metaPairs, _ := cmd.Flags().GetStringArray("metadata")
+		metadata, err := parseKVStringList(metaPairs)
+		if err != nil {
+			return fmt.Errorf("--metadata: %w", err)
+		}
+		if len(metadata) > 0 {
+			req.Metadata = metadata
+		}
 		docFlags, _ := cmd.Flags().GetStringArray("document")
 		legacyFileFlags, _ := cmd.Flags().GetStringArray("document-file")
 		fileEntries, err := parseDocumentArgs(docFlags, legacyFileFlags, cmd.ErrOrStderr())
@@ -660,6 +668,7 @@ type workflowRunCreateParams struct {
 	Documents   map[string]any
 	JSONInputs  map[string]any
 	Version     string
+	Metadata    map[string]string
 	TriggerType string
 	ParentRunID string
 }
@@ -683,6 +692,9 @@ func workflowRunCreateRequestBody(request workflowRunCreateParams) (map[string]a
 		body["version"] = "production"
 	} else {
 		body["version"] = request.Version
+	}
+	if len(request.Metadata) > 0 {
+		body["metadata"] = request.Metadata
 	}
 	if request.TriggerType != "" {
 		body["trigger_type"] = request.TriggerType
@@ -1568,6 +1580,7 @@ func init() {
 	workflowsRunsCreateCmd.Flags().StringArray("document-url", nil, "document url as block-id=url (repeatable)")
 	workflowsRunsCreateCmd.Flags().StringArray("document-id", nil, "previously-uploaded file as block-id=file-id (repeatable)")
 	workflowsRunsCreateCmd.Flags().String("json-inputs-file", "", "JSON inputs object (or - for stdin)")
+	workflowsRunsCreateCmd.Flags().StringArray("metadata", nil, "user-defined metadata as key=value (repeatable)")
 	// --wait blocks until the run settles (completed/error/cancelled) or
 	// pauses for review (awaiting_review); --poll-interval-ms / --timeout-seconds
 	// tune the poll loop, matching `extractions create` and `experiments runs create`.

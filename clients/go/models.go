@@ -2176,10 +2176,6 @@ type Workflow struct {
 	Published *WorkflowPublished `json:"published,omitempty"`
 	CreatedAt time.Time          `json:"created_at"`
 	UpdatedAt time.Time          `json:"updated_at"`
-	// Capabilities is server-derived permissions for the current actor.
-	Capabilities []WorkflowCapabilities `json:"capabilities,omitempty"`
-	// AuthzStatus is provisioning state of this workflow's WorkOS authorization resource.
-	AuthzStatus *WorkflowAuthzStatus `json:"authz_status,omitempty"`
 }
 
 // UnmarshalJSON applies spec-declared defaults to optional fields the
@@ -2668,6 +2664,8 @@ type WorkflowRun struct {
 	Timing RunTiming `json:"timing"`
 	// Inputs is input payloads supplied at run creation time
 	Inputs *RunInputs `json:"inputs,omitempty"`
+	// Metadata is user-defined metadata associated with this workflow run.
+	Metadata map[string]string `json:"metadata,omitempty"`
 }
 
 // WorkflowRunStep public step status object.

@@ -113,6 +113,7 @@ module Retab
     # @param documents [Hash{String => Retab::MimeData, Retab::FileRef, Pathname, IO, String, Hash}, nil] Mapping of start_document block IDs to their input documents.
     # @param json_inputs [Hash{String => Object}, nil] Mapping of start-json block IDs to their input JSON data.
     # @param version [String, nil] Workflow version to run: 'production', 'draft', or a pinned version id like 'ver_...'. Only valid for fresh-run creation.
+    # @param metadata [Hash{String => String}, nil] User-defined metadata to associate with this workflow run.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::WorkflowRun]
     def create(
@@ -120,6 +121,7 @@ module Retab
       documents: nil,
       json_inputs: nil,
       version: nil,
+      metadata: nil,
       request_options: {}
     )
       documents = Retab::MimeData.coerce_document_map(documents, client: @client) unless documents.nil?
@@ -127,7 +129,8 @@ module Retab
         "workflow_id" => workflow_id,
         "documents" => documents,
         "json_inputs" => json_inputs,
-        "version" => version
+        "version" => version,
+        "metadata" => metadata
       }.compact
       response = @client.request(
         method: :post,
