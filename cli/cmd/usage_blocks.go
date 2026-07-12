@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 
 	"github.com/spf13/cobra"
 )
@@ -12,15 +13,18 @@ import (
 // usageBlockRecord mirrors the GET /v1/usage/blocks row (UsageBlockRecord on the
 // server). Only usage + operational metadata is present by design.
 type usageBlockRecord struct {
-	BlockID         string  `json:"block_id"`
-	WorkflowID      string  `json:"workflow_id"`
-	BlockType       string  `json:"block_type"`
-	RunCount        int64   `json:"run_count"`
-	ExecutionCount  int64   `json:"execution_count"`
-	PageCount       int64   `json:"page_count"`
-	Credits         float64 `json:"credits"`
-	FirstActivityAt *string `json:"first_activity_at,omitempty"`
-	LastActivityAt  *string `json:"last_activity_at,omitempty"`
+	BlockID        string  `json:"block_id"`
+	WorkflowID     string  `json:"workflow_id"`
+	BlockType      string  `json:"block_type"`
+	RunCount       int64   `json:"run_count"`
+	ExecutionCount int64   `json:"execution_count"`
+	PageCount      int64   `json:"page_count"`
+	Credits        float64 `json:"credits"`
+	// StatusCounts is the block's execution count broken down by lifecycle status
+	// (e.g. {"completed": 190, "failed": 11}); its values sum to ExecutionCount.
+	StatusCounts    map[string]int64 `json:"status_counts,omitempty"`
+	FirstActivityAt *string          `json:"first_activity_at,omitempty"`
+	LastActivityAt  *string          `json:"last_activity_at,omitempty"`
 }
 
 // usageBlockListResponse is the GET /v1/usage/blocks envelope. The `data` field
@@ -107,8 +111,25 @@ var usageBlockColumns = []TableColumn{
 	{Header: "RUNS", Extract: func(row any) string { return usageBlockCell(row, "run_count") }},
 	{Header: "EXECS", Extract: func(row any) string { return usageBlockCell(row, "execution_count") }},
 	{Header: "PAGES", Extract: func(row any) string { return usageBlockCell(row, "page_count") }},
+	{Header: "FAILED", Extract: usageBlockFailedCell},
 	{Header: "CREDITS", Extract: func(row any) string { return usageBlockCell(row, "credits") }},
 	{Header: "LAST_ACTIVITY", Extract: func(row any) string { return usageBlockCell(row, "last_activity_at") }},
+}
+
+// usageBlockFailedCell surfaces the block's failed-execution count from the
+// status_counts breakdown — the at-a-glance signal that distinguishes an
+// all-failing block from an all-succeeding one at equal credits. Blank when the
+// block has no failures (or no breakdown). The full per-status map is available
+// in --output json / csv.
+func usageBlockFailedCell(row any) string {
+	r, ok := row.(usageBlockRecord)
+	if !ok {
+		return ""
+	}
+	if n := r.StatusCounts["failed"]; n > 0 {
+		return strconv.FormatInt(n, 10)
+	}
+	return ""
 }
 
 func printUsageBlockListResult(cmd *cobra.Command, result usageBlockListResponse) error {

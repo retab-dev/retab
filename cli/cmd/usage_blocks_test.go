@@ -213,6 +213,7 @@ func TestUsageBlocksCSVOutputUsesSafeColumnsAndEscapesFormulaCells(t *testing.T)
 			ExecutionCount: 3,
 			PageCount:      5,
 			Credits:        7.25,
+			StatusCounts:   map[string]int64{"completed": 1, "failed": 2},
 			LastActivityAt: &last,
 		}},
 	}
@@ -235,7 +236,7 @@ func TestUsageBlocksCSVOutputUsesSafeColumnsAndEscapesFormulaCells(t *testing.T)
 	if len(rows) != 2 {
 		t.Fatalf("csv rows = %d, want header + one data row:\n%s", len(rows), stdout)
 	}
-	wantHeader := []string{"BLOCK_ID", "WORKFLOW", "TYPE", "RUNS", "EXECS", "PAGES", "CREDITS", "LAST_ACTIVITY"}
+	wantHeader := []string{"BLOCK_ID", "WORKFLOW", "TYPE", "RUNS", "EXECS", "PAGES", "FAILED", "CREDITS", "LAST_ACTIVITY"}
 	for i, want := range wantHeader {
 		if rows[0][i] != want {
 			t.Fatalf("header[%d] = %q, want %q; header=%v", i, rows[0][i], want, rows[0])
@@ -243,6 +244,10 @@ func TestUsageBlocksCSVOutputUsesSafeColumnsAndEscapesFormulaCells(t *testing.T)
 	}
 	if rows[1][0] != "'=HYPERLINK(\"https://example.invalid\")" {
 		t.Fatalf("formula-like block id was not neutralized: %q", rows[1][0])
+	}
+	// FAILED column (index 6) surfaces the failed-execution count from status_counts.
+	if rows[1][6] != "2" {
+		t.Fatalf("FAILED cell = %q, want 2; row=%v", rows[1][6], rows[1])
 	}
 	for _, forbidden := range []string{"FILENAME", "API_COST", "PROVIDER", "MARGIN", "MODEL", "RESULT"} {
 		if strings.Contains(strings.ToUpper(stdout), forbidden) {
@@ -298,7 +303,7 @@ func TestUsageBlocksTableExposesUsageColumnsOnly(t *testing.T) {
 	for _, col := range usageBlockColumns {
 		headers[col.Header] = true
 	}
-	for _, want := range []string{"BLOCK_ID", "WORKFLOW", "TYPE", "RUNS", "EXECS", "PAGES", "CREDITS", "LAST_ACTIVITY"} {
+	for _, want := range []string{"BLOCK_ID", "WORKFLOW", "TYPE", "RUNS", "EXECS", "PAGES", "FAILED", "CREDITS", "LAST_ACTIVITY"} {
 		if !headers[want] {
 			t.Fatalf("usage blocks table missing column %q", want)
 		}

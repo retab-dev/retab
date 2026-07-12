@@ -12,20 +12,34 @@ import (
 )
 
 // usagePrimitiveRecord mirrors the GET /v1/usage/primitives row
-// (UsagePrimitiveRecord on the server). Only usage + operational metadata is
-// present by design.
+// (UsagePrimitiveRecord on the server). Only usage + operational metadata plus
+// the caller's own user metadata is present by design. The origin identifiers,
+// resource kind, created_at, and metadata are nullable on the wire (explicit
+// JSON null when absent); decoding a null into these Go fields leaves the zero
+// value, which the table renderer prints as an empty cell.
 type usagePrimitiveRecord struct {
-	PrimitiveExecutionID string  `json:"primitive_execution_id"`
-	Operation            string  `json:"operation"`
-	WorkflowID           string  `json:"workflow_id,omitempty"`
-	RunID                string  `json:"run_id,omitempty"`
-	ProjectID            string  `json:"project_id,omitempty"`
-	BlockID              string  `json:"block_id,omitempty"`
-	Status               string  `json:"status"`
-	ResourceKind         string  `json:"resource_kind,omitempty"`
-	CreatedAt            *string `json:"created_at,omitempty"`
-	PageCount            int64   `json:"page_count"`
-	Credits              float64 `json:"credits"`
+	PrimitiveExecutionID string                     `json:"primitive_execution_id"`
+	Operation            string                     `json:"operation"`
+	WorkflowID           string                     `json:"workflow_id,omitempty"`
+	RunID                string                     `json:"run_id,omitempty"`
+	ProjectID            string                     `json:"project_id,omitempty"`
+	BlockID              string                     `json:"block_id,omitempty"`
+	Status               string                     `json:"status"`
+	ResourceKind         string                     `json:"resource_kind,omitempty"`
+	Model                string                     `json:"model,omitempty"`
+	CreatedAt            *string                    `json:"created_at,omitempty"`
+	CompletedAt          *string                    `json:"completed_at,omitempty"`
+	DurationMs           *int64                     `json:"duration_ms,omitempty"`
+	PageCount            int64                      `json:"page_count"`
+	Credits              float64                    `json:"credits"`
+	Documents            []usagePrimitiveDocumentEl `json:"documents,omitempty"`
+	Metadata             map[string]string          `json:"metadata,omitempty"`
+}
+
+// usagePrimitiveDocumentEl is one source document of a primitive execution row.
+type usagePrimitiveDocumentEl struct {
+	FileID   string `json:"file_id,omitempty"`
+	Filename string `json:"filename,omitempty"`
 }
 
 // usagePrimitiveListResponse is the GET /v1/usage/primitives envelope. The `data`
@@ -40,13 +54,15 @@ var usagePrimitivesCmd = &cobra.Command{
 	Short: "Per-operation usage export (credits and pages per primitive execution)",
 	Long: `List one usage row per primitive execution (extraction, classify, split, parse,
 edit, partition, schema_generation …): the operation, its origin identifiers (workflow, run,
-project, block), lifecycle status, deduplicated page count, and credit spend.
+project, block), lifecycle status, the Retab model tier, source document filenames/ids,
+created/completed timestamps, deduplicated page count, credit spend, and your own metadata.
 
 This is the per-operation grain of the usage export — the list form of the usage
 dashboard's per-operation credits graph. Scoped to the authenticated organization
-and environment, and confidential-safe like ` + "`usage runs`" + `: it never exposes
-model names, token counts, provider/API dollar costs, request metadata, or
-document content.
+and environment. Model is reported only as the normalized Retab tier
+(retab-micro / retab-small / retab-large) — the underlying provider model id is
+never surfaced — and token counts, provider/API dollar costs, and raw error text
+remain excluded.
 
 Filter by workflow, project, run, block, operation, lifecycle status, metadata,
 and created_at date range. Page by execution id with ` + "`--before`" + ` / ` + "`--after`" + `,
@@ -145,13 +161,35 @@ func runUsagePrimitivesList(cmd *cobra.Command, _ []string) error {
 var usagePrimitiveColumns = []TableColumn{
 	{Header: "EXECUTION_ID", Extract: func(row any) string { return usagePrimitiveCell(row, "primitive_execution_id") }},
 	{Header: "OPERATION", Extract: func(row any) string { return usagePrimitiveCell(row, "operation") }},
+	{Header: "MODEL", Extract: func(row any) string { return usagePrimitiveCell(row, "model") }},
 	{Header: "WORKFLOW", Extract: func(row any) string { return usagePrimitiveCell(row, "workflow_id") }},
 	{Header: "BLOCK", Extract: func(row any) string { return usagePrimitiveCell(row, "block_id") }},
 	{Header: "PROJECT", Extract: func(row any) string { return usagePrimitiveCell(row, "project_id") }},
 	{Header: "STATUS", Extract: func(row any) string { return usagePrimitiveCell(row, "status") }},
+	{Header: "FILENAME", Extract: usagePrimitiveFilenameCell},
 	{Header: "CREATED_AT", Extract: func(row any) string { return usagePrimitiveCell(row, "created_at") }},
+	{Header: "COMPLETED_AT", Extract: func(row any) string { return usagePrimitiveCell(row, "completed_at") }},
+	{Header: "DURATION_MS", Extract: func(row any) string { return usagePrimitiveCell(row, "duration_ms") }},
 	{Header: "PAGES", Extract: func(row any) string { return usagePrimitiveCell(row, "page_count") }},
 	{Header: "CREDITS", Extract: func(row any) string { return usagePrimitiveCell(row, "credits") }},
+}
+
+// usagePrimitiveFilenameCell renders the first source document's filename (with a
+// "+N" suffix when the execution has more), keeping the table to one line while
+// the full document list stays available in --output json.
+func usagePrimitiveFilenameCell(row any) string {
+	rec, ok := row.(usagePrimitiveRecord)
+	if !ok || len(rec.Documents) == 0 {
+		return ""
+	}
+	name := rec.Documents[0].Filename
+	if name == "" {
+		name = rec.Documents[0].FileID
+	}
+	if extra := len(rec.Documents) - 1; extra > 0 {
+		name = fmt.Sprintf("%s +%d", name, extra)
+	}
+	return name
 }
 
 func printUsagePrimitiveListResult(cmd *cobra.Command, result usagePrimitiveListResponse) error {

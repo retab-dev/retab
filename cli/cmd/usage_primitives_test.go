@@ -11,6 +11,7 @@ import (
 
 func usagePrimitivesFixture() usagePrimitiveListResponse {
 	created := "2026-07-01T12:00:00Z"
+	completed := "2026-07-01T12:00:03Z"
 	after := "pexec_older"
 	return usagePrimitiveListResponse{
 		Data: []usagePrimitiveRecord{
@@ -23,9 +24,13 @@ func usagePrimitivesFixture() usagePrimitiveListResponse {
 				BlockID:              "block_123",
 				Status:               "completed",
 				ResourceKind:         "schema",
+				Model:                "retab-small",
 				CreatedAt:            &created,
+				CompletedAt:          &completed,
 				PageCount:            7,
 				Credits:              12.5,
+				Documents:            []usagePrimitiveDocumentEl{{FileID: "file_1", Filename: "invoice.pdf"}},
+				Metadata:             map[string]string{"tenant": "acme"},
 			},
 		},
 		ListMetadata: usageRunListMetadata{After: &after},
@@ -233,15 +238,20 @@ func TestUsagePrimitivesTableExposesUsageColumnsOnly(t *testing.T) {
 			t.Fatalf("usage primitives: %v", err)
 		}
 	})
-	for _, want := range []string{"EXECUTION_ID", "OPERATION", "WORKFLOW", "BLOCK", "PROJECT", "STATUS", "PAGES", "CREDITS", "pexec_abc123", "extraction", "block_123", "12.5"} {
+	for _, want := range []string{
+		"EXECUTION_ID", "OPERATION", "MODEL", "WORKFLOW", "BLOCK", "PROJECT", "STATUS",
+		"FILENAME", "CREATED_AT", "COMPLETED_AT", "PAGES", "CREDITS",
+		"pexec_abc123", "extraction", "retab-small", "invoice.pdf", "block_123", "12.5",
+	} {
 		if !strings.Contains(stdout, want) {
 			t.Fatalf("stdout missing %q:\n%s", want, stdout)
 		}
 	}
-	// Confidential-safe: no model / cost / token / filename columns leak.
-	for _, unwanted := range []string{"MODEL", "PROVIDER", "COST", "TOKENS", "FILENAME", "METADATA"} {
-		if strings.Contains(strings.ToUpper(stdout), unwanted) {
-			t.Fatalf("stdout should not expose %s:\n%s", unwanted, stdout)
+	// Model is the public Retab tier only — the raw provider model id and the
+	// confidential cost/token columns never leak.
+	for _, unwanted := range []string{"gpt", "claude", "PROVIDER", "COST", "TOKENS", "MARGIN"} {
+		if strings.Contains(strings.ToLower(stdout), strings.ToLower(unwanted)) {
+			t.Fatalf("stdout should not expose %q:\n%s", unwanted, stdout)
 		}
 	}
 }
