@@ -1,0 +1,14 @@
+{
+  "block_id": "block_id_01234",
+  "block_type": "test_block_type",
+  "credits": 1,
+  "execution_count": 1,
+  "first_activity_at": "2023-01-01T00:00:00.000Z",
+  "last_activity_at": "2023-01-01T00:00:00.000Z",
+  "page_count": 1,
+  "run_count": 1,
+  "status_counts": {
+    "key": 1
+  },
+  "workflow_id": "workflow_id_01234"
+}

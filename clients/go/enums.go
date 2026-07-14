@@ -684,6 +684,9 @@ type SplitsOrder = ClassificationsOrder
 // SplitsStatus is an alias for ClassificationStatus.
 type SplitsStatus = ClassificationStatus
 
+// UsageOrder is an alias for ClassificationsOrder.
+type UsageOrder = ClassificationsOrder
+
 // WorkflowsOrder is an alias for ClassificationsOrder.
 type WorkflowsOrder = ClassificationsOrder
 

@@ -988,6 +988,12 @@ per-eval results with ` + "`workflows evals results list`" + `.`,
 		if err != nil {
 			return err
 		}
+		// A whole-workflow (or block) run can resolve to a large suite that the
+		// caller did not size — the server executes every selected eval on a
+		// shared serial queue, so a big batch takes minutes and delays other eval
+		// runs. Surface the resolved count to stderr (never stdout, which carries
+		// the JSON result) so the wait/CI output stays clean.
+		warnLargeEvalRun(cmd, result)
 		if wait, _ := cmd.Flags().GetBool("wait"); !wait {
 			return printResult(cmd, result)
 		}
@@ -1007,6 +1013,28 @@ per-eval results with ` + "`workflows evals results list`" + `.`,
 		}
 		return workflowEvalRunTerminalError(final)
 	}),
+}
+
+// largeEvalRunThreshold is the number of selected evals above which
+// `runs create` prints a one-line advisory. A whole-workflow suite can grow to
+// hundreds of evals over time; each executes on a shared serial queue (~seconds
+// each), so a large batch runs for minutes and queues other eval runs behind
+// it. The threshold is intentionally well above a hand-curated suite so
+// deliberate runs stay quiet.
+const largeEvalRunThreshold = 25
+
+// warnLargeEvalRun prints a stderr advisory when a freshly-created run resolves
+// to a large eval suite. Written to stderr so it never contaminates the JSON
+// result on stdout that `--wait`/CI parses.
+func warnLargeEvalRun(cmd *cobra.Command, run *retab.WorkflowEvalRun) {
+	if run == nil || run.TotalEvals < largeEvalRunThreshold {
+		return
+	}
+	fmt.Fprintf(cmd.ErrOrStderr(),
+		"note: this run covers %d evals; they execute on a shared serial queue, "+
+			"so it may take several minutes and delay other eval runs. Narrow the "+
+			"scope with --eval-id or --target-file to run fewer.\n",
+		run.TotalEvals)
 }
 
 // workflowEvalRunStatus reads the lifecycle discriminator off a workflow-eval

@@ -11,6 +11,7 @@ use crate::resources::SchemasApi;
 use crate::resources::SecretsApi;
 use crate::resources::SplitsApi;
 use crate::resources::TablesApi;
+use crate::resources::UsageApi;
 use crate::resources::WorkflowsApi;
 
 impl Retab {
@@ -62,6 +63,11 @@ impl Retab {
     /// Access the `tables` resource.
     pub fn tables(&self) -> TablesApi<'_> {
         TablesApi { client: self }
+    }
+
+    /// Access the `usage` resource.
+    pub fn usage(&self) -> UsageApi<'_> {
+        UsageApi { client: self }
     }
 
     /// Access the `workflows` resource.

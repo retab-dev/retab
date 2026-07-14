@@ -1,0 +1,33 @@
+{
+  "data": [
+    {
+      "block_id": "block_id_01234",
+      "completed_at": "2023-01-01T00:00:00.000Z",
+      "created_at": "2023-01-01T00:00:00.000Z",
+      "credits": 1,
+      "documents": [
+        {
+          "file_id": "file_id_01234",
+          "filename": "Test"
+        }
+      ],
+      "duration_ms": 1,
+      "metadata": {
+        "key": "test_value"
+      },
+      "model": "test_model",
+      "operation": "test_operation",
+      "page_count": 1,
+      "primitive_execution_id": "primitive_execution_id_01234",
+      "project_id": "project_id_01234",
+      "resource_kind": "test_resource_kind",
+      "run_id": "run_id_01234",
+      "status": "test_status",
+      "workflow_id": "workflow_id_01234"
+    }
+  ],
+  "list_metadata": {
+    "before": null,
+    "after": null
+  }
+}

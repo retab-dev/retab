@@ -38,6 +38,7 @@ type Client struct {
 	Secrets         *SecretService
 	Splits          *SplitService
 	Tables          *TableService
+	Usage           *UsageService
 	Workflows       *WorkflowService
 }
 
@@ -137,6 +138,7 @@ func NewClient(apiKey string, opts ...Option) (*Client, error) {
 	c.Secrets = &SecretService{client: c}
 	c.Splits = &SplitService{client: c}
 	c.Tables = &TableService{client: c}
+	c.Usage = &UsageService{client: c}
 	c.Workflows = &WorkflowService{client: c}
 	workflowArtifacts := &WorkflowArtifactService{client: c}
 	workflowBlocks := &WorkflowBlockService{client: c}

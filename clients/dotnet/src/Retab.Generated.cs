@@ -57,6 +57,11 @@ namespace Retab
         /// <summary>Gets the <see cref="TablesService"/> for tables API operations.</summary>
         public virtual TablesService Tables => this.tables ??= new TablesService(this);
 
+        private UsageService? usage;
+
+        /// <summary>Gets the <see cref="UsageService"/> for usage API operations.</summary>
+        public virtual UsageService Usage => this.usage ??= new UsageService(this);
+
         private WorkflowsService? workflows;
 
         /// <summary>Gets the <see cref="WorkflowsService"/> for workflows API operations.</summary>
