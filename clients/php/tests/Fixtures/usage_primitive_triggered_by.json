@@ -1,0 +1,8 @@
+{
+  "access_token_id": "access_token_id_01234",
+  "api_key_id": "api_key_id_01234",
+  "auth_method": "test_auth_method",
+  "key_name": "Test",
+  "key_prefix": "test_key_prefix",
+  "user_id": "user_id_01234"
+}

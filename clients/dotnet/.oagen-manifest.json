@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "dotnet",
-  "generatedAt": "2026-07-14T13:13:36.809Z",
+  "generatedAt": "2026-07-15T00:45:43.742Z",
   "files": [
     "README.md",
     "Retab.csproj",
@@ -212,6 +212,7 @@
     "src/Entities/UsageBlockRecord.cs",
     "src/Entities/UsagePrimitiveDocument.cs",
     "src/Entities/UsagePrimitiveRecord.cs",
+    "src/Entities/UsagePrimitiveTriggeredBy.cs",
     "src/Entities/UsageRunRecord.cs",
     "src/Entities/ValidateWorkflowBlockConfigResponse.cs",
     "src/Entities/ValidationError.cs",

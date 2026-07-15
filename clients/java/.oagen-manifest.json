@@ -272,6 +272,7 @@
     "src/main/java/com/retab/models/UsageBlockRecord.java",
     "src/main/java/com/retab/models/UsagePrimitiveDocument.java",
     "src/main/java/com/retab/models/UsagePrimitiveRecord.java",
+    "src/main/java/com/retab/models/UsagePrimitiveTriggeredBy.java",
     "src/main/java/com/retab/models/UsageRunRecord.java",
     "src/main/java/com/retab/models/ValidateWorkflowBlockConfigRequest.java",
     "src/main/java/com/retab/models/ValidateWorkflowBlockConfigResponse.java",

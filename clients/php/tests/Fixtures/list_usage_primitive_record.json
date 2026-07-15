@@ -12,6 +12,7 @@
         }
       ],
       "duration_ms": 1,
+      "environment_id": "environment_id_01234",
       "metadata": {
         "key": "test_value"
       },
@@ -23,6 +24,14 @@
       "resource_kind": "test_resource_kind",
       "run_id": "run_id_01234",
       "status": "test_status",
+      "triggered_by": {
+        "access_token_id": "access_token_id_01234",
+        "api_key_id": "api_key_id_01234",
+        "auth_method": "test_auth_method",
+        "key_name": "Test",
+        "key_prefix": "test_key_prefix",
+        "user_id": "user_id_01234"
+      },
       "workflow_id": "workflow_id_01234"
     }
   ],

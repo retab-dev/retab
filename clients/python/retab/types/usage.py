@@ -36,6 +36,7 @@ class UsagePrimitiveRecord(BaseModel):
     credits: float
     documents: list[UsagePrimitiveDocument] | None
     duration_ms: int | None
+    environment_id: str | None
     metadata: dict[str, str] | None
     model: str | None
     operation: str
@@ -45,7 +46,19 @@ class UsagePrimitiveRecord(BaseModel):
     resource_kind: str | None
     run_id: str | None
     status: str
+    triggered_by: UsagePrimitiveTriggeredBy | None = None
     workflow_id: str | None
+
+
+class UsagePrimitiveTriggeredBy(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    access_token_id: str | None
+    api_key_id: str | None
+    auth_method: str | None
+    key_name: str | None
+    key_prefix: str | None
+    user_id: str | None
 
 
 class UsageRunRecord(BaseModel):
@@ -73,4 +86,5 @@ class UsageRunRecord(BaseModel):
 UsageBlockRecord.model_rebuild()
 UsagePrimitiveDocument.model_rebuild()
 UsagePrimitiveRecord.model_rebuild()
+UsagePrimitiveTriggeredBy.model_rebuild()
 UsageRunRecord.model_rebuild()

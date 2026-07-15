@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "php",
-  "generatedAt": "2026-07-14T13:13:13.369Z",
+  "generatedAt": "2026-07-14T23:44:02.029Z",
   "files": [
     "composer.json",
     "lib/Client.php",
@@ -295,6 +295,7 @@
     "lib/Resource/UsageBlockRecord.php",
     "lib/Resource/UsagePrimitiveDocument.php",
     "lib/Resource/UsagePrimitiveRecord.php",
+    "lib/Resource/UsagePrimitiveTriggeredBy.php",
     "lib/Resource/UsageRunRecord.php",
     "lib/Resource/ValidateWorkflowBlockConfigRequest.php",
     "lib/Resource/ValidateWorkflowBlockConfigResponse.php",
@@ -672,6 +673,7 @@
     "tests/Fixtures/usage_block_record.json",
     "tests/Fixtures/usage_primitive_document.json",
     "tests/Fixtures/usage_primitive_record.json",
+    "tests/Fixtures/usage_primitive_triggered_by.json",
     "tests/Fixtures/usage_run_record.json",
     "tests/Fixtures/validate_workflow_block_config_request.json",
     "tests/Fixtures/validate_workflow_block_config_response.json",

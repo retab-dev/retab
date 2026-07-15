@@ -12,6 +12,7 @@ namespace Retab
         public double Credits { get; set; }
         public List<UsagePrimitiveDocument>? Documents { get; set; }
         public long? DurationMs { get; set; }
+        public string? EnvironmentId { get; set; }
         public Dictionary<string, string>? Metadata { get; set; }
         public string? Model { get; set; }
         public string Operation { get; set; } = default!;
@@ -21,6 +22,7 @@ namespace Retab
         public string? ResourceKind { get; set; }
         public string? RunId { get; set; }
         public string Status { get; set; } = default!;
+        public UsagePrimitiveTriggeredBy? TriggeredBy { get; set; }
         public string? WorkflowId { get; set; }
 
         /// <summary>

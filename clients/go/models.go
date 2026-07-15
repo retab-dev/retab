@@ -2131,22 +2131,34 @@ type UsagePrimitiveDocument struct {
 
 // UsagePrimitiveRecord represents an usage primitive record.
 type UsagePrimitiveRecord struct {
-	BlockID              *string                   `json:"block_id"`
-	CompletedAt          *time.Time                `json:"completed_at"`
-	CreatedAt            *time.Time                `json:"created_at"`
-	Credits              float64                   `json:"credits"`
-	Documents            []*UsagePrimitiveDocument `json:"documents"`
-	DurationMs           *int                      `json:"duration_ms"`
-	Metadata             map[string]string         `json:"metadata"`
-	Model                *string                   `json:"model"`
-	Operation            string                    `json:"operation"`
-	PageCount            int                       `json:"page_count"`
-	PrimitiveExecutionID string                    `json:"primitive_execution_id"`
-	ProjectID            *string                   `json:"project_id"`
-	ResourceKind         *string                   `json:"resource_kind"`
-	RunID                *string                   `json:"run_id"`
-	Status               string                    `json:"status"`
-	WorkflowID           *string                   `json:"workflow_id"`
+	BlockID              *string                    `json:"block_id"`
+	CompletedAt          *time.Time                 `json:"completed_at"`
+	CreatedAt            *time.Time                 `json:"created_at"`
+	Credits              float64                    `json:"credits"`
+	Documents            []*UsagePrimitiveDocument  `json:"documents"`
+	DurationMs           *int                       `json:"duration_ms"`
+	EnvironmentID        *string                    `json:"environment_id"`
+	Metadata             map[string]string          `json:"metadata"`
+	Model                *string                    `json:"model"`
+	Operation            string                     `json:"operation"`
+	PageCount            int                        `json:"page_count"`
+	PrimitiveExecutionID string                     `json:"primitive_execution_id"`
+	ProjectID            *string                    `json:"project_id"`
+	ResourceKind         *string                    `json:"resource_kind"`
+	RunID                *string                    `json:"run_id"`
+	Status               string                     `json:"status"`
+	TriggeredBy          *UsagePrimitiveTriggeredBy `json:"triggered_by,omitempty"`
+	WorkflowID           *string                    `json:"workflow_id"`
+}
+
+// UsagePrimitiveTriggeredBy represents an usage primitive triggered by.
+type UsagePrimitiveTriggeredBy struct {
+	AccessTokenID *string `json:"access_token_id"`
+	APIKeyID      *string `json:"api_key_id"`
+	AuthMethod    *string `json:"auth_method"`
+	KeyName       *string `json:"key_name"`
+	KeyPrefix     *string `json:"key_prefix"`
+	UserID        *string `json:"user_id"`
 }
 
 // UsageRunRecord represents an usage run record.

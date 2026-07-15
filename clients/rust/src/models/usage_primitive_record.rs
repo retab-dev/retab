@@ -19,6 +19,8 @@ pub struct UsagePrimitiveRecord {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub duration_ms: Option<i64>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub environment_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub metadata: Option<std::collections::HashMap<String, String>>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub model: Option<String>,
@@ -32,6 +34,8 @@ pub struct UsagePrimitiveRecord {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub run_id: Option<String>,
     pub status: String,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub triggered_by: Option<UsagePrimitiveTriggeredBy>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub workflow_id: Option<String>,
 }
@@ -52,6 +56,7 @@ impl UsagePrimitiveRecord {
             credits,
             documents: Default::default(),
             duration_ms: Default::default(),
+            environment_id: Default::default(),
             metadata: Default::default(),
             model: Default::default(),
             operation: operation.into(),
@@ -61,6 +66,7 @@ impl UsagePrimitiveRecord {
             resource_kind: Default::default(),
             run_id: Default::default(),
             status: status.into(),
+            triggered_by: Default::default(),
             workflow_id: Default::default(),
         }
     }

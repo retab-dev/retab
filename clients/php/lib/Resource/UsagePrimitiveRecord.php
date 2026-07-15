@@ -18,6 +18,7 @@ readonly class UsagePrimitiveRecord implements \JsonSerializable
         /** @var array<\Retab\Resource\UsagePrimitiveDocument>|null */
         public ?array $documents,
         public ?int $durationMs,
+        public ?string $environmentId,
         /** @var array<string, string>|null */
         public ?array $metadata,
         public ?string $model,
@@ -29,6 +30,7 @@ readonly class UsagePrimitiveRecord implements \JsonSerializable
         public ?string $runId,
         public string $status,
         public ?string $workflowId,
+        public ?UsagePrimitiveTriggeredBy $triggeredBy = null,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -41,6 +43,7 @@ readonly class UsagePrimitiveRecord implements \JsonSerializable
             'credits',
             'documents',
             'duration_ms',
+            'environment_id',
             'metadata',
             'model',
             'operation',
@@ -63,6 +66,7 @@ readonly class UsagePrimitiveRecord implements \JsonSerializable
             credits: $data['credits'],
             documents: isset($data['documents']) ? array_map(fn($item) => UsagePrimitiveDocument::fromArray($item), $data['documents']) : null,
             durationMs: $data['duration_ms'] ?? null,
+            environmentId: $data['environment_id'] ?? null,
             metadata: $data['metadata'] ?? null,
             model: $data['model'] ?? null,
             operation: $data['operation'],
@@ -73,6 +77,7 @@ readonly class UsagePrimitiveRecord implements \JsonSerializable
             runId: $data['run_id'] ?? null,
             status: $data['status'],
             workflowId: $data['workflow_id'] ?? null,
+            triggeredBy: isset($data['triggered_by']) ? UsagePrimitiveTriggeredBy::fromArray($data['triggered_by']) : null,
         );
     }
 
@@ -86,6 +91,7 @@ readonly class UsagePrimitiveRecord implements \JsonSerializable
             'credits' => $this->credits,
             'documents' => $this->documents !== null ? array_map(fn($item) => $item->toArray(), $this->documents) : null,
             'duration_ms' => $this->durationMs,
+            'environment_id' => $this->environmentId,
             'metadata' => $this->metadata,
             'model' => $this->model,
             'operation' => $this->operation,
@@ -96,6 +102,7 @@ readonly class UsagePrimitiveRecord implements \JsonSerializable
             'run_id' => $this->runId,
             'status' => $this->status,
             'workflow_id' => $this->workflowId,
+            'triggered_by' => $this->triggeredBy?->toArray(),
         ];
     }
 }

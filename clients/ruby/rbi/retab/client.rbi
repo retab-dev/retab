@@ -36,6 +36,9 @@ module Retab
     sig { returns(Retab::Tables) }
     def tables; end
 
+    sig { returns(Retab::Usage) }
+    def usage; end
+
     sig { returns(Retab::Workflows) }
     def workflows; end
 

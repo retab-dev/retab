@@ -17,6 +17,7 @@ public final class UsagePrimitiveRecord {
   private final Double credits;
   private final List<UsagePrimitiveDocument> documents;
   private final Long durationMs;
+  private final String environmentId;
   private final Map<String, String> metadata;
   private final String model;
   private final String operation;
@@ -26,6 +27,7 @@ public final class UsagePrimitiveRecord {
   private final String resourceKind;
   private final String runId;
   private final String status;
+  private final UsagePrimitiveTriggeredBy triggeredBy;
   private final String workflowId;
 
   @JsonCreator
@@ -36,6 +38,7 @@ public final class UsagePrimitiveRecord {
       @JsonProperty(value = "credits", required = true) Double credits,
       @JsonProperty(value = "documents", required = true) List<UsagePrimitiveDocument> documents,
       @JsonProperty(value = "duration_ms", required = true) Long durationMs,
+      @JsonProperty(value = "environment_id", required = true) String environmentId,
       @JsonProperty(value = "metadata", required = true) Map<String, String> metadata,
       @JsonProperty(value = "model", required = true) String model,
       @JsonProperty(value = "operation", required = true) String operation,
@@ -45,6 +48,7 @@ public final class UsagePrimitiveRecord {
       @JsonProperty(value = "resource_kind", required = true) String resourceKind,
       @JsonProperty(value = "run_id", required = true) String runId,
       @JsonProperty(value = "status", required = true) String status,
+      @JsonProperty(value = "triggered_by", required = false) UsagePrimitiveTriggeredBy triggeredBy,
       @JsonProperty(value = "workflow_id", required = true) String workflowId) {
     this.blockId = blockId;
     this.completedAt = completedAt;
@@ -52,6 +56,7 @@ public final class UsagePrimitiveRecord {
     this.credits = credits;
     this.documents = documents;
     this.durationMs = durationMs;
+    this.environmentId = environmentId;
     this.metadata = metadata;
     this.model = model;
     this.operation = operation;
@@ -61,6 +66,7 @@ public final class UsagePrimitiveRecord {
     this.resourceKind = resourceKind;
     this.runId = runId;
     this.status = status;
+    this.triggeredBy = triggeredBy;
     this.workflowId = workflowId;
   }
 
@@ -92,6 +98,11 @@ public final class UsagePrimitiveRecord {
   @JsonProperty("duration_ms")
   public Long getDurationMs() {
     return durationMs;
+  }
+
+  @JsonProperty("environment_id")
+  public String getEnvironmentId() {
+    return environmentId;
   }
 
   @JsonProperty("metadata")
@@ -137,6 +148,11 @@ public final class UsagePrimitiveRecord {
   @JsonProperty("status")
   public String getStatus() {
     return status;
+  }
+
+  @JsonProperty("triggered_by")
+  public UsagePrimitiveTriggeredBy getTriggeredBy() {
+    return triggeredBy;
   }
 
   @JsonProperty("workflow_id")

@@ -20,6 +20,7 @@ import (
 type usagePrimitiveRecord struct {
 	PrimitiveExecutionID string                     `json:"primitive_execution_id"`
 	Operation            string                     `json:"operation"`
+	EnvironmentID        string                     `json:"environment_id,omitempty"`
 	WorkflowID           string                     `json:"workflow_id,omitempty"`
 	RunID                string                     `json:"run_id,omitempty"`
 	ProjectID            string                     `json:"project_id,omitempty"`
@@ -34,6 +35,20 @@ type usagePrimitiveRecord struct {
 	Credits              float64                    `json:"credits"`
 	Documents            []usagePrimitiveDocumentEl `json:"documents,omitempty"`
 	Metadata             map[string]string          `json:"metadata,omitempty"`
+	TriggeredBy          *usagePrimitiveTriggeredBy `json:"triggered_by,omitempty"`
+}
+
+// usagePrimitiveTriggeredBy is the triggering credential's provenance: the auth
+// method plus the credential's non-secret identifiers (api key id / access
+// token id / user id, and the key's display prefix + name). Null for rows
+// recorded before provenance capture.
+type usagePrimitiveTriggeredBy struct {
+	AuthMethod    string `json:"auth_method,omitempty"`
+	UserID        string `json:"user_id,omitempty"`
+	APIKeyID      string `json:"api_key_id,omitempty"`
+	AccessTokenID string `json:"access_token_id,omitempty"`
+	KeyPrefix     string `json:"key_prefix,omitempty"`
+	KeyName       string `json:"key_name,omitempty"`
 }
 
 // usagePrimitiveDocumentEl is one source document of a primitive execution row.
@@ -166,12 +181,39 @@ var usagePrimitiveColumns = []TableColumn{
 	{Header: "BLOCK", Extract: func(row any) string { return usagePrimitiveCell(row, "block_id") }},
 	{Header: "PROJECT", Extract: func(row any) string { return usagePrimitiveCell(row, "project_id") }},
 	{Header: "STATUS", Extract: func(row any) string { return usagePrimitiveCell(row, "status") }},
+	{Header: "TRIGGERED_BY", Extract: usagePrimitiveTriggeredByCell},
 	{Header: "FILENAME", Extract: usagePrimitiveFilenameCell},
 	{Header: "CREATED_AT", Extract: func(row any) string { return usagePrimitiveCell(row, "created_at") }},
 	{Header: "COMPLETED_AT", Extract: func(row any) string { return usagePrimitiveCell(row, "completed_at") }},
 	{Header: "DURATION_MS", Extract: func(row any) string { return usagePrimitiveCell(row, "duration_ms") }},
 	{Header: "PAGES", Extract: func(row any) string { return usagePrimitiveCell(row, "page_count") }},
 	{Header: "CREDITS", Extract: func(row any) string { return usagePrimitiveCell(row, "credits") }},
+}
+
+// usagePrimitiveTriggeredByCell renders the triggering credential as one short
+// cell: the key's display name (or prefix) for api-key/token callers, the user
+// id for session callers, falling back to the bare auth method. The full
+// provenance object stays available in --output json.
+func usagePrimitiveTriggeredByCell(row any) string {
+	rec, ok := row.(usagePrimitiveRecord)
+	if !ok || rec.TriggeredBy == nil {
+		return ""
+	}
+	t := rec.TriggeredBy
+	label := t.KeyName
+	if label == "" {
+		label = t.KeyPrefix
+	}
+	if label == "" {
+		label = t.UserID
+	}
+	if label == "" {
+		return t.AuthMethod
+	}
+	if t.AuthMethod == "" {
+		return label
+	}
+	return fmt.Sprintf("%s:%s", t.AuthMethod, label)
 }
 
 // usagePrimitiveFilenameCell renders the first source document's filename (with a

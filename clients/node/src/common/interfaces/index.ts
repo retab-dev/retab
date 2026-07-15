@@ -18,6 +18,7 @@ export * from './partitions-status.interface.js';
 export * from './review-decision-status.interface.js';
 export * from './splits-order.interface.js';
 export * from './splits-status.interface.js';
+export * from './usage-order.interface.js';
 export * from './validation-error.interface.js';
 export * from './workflow-artifacts-operation.interface.js';
 export * from './workflow-block-executions-order.interface.js';
