@@ -7,7 +7,67 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/spf13/cobra"
 )
+
+// addColumnSchemaOverridesField must treat an empty/whitespace value — even one
+// passed explicitly as "" — as "not provided": it must neither register a bogus
+// empty multipart field nor (on `tables replace`, which keys schema preservation
+// off the field's presence) silently disable that default. Non-empty valid JSON
+// is registered; invalid JSON is rejected before any upload.
+func TestAddColumnSchemaOverridesFieldEmptyIsAbsent(t *testing.T) {
+	newCmd := func(value string, changed bool) *cobra.Command {
+		c := &cobra.Command{Use: "x"}
+		c.Flags().String("column-schema-overrides", "", "")
+		if changed {
+			_ = c.Flags().Set("column-schema-overrides", value)
+		}
+		return c
+	}
+
+	// Explicitly-passed empty string: must not register the key.
+	fields := map[string]string{}
+	if err := addColumnSchemaOverridesField(newCmd("", true), fields); err != nil {
+		t.Fatalf("explicit empty: unexpected error %v", err)
+	}
+	if _, ok := fields["column_schema_overrides"]; ok {
+		t.Fatalf("explicit empty value registered a bogus field: %v", fields)
+	}
+
+	// Whitespace-only: also treated as absent.
+	fields = map[string]string{}
+	if err := addColumnSchemaOverridesField(newCmd("   ", true), fields); err != nil {
+		t.Fatalf("whitespace: unexpected error %v", err)
+	}
+	if _, ok := fields["column_schema_overrides"]; ok {
+		t.Fatalf("whitespace value registered a bogus field: %v", fields)
+	}
+
+	// Flag not set at all: absent.
+	fields = map[string]string{}
+	if err := addColumnSchemaOverridesField(newCmd("", false), fields); err != nil {
+		t.Fatalf("unset: unexpected error %v", err)
+	}
+	if _, ok := fields["column_schema_overrides"]; ok {
+		t.Fatalf("unset flag registered a field: %v", fields)
+	}
+
+	// Valid JSON object: registered verbatim.
+	fields = map[string]string{}
+	valid := `{"code":{"type":"string"}}`
+	if err := addColumnSchemaOverridesField(newCmd(valid, true), fields); err != nil {
+		t.Fatalf("valid JSON: unexpected error %v", err)
+	}
+	if fields["column_schema_overrides"] != valid {
+		t.Fatalf("valid JSON not registered: %v", fields)
+	}
+
+	// Invalid JSON: rejected locally.
+	if err := addColumnSchemaOverridesField(newCmd("not json", true), map[string]string{}); err == nil {
+		t.Fatal("expected invalid JSON to be rejected")
+	}
+}
 
 // Invalid --column-schema-overrides must be rejected locally with a clear error
 // (mirroring --filters validation), before any upload, instead of surfacing as a

@@ -145,6 +145,15 @@ func loadParse(ctx context.Context, path string, kind docKind, liteBin string, o
 	key := parseCacheKey(fileBytes, kind.documentType(), opt)
 	if useCache {
 		if cached, ok := readParseCache(key); ok {
+			// The cache key is content + document type + options only — it does
+			// NOT include the file name/path. A byte-identical file parsed under a
+			// different name therefore hits the same entry, so re-stamp the
+			// identity fields from THIS invocation before returning; otherwise the
+			// output (and `files grep` / `files inspect`) would report the name of
+			// whichever file populated the cache first.
+			cached.Filename = filename
+			cached.MIMEType = mime
+			cached.DocumentType = kind.documentType()
 			return cached, nil
 		}
 	}

@@ -537,13 +537,20 @@ func (c *workflowASCIICanvas) drawBox(box workflowASCIIBox) {
 		}
 	}
 
+	// `range` over a string yields byte offsets; use a separate per-rune column
+	// counter so multibyte labels land one cell per rune instead of skipping
+	// columns by each rune's byte length.
 	label := workflowASCIIFit(workflowASCIIBlockLabel(box.block), box.w-4)
-	for i, ch := range label {
-		c.put(box.x+2+i, box.y+1, ch)
+	col := 0
+	for _, ch := range label {
+		c.put(box.x+2+col, box.y+1, ch)
+		col++
 	}
 	meta := workflowASCIIFit(workflowASCIIBlockMeta(box.block), box.w-4)
-	for i, ch := range meta {
-		c.put(box.x+2+i, box.y+2, ch)
+	col = 0
+	for _, ch := range meta {
+		c.put(box.x+2+col, box.y+2, ch)
+		col++
 	}
 }
 
@@ -820,13 +827,17 @@ func workflowASCIIFit(value string, width int) string {
 		return ""
 	}
 	value = strings.Join(strings.Fields(value), " ")
-	if len(value) <= width {
+	// Count and slice by rune, not byte: a block label with non-ASCII runes
+	// (accents, CJK) sliced at a byte boundary would emit invalid UTF-8 and
+	// mis-measure the width. width is a column count, so runes are the unit.
+	runes := []rune(value)
+	if len(runes) <= width {
 		return value
 	}
 	if width <= 3 {
-		return value[:width]
+		return string(runes[:width])
 	}
-	return value[:width-3] + "..."
+	return string(runes[:width-3]) + "..."
 }
 
 func workflowASCIIBoxWidth(block retab.WorkflowBlock) int {

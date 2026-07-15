@@ -103,6 +103,38 @@ func TestResolveDirDestWritesIntoDirectory(t *testing.T) {
 	if got := resolveDirDest(missing, "invoice.pdf", "file_abc"); got != missing {
 		t.Fatalf("resolveDirDest(missing) = %q, want unchanged %q", got, missing)
 	}
+	// A server filename carrying path separators must not escape the target
+	// directory: it is reduced to its base component before the join.
+	if got, want := resolveDirDest(dir, "../evil.pdf", "file_abc"), filepath.Join(dir, "evil.pdf"); got != want {
+		t.Fatalf("resolveDirDest(dir, traversal) = %q, want %q", got, want)
+	}
+	if got, want := resolveDirDest(dir, "sub/report.pdf", "file_abc"), filepath.Join(dir, "report.pdf"); got != want {
+		t.Fatalf("resolveDirDest(dir, subpath) = %q, want %q", got, want)
+	}
+	// A name that reduces to no usable component falls back to the file id.
+	if got, want := resolveDirDest(dir, "..", "file_abc"), filepath.Join(dir, "file_abc"); got != want {
+		t.Fatalf("resolveDirDest(dir, dotdot) = %q, want %q", got, want)
+	}
+}
+
+// TestSafeDownloadName pins that untrusted server filenames are reduced to a
+// single safe path component so `files download` cannot write outside the CWD.
+func TestSafeDownloadName(t *testing.T) {
+	cases := map[string]string{
+		"invoice.pdf":      "invoice.pdf",
+		"sub/report.pdf":   "report.pdf",
+		"../evil.pdf":      "evil.pdf",
+		"../../etc/passwd": "passwd",
+		"":                 "",
+		".":                "",
+		"..":               "",
+		"/":                "",
+	}
+	for in, want := range cases {
+		if got := safeDownloadName(in); got != want {
+			t.Errorf("safeDownloadName(%q) = %q, want %q", in, got, want)
+		}
+	}
 }
 
 // TestResolveDownloadDest pins the destination-resolution rules for

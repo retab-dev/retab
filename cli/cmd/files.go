@@ -640,7 +640,7 @@ truncates an existing file or leaves a half-written one behind.`,
 			return err
 		}
 		if !toStdout && dest == "" {
-			dest = link.Filename
+			dest = safeDownloadName(link.Filename)
 			if dest == "" {
 				dest = args[0]
 			}
@@ -680,11 +680,32 @@ func resolveDirDest(dest, serverName, fileID string) string {
 	if err != nil || !info.IsDir() {
 		return dest
 	}
-	name := serverName
+	name := safeDownloadName(serverName)
 	if name == "" {
 		name = fileID
 	}
 	return filepath.Join(dest, name)
+}
+
+// safeDownloadName reduces a server-supplied filename to a single, safe path
+// component. The server-recorded name is untrusted input (a file may have been
+// uploaded with a name like "../evil.pdf" or "sub/report.pdf" — create-upload
+// does not reject path separators), and `files download` promises to write it
+// "in the current directory". Without this, filepath.Join(dir, name) would let
+// a crafted name escape the target directory. Returns "" when the name has no
+// usable base component, so callers fall back to the file id.
+func safeDownloadName(serverName string) string {
+	base := filepath.Base(serverName)
+	switch base {
+	case ".", "..", string(filepath.Separator), "":
+		return ""
+	}
+	// filepath.Base strips both / and \ separators; guard against any residual
+	// separator (or a Windows drive-relative remnant like "C:") just in case.
+	if strings.ContainsAny(base, `/\`) {
+		return ""
+	}
+	return base
 }
 
 // streamDownloadToFile writes src to dest atomically: bytes go to a temp

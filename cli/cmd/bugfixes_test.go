@@ -115,7 +115,11 @@ func TestNotifierSkippableCommand(t *testing.T) {
 		{"version"},
 		{"update"},
 		{"completion", "bash"},
-		{"--global-flag", "completion"}, // value-less flags are skipped over
+		{"__complete", "files", "get", ""}, // cobra's hidden completion driver
+		{"__completeNoDesc", "workflows"},   // no-description variant
+		{"--global-flag", "completion"},     // value-less flags are skipped over
+		{"--output", "json", "version"},     // value-taking flag: its value is not the subcommand
+		{"--base-url", "https://x", "completion"},
 		{"--version"},
 		{"-v"},
 	}
@@ -128,6 +132,8 @@ func TestNotifierSkippableCommand(t *testing.T) {
 		{"files", "get", "version"}, // "version" is an arg, not the command
 		{"workflows", "runs", "list"},
 		{"files", "list", "--after", "update"},
+		{"--env", "update", "files", "list"},   // "update" is the --env value, real cmd is "files"
+		{"--output", "json", "workflows", "list"},
 	}
 	for _, args := range keep {
 		if notifierSkippableCommand(args) {

@@ -141,7 +141,12 @@ func experimentHandleInputsFromMap(raw map[string]any) (map[string]retab.HandleI
 	for key, value := range raw {
 		input := retab.JSONHandleInput{}
 		if obj, ok := value.(map[string]any); ok {
-			if t, ok := obj["type"].(string); ok && t != "" {
+			// Only the recognized discriminators ("file"/"json") mean the object
+			// is in wire form. A raw JSON document that merely happens to carry a
+			// top-level "type" field (e.g. {"type":"invoice","amount":100}) is
+			// common and must pass through as raw data below, not be rejected as
+			// an unsupported handle input type.
+			if t, _ := obj["type"].(string); t == "file" || t == "json" {
 				switch t {
 				case "file":
 					fileInput, err := experimentFileHandleInputFromMap(obj)
@@ -157,8 +162,6 @@ func experimentHandleInputsFromMap(raw map[string]any) (map[string]retab.HandleI
 					}
 					out[key] = retab.HandleInputTypeFromJSONHandleInput(input)
 					continue
-				default:
-					return nil, fmt.Errorf("%s: unsupported handle input type %q (want: file | json)", key, t)
 				}
 			}
 		}
@@ -426,9 +429,12 @@ workflow id is required: experiments have no org-wide listing.`,
 		if after, _ := cmd.Flags().GetString("after"); after != "" {
 			params.After = ptr(after)
 		}
-		if v, _ := cmd.Flags().GetInt("limit"); v > 0 {
-			params.Limit = ptr(v)
-		}
+		// Honor the documented default (1-100; default 50) when --limit is
+		// omitted; getIntFlagOrDefault returns the user's value when set and
+		// falls back to 50 otherwise, matching `evals list`. Setting it
+		// manually rather than via collectListParams because this command
+		// builds its params struct field-by-field.
+		params.Limit = ptr(getIntFlagOrDefault(cmd, "limit", 50))
 		if v, _ := cmd.Flags().GetString("order"); v != "" {
 			params.Order = ptr(v)
 		}

@@ -336,14 +336,17 @@ func replaceCSVHeaderColumns(path string) ([]string, error) {
 // matching how --filters is validated before the request is sent.
 func addColumnSchemaOverridesField(cmd *cobra.Command, fields map[string]string) error {
 	v, _ := cmd.Flags().GetString("column-schema-overrides")
-	if v == "" && !cmd.Flags().Changed("column-schema-overrides") {
+	// Treat an empty/whitespace value (even when the flag was explicitly passed
+	// as "") as "not provided": an empty string is not a valid JSON object, and
+	// registering the key would send a bogus column_schema_overrides="" field
+	// and, on `tables replace`, silently disable the default schema-preservation
+	// step (which keys off the field's presence).
+	if strings.TrimSpace(v) == "" {
 		return nil
 	}
-	if strings.TrimSpace(v) != "" {
-		var overrides map[string]any
-		if err := json.Unmarshal([]byte(v), &overrides); err != nil {
-			return fmt.Errorf("--column-schema-overrides must be a JSON object: %w", err)
-		}
+	var overrides map[string]any
+	if err := json.Unmarshal([]byte(v), &overrides); err != nil {
+		return fmt.Errorf("--column-schema-overrides must be a JSON object: %w", err)
 	}
 	fields["column_schema_overrides"] = v
 	return nil
