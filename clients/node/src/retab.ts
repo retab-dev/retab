@@ -11,6 +11,7 @@ import { Schemas } from './schemas/schemas.js';
 import { Secrets } from './secrets/secrets.js';
 import { Splits } from './splits/splits.js';
 import { Tables } from './tables/tables.js';
+import { Usage } from './usage/usage.js';
 import { Workflows } from './workflows/workflows.js';
 
 /**
@@ -30,6 +31,7 @@ export class Retab extends RetabBase {
   readonly secrets: Secrets;
   readonly splits: Splits;
   readonly tables: Tables;
+  readonly usage: Usage;
   readonly workflows: Workflows;
 
   constructor(options: RetabOptions) {
@@ -44,6 +46,7 @@ export class Retab extends RetabBase {
     this.secrets = new Secrets(this);
     this.splits = new Splits(this);
     this.tables = new Tables(this);
+    this.usage = new Usage(this);
     this.workflows = new Workflows(this);
   }
 }

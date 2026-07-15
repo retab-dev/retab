@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "php",
-  "generatedAt": "2026-07-05T23:35:39.941Z",
+  "generatedAt": "2026-07-14T23:44:02.029Z",
   "files": [
     "composer.json",
     "lib/Client.php",
@@ -292,6 +292,11 @@
     "lib/Resource/UpdateWorkflowRequest.php",
     "lib/Resource/UpdateWorkflowTableRequest.php",
     "lib/Resource/UploadFileRequest.php",
+    "lib/Resource/UsageBlockRecord.php",
+    "lib/Resource/UsagePrimitiveDocument.php",
+    "lib/Resource/UsagePrimitiveRecord.php",
+    "lib/Resource/UsagePrimitiveTriggeredBy.php",
+    "lib/Resource/UsageRunRecord.php",
     "lib/Resource/ValidateWorkflowBlockConfigRequest.php",
     "lib/Resource/ValidateWorkflowBlockConfigResponse.php",
     "lib/Resource/ValidationError.php",
@@ -300,7 +305,6 @@
     "lib/Resource/WhileLoopTerminationTerminationReason.php",
     "lib/Resource/Workflow.php",
     "lib/Resource/WorkflowArtifact.php",
-    "lib/Resource/WorkflowAuthzStatus.php",
     "lib/Resource/WorkflowBlock.php",
     "lib/Resource/WorkflowBlockCreateRequest.php",
     "lib/Resource/WorkflowBlockCreateRequestType.php",
@@ -308,7 +312,6 @@
     "lib/Resource/WorkflowBlockType.php",
     "lib/Resource/WorkflowBlockVersion.php",
     "lib/Resource/WorkflowBlockVersionDiff.php",
-    "lib/Resource/WorkflowCapabilities.php",
     "lib/Resource/WorkflowConfigBlock.php",
     "lib/Resource/WorkflowConfigEdge.php",
     "lib/Resource/WorkflowEdgeCreateRequest.php",
@@ -377,6 +380,7 @@
     "lib/Service/Secrets.php",
     "lib/Service/Splits.php",
     "lib/Service/Tables.php",
+    "lib/Service/Usage.php",
     "lib/Service/WorkflowArtifacts.php",
     "lib/Service/WorkflowBlockExecutions.php",
     "lib/Service/WorkflowBlocks.php",
@@ -543,6 +547,9 @@
     "tests/Fixtures/list_review_version.json",
     "tests/Fixtures/list_split.json",
     "tests/Fixtures/list_stored_block_execution.json",
+    "tests/Fixtures/list_usage_block_record.json",
+    "tests/Fixtures/list_usage_primitive_record.json",
+    "tests/Fixtures/list_usage_run_record.json",
     "tests/Fixtures/list_workflow.json",
     "tests/Fixtures/list_workflow_artifact.json",
     "tests/Fixtures/list_workflow_block.json",
@@ -663,6 +670,11 @@
     "tests/Fixtures/update_workflow_request.json",
     "tests/Fixtures/update_workflow_table_request.json",
     "tests/Fixtures/upload_file_request.json",
+    "tests/Fixtures/usage_block_record.json",
+    "tests/Fixtures/usage_primitive_document.json",
+    "tests/Fixtures/usage_primitive_record.json",
+    "tests/Fixtures/usage_primitive_triggered_by.json",
+    "tests/Fixtures/usage_run_record.json",
     "tests/Fixtures/validate_workflow_block_config_request.json",
     "tests/Fixtures/validate_workflow_block_config_response.json",
     "tests/Fixtures/validation_error.json",
@@ -733,6 +745,7 @@
     "tests/Service/SecretsTest.php",
     "tests/Service/SplitsTest.php",
     "tests/Service/TablesTest.php",
+    "tests/Service/UsageTest.php",
     "tests/Service/WorkflowArtifactsTest.php",
     "tests/Service/WorkflowBlockExecutionsTest.php",
     "tests/Service/WorkflowBlocksTest.php",
@@ -1004,6 +1017,18 @@
     "POST /v1/tables/{table_id}/validate": {
       "sdkMethod": "validate",
       "service": "tables"
+    },
+    "GET /v1/usage/blocks": {
+      "sdkMethod": "listBlocks",
+      "service": "usage"
+    },
+    "GET /v1/usage/primitives": {
+      "sdkMethod": "listPrimitives",
+      "service": "usage"
+    },
+    "GET /v1/usage/runs": {
+      "sdkMethod": "listRuns",
+      "service": "usage"
     },
     "GET /v1/workflows": {
       "sdkMethod": "list",

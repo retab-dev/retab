@@ -12,9 +12,7 @@ module Retab
       project_id: :project_id,
       published: :published,
       created_at: :created_at,
-      updated_at: :updated_at,
-      capabilities: :capabilities,
-      authz_status: :authz_status
+      updated_at: :updated_at
     }.freeze
 
     attr_accessor(
@@ -24,9 +22,7 @@ module Retab
       :project_id,
       :published,
       :created_at,
-      :updated_at,
-      :capabilities,
-      :authz_status
+      :updated_at
     )
 
     def initialize(json)
@@ -39,8 +35,6 @@ module Retab
       @published = hash[:published] ? Retab::WorkflowPublished.new(hash[:published]) : nil
       @created_at = hash[:created_at]
       @updated_at = hash[:updated_at]
-      @capabilities = (hash[:capabilities] || [])
-      @authz_status = hash[:authz_status]
     end
   end
 end

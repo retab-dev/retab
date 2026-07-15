@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -2637,6 +2638,42 @@ func TestWorkflowEvalRunTerminalErrorFailsOnNonPassingAssertions(t *testing.T) {
 			}
 			if !tc.wantErr && err != nil {
 				t.Fatalf("expected success, got error: %v", err)
+			}
+		})
+	}
+}
+
+// warnLargeEvalRun advises (on stderr, never stdout) when a freshly-created run
+// resolves to a large suite. Small/curated runs stay silent; the advisory only
+// fires at or above the threshold and reports the resolved count.
+func TestWarnLargeEvalRun(t *testing.T) {
+	cases := []struct {
+		name       string
+		run        *retab.WorkflowEvalRun
+		wantWarned bool
+	}{
+		{name: "nil run stays silent", run: nil, wantWarned: false},
+		{name: "single eval stays silent", run: &retab.WorkflowEvalRun{TotalEvals: 1}, wantWarned: false},
+		{name: "just below threshold stays silent", run: &retab.WorkflowEvalRun{TotalEvals: largeEvalRunThreshold - 1}, wantWarned: false},
+		{name: "at threshold warns", run: &retab.WorkflowEvalRun{TotalEvals: largeEvalRunThreshold}, wantWarned: true},
+		{name: "large batch warns", run: &retab.WorkflowEvalRun{TotalEvals: 1027}, wantWarned: true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			cmd := &cobra.Command{}
+			var errBuf, outBuf bytes.Buffer
+			cmd.SetErr(&errBuf)
+			cmd.SetOut(&outBuf)
+			warnLargeEvalRun(cmd, tc.run)
+			warned := errBuf.Len() > 0
+			if warned != tc.wantWarned {
+				t.Fatalf("warned=%v want %v (stderr=%q)", warned, tc.wantWarned, errBuf.String())
+			}
+			if outBuf.Len() != 0 {
+				t.Fatalf("advisory must never write to stdout, got %q", outBuf.String())
+			}
+			if tc.wantWarned && !strings.Contains(errBuf.String(), strconv.Itoa(tc.run.TotalEvals)) {
+				t.Fatalf("advisory should report the resolved count %d, got %q", tc.run.TotalEvals, errBuf.String())
 			}
 		})
 	}

@@ -25,6 +25,9 @@
       "json_data": {
         "key": {}
       }
+    },
+    "metadata": {
+      "key": "test_value"
     }
   },
   "redis_available": true,

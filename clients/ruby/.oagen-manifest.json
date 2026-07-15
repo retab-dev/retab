@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "ruby",
-  "generatedAt": "2026-07-05T23:35:42.624Z",
+  "generatedAt": "1970-01-01T00:00:00.000Z",
   "files": [
     "Gemfile",
     "lib/retab.rb",
@@ -238,16 +238,15 @@
     "lib/retab/types/trigger_info_type.rb",
     "lib/retab/types/update_experiment_request_n_consensus.rb",
     "lib/retab/types/update_workflow_block_request_config_mode.rb",
+    "lib/retab/types/usage_order.rb",
     "lib/retab/types/validate_workflow_block_config_request_config_mode.rb",
     "lib/retab/types/while_loop_termination_termination_reason.rb",
     "lib/retab/types/workflow_artifact_operation.rb",
     "lib/retab/types/workflow_artifacts_operation.rb",
-    "lib/retab/types/workflow_authz_status.rb",
     "lib/retab/types/workflow_block_create_request_type.rb",
     "lib/retab/types/workflow_block_executions_order.rb",
     "lib/retab/types/workflow_block_type.rb",
     "lib/retab/types/workflow_block_version_type.rb",
-    "lib/retab/types/workflow_capabilities.rb",
     "lib/retab/types/workflow_config_block_type.rb",
     "lib/retab/types/workflow_eval_result_verdict.rb",
     "lib/retab/types/workflow_eval_run_results_order.rb",
@@ -274,6 +273,12 @@
     "lib/retab/types/workflow_table_validation_column_rule_type.rb",
     "lib/retab/types/workflow_table_validation_severity.rb",
     "lib/retab/types/workflows_order.rb",
+    "lib/retab/usage.rb",
+    "lib/retab/usage/usage_block_record.rb",
+    "lib/retab/usage/usage_primitive_document.rb",
+    "lib/retab/usage/usage_primitive_record.rb",
+    "lib/retab/usage/usage_primitive_triggered_by.rb",
+    "lib/retab/usage/usage_run_record.rb",
     "lib/retab/util.rb",
     "lib/retab/version.rb",
     "lib/retab/workflow_artifacts.rb",
@@ -726,6 +731,12 @@
     "rbi/retab/update_workflow_request.rbi",
     "rbi/retab/update_workflow_table_request.rbi",
     "rbi/retab/upload_file_request.rbi",
+    "rbi/retab/usage.rbi",
+    "rbi/retab/usage_block_record.rbi",
+    "rbi/retab/usage_primitive_document.rbi",
+    "rbi/retab/usage_primitive_record.rbi",
+    "rbi/retab/usage_primitive_triggered_by.rbi",
+    "rbi/retab/usage_run_record.rbi",
     "rbi/retab/validate_workflow_block_config_request.rbi",
     "rbi/retab/validate_workflow_block_config_response.rbi",
     "rbi/retab/validation_error.rbi",
@@ -812,6 +823,7 @@
     "test/retab/test_secrets.rb",
     "test/retab/test_splits.rb",
     "test/retab/test_tables.rb",
+    "test/retab/test_usage.rb",
     "test/retab/test_workflow_artifacts.rb",
     "test/retab/test_workflow_block_executions.rb",
     "test/retab/test_workflow_blocks.rb",
@@ -1086,6 +1098,18 @@
     "POST /v1/tables/{table_id}/validate": {
       "sdkMethod": "validate",
       "service": "tables"
+    },
+    "GET /v1/usage/blocks": {
+      "sdkMethod": "list_blocks",
+      "service": "usage"
+    },
+    "GET /v1/usage/primitives": {
+      "sdkMethod": "list_primitives",
+      "service": "usage"
+    },
+    "GET /v1/usage/runs": {
+      "sdkMethod": "list_runs",
+      "service": "usage"
     },
     "GET /v1/workflows": {
       "sdkMethod": "list",

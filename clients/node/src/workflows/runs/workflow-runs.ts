@@ -40,6 +40,7 @@ export class WorkflowRuns {
     minDurationMs?: number | null | undefined;
     maxDurationMs?: number | null | undefined;
     search?: string | null | undefined;
+    metadata?: string | null | undefined;
     sortBy?: string | undefined;
     limit?: number;
     before?: string;
@@ -59,6 +60,7 @@ export class WorkflowRuns {
         min_duration_ms: options?.minDurationMs,
         max_duration_ms: options?.maxDurationMs,
         search: options?.search,
+        metadata: options?.metadata,
         sort_by: options?.sortBy,
         limit: options?.limit,
         before: options?.before,
@@ -74,7 +76,8 @@ export class WorkflowRuns {
     workflowId: string,
     documents?: Record<string, DocumentInput>,
     jsonInputs?: Record<string, unknown>,
-    version?: string
+    version?: string,
+    metadata?: Record<string, string> | null
   ): Promise<WorkflowRun> {
     const documentsCoerced =
       documents === undefined
@@ -92,6 +95,7 @@ export class WorkflowRuns {
       documents: documentsCoerced,
       json_inputs: jsonInputs,
       version: version,
+      metadata: metadata,
     };
     const __wire = await this.client.request<WorkflowRunResponse>({
       method: 'POST',

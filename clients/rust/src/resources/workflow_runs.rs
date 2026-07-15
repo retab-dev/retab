@@ -42,6 +42,9 @@ pub struct ListParams {
     /// Search by run ID (partial match)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub search: Option<String>,
+    /// Filter by metadata equality: a JSON object of key/value pairs (e.g. {"tenant":"acme"}). Pairs AND together.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub before: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -72,6 +75,7 @@ impl Default for ListParams {
             min_duration_ms: Default::default(),
             max_duration_ms: Default::default(),
             search: Default::default(),
+            metadata: Default::default(),
             before: Default::default(),
             after: Default::default(),
             limit: Some(20),

@@ -126,6 +126,7 @@ class CreateWorkflowRunRequest(BaseModel):
     version: str | None = Field(
         default="production", description="Workflow version to run: 'production', 'draft', or a pinned version id like 'ver_...'. Only valid for fresh-run creation."
     )
+    metadata: dict[str, str] | None = Field(default=None, description="User-defined metadata to associate with this workflow run.")
 
 
 class ErrorTerminal(BaseModel):
@@ -242,6 +243,7 @@ class WorkflowRun(BaseModel):
     )
     timing: RunTiming = Field(..., description="All timing information")
     inputs: RunInputs | None = Field(default={"documents": {}, "json_data": {}}, validate_default=True, description="Input payloads supplied at run creation time")
+    metadata: dict[str, str] | None = Field(default=None, description="User-defined metadata associated with this workflow run.")
 
 
 # Resolve forward references (Pydantic v2). Safe no-op when

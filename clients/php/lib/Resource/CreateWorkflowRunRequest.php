@@ -26,6 +26,11 @@ readonly class CreateWorkflowRunRequest implements \JsonSerializable
         public ?array $jsonInputs = null,
         /** Workflow version to run: 'production', 'draft', or a pinned version id like 'ver_...'. Only valid for fresh-run creation. */
         public ?string $version = null,
+        /**
+         * User-defined metadata to associate with this workflow run.
+         * @var array<string, string>|null
+         */
+        public ?array $metadata = null,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -43,6 +48,7 @@ readonly class CreateWorkflowRunRequest implements \JsonSerializable
             documents: $data['documents'] ?? null,
             jsonInputs: $data['json_inputs'] ?? null,
             version: $data['version'] ?? null,
+            metadata: $data['metadata'] ?? null,
         );
     }
 
@@ -54,6 +60,7 @@ readonly class CreateWorkflowRunRequest implements \JsonSerializable
             'documents' => $this->documents,
             'json_inputs' => $this->jsonInputs,
             'version' => $this->version,
+            'metadata' => $this->metadata,
         ];
     }
 }

@@ -2109,6 +2109,74 @@ type TriggerInfo struct {
 	Type TriggerInfoType `json:"type"`
 }
 
+// UsageBlockRecord represents an usage block record.
+type UsageBlockRecord struct {
+	BlockID         string         `json:"block_id"`
+	BlockType       string         `json:"block_type"`
+	Credits         float64        `json:"credits"`
+	ExecutionCount  int            `json:"execution_count"`
+	FirstActivityAt *time.Time     `json:"first_activity_at"`
+	LastActivityAt  *time.Time     `json:"last_activity_at"`
+	PageCount       int            `json:"page_count"`
+	RunCount        int            `json:"run_count"`
+	StatusCounts    map[string]int `json:"status_counts"`
+	WorkflowID      string         `json:"workflow_id"`
+}
+
+// UsagePrimitiveDocument represents an usage primitive document.
+type UsagePrimitiveDocument struct {
+	FileID   *string `json:"file_id"`
+	Filename *string `json:"filename"`
+}
+
+// UsagePrimitiveRecord represents an usage primitive record.
+type UsagePrimitiveRecord struct {
+	BlockID              *string                    `json:"block_id"`
+	CompletedAt          *time.Time                 `json:"completed_at"`
+	CreatedAt            *time.Time                 `json:"created_at"`
+	Credits              float64                    `json:"credits"`
+	Documents            []*UsagePrimitiveDocument  `json:"documents"`
+	DurationMs           *int                       `json:"duration_ms"`
+	EnvironmentID        *string                    `json:"environment_id"`
+	Metadata             map[string]string          `json:"metadata"`
+	Model                *string                    `json:"model"`
+	Operation            string                     `json:"operation"`
+	PageCount            int                        `json:"page_count"`
+	PrimitiveExecutionID string                     `json:"primitive_execution_id"`
+	ProjectID            *string                    `json:"project_id"`
+	ResourceKind         *string                    `json:"resource_kind"`
+	RunID                *string                    `json:"run_id"`
+	Status               string                     `json:"status"`
+	TriggeredBy          *UsagePrimitiveTriggeredBy `json:"triggered_by,omitempty"`
+	WorkflowID           *string                    `json:"workflow_id"`
+}
+
+// UsagePrimitiveTriggeredBy represents an usage primitive triggered by.
+type UsagePrimitiveTriggeredBy struct {
+	AccessTokenID *string `json:"access_token_id"`
+	APIKeyID      *string `json:"api_key_id"`
+	AuthMethod    *string `json:"auth_method"`
+	KeyName       *string `json:"key_name"`
+	KeyPrefix     *string `json:"key_prefix"`
+	UserID        *string `json:"user_id"`
+}
+
+// UsageRunRecord represents an usage run record.
+type UsageRunRecord struct {
+	CompletedAt         *time.Time `json:"completed_at"`
+	CreatedAt           *time.Time `json:"created_at"`
+	Credits             float64    `json:"credits"`
+	DurationMs          *int       `json:"duration_ms"`
+	ExecutionDurationMs int        `json:"execution_duration_ms"`
+	PageCount           int        `json:"page_count"`
+	RetryCount          int        `json:"retry_count"`
+	RunID               string     `json:"run_id"`
+	StartedAt           *time.Time `json:"started_at"`
+	Status              string     `json:"status"`
+	TriggerType         string     `json:"trigger_type"`
+	WorkflowID          string     `json:"workflow_id"`
+}
+
 // ValidateWorkflowBlockConfigResponse represents a validate workflow block config response.
 type ValidateWorkflowBlockConfigResponse struct {
 	Ok         bool   `json:"ok,omitempty"`
@@ -2176,10 +2244,6 @@ type Workflow struct {
 	Published *WorkflowPublished `json:"published,omitempty"`
 	CreatedAt time.Time          `json:"created_at"`
 	UpdatedAt time.Time          `json:"updated_at"`
-	// Capabilities is server-derived permissions for the current actor.
-	Capabilities []WorkflowCapabilities `json:"capabilities,omitempty"`
-	// AuthzStatus is provisioning state of this workflow's WorkOS authorization resource.
-	AuthzStatus *WorkflowAuthzStatus `json:"authz_status,omitempty"`
 }
 
 // UnmarshalJSON applies spec-declared defaults to optional fields the
@@ -2668,6 +2732,8 @@ type WorkflowRun struct {
 	Timing RunTiming `json:"timing"`
 	// Inputs is input payloads supplied at run creation time
 	Inputs *RunInputs `json:"inputs,omitempty"`
+	// Metadata is user-defined metadata associated with this workflow run.
+	Metadata map[string]string `json:"metadata,omitempty"`
 }
 
 // WorkflowRunStep public step status object.

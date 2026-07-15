@@ -1,7 +1,6 @@
 namespace Retab
 {
     using System;
-    using System.Collections.Generic;
 
     /// <summary>A workflow and its current configuration.</summary>
     public class Workflow
@@ -23,12 +22,6 @@ namespace Retab
         public WorkflowPublished? Published { get; set; }
         public DateTimeOffset CreatedAt { get; set; }
         public DateTimeOffset UpdatedAt { get; set; }
-
-        /// <summary>Server-derived permissions for the current actor.</summary>
-        public List<WorkflowCapabilities>? Capabilities { get; set; }
-
-        /// <summary>Provisioning state of this workflow's WorkOS authorization resource.</summary>
-        public WorkflowAuthzStatus? AuthzStatus { get; set; }
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

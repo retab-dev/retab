@@ -82,6 +82,8 @@ export interface WorkflowRun {
    * @default {"documents":{},"json_data":{}}
    */
   inputs?: RunInputs;
+  /** User-defined metadata associated with this workflow run. */
+  metadata?: Record<string, string> | null;
 }
 
 export interface WorkflowRunResponse {
@@ -98,6 +100,7 @@ export interface WorkflowRunResponse {
     | CancelledTerminalResponse;
   timing: RunTimingResponse;
   inputs?: RunInputsResponse;
+  metadata?: Record<string, string> | null;
 }
 
 export const ZWorkflowRun = z.object({
@@ -115,6 +118,7 @@ export const ZWorkflowRun = z.object({
   ]),
   timing: ZRunTiming,
   inputs: ZRunInputs.optional(),
+  metadata: z.record(z.string(), z.string()).nullable().optional(),
 }) as z.ZodType<WorkflowRun>;
 
 export function deserializeWorkflowRun(wire: WorkflowRunResponse): WorkflowRun {
@@ -156,6 +160,7 @@ export function deserializeWorkflowRun(wire: WorkflowRunResponse): WorkflowRun {
     timing: deserializeRunTiming(wire['timing']),
     inputs:
       wire['inputs'] == null ? (wire['inputs'] as undefined) : deserializeRunInputs(wire['inputs']),
+    metadata: wire['metadata'],
   };
 }
 
@@ -198,5 +203,6 @@ export function serializeWorkflowRun(domain: WorkflowRun): WorkflowRunResponse {
       domain['inputs'] == null
         ? (domain['inputs'] as undefined)
         : serializeRunInputs(domain['inputs']),
+    metadata: domain['metadata'],
   };
 }

@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "dotnet",
-  "generatedAt": "2026-07-05T23:35:20.826Z",
+  "generatedAt": "2026-07-15T00:45:43.742Z",
   "files": [
     "README.md",
     "Retab.csproj",
@@ -209,6 +209,11 @@
     "src/Entities/StoredBlockExecution.cs",
     "src/Entities/Subdocument.cs",
     "src/Entities/SubmitDecisionResponse.cs",
+    "src/Entities/UsageBlockRecord.cs",
+    "src/Entities/UsagePrimitiveDocument.cs",
+    "src/Entities/UsagePrimitiveRecord.cs",
+    "src/Entities/UsagePrimitiveTriggeredBy.cs",
+    "src/Entities/UsageRunRecord.cs",
     "src/Entities/ValidateWorkflowBlockConfigResponse.cs",
     "src/Entities/ValidationError.cs",
     "src/Entities/VerdictSummary.cs",
@@ -294,10 +299,8 @@
     "src/Enums/SubmissionStatus.cs",
     "src/Enums/UpdateWorkflowBlockRequestConfigMode.cs",
     "src/Enums/WhileLoopTerminationTerminationReason.cs",
-    "src/Enums/WorkflowAuthzStatus.cs",
     "src/Enums/WorkflowBlockCreateRequestType.cs",
     "src/Enums/WorkflowBlockType.cs",
-    "src/Enums/WorkflowCapabilities.cs",
     "src/Enums/WorkflowExperimentRunPlanMode.cs",
     "src/Enums/WorkflowExportPayloadRequestExcludeStatus.cs",
     "src/Enums/WorkflowExportPayloadRequestExportSource.cs",
@@ -339,6 +342,8 @@
     "src/Services/Splits/_interfaces/SplitsOptions.cs",
     "src/Services/Tables/TablesService.cs",
     "src/Services/Tables/_interfaces/TablesOptions.cs",
+    "src/Services/Usage/UsageService.cs",
+    "src/Services/Usage/_interfaces/UsageOptions.cs",
     "src/Services/WorkflowArtifacts/WorkflowArtifactsService.cs",
     "src/Services/WorkflowArtifacts/_interfaces/WorkflowArtifactsOptions.cs",
     "src/Services/WorkflowBlockExecutions/WorkflowBlockExecutionsService.cs",
@@ -627,6 +632,18 @@
     "POST /v1/tables/{table_id}/validate": {
       "sdkMethod": "ValidateAsync",
       "service": "tables"
+    },
+    "GET /v1/usage/blocks": {
+      "sdkMethod": "ListBlocksAsync",
+      "service": "usage"
+    },
+    "GET /v1/usage/primitives": {
+      "sdkMethod": "ListPrimitivesAsync",
+      "service": "usage"
+    },
+    "GET /v1/usage/runs": {
+      "sdkMethod": "ListRunsAsync",
+      "service": "usage"
     },
     "GET /v1/workflows": {
       "sdkMethod": "ListAsync",

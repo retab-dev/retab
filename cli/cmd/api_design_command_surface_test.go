@@ -21,13 +21,13 @@ func TestAPICommandSurfaceUsesCanonicalResourceActionNames(t *testing.T) {
 		"experiments": true, "export": true, "extractions": true, "files": true,
 		"functions": true, "generate": true, "get": true, "grant": true, "grep": true, "history": true, "hydrate": true, "inspect": true, "invitations": true,
 		"list": true, "login": true, "logout": true, "members": true, "metrics": true, "org": true,
-		"parse": true, "parses": true, "partitions": true, "permissions": true, "plan": true, "plan-to": true, "profile": true, "projects": true, "publish": true, "pull": true,
+		"parse": true, "parses": true, "partitions": true, "permissions": true, "plan": true, "plan-to": true, "primitives": true, "profile": true, "projects": true, "publish": true, "pull": true,
 		"push": true, "query": true, "reconstruct": true, "reject": true, "remove": true, "render": true, "replace": true, "restart": true, "restore": true, "results": true, "retry": true, "retrieve": true,
 		"reviews": true, "revoke": true, "run": true, "runs": true, "schema": true, "schemas": true, "secrets": true,
 		"set": true, "setup": true, "executions": true, "sources": true, "spec": true,
 		"splits": true, "stats": true, "status": true, "steps": true, "stream": true,
 		"switch": true, "sync": true, "tables": true, "templates": true, "evals": true, "update": true,
-		"upload": true, "validate": true, "value": true, "versions": true, "version": true,
+		"upload": true, "usage": true, "validate": true, "value": true, "versions": true, "version": true,
 		"view": true, "wait": true, "which": true, "workflows": true,
 	}
 
@@ -122,7 +122,8 @@ func TestRemovedCommandSurfaceIsAbsent(t *testing.T) {
 
 func TestCoreAPIResourcesExposeExpectedCommandSurface(t *testing.T) {
 	expectedChildren := map[string][]string{
-		"":                              {"auth", "env", "org", "classifications", "edits", "extractions", "files", "invitations", "members", "parses", "partitions", "projects", "schemas", "secrets", "setup", "splits", "sync", "tables", "version", "workflows"},
+		"":                              {"auth", "env", "org", "classifications", "edits", "extractions", "files", "invitations", "members", "parses", "partitions", "projects", "schemas", "secrets", "setup", "splits", "sync", "tables", "usage", "version", "workflows"},
+		"usage":                         {"runs", "blocks", "primitives"},
 		"auth":                          {"login", "logout", "status"},
 		"env":                           {"add", "switch", "which", "claim", "list", "get"},
 		"org":                           {"list", "switch"},

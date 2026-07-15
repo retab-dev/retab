@@ -212,8 +212,11 @@ func experimentFileHandleInputFromMap(obj map[string]any) (retab.FileHandleInput
 // A leading `<workflow-id>`, when supplied, is accepted purely for symmetry
 // with `runs create`: unlike `runs list` (where workflow-id is a server-side
 // FILTER that changes which rows return) the experiment id alone fully
-// determines the resource here, so a workflow id in the first slot cannot
-// misroute to a different experiment and is intentionally not forwarded.
+// determines the resource here, so a workflow id in the first slot never
+// reroutes the request. It is still a scope hint the caller asserted, though,
+// so get/update/delete verify it matches the experiment's real workflow (see
+// ensureExperimentWorkflowMatches) rather than silently ignoring a hint that
+// names a different workflow — mirroring the 404 `runs create` already returns.
 func resolveExperimentIDArg(args []string) (string, error) {
 	if len(args) == 0 {
 		return "", fmt.Errorf("experiment id required")
@@ -223,6 +226,38 @@ func resolveExperimentIDArg(args []string) (string, error) {
 		return "", fmt.Errorf("experiment id required")
 	}
 	return id, nil
+}
+
+// leadingWorkflowIDArg returns the optional leading `<workflow-id>` positional
+// of the shared `[workflow-id] <experiment-id>` contract, or "" when only the
+// experiment id was supplied. resolveExperimentIDArg selects the resource (the
+// last positional); this exposes the scope hint so the mutating/destructive
+// commands can reject a hint that contradicts the experiment's real workflow.
+func leadingWorkflowIDArg(args []string) string {
+	if len(args) < 2 {
+		return ""
+	}
+	return strings.TrimSpace(args[0])
+}
+
+// ensureExperimentWorkflowMatches rejects a two-positional invocation whose
+// leading `<workflow-id>` disagrees with the experiment's actual workflow.
+// The leading workflow id is a scope hint that never reroutes the request (the
+// experiment id alone selects the resource), but silently ignoring a hint that
+// names a DIFFERENT workflow is a footgun on the mutating/destructive commands:
+// `delete wf_wrong exp_x --yes` would delete exp_x regardless. `runs create`
+// already returns a server-side 404 ("workflow_id does not match the
+// experiment's workflow") for the same mistake; this brings get/update/delete
+// into line with that guard. A single-positional invocation supplies no hint
+// and skips the check.
+func ensureExperimentWorkflowMatches(hint string, experiment *retab.WorkflowExperiment) error {
+	if hint == "" || experiment == nil || experiment.WorkflowID == "" {
+		return nil
+	}
+	if hint != experiment.WorkflowID {
+		return fmt.Errorf("workflow_id %q does not match the experiment's workflow %q", hint, experiment.WorkflowID)
+	}
+	return nil
 }
 
 func validateExperimentMetricsView(view string) error {
@@ -556,6 +591,9 @@ The experiment id is the only required positional. A leading
 		if err != nil {
 			return err
 		}
+		if err := ensureExperimentWorkflowMatches(leadingWorkflowIDArg(args), result); err != nil {
+			return err
+		}
 		return printResult(cmd, result)
 	}),
 }
@@ -614,6 +652,18 @@ The experiment id is the only required positional. A leading
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
+		// When the caller supplies the leading `<workflow-id>` scope hint,
+		// verify it names the experiment's real workflow before mutating —
+		// otherwise `update wf_wrong exp_x` silently patches exp_x.
+		if hint := leadingWorkflowIDArg(args); hint != "" {
+			current, err := client.Workflows.Experiments.Get(ctx, experimentID)
+			if err != nil {
+				return err
+			}
+			if err := ensureExperimentWorkflowMatches(hint, current); err != nil {
+				return err
+			}
+		}
 		result, err := client.Workflows.Experiments.Update(ctx, experimentID, &req)
 		if err != nil {
 			return err
@@ -656,6 +706,18 @@ definition.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
+		// When the caller supplies the leading `<workflow-id>` scope hint,
+		// verify it names the experiment's real workflow BEFORE deleting —
+		// otherwise `delete wf_wrong exp_x --yes` silently deletes exp_x.
+		if hint := leadingWorkflowIDArg(args); hint != "" {
+			current, err := client.Workflows.Experiments.Get(ctx, experimentID)
+			if err != nil {
+				return err
+			}
+			if err := ensureExperimentWorkflowMatches(hint, current); err != nil {
+				return err
+			}
+		}
 		if err := client.Workflows.Experiments.Delete(ctx, experimentID); err != nil {
 			return err
 		}

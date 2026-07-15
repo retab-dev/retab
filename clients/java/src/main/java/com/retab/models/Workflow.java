@@ -5,10 +5,7 @@ package com.retab.models;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.retab.types.WorkflowAuthzStatus;
-import com.retab.types.WorkflowCapabilities;
 import java.time.OffsetDateTime;
-import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class Workflow {
@@ -19,8 +16,6 @@ public final class Workflow {
   private final WorkflowPublished published;
   private final OffsetDateTime createdAt;
   private final OffsetDateTime updatedAt;
-  private final List<WorkflowCapabilities> capabilities;
-  private final WorkflowAuthzStatus authzStatus;
 
   @JsonCreator
   public Workflow(
@@ -30,10 +25,7 @@ public final class Workflow {
       @JsonProperty(value = "project_id", required = false) String projectId,
       @JsonProperty(value = "published", required = false) WorkflowPublished published,
       @JsonProperty(value = "created_at", required = true) OffsetDateTime createdAt,
-      @JsonProperty(value = "updated_at", required = true) OffsetDateTime updatedAt,
-      @JsonProperty(value = "capabilities", required = false)
-          List<WorkflowCapabilities> capabilities,
-      @JsonProperty(value = "authz_status", required = false) WorkflowAuthzStatus authzStatus) {
+      @JsonProperty(value = "updated_at", required = true) OffsetDateTime updatedAt) {
     this.id = id;
     this.name = name != null ? name : "Untitled Workflow";
     this.description = description != null ? description : "";
@@ -41,8 +33,6 @@ public final class Workflow {
     this.published = published;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
-    this.capabilities = capabilities;
-    this.authzStatus = authzStatus;
   }
 
   @JsonProperty("id")
@@ -78,15 +68,5 @@ public final class Workflow {
   @JsonProperty("updated_at")
   public OffsetDateTime getUpdatedAt() {
     return updatedAt;
-  }
-
-  @JsonProperty("capabilities")
-  public List<WorkflowCapabilities> getCapabilities() {
-    return capabilities;
-  }
-
-  @JsonProperty("authz_status")
-  public WorkflowAuthzStatus getAuthzStatus() {
-    return authzStatus;
   }
 }

@@ -452,30 +452,6 @@ const (
 	WhileLoopTerminationTerminationReasonError                WhileLoopTerminationTerminationReason = "error"
 )
 
-// WorkflowCapabilities represents workflow capabilities values.
-type WorkflowCapabilities string
-
-const (
-	WorkflowCapabilitiesWorkflowView    WorkflowCapabilities = "workflow:view"
-	WorkflowCapabilitiesWorkflowEdit    WorkflowCapabilities = "workflow:edit"
-	WorkflowCapabilitiesWorkflowRun     WorkflowCapabilities = "workflow:run"
-	WorkflowCapabilitiesWorkflowDelete  WorkflowCapabilities = "workflow:delete"
-	WorkflowCapabilitiesWorkflowPublish WorkflowCapabilities = "workflow:publish"
-	WorkflowCapabilitiesWorkflowReview  WorkflowCapabilities = "workflow:review"
-	WorkflowCapabilitiesWorkflowManage  WorkflowCapabilities = "workflow:manage"
-)
-
-// WorkflowAuthzStatus represents workflow authz status values.
-type WorkflowAuthzStatus string
-
-const (
-	WorkflowAuthzStatusProvisioning WorkflowAuthzStatus = "provisioning"
-	WorkflowAuthzStatusReady        WorkflowAuthzStatus = "ready"
-	WorkflowAuthzStatusFailed       WorkflowAuthzStatus = "failed"
-	WorkflowAuthzStatusDeleting     WorkflowAuthzStatus = "deleting"
-	WorkflowAuthzStatusDeleted      WorkflowAuthzStatus = "deleted"
-)
-
 // WorkflowArtifactOperation is an alias for StepArtifactRefOperation.
 type WorkflowArtifactOperation = StepArtifactRefOperation
 
@@ -707,6 +683,9 @@ type SplitsOrder = ClassificationsOrder
 
 // SplitsStatus is an alias for ClassificationStatus.
 type SplitsStatus = ClassificationStatus
+
+// UsageOrder is an alias for ClassificationsOrder.
+type UsageOrder = ClassificationsOrder
 
 // WorkflowsOrder is an alias for ClassificationsOrder.
 type WorkflowsOrder = ClassificationsOrder

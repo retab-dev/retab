@@ -3,8 +3,8 @@
   "openapi": "public/docs/api-reference/openapi.json",
   "default_decision": "deferred",
   "baseline_operation_ids": [
-    "apply_workflow_spec",
     "apply_existing_workflow_spec",
+    "apply_workflow_spec",
     "approve_review",
     "cancel_classification",
     "cancel_edit",
@@ -34,9 +34,9 @@
     "create_split",
     "create_table",
     "create_template",
+    "create_workflow",
     "create_workflow_eval",
     "create_workflow_eval_run",
-    "create_workflow",
     "create_workflow_run",
     "delete_block",
     "delete_classification",
@@ -50,13 +50,13 @@
     "delete_split",
     "delete_table",
     "delete_template",
-    "delete_workflow_eval",
     "delete_workflow",
+    "delete_workflow_eval",
     "delete_workflow_run",
-    "discard_draft_workflow",
     "diff_block_versions",
     "diff_edge_versions",
     "diff_workflow_versions",
+    "discard_draft_workflow",
     "download_link",
     "download_table_csv",
     "export_workflow_spec",
@@ -85,11 +85,11 @@
     "get_table",
     "get_table_schema",
     "get_template",
+    "get_workflow",
+    "get_workflow_artifact_by_id",
     "get_workflow_eval",
     "get_workflow_eval_result",
     "get_workflow_eval_run",
-    "get_workflow",
-    "get_workflow_artifact_by_id",
     "get_workflow_export_payload",
     "get_workflow_run",
     "get_workflow_step",
@@ -98,8 +98,8 @@
     "list_block_versions",
     "list_blocks",
     "list_classifications",
-    "list_edges",
     "list_edge_versions",
+    "list_edges",
     "list_edits",
     "list_experiment_results",
     "list_experiment_runs",
@@ -114,16 +114,19 @@
     "list_splits",
     "list_tables",
     "list_templates",
+    "list_usage_blocks",
+    "list_usage_primitives",
+    "list_usage_runs",
+    "list_workflow_artifacts",
     "list_workflow_eval_results",
     "list_workflow_eval_runs",
     "list_workflow_evals",
-    "list_workflow_artifacts",
-    "list_workflow_versions",
     "list_workflow_run_steps",
     "list_workflow_runs",
+    "list_workflow_versions",
     "list_workflows",
-    "plan_workflow_spec",
     "plan_existing_workflow_spec",
+    "plan_workflow_spec",
     "profile_table",
     "publish_workflow",
     "query_table",
@@ -138,8 +141,8 @@
     "update_experiment",
     "update_table",
     "update_template",
-    "update_workflow_eval",
     "update_workflow",
+    "update_workflow_eval",
     "upload_file",
     "validate_block_config",
     "validate_table",
@@ -152,16 +155,16 @@
         "public/sdk/cli/cmd/workflows_spec.go"
       ]
     },
-    "cancel_parse": {
-      "command": "retab parses cancel",
-      "source_files": [
-        "public/sdk/cli/cmd/parses.go"
-      ]
-    },
     "cancel_file_blueprint": {
       "command": "retab files blueprints cancel",
       "source_files": [
         "public/sdk/cli/cmd/files_blueprints.go"
+      ]
+    },
+    "cancel_parse": {
+      "command": "retab parses cancel",
+      "source_files": [
+        "public/sdk/cli/cmd/parses.go"
       ]
     },
     "create_classification": {
@@ -224,12 +227,6 @@
         "public/sdk/cli/cmd/zz_oagen_workflows.go"
       ]
     },
-    "delete_template": {
-      "command": "retab edits templates delete",
-      "source_files": [
-        "public/sdk/cli/cmd/zz_oagen_edits_templates.go"
-      ]
-    },
     "delete_classification": {
       "command": "retab classifications delete",
       "source_files": [
@@ -264,6 +261,12 @@
       "command": "retab splits delete",
       "source_files": [
         "public/sdk/cli/cmd/zz_oagen_splits.go"
+      ]
+    },
+    "delete_template": {
+      "command": "retab edits templates delete",
+      "source_files": [
+        "public/sdk/cli/cmd/zz_oagen_edits_templates.go"
       ]
     },
     "delete_workflow": {
@@ -402,6 +405,24 @@
       "command": "retab edits templates list",
       "source_files": [
         "public/sdk/cli/cmd/zz_oagen_edits_templates.go"
+      ]
+    },
+    "list_usage_blocks": {
+      "command": "retab usage blocks",
+      "source_files": [
+        "public/sdk/cli/cmd/usage_blocks.go"
+      ]
+    },
+    "list_usage_primitives": {
+      "command": "retab usage primitives",
+      "source_files": [
+        "public/sdk/cli/cmd/usage_primitives.go"
+      ]
+    },
+    "list_usage_runs": {
+      "command": "retab usage runs",
+      "source_files": [
+        "public/sdk/cli/cmd/usage.go"
       ]
     },
     "list_workflows": {

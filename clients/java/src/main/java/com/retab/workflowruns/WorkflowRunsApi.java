@@ -41,7 +41,8 @@ public final class WorkflowRunsApi {
   }
 
   public List<WorkflowRun> list() throws IOException, InterruptedException {
-    return list(null, null, null, null, null, null, null, null, null, null, null, null, null, null);
+    return list(
+        null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
   }
 
   public List<WorkflowRun> list(
@@ -54,6 +55,7 @@ public final class WorkflowRunsApi {
       Long minDurationMs,
       Long maxDurationMs,
       String search,
+      String metadata,
       String before,
       String after,
       Long limit,
@@ -71,6 +73,7 @@ public final class WorkflowRunsApi {
     appendQueryParam(query, "min_duration_ms", minDurationMs);
     appendQueryParam(query, "max_duration_ms", maxDurationMs);
     appendQueryParam(query, "search", search);
+    appendQueryParam(query, "metadata", metadata);
     appendQueryParam(query, "before", before);
     appendQueryParam(query, "after", after);
     appendQueryParam(query, "limit", limit);
@@ -108,14 +111,16 @@ public final class WorkflowRunsApi {
         request == null ? null : request.getWorkflowId(),
         request == null ? null : request.getDocuments(),
         request == null ? null : request.getJsonInputs(),
-        request == null ? null : request.getVersion());
+        request == null ? null : request.getVersion(),
+        request == null ? null : request.getMetadata());
   }
 
   public WorkflowRun create(
       String workflowId,
       Map<String, MimeData> documents,
       Map<String, Object> jsonInputs,
-      String version)
+      String version,
+      Map<String, String> metadata)
       throws IOException, InterruptedException {
     String path = "/v1/workflows/runs";
     StringBuilder query = new StringBuilder();
@@ -130,6 +135,9 @@ public final class WorkflowRunsApi {
     }
     if (version != null) {
       body.put("version", version);
+    }
+    if (metadata != null) {
+      body.put("metadata", metadata);
     }
     String requestBody = client.getObjectMapper().writeValueAsString(body);
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);

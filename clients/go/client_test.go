@@ -1414,3 +1414,105 @@ func TestAPIErrorFastAPIDetailArray(t *testing.T) {
 		t.Fatalf("message degraded to generic fallback: %q", apiErr.Message)
 	}
 }
+
+// TestWorkflowRunMetadataRoundTripsThroughSDK pins the SDK-layer contract for the
+// user-defined run `metadata` field end to end: Create must send it in the request
+// body, and both the Create (202) response and a subsequent Get must deserialize
+// it into the typed map[string]string. A future OpenAPI regeneration that dropped
+// the field from either the params or the model would silently break callers — this
+// is the guard that catches it.
+func TestWorkflowRunMetadataRoundTripsThroughSDK(t *testing.T) {
+	var createBody map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == "/v1/workflows/runs":
+			if err := json.NewDecoder(r.Body).Decode(&createBody); err != nil {
+				t.Fatalf("decode create body: %v", err)
+			}
+			run := workflowRunResponse("run_meta", "wf_123", "pending")
+			run["metadata"] = map[string]any{"tenant": "acme", "run_label": "nightly"}
+			w.WriteHeader(http.StatusAccepted)
+			_ = json.NewEncoder(w).Encode(run)
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/workflows/runs/run_meta":
+			run := workflowRunResponse("run_meta", "wf_123", "completed")
+			run["metadata"] = map[string]any{"tenant": "acme", "run_label": "nightly"}
+			_ = json.NewEncoder(w).Encode(run)
+		default:
+			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
+		}
+	}))
+	defer server.Close()
+
+	client, err := NewClient("test-key", WithBaseURL(server.URL))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Create sends metadata in the request body and echoes it on the response.
+	metadata := map[string]string{"tenant": "acme", "run_label": "nightly"}
+	created, err := client.Workflows.Runs.Create(context.Background(), &WorkflowRunsCreateParams{
+		WorkflowID: "wf_123",
+		Metadata:   &metadata,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	sentMetadata, ok := createBody["metadata"].(map[string]any)
+	if !ok {
+		t.Fatalf("create request body metadata = %#v, want an object", createBody["metadata"])
+	}
+	if sentMetadata["tenant"] != "acme" || sentMetadata["run_label"] != "nightly" {
+		t.Fatalf("create request metadata = %#v", sentMetadata)
+	}
+	if created.Metadata["tenant"] != "acme" || created.Metadata["run_label"] != "nightly" {
+		t.Fatalf("create response metadata = %#v", created.Metadata)
+	}
+
+	// Get deserializes metadata into the typed field.
+	got, err := client.Workflows.Runs.Get(context.Background(), "run_meta")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Metadata["tenant"] != "acme" || got.Metadata["run_label"] != "nightly" {
+		t.Fatalf("get response metadata = %#v", got.Metadata)
+	}
+}
+
+// TestWorkflowRunMetadataOmittedWhenAbsentThroughSDK pins that a run without
+// metadata deserializes to a nil map and Create omits the field from the request
+// body when no metadata is supplied (omitempty), so absent stays absent.
+func TestWorkflowRunMetadataOmittedWhenAbsentThroughSDK(t *testing.T) {
+	var createBody map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == "/v1/workflows/runs":
+			if err := json.NewDecoder(r.Body).Decode(&createBody); err != nil {
+				t.Fatalf("decode create body: %v", err)
+			}
+			w.WriteHeader(http.StatusAccepted)
+			_ = json.NewEncoder(w).Encode(workflowRunResponse("run_bare", "wf_123", "pending"))
+		default:
+			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
+		}
+	}))
+	defer server.Close()
+
+	client, err := NewClient("test-key", WithBaseURL(server.URL))
+	if err != nil {
+		t.Fatal(err)
+	}
+	created, err := client.Workflows.Runs.Create(context.Background(), &WorkflowRunsCreateParams{
+		WorkflowID: "wf_123",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, present := createBody["metadata"]; present {
+		t.Fatalf("create body should omit metadata when unset, got %#v", createBody["metadata"])
+	}
+	if created.Metadata != nil {
+		t.Fatalf("bare run metadata should be nil, got %#v", created.Metadata)
+	}
+}

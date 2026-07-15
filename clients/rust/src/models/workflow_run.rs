@@ -25,6 +25,9 @@ pub struct WorkflowRun {
     /// Defaults to `{"documents":{},"json_data":{}}`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub inputs: Option<RunInputs>,
+    /// User-defined metadata associated with this workflow run.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub metadata: Option<std::collections::HashMap<String, String>>,
 }
 impl WorkflowRun {
     /// Construct a new `WorkflowRun` with the required fields set.
@@ -45,6 +48,7 @@ impl WorkflowRun {
             lifecycle,
             timing,
             inputs: Default::default(),
+            metadata: Default::default(),
         }
     }
 }

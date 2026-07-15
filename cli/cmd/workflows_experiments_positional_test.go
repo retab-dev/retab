@@ -110,7 +110,8 @@ func TestWorkflowsExperimentsGetSingleArgStillWorks(t *testing.T) {
 
 // TestWorkflowsExperimentsUpdateTwoArgForm pins that `update` routes the
 // PATCH to the experiment id (last positional) when given the two-positional
-// convenience form.
+// convenience form. The leading workflow id is first validated with a GET (it
+// matches here), then the PATCH is issued to the experiment id.
 func TestWorkflowsExperimentsUpdateTwoArgForm(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
@@ -119,7 +120,7 @@ func TestWorkflowsExperimentsUpdateTwoArgForm(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requests = append(requests, r.Method+" "+r.URL.Path)
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]any{"id": "exp_xyz", "name": "renamed"})
+		_ = json.NewEncoder(w).Encode(map[string]any{"id": "exp_xyz", "workflow_id": "wf_abc", "name": "renamed"})
 	}))
 	defer server.Close()
 	t.Setenv("RETAB_API_BASE_URL", server.URL)
@@ -137,13 +138,50 @@ func TestWorkflowsExperimentsUpdateTwoArgForm(t *testing.T) {
 	if stderr != "" {
 		t.Fatalf("unexpected stderr: %q", stderr)
 	}
-	if want := "PATCH /v1/workflows/experiments/exp_xyz"; strings.Join(requests, ",") != want {
+	if want := "GET /v1/workflows/experiments/exp_xyz,PATCH /v1/workflows/experiments/exp_xyz"; strings.Join(requests, ",") != want {
 		t.Fatalf("requests = %v, want %q", requests, want)
 	}
 }
 
+// TestWorkflowsExperimentsUpdateRejectsMismatchedWorkflow pins that a leading
+// workflow id that names a DIFFERENT workflow than the experiment's is rejected
+// before any PATCH is issued — matching the server-side guard `runs create`
+// enforces, so `update wf_wrong exp_x` cannot silently mutate exp_x.
+func TestWorkflowsExperimentsUpdateRejectsMismatchedWorkflow(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var requests []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests = append(requests, r.Method+" "+r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"id": "exp_xyz", "workflow_id": "wf_owner"})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := workflowsExperimentsUpdateCmd.Flags().Set("name", "renamed"); err != nil {
+		t.Fatalf("set --name: %v", err)
+	}
+	t.Cleanup(func() { _ = workflowsExperimentsUpdateCmd.Flags().Set("name", "") })
+
+	_, _ = captureStd(t, func() {
+		err := workflowsExperimentsUpdateCmd.RunE(workflowsExperimentsUpdateCmd, []string{"wf_wrong", "exp_xyz"})
+		if err == nil {
+			t.Fatalf("expected mismatched-workflow error, got nil")
+		}
+		if !strings.Contains(err.Error(), "does not match the experiment's workflow") {
+			t.Fatalf("error = %v, want workflow-mismatch message", err)
+		}
+	})
+	if want := "GET /v1/workflows/experiments/exp_xyz"; strings.Join(requests, ",") != want {
+		t.Fatalf("requests = %v, want %q (no PATCH may be issued on mismatch)", requests, want)
+	}
+}
+
 // TestWorkflowsExperimentsDeleteTwoArgForm pins that `delete` routes the
-// DELETE to the experiment id (last positional) in the two-positional form.
+// DELETE to the experiment id (last positional) in the two-positional form,
+// after validating the leading workflow id with a GET (it matches here).
 func TestWorkflowsExperimentsDeleteTwoArgForm(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
@@ -151,6 +189,11 @@ func TestWorkflowsExperimentsDeleteTwoArgForm(t *testing.T) {
 	var requests []string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requests = append(requests, r.Method+" "+r.URL.Path)
+		if r.Method == http.MethodGet {
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(map[string]any{"id": "exp_xyz", "workflow_id": "wf_abc"})
+			return
+		}
 		w.WriteHeader(http.StatusNoContent)
 	}))
 	defer server.Close()
@@ -166,7 +209,71 @@ func TestWorkflowsExperimentsDeleteTwoArgForm(t *testing.T) {
 			t.Fatalf("experiments delete (2-arg): %v", err)
 		}
 	})
-	if want := "DELETE /v1/workflows/experiments/exp_xyz"; strings.Join(requests, ",") != want {
+	if want := "GET /v1/workflows/experiments/exp_xyz,DELETE /v1/workflows/experiments/exp_xyz"; strings.Join(requests, ",") != want {
 		t.Fatalf("requests = %v, want %q", requests, want)
 	}
+}
+
+// TestWorkflowsExperimentsDeleteRejectsMismatchedWorkflow pins the destructive
+// footgun fix: `delete wf_wrong exp_x --yes` must NOT delete exp_x when the
+// leading workflow id names a different workflow — no DELETE may be issued.
+func TestWorkflowsExperimentsDeleteRejectsMismatchedWorkflow(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var requests []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests = append(requests, r.Method+" "+r.URL.Path)
+		if r.Method == http.MethodGet {
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(map[string]any{"id": "exp_xyz", "workflow_id": "wf_owner"})
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := workflowsExperimentsDeleteCmd.Flags().Set("yes", "true"); err != nil {
+		t.Fatalf("set --yes: %v", err)
+	}
+	t.Cleanup(func() { _ = workflowsExperimentsDeleteCmd.Flags().Set("yes", "false") })
+
+	_, _ = captureStd(t, func() {
+		err := workflowsExperimentsDeleteCmd.RunE(workflowsExperimentsDeleteCmd, []string{"wf_wrong", "exp_xyz"})
+		if err == nil {
+			t.Fatalf("expected mismatched-workflow error, got nil")
+		}
+		if !strings.Contains(err.Error(), "does not match the experiment's workflow") {
+			t.Fatalf("error = %v, want workflow-mismatch message", err)
+		}
+	})
+	if want := "GET /v1/workflows/experiments/exp_xyz"; strings.Join(requests, ",") != want {
+		t.Fatalf("requests = %v, want %q (no DELETE may be issued on mismatch)", requests, want)
+	}
+}
+
+// TestWorkflowsExperimentsGetRejectsMismatchedWorkflow pins that `get` surfaces
+// a mismatched leading workflow id (validated against the fetched experiment)
+// rather than silently returning an experiment from another workflow.
+func TestWorkflowsExperimentsGetRejectsMismatchedWorkflow(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"id": "exp_xyz", "workflow_id": "wf_owner"})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	_, _ = captureStd(t, func() {
+		err := workflowsExperimentsGetCmd.RunE(workflowsExperimentsGetCmd, []string{"wf_wrong", "exp_xyz"})
+		if err == nil {
+			t.Fatalf("expected mismatched-workflow error, got nil")
+		}
+		if !strings.Contains(err.Error(), "does not match the experiment's workflow") {
+			t.Fatalf("error = %v, want workflow-mismatch message", err)
+		}
+	})
 }

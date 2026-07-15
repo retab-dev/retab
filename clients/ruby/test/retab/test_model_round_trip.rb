@@ -1038,7 +1038,8 @@ class ModelRoundTripTest < Minitest::Test
       "workflow_id" => "stub",
       "documents" => {},
       "json_inputs" => {},
-      "version" => "stub"
+      "version" => "stub",
+      "metadata" => nil
     }
     model = Retab::CreateWorkflowRunRequest.new(fixture.to_json)
     json = model.to_h
@@ -3386,6 +3387,143 @@ class ModelRoundTripTest < Minitest::Test
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
+  def test_usage_block_record_round_trip
+    fixture = {
+      "block_id" => "stub",
+      "block_type" => "stub",
+      "credits" => 1.0,
+      "execution_count" => 1,
+      "first_activity_at" => nil,
+      "last_activity_at" => nil,
+      "page_count" => 1,
+      "run_count" => 1,
+      "status_counts" => nil,
+      "workflow_id" => "stub"
+    }
+    model = Retab::UsageBlockRecord.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["block_id"], json[:block_id])
+    assert_equal(fixture["block_type"], json[:block_type])
+    assert_equal(fixture["credits"], json[:credits])
+    assert_equal(fixture["execution_count"], json[:execution_count])
+    assert_nil(json[:first_activity_at])
+    assert_nil(json[:last_activity_at])
+    assert_equal(fixture["page_count"], json[:page_count])
+    assert_equal(fixture["run_count"], json[:run_count])
+    assert_equal(fixture["workflow_id"], json[:workflow_id])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_usage_primitive_document_round_trip
+    fixture = {
+      "file_id" => nil,
+      "filename" => nil
+    }
+    model = Retab::UsagePrimitiveDocument.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_nil(json[:file_id])
+    assert_nil(json[:filename])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_usage_primitive_record_round_trip
+    fixture = {
+      "block_id" => nil,
+      "completed_at" => nil,
+      "created_at" => nil,
+      "credits" => 1.0,
+      "documents" => nil,
+      "duration_ms" => nil,
+      "environment_id" => nil,
+      "metadata" => nil,
+      "model" => nil,
+      "operation" => "stub",
+      "page_count" => 1,
+      "primitive_execution_id" => "stub",
+      "project_id" => nil,
+      "resource_kind" => nil,
+      "run_id" => nil,
+      "status" => "stub",
+      "triggered_by" => nil,
+      "workflow_id" => nil
+    }
+    model = Retab::UsagePrimitiveRecord.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_nil(json[:block_id])
+    assert_nil(json[:completed_at])
+    assert_nil(json[:created_at])
+    assert_equal(fixture["credits"], json[:credits])
+    assert_nil(json[:duration_ms])
+    assert_nil(json[:environment_id])
+    assert_nil(json[:model])
+    assert_equal(fixture["operation"], json[:operation])
+    assert_equal(fixture["page_count"], json[:page_count])
+    assert_equal(fixture["primitive_execution_id"], json[:primitive_execution_id])
+    assert_nil(json[:project_id])
+    assert_nil(json[:resource_kind])
+    assert_nil(json[:run_id])
+    assert_equal(fixture["status"], json[:status])
+    assert_nil(json[:workflow_id])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_usage_primitive_triggered_by_round_trip
+    fixture = {
+      "access_token_id" => nil,
+      "api_key_id" => nil,
+      "auth_method" => nil,
+      "key_name" => nil,
+      "key_prefix" => nil,
+      "user_id" => nil
+    }
+    model = Retab::UsagePrimitiveTriggeredBy.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_nil(json[:access_token_id])
+    assert_nil(json[:api_key_id])
+    assert_nil(json[:auth_method])
+    assert_nil(json[:key_name])
+    assert_nil(json[:key_prefix])
+    assert_nil(json[:user_id])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_usage_run_record_round_trip
+    fixture = {
+      "completed_at" => nil,
+      "created_at" => nil,
+      "credits" => 1.0,
+      "duration_ms" => nil,
+      "execution_duration_ms" => 1,
+      "page_count" => 1,
+      "retry_count" => 1,
+      "run_id" => "stub",
+      "started_at" => nil,
+      "status" => "stub",
+      "trigger_type" => "stub",
+      "workflow_id" => "stub"
+    }
+    model = Retab::UsageRunRecord.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_nil(json[:completed_at])
+    assert_nil(json[:created_at])
+    assert_equal(fixture["credits"], json[:credits])
+    assert_nil(json[:duration_ms])
+    assert_equal(fixture["execution_duration_ms"], json[:execution_duration_ms])
+    assert_equal(fixture["page_count"], json[:page_count])
+    assert_equal(fixture["retry_count"], json[:retry_count])
+    assert_equal(fixture["run_id"], json[:run_id])
+    assert_nil(json[:started_at])
+    assert_equal(fixture["status"], json[:status])
+    assert_equal(fixture["trigger_type"], json[:trigger_type])
+    assert_equal(fixture["workflow_id"], json[:workflow_id])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
   def test_validate_workflow_block_config_request_round_trip
     fixture = {
       "config" => {},
@@ -3474,9 +3612,7 @@ class ModelRoundTripTest < Minitest::Test
       "project_id" => nil,
       "published" => nil,
       "created_at" => "stub",
-      "updated_at" => "stub",
-      "capabilities" => nil,
-      "authz_status" => nil
+      "updated_at" => "stub"
     }
     model = Retab::Workflow.new(fixture.to_json)
     json = model.to_h
@@ -4083,7 +4219,8 @@ class ModelRoundTripTest < Minitest::Test
       "trigger" => {},
       "lifecycle" => {},
       "timing" => {},
-      "inputs" => {}
+      "inputs" => {},
+      "metadata" => nil
     }
     model = Retab::WorkflowRun.new(fixture.to_json)
     json = model.to_h

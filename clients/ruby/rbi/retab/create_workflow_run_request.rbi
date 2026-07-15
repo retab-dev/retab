@@ -33,6 +33,12 @@ module Retab
     sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
     def version=(value); end
 
+    sig { returns(T.nilable(T::Hash[String, String])) }
+    def metadata; end
+
+    sig { params(value: T.nilable(T::Hash[String, String])).returns(T.nilable(T::Hash[String, String])) }
+    def metadata=(value); end
+
     sig { returns(T::Hash[Symbol, T.untyped]) }
     def to_h; end
 

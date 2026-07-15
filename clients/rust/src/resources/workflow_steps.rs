@@ -18,6 +18,8 @@ pub struct ListParams {
     /// Optional workflow run ID filter.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub run_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub workflow_id: Option<String>,
     /// Optional logical block ID filter.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub block_id: Option<String>,
@@ -48,6 +50,7 @@ impl Default for ListParams {
     fn default() -> Self {
         Self {
             run_id: Default::default(),
+            workflow_id: Default::default(),
             block_id: Default::default(),
             step_id: Default::default(),
             block_type: Default::default(),

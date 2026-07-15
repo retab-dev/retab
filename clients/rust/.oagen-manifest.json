@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "rust",
-  "generatedAt": "2026-07-05T23:35:44.124Z",
+  "generatedAt": "2026-07-15T00:45:43.749Z",
   "files": [
     "Cargo.toml",
     "LICENSE-MIT",
@@ -92,16 +92,15 @@
     "src/enums/trigger_info_type.rs",
     "src/enums/update_experiment_request_n_consensus.rs",
     "src/enums/update_workflow_block_request_config_mode.rs",
+    "src/enums/usage_order.rs",
     "src/enums/validate_workflow_block_config_request_config_mode.rs",
     "src/enums/while_loop_termination_termination_reason.rs",
     "src/enums/workflow_artifact_operation.rs",
     "src/enums/workflow_artifacts_operation.rs",
-    "src/enums/workflow_authz_status.rs",
     "src/enums/workflow_block_create_request_type.rs",
     "src/enums/workflow_block_executions_order.rs",
     "src/enums/workflow_block_type.rs",
     "src/enums/workflow_block_version_type.rs",
-    "src/enums/workflow_capabilities.rs",
     "src/enums/workflow_config_block_type.rs",
     "src/enums/workflow_eval_result_verdict.rs",
     "src/enums/workflow_eval_run_results_order.rs",
@@ -388,6 +387,14 @@
     "src/models/update_workflow_request.rs",
     "src/models/update_workflow_table_request.rs",
     "src/models/upload_file_request.rs",
+    "src/models/usage_block_list.rs",
+    "src/models/usage_block_record.rs",
+    "src/models/usage_primitive_document.rs",
+    "src/models/usage_primitive_list.rs",
+    "src/models/usage_primitive_record.rs",
+    "src/models/usage_primitive_triggered_by.rs",
+    "src/models/usage_run_list.rs",
+    "src/models/usage_run_record.rs",
     "src/models/validate_workflow_block_config_request.rs",
     "src/models/validate_workflow_block_config_response.rs",
     "src/models/validation_error.rs",
@@ -478,6 +485,7 @@
     "src/resources/secrets.rs",
     "src/resources/splits.rs",
     "src/resources/tables.rs",
+    "src/resources/usage.rs",
     "src/resources/workflow_artifacts.rs",
     "src/resources/workflow_block_executions.rs",
     "src/resources/workflow_blocks.rs",
@@ -753,6 +761,18 @@
     "POST /v1/tables/{table_id}/validate": {
       "sdkMethod": "validate",
       "service": "tables"
+    },
+    "GET /v1/usage/blocks": {
+      "sdkMethod": "list_blocks",
+      "service": "usage"
+    },
+    "GET /v1/usage/primitives": {
+      "sdkMethod": "list_primitives",
+      "service": "usage"
+    },
+    "GET /v1/usage/runs": {
+      "sdkMethod": "list_runs",
+      "service": "usage"
     },
     "GET /v1/workflows": {
       "sdkMethod": "list",

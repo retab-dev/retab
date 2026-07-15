@@ -21,7 +21,7 @@ from .exceptions import (
     RateLimitError,
     ValidationError,
 )
-from .resources import files, schemas, extractions, classifications, parses, splits, partitions, edits, workflows, tables, secrets
+from .resources import files, schemas, extractions, classifications, parses, splits, partitions, edits, workflows, tables, secrets, usage
 from .types.standards import PreparedRequest
 
 logger = logging.getLogger("retab")
@@ -243,6 +243,7 @@ class Retab(BaseRetab):
         self.workflows = workflows.Workflows(client=self)
         self.tables = tables.Tables(client=self)
         self.secrets = secrets.Secrets(client=self)
+        self.usage = usage.Usage(client=self)
 
     def _request(
         self,
@@ -581,6 +582,7 @@ class AsyncRetab(BaseRetab):
         self.workflows = workflows.AsyncWorkflows(client=self)
         self.tables = tables.AsyncTables(client=self)
         self.secrets = secrets.AsyncSecrets(client=self)
+        self.usage = usage.AsyncUsage(client=self)
 
     async def _request(
         self,

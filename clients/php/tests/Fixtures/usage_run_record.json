@@ -1,0 +1,14 @@
+{
+  "completed_at": "2023-01-01T00:00:00.000Z",
+  "created_at": "2023-01-01T00:00:00.000Z",
+  "credits": 1,
+  "duration_ms": 1,
+  "execution_duration_ms": 1,
+  "page_count": 1,
+  "retry_count": 1,
+  "run_id": "run_id_01234",
+  "started_at": "2023-01-01T00:00:00.000Z",
+  "status": "test_status",
+  "trigger_type": "test_trigger_type",
+  "workflow_id": "workflow_id_01234"
+}

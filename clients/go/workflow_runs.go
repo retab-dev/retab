@@ -34,6 +34,8 @@ type WorkflowRunsListParams struct {
 	MaxDurationMs *int `url:"max_duration_ms,omitempty" json:"-"`
 	// Search is search by run ID (partial match)
 	Search *string `url:"search,omitempty" json:"-"`
+	// Metadata is filter by metadata equality: a JSON object of key/value pairs (e.g. {"tenant":"acme"}). Pairs AND together.
+	Metadata *string `url:"metadata,omitempty" json:"-"`
 	// Defaults to "timing.created_at".
 	SortBy *string `url:"sort_by,omitempty" json:"-"`
 }
@@ -54,6 +56,8 @@ type WorkflowRunsCreateParams struct {
 	JSONInputs *map[string]interface{} `json:"json_inputs,omitempty" url:"-"`
 	// Version is workflow version to run: 'production', 'draft', or a pinned version id like 'ver_...'. Only valid for fresh-run creation.
 	Version *string `json:"version,omitempty" url:"-"`
+	// Metadata is user-defined metadata to associate with this workflow run.
+	Metadata *map[string]string `json:"metadata,omitempty" url:"-"`
 }
 
 // Create workflow Run

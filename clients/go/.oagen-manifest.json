@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "go",
-  "generatedAt": "2026-07-05T23:35:14.288Z",
+  "generatedAt": "2026-07-14T13:14:15.038Z",
   "files": [
     "classifications.go",
     "compat.go",
@@ -27,6 +27,7 @@
     "secrets.go",
     "splits.go",
     "tables.go",
+    "usage.go",
     "workflow_artifacts.go",
     "workflow_block_executions.go",
     "workflow_blocks.go",
@@ -299,6 +300,18 @@
     "POST /v1/tables/{table_id}/validate": {
       "sdkMethod": "Validate",
       "service": "tables"
+    },
+    "GET /v1/usage/blocks": {
+      "sdkMethod": "ListBlocks",
+      "service": "usage"
+    },
+    "GET /v1/usage/primitives": {
+      "sdkMethod": "ListPrimitives",
+      "service": "usage"
+    },
+    "GET /v1/usage/runs": {
+      "sdkMethod": "ListRuns",
+      "service": "usage"
     },
     "GET /v1/workflows": {
       "sdkMethod": "List",

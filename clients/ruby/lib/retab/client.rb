@@ -45,6 +45,10 @@ module Retab
       @tables ||= Retab::Tables.new(self)
     end
 
+    def usage
+      @usage ||= Retab::Usage.new(self)
+    end
+
     def workflows
       @workflows ||= Retab::Workflows.new(self)
     end

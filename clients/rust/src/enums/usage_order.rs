@@ -6,14 +6,9 @@ use std::str::FromStr;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[non_exhaustive]
-pub enum WorkflowCapabilities {
-    WorkflowView,
-    WorkflowEdit,
-    WorkflowRun,
-    WorkflowDelete,
-    WorkflowPublish,
-    WorkflowReview,
-    WorkflowManage,
+pub enum UsageOrder {
+    Asc,
+    Desc,
     /// Wire value not recognized by this SDK version. The original
     /// string is preserved verbatim. WorkOS may add new enum values
     /// server-side; matching on this variant lets callers handle
@@ -21,54 +16,44 @@ pub enum WorkflowCapabilities {
     Unknown(String),
 }
 
-impl WorkflowCapabilities {
+impl UsageOrder {
     /// Canonical wire string for this value. For [`Self::Unknown`] returns the
     /// original wire value as received from the API.
     #[allow(deprecated)]
     pub fn as_str(&self) -> &str {
         match self {
-            Self::WorkflowView => "workflow:view",
-            Self::WorkflowEdit => "workflow:edit",
-            Self::WorkflowRun => "workflow:run",
-            Self::WorkflowDelete => "workflow:delete",
-            Self::WorkflowPublish => "workflow:publish",
-            Self::WorkflowReview => "workflow:review",
-            Self::WorkflowManage => "workflow:manage",
+            Self::Asc => "asc",
+            Self::Desc => "desc",
             Self::Unknown(s) => s.as_str(),
         }
     }
 }
 
-impl fmt::Display for WorkflowCapabilities {
+impl fmt::Display for UsageOrder {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(self.as_str())
     }
 }
 
-impl AsRef<str> for WorkflowCapabilities {
+impl AsRef<str> for UsageOrder {
     fn as_ref(&self) -> &str {
         self.as_str()
     }
 }
 
-impl FromStr for WorkflowCapabilities {
+impl FromStr for UsageOrder {
     type Err = std::convert::Infallible;
     #[allow(deprecated)]
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(match s {
-            "workflow:view" => Self::WorkflowView,
-            "workflow:edit" => Self::WorkflowEdit,
-            "workflow:run" => Self::WorkflowRun,
-            "workflow:delete" => Self::WorkflowDelete,
-            "workflow:publish" => Self::WorkflowPublish,
-            "workflow:review" => Self::WorkflowReview,
-            "workflow:manage" => Self::WorkflowManage,
+            "asc" => Self::Asc,
+            "desc" => Self::Desc,
             other => Self::Unknown(other.to_string()),
         })
     }
 }
 
-impl From<String> for WorkflowCapabilities {
+impl From<String> for UsageOrder {
     fn from(s: String) -> Self {
         // Reuse the original `String` allocation in the fallback branch.
         match Self::from_str(&s) {
@@ -78,19 +63,19 @@ impl From<String> for WorkflowCapabilities {
     }
 }
 
-impl From<&str> for WorkflowCapabilities {
+impl From<&str> for UsageOrder {
     fn from(s: &str) -> Self {
         Self::from_str(s).unwrap_or_else(|_| Self::Unknown(s.to_string()))
     }
 }
 
-impl Serialize for WorkflowCapabilities {
+impl Serialize for UsageOrder {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         serializer.serialize_str(self.as_str())
     }
 }
 
-impl<'de> Deserialize<'de> for WorkflowCapabilities {
+impl<'de> Deserialize<'de> for UsageOrder {
     fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         let s = String::deserialize(deserializer)?;
         Ok(Self::from(s))

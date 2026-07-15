@@ -27,6 +27,7 @@ export * from './schemas/interfaces/index.js';
 export * from './secrets/interfaces/index.js';
 export * from './splits/interfaces/index.js';
 export * from './tables/interfaces/index.js';
+export * from './usage/interfaces/index.js';
 export * from './workflows/interfaces/index.js';
 export * from './workflows/artifacts/interfaces/index.js';
 export * from './workflows/blocks/interfaces/index.js';

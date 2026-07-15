@@ -269,6 +269,11 @@
     "src/main/java/com/retab/models/UpdateWorkflowRequest.java",
     "src/main/java/com/retab/models/UpdateWorkflowTableRequest.java",
     "src/main/java/com/retab/models/UploadFileRequest.java",
+    "src/main/java/com/retab/models/UsageBlockRecord.java",
+    "src/main/java/com/retab/models/UsagePrimitiveDocument.java",
+    "src/main/java/com/retab/models/UsagePrimitiveRecord.java",
+    "src/main/java/com/retab/models/UsagePrimitiveTriggeredBy.java",
+    "src/main/java/com/retab/models/UsageRunRecord.java",
     "src/main/java/com/retab/models/ValidateWorkflowBlockConfigRequest.java",
     "src/main/java/com/retab/models/ValidateWorkflowBlockConfigResponse.java",
     "src/main/java/com/retab/models/ValidationError.java",
@@ -416,11 +421,9 @@
     "src/main/java/com/retab/types/WhileLoopTerminationTerminationReason.java",
     "src/main/java/com/retab/types/WorkflowArtifactOperation.java",
     "src/main/java/com/retab/types/WorkflowArtifactsOperation.java",
-    "src/main/java/com/retab/types/WorkflowAuthzStatus.java",
     "src/main/java/com/retab/types/WorkflowBlockCreateRequestType.java",
     "src/main/java/com/retab/types/WorkflowBlockType.java",
     "src/main/java/com/retab/types/WorkflowBlockVersionType.java",
-    "src/main/java/com/retab/types/WorkflowCapabilities.java",
     "src/main/java/com/retab/types/WorkflowConfigBlockType.java",
     "src/main/java/com/retab/types/WorkflowEvalResultVerdict.java",
     "src/main/java/com/retab/types/WorkflowEvalSchemaDrift.java",
@@ -440,6 +443,7 @@
     "src/main/java/com/retab/types/WorkflowTableFilterOperator.java",
     "src/main/java/com/retab/types/WorkflowTableValidationColumnRuleType.java",
     "src/main/java/com/retab/types/WorkflowTableValidationSeverity.java",
+    "src/main/java/com/retab/usage/UsageApi.java",
     "src/main/java/com/retab/workflowartifacts/WorkflowArtifactsApi.java",
     "src/main/java/com/retab/workflowblockexecutions/WorkflowBlockExecutionsApi.java",
     "src/main/java/com/retab/workflowblocks/WorkflowBlocksApi.java",
@@ -713,6 +717,18 @@
     "POST /v1/tables/{table_id}/validate": {
       "sdkMethod": "validate",
       "service": "tables"
+    },
+    "GET /v1/usage/blocks": {
+      "sdkMethod": "listBlocks",
+      "service": "usage"
+    },
+    "GET /v1/usage/primitives": {
+      "sdkMethod": "listPrimitives",
+      "service": "usage"
+    },
+    "GET /v1/usage/runs": {
+      "sdkMethod": "listRuns",
+      "service": "usage"
     },
     "GET /v1/workflows": {
       "sdkMethod": "list",

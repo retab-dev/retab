@@ -12,6 +12,7 @@ module Retab
 
     # List Workflow Run Steps
     # @param run_id [String, nil] Optional workflow run ID filter.
+    # @param workflow_id [String, nil]
     # @param block_id [String, nil] Optional logical block ID filter.
     # @param step_id [String, nil] Optional step ID filter.
     # @param block_type [Array<String>, nil] Optional block type filter. Repeat the query parameter for multiple values.
@@ -23,6 +24,7 @@ module Retab
     # @return [Retab::PaginatedList<Retab::WorkflowRunStep>]
     def list(
       run_id: nil,
+      workflow_id: nil,
       block_id: nil,
       step_id: nil,
       block_type: nil,
@@ -34,6 +36,7 @@ module Retab
     )
       params = {
         "run_id" => run_id,
+        "workflow_id" => workflow_id,
         "block_id" => block_id,
         "step_id" => step_id,
         "block_type" => block_type,
@@ -52,6 +55,7 @@ module Retab
       fetch_next = -> (cursor) {
         list(
           run_id: run_id,
+          workflow_id: workflow_id,
           block_id: block_id,
           step_id: step_id,
           block_type: block_type,
@@ -67,6 +71,7 @@ module Retab
         model: Retab::WorkflowRunStep,
         filters: {
           run_id: run_id,
+          workflow_id: workflow_id,
           block_id: block_id,
           step_id: step_id,
           block_type: block_type,

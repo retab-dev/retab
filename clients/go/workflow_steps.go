@@ -17,7 +17,8 @@ type WorkflowStepService struct {
 type WorkflowStepsListParams struct {
 	PaginationParams
 	// RunID is optional workflow run ID filter.
-	RunID *string `url:"run_id,omitempty" json:"-"`
+	RunID      *string `url:"run_id,omitempty" json:"-"`
+	WorkflowID *string `url:"workflow_id,omitempty" json:"-"`
 	// BlockID is optional logical block ID filter.
 	BlockID *string `url:"block_id,omitempty" json:"-"`
 	// StepID is optional step ID filter.

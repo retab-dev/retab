@@ -26,6 +26,11 @@ readonly class WorkflowRun implements \JsonSerializable
         public RunTiming $timing,
         /** Input payloads supplied at run creation time */
         public ?RunInputs $inputs = null,
+        /**
+         * User-defined metadata associated with this workflow run.
+         * @var array<string, string>|null
+         */
+        public ?array $metadata = null,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -53,6 +58,7 @@ readonly class WorkflowRun implements \JsonSerializable
             },
             timing: RunTiming::fromArray($data['timing']),
             inputs: isset($data['inputs']) ? RunInputs::fromArray($data['inputs']) : null,
+            metadata: $data['metadata'] ?? null,
         );
     }
 
@@ -67,6 +73,7 @@ readonly class WorkflowRun implements \JsonSerializable
             'lifecycle' => $this->lifecycle->toArray(),
             'timing' => $this->timing->toArray(),
             'inputs' => $this->inputs?->toArray(),
+            'metadata' => $this->metadata,
         ];
     }
 }

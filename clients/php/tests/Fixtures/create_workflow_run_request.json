@@ -9,5 +9,8 @@
   "json_inputs": {
     "key": {}
   },
-  "version": "test_version"
+  "version": "test_version",
+  "metadata": {
+    "key": "test_value"
+  }
 }

@@ -35,6 +35,9 @@ namespace Retab
         /// <summary>Search by run ID (partial match)</summary>
         public string? Search { get; set; }
 
+        /// <summary>Filter by metadata equality: a JSON object of key/value pairs (e.g. {"tenant":"acme"}). Pairs AND together.</summary>
+        public string? Metadata { get; set; }
+
         public string? SortBy { get; set; }
 
     }
@@ -53,6 +56,9 @@ namespace Retab
 
         /// <summary>Workflow version to run: 'production', 'draft', or a pinned version id like 'ver_...'. Only valid for fresh-run creation.</summary>
         public string? Version { get; set; }
+
+        /// <summary>User-defined metadata to associate with this workflow run.</summary>
+        public Dictionary<string, string>? Metadata { get; set; }
 
     }
 
