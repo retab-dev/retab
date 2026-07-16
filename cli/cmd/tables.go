@@ -325,6 +325,13 @@ func replaceCSVHeaderColumns(path string) ([]string, error) {
 	if alt := parseCSVHeaderRecord(s, ';'); len(alt) > len(header) {
 		header = alt
 	}
+	if len(header) == 0 {
+		// Malformed header (e.g. an unbalanced quote) that strict RFC-4180
+		// parsing rejects: fall back to the naive first-line split this
+		// function used before it was quote-aware, so broken input degrades
+		// exactly as it used to instead of dropping the header entirely.
+		return naiveCSVHeaderColumns(s), nil
+	}
 	cols := make([]string, 0, len(header))
 	for _, c := range header {
 		cols = append(cols, strings.TrimSpace(c))
@@ -333,19 +340,41 @@ func replaceCSVHeaderColumns(path string) ([]string, error) {
 }
 
 // parseCSVHeaderRecord reads just the first CSV record of s using the given
-// delimiter, returning nil when it can't be parsed. LazyQuotes keeps the
-// header peek permissive: a malformed cell degrades to best-effort text
-// instead of aborting the schema-preservation step.
+// delimiter, returning nil when it can't be parsed. Strict quoting (no
+// LazyQuotes) on purpose: a malformed header must fail here so the caller
+// falls back to the legacy naive split rather than swallowing data rows
+// into a giant header cell.
 func parseCSVHeaderRecord(s string, delim rune) []string {
 	reader := csv.NewReader(strings.NewReader(s))
 	reader.Comma = delim
-	reader.LazyQuotes = true
 	reader.FieldsPerRecord = -1
 	record, err := reader.Read()
 	if err != nil {
 		return nil
 	}
 	return record
+}
+
+// naiveCSVHeaderColumns is the pre-quote-aware header split, kept as the
+// fallback for input that strict CSV parsing rejects: cut at the first
+// newline, sniff the delimiter by count, split, and trim quotes/space.
+func naiveCSVHeaderColumns(s string) []string {
+	if i := strings.IndexByte(s, '\n'); i >= 0 {
+		s = s[:i]
+	}
+	line := strings.TrimRight(s, "\r")
+	if strings.TrimSpace(line) == "" {
+		return nil
+	}
+	delim := ","
+	if strings.Count(line, ";") > strings.Count(line, ",") {
+		delim = ";"
+	}
+	cols := make([]string, 0)
+	for _, c := range strings.Split(line, delim) {
+		cols = append(cols, strings.TrimSpace(strings.Trim(c, "\"")))
+	}
+	return cols
 }
 
 // addColumnSchemaOverridesField validates the --column-schema-overrides flag (a

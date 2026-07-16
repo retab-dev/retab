@@ -38,6 +38,10 @@ func TestReplaceCSVHeaderColumns(t *testing.T) {
 		// in preservedSchemaOverrides.
 		{"quoted-delimiter", write("q.csv", "\"last,first\",code\nAGCO,0000511029\n"), []string{"last,first", "code"}},
 		{"quoted-newline", write("n.csv", "\"multi\nline\",code\nA,1\n"), []string{"multi\nline", "code"}},
+		// An unbalanced quote is rejected by strict CSV parsing and must fall
+		// back to the legacy naive first-line split, not swallow data rows
+		// into a giant header cell.
+		{"unbalanced-quote", write("u.csv", "name,\"desc\nAGCO,1\nB,2\n"), []string{"name", "desc"}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

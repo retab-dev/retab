@@ -3,6 +3,7 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -491,5 +492,55 @@ func TestCompileLocalAPICallRequestClampsNonPositiveTimeout(t *testing.T) {
 				t.Fatalf("TimeoutSeconds = %d, want %d", req.TimeoutSeconds, tc.want)
 			}
 		})
+	}
+}
+
+// runLocalAPICallsParallel semantics: without continue-on-error it must be
+// fail-fast — return the first sample's error verbatim (matching the
+// sequential runner) and stop dispatching new samples; with it, every sample
+// runs and the aggregate error is returned. Guards the --jobs fail-fast path.
+func TestRunLocalAPICallsParallelFailFastSemantics(t *testing.T) {
+	bundleDir := t.TempDir()
+	outDir := filepath.Join(bundleDir, "outputs")
+	traceDir := filepath.Join(bundleDir, "traces")
+	for _, dir := range []string{outDir, traceDir} {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	inputs := []string{
+		filepath.Join(bundleDir, "missing-1.json"),
+		filepath.Join(bundleDir, "missing-2.json"),
+		filepath.Join(bundleDir, "missing-3.json"),
+		filepath.Join(bundleDir, "missing-4.json"),
+	}
+
+	stdout, _ := captureStd(t, func() {
+		err := runLocalAPICallsParallel(context.Background(), bundleDir, outDir, traceDir, map[string]any{}, map[string]string{}, inputs, "2", false, false, false)
+		if err == nil {
+			t.Error("fail-fast: expected an error, got nil")
+			return
+		}
+		if strings.Contains(err.Error(), "one or more local api_call samples failed") {
+			t.Errorf("fail-fast: got aggregate error %q, want the first sample's error", err)
+		}
+	})
+	_ = stdout
+
+	stdout, _ = captureStd(t, func() {
+		err := runLocalAPICallsParallel(context.Background(), bundleDir, outDir, traceDir, map[string]any{}, map[string]string{}, inputs, "2", false, false, true)
+		if err == nil {
+			t.Error("continue-on-error: expected an error, got nil")
+			return
+		}
+		if !strings.Contains(err.Error(), "one or more local api_call samples failed") {
+			t.Errorf("continue-on-error: got %q, want the aggregate error", err)
+		}
+	})
+	// Every sample must have been attempted and reported on stdout.
+	for _, input := range inputs {
+		if !strings.Contains(stdout, filepath.Base(input)) {
+			t.Errorf("continue-on-error: sample %s missing from output", filepath.Base(input))
+		}
 	}
 }

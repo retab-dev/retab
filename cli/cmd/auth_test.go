@@ -7,6 +7,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -1091,5 +1092,41 @@ func TestAddAuthOrganizationStatus_SwallowsFailure(t *testing.T) {
 
 	if _, ok := out["organization"]; ok {
 		t.Fatalf("organization should be absent when the lookup fails: %#v", out["organization"])
+	}
+}
+
+// promptSecret must return a piped secret that arrives without a trailing
+// newline (io.EOF with bytes read), but still fail fast on a closed/empty
+// stdin so `auth login --browser=false </dev/null` doesn't silently fall
+// through to the interactive browser flow.
+func TestPromptSecretEOFHandling(t *testing.T) {
+	run := func(input string) (string, error) {
+		r, w, err := os.Pipe()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := w.WriteString(input); err != nil {
+			t.Fatal(err)
+		}
+		if err := w.Close(); err != nil {
+			t.Fatal(err)
+		}
+		old := os.Stdin
+		os.Stdin = r
+		defer func() {
+			os.Stdin = old
+			_ = r.Close()
+		}()
+		return promptSecret("key: ")
+	}
+
+	if got, err := run("sk-test-key"); err != nil || got != "sk-test-key" {
+		t.Errorf("pipe without newline: got (%q, %v), want (sk-test-key, nil)", got, err)
+	}
+	if got, err := run("sk-test-key\n"); err != nil || got != "sk-test-key" {
+		t.Errorf("pipe with newline: got (%q, %v), want (sk-test-key, nil)", got, err)
+	}
+	if got, err := run(""); err == nil {
+		t.Errorf("empty stdin: got (%q, nil), want error", got)
 	}
 }
