@@ -399,7 +399,16 @@ var preferredColumnOrder = []struct {
 	// ``target_type``/``target`` covers spec-plan resource_changes; the
 	// trailing ``actions`` (array of {add|update|delete}) also rounds
 	// back into TYPE when the change-shape is what's being listed.
-	{"TYPE", []string{"type", "status", "block_type", "trigger_type", "lifecycle.status", "trigger.type", "operation", "actions"}},
+	//
+	// ``operation`` MUST precede the status aliases. Every *WorkflowArtifact
+	// variant carries ``operation`` and none carries ``type``, but six of them
+	// (extraction/split/classification/parse/partition/edit) also carry
+	// ``status`` — with ``status`` first those rendered TYPE="completed", a
+	// constant that says nothing, while the field that actually distinguishes
+	// the rows was never reached. The status-less artifact variants
+	// (api_call/conditional/function/review/while_loop) picked ``operation``
+	// up and looked fine, which is why the shadowing went unnoticed.
+	{"TYPE", []string{"type", "operation", "status", "block_type", "trigger_type", "lifecycle.status", "trigger.type", "actions"}},
 	{"MODEL", []string{"model"}},
 	// Timestamp columns are split per field so the rendered header matches the
 	// field actually shown. Lying about which timestamp a column shows is

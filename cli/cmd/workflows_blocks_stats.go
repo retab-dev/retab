@@ -52,7 +52,7 @@ var workflowsBlocksStatsCmd = &cobra.Command{
 	Long: `Fetch dashboard block stats for one block.
 
 The backend endpoint is scoped by both workflow id and block id, so pass the
-workflow id positionally (` + "`stats <workflow-id> <block-id>`" + `) or with
+workflow id positionally (` + "`blocks stats <workflow-id> <block-id>`" + `) or with
 ` + "`--workflow-id`" + `. The endpoint returns dashboard analytics for run
 volume plus the block-specific output shape. Use ` + "`--from`" + `, ` + "`--to`" + `, and
 ` + "`--granularity`" + ` to choose the analytics time window.`,
@@ -121,7 +121,12 @@ func resolveBlockStatsScope(cmd *cobra.Command, args []string) (string, string, 
 		return "", "", fmt.Errorf("block-id positional argument is empty")
 	}
 	if workflowID == "" {
-		return "", "", fmt.Errorf("workflow id is required for block stats; pass `stats <workflow-id> <block-id>` or `--workflow-id <workflow-id>`")
+		// Name the full command path, not the bare leaf: this command is reached
+		// as BOTH `workflows blocks stats` and `workflows stats blocks`, and the
+		// old hint ("stats <workflow-id> <block-id>") reads as `workflows stats
+		// <workflow-id> <block-id>` from the latter — a form that does not exist
+		// and fails with cobra's "accepts 1 arg(s), received 2".
+		return "", "", fmt.Errorf("workflow id is required for block stats; pass `workflows blocks stats <workflow-id> <block-id>` or `--workflow-id <workflow-id>`")
 	}
 	return workflowID, blockID, nil
 }

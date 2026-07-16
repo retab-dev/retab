@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
@@ -58,6 +59,49 @@ type cliPublishedWorkflowVersion struct {
 	IsCurrent         bool    `json:"is_current"`
 }
 
+// publishedVersionColumns is the dedicated TableColumn spec for
+// `workflows versions list --output table/csv`.
+//
+// The generic auto-renderer matched only `id` out of preferredColumnOrder
+// (these rows carry no name/type/created_at), collapsing the table to a single
+// column of `wph_...` publication-record ids. That id is a dead end: nothing
+// accepts it — `versions get/diff/restore` all take the `ver_...`
+// workflow_version_id — so the sole identifier on screen 404s when pasted into
+// the next command, while the one it needs was hidden. Lead with the version
+// ordinal and the actionable id, and say which version is live.
+var publishedVersionColumns = []TableColumn{
+	{Header: "VERSION", Extract: func(row any) string { return workflowVersionCell(row, "version") }},
+	{Header: "WORKFLOW_VERSION_ID", Extract: func(row any) string { return workflowVersionCell(row, "workflow_version_id") }},
+	{Header: "CURRENT", Extract: publishedVersionCurrentCell},
+	{Header: "DESCRIPTION", Extract: func(row any) string { return workflowVersionCell(row, "description") }},
+	{Header: "PUBLISHED_AT", Extract: func(row any) string {
+		return normalizeTimestampCell(workflowVersionCell(row, "published_at"))
+	}},
+}
+
+func workflowVersionCell(row any, key string) string {
+	value, ok := rowField(row, key)
+	if !ok || cellIsEmpty(value) || !cellIsDisplayable(value) {
+		return ""
+	}
+	return stringifyCell(value)
+}
+
+// publishedVersionCurrentCell renders is_current. It is spelled out rather than
+// routed through workflowVersionCell because cellIsEmpty treats the zero value
+// (false) as absent, which would blank the column for every non-live version and
+// leave the reader unable to tell "not current" from "field missing".
+func publishedVersionCurrentCell(row any) string {
+	value, ok := rowField(row, "is_current")
+	if !ok {
+		return ""
+	}
+	if current, isBool := value.(bool); isBool && current {
+		return "yes"
+	}
+	return ""
+}
+
 var workflowsVersionsListCmd = &cobra.Command{
 	Use:   "list <workflow-id>",
 	Short: "List published workflow versions",
@@ -72,6 +116,15 @@ var workflowsVersionsListCmd = &cobra.Command{
 		path := fmt.Sprintf("/v1/workflows/%s/published-versions", url.PathEscape(args[0]))
 		if err := cliJSONRequestInto(cmd, http.MethodGet, path, query, nil, &result); err != nil {
 			return err
+		}
+		format := OutputAuto
+		if f := cmd.Root().PersistentFlags().Lookup("output"); f != nil {
+			if raw := f.Value.String(); raw != "" {
+				format = OutputFormat(raw)
+			}
+		}
+		if format == OutputTable || format == OutputCSV {
+			return RenderList(os.Stdout, format, result, publishedVersionColumns)
 		}
 		return printResult(cmd, result)
 	}),

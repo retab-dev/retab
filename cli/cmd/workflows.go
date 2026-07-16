@@ -82,8 +82,10 @@ asks you to confirm.
 Review is configured on the block (` + "`config.review`" + `), not as a
 standalone block. A reviewed run pauses with status
 ` + "`awaiting_review`" + ` and is resumed through
-` + "`retab workflows reviews approve --version-id ...`" + ` or failed through
-` + "`retab workflows reviews reject --version-id ... --reason ...`" + `.
+` + "`retab workflows reviews approve <review-id>`" + ` or failed through
+` + "`retab workflows reviews reject <review-id> --reason ...`" + `.
+Both act on the review's latest version by default; pass
+` + "`--version-id rvr_...`" + ` to pin an exact one.
 For low-confidence review, enable consensus on the reviewed block
 (` + "`n_consensus > 1`" + `) and use predicates such as
 ` + "`confidence_lt`" + `, ` + "`field_confidence_lt`" + `,
