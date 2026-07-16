@@ -311,23 +311,41 @@ func replaceCSVHeaderColumns(path string) ([]string, error) {
 	if err != nil && err != io.EOF {
 		return nil, err
 	}
-	s := string(buf[:n])
-	if i := strings.IndexByte(s, '\n'); i >= 0 {
-		s = s[:i]
-	}
-	line := strings.TrimRight(strings.TrimPrefix(s, "\ufeff"), "\r")
-	if strings.TrimSpace(line) == "" {
+	s := strings.TrimPrefix(string(buf[:n]), "\ufeff")
+	if strings.TrimSpace(s) == "" {
 		return nil, nil
 	}
-	delim := ","
-	if strings.Count(line, ";") > strings.Count(line, ",") {
-		delim = ";"
+	// Parse the header with encoding/csv rather than a raw strings.Split so
+	// RFC-4180 quoting is honored: a quoted header cell may contain the
+	// delimiter (or even a newline), and mis-splitting it would make
+	// preservedSchemaOverrides silently drop that column's schema override.
+	// The delimiter (',' vs ';') is chosen by whichever quote-aware parse
+	// yields more header fields, matching the backend's auto-detection.
+	header := parseCSVHeaderRecord(s, ',')
+	if alt := parseCSVHeaderRecord(s, ';'); len(alt) > len(header) {
+		header = alt
 	}
-	cols := make([]string, 0)
-	for _, c := range strings.Split(line, delim) {
-		cols = append(cols, strings.TrimSpace(strings.Trim(c, "\"")))
+	cols := make([]string, 0, len(header))
+	for _, c := range header {
+		cols = append(cols, strings.TrimSpace(c))
 	}
 	return cols, nil
+}
+
+// parseCSVHeaderRecord reads just the first CSV record of s using the given
+// delimiter, returning nil when it can't be parsed. LazyQuotes keeps the
+// header peek permissive: a malformed cell degrades to best-effort text
+// instead of aborting the schema-preservation step.
+func parseCSVHeaderRecord(s string, delim rune) []string {
+	reader := csv.NewReader(strings.NewReader(s))
+	reader.Comma = delim
+	reader.LazyQuotes = true
+	reader.FieldsPerRecord = -1
+	record, err := reader.Read()
+	if err != nil {
+		return nil
+	}
+	return record
 }
 
 // addColumnSchemaOverridesField validates the --column-schema-overrides flag (a
@@ -495,69 +513,73 @@ func tableCommandResultForPrint(result any) any {
 }
 
 func renderTableMetadataRows(format OutputFormat, rows []map[string]any) error {
+	csvOut := format == OutputCSV
 	columns := []TableColumn{
-		tableMapColumn("id", "id"),
-		tableMapColumn("name", "name"),
-		tableMapColumn("filename", "filename"),
-		tableMapColumn("rows", "row_count"),
+		tableMapColumn("id", "id", csvOut),
+		tableMapColumn("name", "name", csvOut),
+		tableMapColumn("filename", "filename", csvOut),
+		tableMapColumn("rows", "row_count", csvOut),
 		{
 			Header: "columns",
 			Extract: func(row any) string {
 				table, _ := row.(map[string]any)
-				return tableColumnNamesSummary(table["columns"])
+				return tableColumnNamesSummary(table["columns"], csvOut)
 			},
 		},
-		tableMapColumn("updated_at", "updated_at"),
+		tableMapColumn("updated_at", "updated_at", csvOut),
 	}
 	return renderMapRowsTable(format, rows, columns)
 }
 
 func renderTableSchemaRows(format OutputFormat, rows []map[string]any) error {
+	csvOut := format == OutputCSV
 	columns := []TableColumn{
-		tableMapColumn("name", "name"),
+		tableMapColumn("name", "name", csvOut),
 		{
 			Header: "type",
 			Extract: func(row any) string {
 				column, _ := row.(map[string]any)
-				return tableJSONSchemaField(column, "type")
+				return tableJSONSchemaField(column, "type", csvOut)
 			},
 		},
 		{
 			Header: "format",
 			Extract: func(row any) string {
 				column, _ := row.(map[string]any)
-				return tableJSONSchemaField(column, "format")
+				return tableJSONSchemaField(column, "format", csvOut)
 			},
 		},
-		tableMapColumn("required", "required"),
-		tableMapColumn("unique", "unique"),
-		tableMapColumn("sample_values", "sample_values"),
+		tableMapColumn("required", "required", csvOut),
+		tableMapColumn("unique", "unique", csvOut),
+		tableMapColumn("sample_values", "sample_values", csvOut),
 	}
 	return renderMapRowsTable(format, rows, columns)
 }
 
 func renderTableProfileRows(format OutputFormat, rows []map[string]any) error {
+	csvOut := format == OutputCSV
 	columns := []TableColumn{
-		tableMapColumn("name", "name"),
+		tableMapColumn("name", "name", csvOut),
 		{
 			Header: "type",
 			Extract: func(row any) string {
 				column, _ := row.(map[string]any)
-				return tableJSONSchemaField(column, "type")
+				return tableJSONSchemaField(column, "type", csvOut)
 			},
 		},
-		tableMapColumn("rows", "row_count"),
-		tableMapColumn("nulls", "null_count"),
-		tableMapColumn("empty", "empty_count"),
-		tableMapColumn("distinct", "distinct_count"),
-		tableMapColumn("min", "min"),
-		tableMapColumn("max", "max"),
-		tableMapColumn("samples", "sample_values"),
+		tableMapColumn("rows", "row_count", csvOut),
+		tableMapColumn("nulls", "null_count", csvOut),
+		tableMapColumn("empty", "empty_count", csvOut),
+		tableMapColumn("distinct", "distinct_count", csvOut),
+		tableMapColumn("min", "min", csvOut),
+		tableMapColumn("max", "max", csvOut),
+		tableMapColumn("samples", "sample_values", csvOut),
 	}
 	return renderMapRowsTable(format, rows, columns)
 }
 
 func renderTableValidationRows(format OutputFormat, result map[string]any, diagnostics []map[string]any) error {
+	csvOut := format == OutputCSV
 	if len(diagnostics) == 0 {
 		status := "ok"
 		if hasErrors, ok := result["has_errors"].(bool); ok && hasErrors {
@@ -571,17 +593,17 @@ func renderTableValidationRows(format OutputFormat, result map[string]any, diagn
 				"diagnostics": 0,
 			}},
 			[]TableColumn{
-				tableMapColumn("table_id", "table_id"),
-				tableMapColumn("status", "status"),
-				tableMapColumn("diagnostics", "diagnostics"),
+				tableMapColumn("table_id", "table_id", csvOut),
+				tableMapColumn("status", "status", csvOut),
+				tableMapColumn("diagnostics", "diagnostics", csvOut),
 			},
 		)
 	}
 	columns := []TableColumn{
-		tableMapColumn("severity", "severity"),
-		tableMapColumn("column", "column"),
-		tableMapColumn("rule", "rule"),
-		tableMapColumn("message", "message"),
+		tableMapColumn("severity", "severity", csvOut),
+		tableMapColumn("column", "column", csvOut),
+		tableMapColumn("rule", "rule", csvOut),
+		tableMapColumn("message", "message", csvOut),
 	}
 	return renderMapRowsTable(format, diagnostics, columns)
 }
@@ -594,8 +616,8 @@ func renderTableDeleteResult(tableID string) error {
 			"status": "deleted",
 		}},
 		[]TableColumn{
-			tableMapColumn("id", "id"),
-			tableMapColumn("status", "status"),
+			tableMapColumn("id", "id", false),
+			tableMapColumn("status", "status", false),
 		},
 	)
 }
@@ -625,7 +647,7 @@ func renderDownloadedCSVTable(body []byte) error {
 	}
 	columns := make([]TableColumn, 0, len(headers))
 	for _, header := range headers {
-		columns = append(columns, tableMapColumn(header, header))
+		columns = append(columns, tableMapColumn(header, header, false))
 	}
 	return renderMapRowsTable(OutputTable, rows, columns)
 }
@@ -669,7 +691,7 @@ func renderMapRowsTable(format OutputFormat, rows []map[string]any, columns []Ta
 	return renderAutoTableWithEmptyHint(os.Stdout, tabulableRows, columns, os.Stdout)
 }
 
-func tableMapColumn(header string, key string) TableColumn {
+func tableMapColumn(header string, key string, csv bool) TableColumn {
 	return TableColumn{
 		Header: header,
 		Extract: func(row any) string {
@@ -677,35 +699,42 @@ func tableMapColumn(header string, key string) TableColumn {
 			if !ok {
 				return ""
 			}
-			return tableCell(values[key])
+			return tableCell(values[key], csv)
 		},
 	}
 }
 
-func tableCell(value any) string {
-	return workflowTableCellText(value, tableQueryRenderOptions{MaxWidth: 96})
+// tableCell renders a metadata cell. csv mirrors the query path's
+// tableQueryRenderOptions.CSV: CSV output must stay faithful and
+// re-importable (empty cells stay empty rather than "-", long cells are not
+// truncated) — see workflowTableCellText/cleanWorkflowTableCell.
+func tableCell(value any, csv bool) string {
+	return workflowTableCellText(value, tableQueryRenderOptions{MaxWidth: 96, CSV: csv})
 }
 
-func tableColumnNamesSummary(value any) string {
+func tableColumnNamesSummary(value any, csv bool) string {
 	columns, ok := mapSliceValue(value)
 	if !ok {
-		return tableCell(value)
+		return tableCell(value, csv)
 	}
 	names := []string{}
 	for _, column := range columns {
-		if name := strings.TrimSpace(tableCell(column["name"])); name != "" && name != "-" {
+		if name := strings.TrimSpace(tableCell(column["name"], csv)); name != "" && name != "-" {
 			names = append(names, name)
 		}
 	}
 	return strings.Join(names, ",")
 }
 
-func tableJSONSchemaField(column map[string]any, field string) string {
+func tableJSONSchemaField(column map[string]any, field string, csv bool) string {
 	schema, ok := mapValue(column["json_schema"])
 	if !ok {
+		if csv {
+			return ""
+		}
 		return "-"
 	}
-	return tableCell(schema[field])
+	return tableCell(schema[field], csv)
 }
 
 func looksLikeProfileColumns(columns []map[string]any) bool {

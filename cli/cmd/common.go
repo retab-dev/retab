@@ -2134,14 +2134,23 @@ func resolveFileIDToSignedDownloadMIMEData(cmd *cobra.Command, fileID string) (r
 	return retab.MIMEData{Filename: filename, URL: link.DownloadURL}, nil
 }
 
+// documentFlagsPresent reports whether any of the standard document-source
+// flags (--file, --url, --file-id, --document-file) was given a value. Lets
+// callers run cheap mutual-exclusion checks before resolveDocument does any
+// work (--file-id resolution costs a server round trip).
+func documentFlagsPresent(cmd *cobra.Command) bool {
+	for _, name := range []string{"file", "url", "file-id", "document-file"} {
+		if v, _ := cmd.Flags().GetString(name); v != "" {
+			return true
+		}
+	}
+	return false
+}
+
 // resolveOptionalDocument is like resolveDocument but returns (nil, nil)
 // when no flag is set.
 func resolveOptionalDocument(cmd *cobra.Command) (any, error) {
-	file, _ := cmd.Flags().GetString("file")
-	urlStr, _ := cmd.Flags().GetString("url")
-	fileID, _ := cmd.Flags().GetString("file-id")
-	docFile, _ := cmd.Flags().GetString("document-file")
-	if file == "" && urlStr == "" && fileID == "" && docFile == "" {
+	if !documentFlagsPresent(cmd) {
 		return nil, nil
 	}
 	return resolveDocument(cmd)

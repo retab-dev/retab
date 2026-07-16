@@ -24,7 +24,21 @@ type cliRouteContract struct {
 // exposes ahead of the public OpenAPI reference. Drop entries here once the
 // routes ship (the test below fails if a route lands in OpenAPI while still
 // listed here, so the list can't go stale).
-var approvedWorkflowCLINonReferenceRoutes = map[string]bool{}
+var approvedWorkflowCLINonReferenceRoutes = map[string]bool{
+	// The evals surface (renamed from workflows/tests) is live in the API but
+	// not yet published in the public OpenAPI reference.
+	"POST /v1/workflows/evals":                      true,
+	"GET /v1/workflows/evals":                       true,
+	"GET /v1/workflows/evals/{eval_id}":             true,
+	"PATCH /v1/workflows/evals/{eval_id}":           true,
+	"DELETE /v1/workflows/evals/{eval_id}":          true,
+	"POST /v1/workflows/evals/runs":                 true,
+	"GET /v1/workflows/evals/runs":                  true,
+	"GET /v1/workflows/evals/runs/{run_id}":         true,
+	"POST /v1/workflows/evals/runs/{run_id}/cancel": true,
+	"GET /v1/workflows/evals/results":               true,
+	"GET /v1/workflows/evals/results/{result_id}":   true,
+}
 
 // workflowRoutePathApproved reports whether any method of the given "/v1"-prefixed
 // path is in approvedWorkflowCLINonReferenceRoutes, so the route-string loop below

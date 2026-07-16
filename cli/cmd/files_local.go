@@ -27,7 +27,7 @@ func init() {
 	filesParseCmd.Flags().String("file", "", "path to the local document (alternative to the positional <path>)")
 	filesParseCmd.Flags().String("format", "text", "output format: text | json")
 	filesParseCmd.Flags().Bool("bbox", false, "include per-item bounding boxes in JSON output (pdf/image)")
-	filesParseCmd.Flags().StringP("out", "o", "", "write output to this path instead of stdout")
+	filesParseCmd.Flags().StringP("out", "o", "", "write output to this path instead of stdout, - for stdout")
 
 	addParseOptionFlags(filesGrepCmd)
 	filesGrepCmd.Flags().String("file", "", "path to the local document (alternative to the positional <path>)")

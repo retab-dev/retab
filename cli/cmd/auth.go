@@ -1023,7 +1023,13 @@ func promptSecret(prompt string) (string, error) {
 	}
 	reader := bufio.NewReader(os.Stdin)
 	line, err := reader.ReadString('\n')
-	if err != nil {
+	// Tolerate io.EOF only when bytes were actually read: piped input
+	// without a trailing newline (e.g. `printf '%s' "$KEY" | retab auth
+	// login`) still delivers the secret in line, and failing on the EOF
+	// would discard it. An EOF with NOTHING read (closed/empty stdin) stays
+	// an error — `auth login --browser=false </dev/null` must fail fast, not
+	// fall through to the interactive browser flow.
+	if err != nil && !(errors.Is(err, io.EOF) && line != "") {
 		return "", err
 	}
 	return strings.TrimRight(line, "\r\n"), nil

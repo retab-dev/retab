@@ -101,6 +101,12 @@ func appendKVPairs(into map[string]string, source map[string]string, raws []stri
 		if !ok {
 			return fmt.Errorf("%s expects block-id=path, got %q", flagName, raw)
 		}
+		// Trim the key like the --document-id/--document-url parsers do: an
+		// untrimmed key (e.g. --document " start"=a.pdf) would dodge the
+		// cross-flag duplicate/overlap checks (which compare trimmed keys
+		// against this map) and dodge start-block alias resolution, reaching
+		// the server as a bogus block id.
+		key = strings.TrimSpace(key)
 		if key == "" || path == "" {
 			return fmt.Errorf("%s expects block-id=path, got %q", flagName, raw)
 		}
@@ -1082,15 +1088,26 @@ which addresses a parent collection, takes a workflow id. The same holds for
 		// so callers get the run + its execution records in one command
 		// instead of a second `workflows steps list` round trip.
 		if includeSteps, _ := cmd.Flags().GetBool("steps"); includeSteps {
-			steps, err := client.Workflows.Steps.List(ctx, &retab.WorkflowStepsListParams{RunID: ptr(runID)})
+			page, err := client.Workflows.Steps.List(ctx, &retab.WorkflowStepsListParams{RunID: ptr(runID)})
 			if err != nil {
+				return err
+			}
+			// Walk every page: a run with more steps than the server's default
+			// page size (easy with loop/for_each blocks) would otherwise embed
+			// a silently truncated subset. Same rationale as
+			// listAllWorkflowBlocks/listAllWorkflowEdges.
+			steps := []retab.WorkflowRunStep{}
+			if err := page.AutoPaging(ctx, func(s retab.WorkflowRunStep) error {
+				steps = append(steps, s)
+				return nil
+			}); err != nil {
 				return err
 			}
 			merged, err := primitiveMap(result)
 			if err != nil {
 				return err
 			}
-			merged["steps"] = steps.Data
+			merged["steps"] = steps
 			return printResult(cmd, merged)
 		}
 		return printResult(cmd, result)

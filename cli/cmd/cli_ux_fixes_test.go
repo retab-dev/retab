@@ -33,6 +33,11 @@ func TestReplaceCSVHeaderColumns(t *testing.T) {
 		{"bom+quotes", write("b.csv", "\ufeff\"customer_name\",\"code\"\nAGCO,1\n"), []string{"customer_name", "code"}},
 		{"crlf", write("r.csv", "a,b\r\n1,2\r\n"), []string{"a", "b"}},
 		{"single-header-no-newline", write("h.csv", "only"), []string{"only"}},
+		// RFC-4180 quoting: a quoted header cell may contain the delimiter;
+		// mis-splitting it would silently drop that column's schema override
+		// in preservedSchemaOverrides.
+		{"quoted-delimiter", write("q.csv", "\"last,first\",code\nAGCO,0000511029\n"), []string{"last,first", "code"}},
+		{"quoted-newline", write("n.csv", "\"multi\nline\",code\nA,1\n"), []string{"multi\nline", "code"}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

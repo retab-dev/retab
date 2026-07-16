@@ -92,8 +92,11 @@ parse/grep calls with the same flags reuse the expensive text extraction/OCR.`,
 		}
 
 		out := os.Stdout
+		// `-o -` is an explicit stdout, matching `files download` and
+		// `tables download`; without this os.Create would make a file
+		// literally named "-".
 		outPath, _ := cmd.Flags().GetString("out")
-		if outPath != "" {
+		if outPath != "" && outPath != "-" {
 			f, err := os.Create(outPath)
 			if err != nil {
 				return fmt.Errorf("create %s: %w", outPath, err)

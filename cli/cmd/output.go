@@ -818,6 +818,25 @@ func cellIsDisplayable(v any) bool {
 		reflect.Float32, reflect.Float64,
 		reflect.String:
 		return true
+	case reflect.Slice, reflect.Array:
+		// A non-empty array of displayable scalars (e.g. spec-plan
+		// "actions": ["delete"]) renders as a comma-joined list (see
+		// stringifyCell) — this is what lets the ``actions`` alias in
+		// preferredColumnOrder actually light up the TYPE column. []byte
+		// stays non-displayable (it would render as joined numbers).
+		if rv.Type().Elem().Kind() == reflect.Uint8 {
+			return false
+		}
+		if rv.Len() == 0 {
+			return false
+		}
+		for i := 0; i < rv.Len(); i++ {
+			elem := rv.Index(i)
+			if !elem.CanInterface() || !cellIsDisplayable(elem.Interface()) {
+				return false
+			}
+		}
+		return true
 	default:
 		return false
 	}
@@ -955,6 +974,19 @@ func stringifyCell(v any) string {
 		if rv.IsNil() {
 			return ""
 		}
+	}
+	// Arrays of scalars (admitted by cellIsDisplayable) render as a
+	// comma-joined list — "delete" beats the %v form "[delete]". []byte is
+	// excluded (joined numbers would be nonsense); it keeps the %v fallback.
+	if (rv.Kind() == reflect.Slice || rv.Kind() == reflect.Array) && rv.Type().Elem().Kind() != reflect.Uint8 {
+		parts := make([]string, 0, rv.Len())
+		for i := 0; i < rv.Len(); i++ {
+			if !rv.Index(i).CanInterface() {
+				return fmt.Sprintf("%v", v)
+			}
+			parts = append(parts, stringifyCell(rv.Index(i).Interface()))
+		}
+		return strings.Join(parts, ",")
 	}
 	switch t := v.(type) {
 	case string:

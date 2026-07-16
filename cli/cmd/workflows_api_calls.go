@@ -205,8 +205,14 @@ func runAPICallBundleCommand(cmd *cobra.Command, args []string, executeHTTP bool
 			return err
 		}
 	}
-	if continueOnError {
-		return runLocalAPICallsParallel(ctx, dir, outputDir, traceDir, config, env, inputs, jobs, executeHTTP, absolutePaths)
+	// Honor an explicitly-passed --jobs even without --continue-on-error:
+	// previously the flag was silently ignored on the fail-fast path (only
+	// --continue-on-error reached the parallel runner), so `--jobs 8` ran
+	// strictly one-at-a-time. Fail-fast semantics are preserved in the
+	// parallel runner (no new samples dispatched after a failure, the first
+	// error is returned). The default (no --jobs) stays sequential.
+	if continueOnError || (cmd.Flags().Changed("jobs") && localAPICallWorkerCount(jobs, len(inputs)) > 1) {
+		return runLocalAPICallsParallel(ctx, dir, outputDir, traceDir, config, env, inputs, jobs, executeHTTP, absolutePaths, continueOnError)
 	}
 	return runLocalAPICallsSequential(ctx, dir, outputDir, traceDir, config, env, inputs, executeHTTP, absolutePaths)
 }
@@ -262,13 +268,14 @@ func runLocalAPICallsSequential(ctx context.Context, bundleDir string, outDir st
 	return nil
 }
 
-func runLocalAPICallsParallel(ctx context.Context, bundleDir string, outDir string, traceDir string, config map[string]any, env map[string]string, inputs []string, jobsRaw string, executeHTTP bool, absolutePaths bool) error {
+func runLocalAPICallsParallel(ctx context.Context, bundleDir string, outDir string, traceDir string, config map[string]any, env map[string]string, inputs []string, jobsRaw string, executeHTTP bool, absolutePaths bool, continueOnError bool) error {
 	workers := localAPICallWorkerCount(jobsRaw, len(inputs))
 	inputCh := make(chan string)
 	var wg sync.WaitGroup
 	var printMu sync.Mutex
 	var stateMu sync.Mutex
 	sawFailure := false
+	var firstErr error
 	for index := 0; index < workers; index++ {
 		wg.Add(1)
 		go func() {
@@ -278,6 +285,9 @@ func runLocalAPICallsParallel(ctx context.Context, bundleDir string, outDir stri
 				if err != nil {
 					stateMu.Lock()
 					sawFailure = true
+					if firstErr == nil {
+						firstErr = err
+					}
 					stateMu.Unlock()
 					result = map[string]any{
 						"input": input,
@@ -292,10 +302,23 @@ func runLocalAPICallsParallel(ctx context.Context, bundleDir string, outDir stri
 		}()
 	}
 	for _, input := range inputs {
+		// Fail-fast mode (--jobs without --continue-on-error): stop handing
+		// out new samples once one has failed; in-flight samples finish.
+		if !continueOnError {
+			stateMu.Lock()
+			failed := sawFailure
+			stateMu.Unlock()
+			if failed {
+				break
+			}
+		}
 		inputCh <- input
 	}
 	close(inputCh)
 	wg.Wait()
+	if !continueOnError && firstErr != nil {
+		return firstErr
+	}
 	if sawFailure {
 		return fmt.Errorf("one or more local api_call samples failed; inspect trace files under %s", traceDir)
 	}

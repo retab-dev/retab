@@ -10,7 +10,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"mime"
 	"net/http"
 	"net/url"
 	"os"
@@ -238,29 +237,15 @@ func resolveUploadMIMEType(serverMIMEType, uploadPath, detectedContentType strin
 	if serverMIMEType != "" {
 		return serverMIMEType
 	}
-	if ext := filepath.Ext(uploadPath); ext != "" {
-		if byExt := mime.TypeByExtension(ext); byExt != "" {
-			if i := strings.IndexByte(byExt, ';'); i >= 0 {
-				byExt = strings.TrimSpace(byExt[:i])
-			}
-			if byExt != "" {
-				return byExt
-			}
-		}
+	if byExt := mimeTypeFromExtension(uploadPath); byExt != "" {
+		return byExt
 	}
 	return detectedContentType
 }
 
 func detectUploadContentType(uploadPath string, data []byte) string {
-	if ext := filepath.Ext(uploadPath); ext != "" {
-		if byExt := mime.TypeByExtension(ext); byExt != "" {
-			if i := strings.IndexByte(byExt, ';'); i >= 0 {
-				byExt = strings.TrimSpace(byExt[:i])
-			}
-			if byExt != "" {
-				return byExt
-			}
-		}
+	if byExt := mimeTypeFromExtension(uploadPath); byExt != "" {
+		return byExt
 	}
 	return http.DetectContentType(data)
 }
@@ -415,10 +400,13 @@ truncates an existing file or leaves a half-written one behind.`,
 			return err
 		}
 		if !toStdout && dest == "" {
-			dest = link.Filename
+			dest = safeDownloadName(link.Filename)
 			if dest == "" {
 				dest = args[0]
 			}
+		}
+		if !toStdout {
+			dest = resolveDirDest(dest, link.Filename, args[0])
 		}
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, link.DownloadURL, nil)
 		if err != nil {

@@ -45,10 +45,9 @@ rendered output (handy when distinguishing edits from multiple passes).`,
     --instructions "Redact all personal phone numbers" \
     --model gpt-4o
 
-  # Apply a saved template to a new document
+  # Run a saved template (uses the template's stored fields and document)
   retab edits create \
     --template-id tmpl_abc123 \
-    --file ./new-invoice.pdf \
     --instructions "Fill the standard invoice fields" \
     --model gpt-4o
 
@@ -62,11 +61,19 @@ rendered output (handy when distinguishing edits from multiple passes).`,
 		if err != nil {
 			return err
 		}
+		templateID, _ := cmd.Flags().GetString("template-id")
+		// The API rejects both-set with a 400 (document and template_id are
+		// mutually exclusive — a template brings its own document); fail
+		// client-side with a clear message instead. Checked via the raw
+		// flags BEFORE resolveOptionalDocument so --file-id doesn't burn a
+		// lookup round trip first.
+		if templateID != "" && documentFlagsPresent(cmd) {
+			return fmt.Errorf("--template-id and a document are mutually exclusive; pass exactly one")
+		}
 		doc, err := resolveOptionalDocument(cmd)
 		if err != nil {
 			return err
 		}
-		templateID, _ := cmd.Flags().GetString("template-id")
 		model, _ := cmd.Flags().GetString("model")
 		color, _ := cmd.Flags().GetString("color")
 		bustCache, _ := cmd.Flags().GetBool("bust-cache")
@@ -241,14 +248,14 @@ var editsTemplatesCmd = &cobra.Command{
 
 A template is a named, persisted set of form fields anchored to a sample
 document. Define it once with ` + "`retab edits templates create`" + `, then
-apply it to many target documents by passing ` + "`--template-id`" + ` to
-` + "`retab edits create`" + `. This is the right pattern for repetitive
-form-fill, redaction, or markup workflows where the field shape is stable
-across documents.
+run it by passing ` + "`--template-id`" + ` to ` + "`retab edits create`" + ` (the
+template supplies its own stored document and fields — don't pass another
+document alongside it). This is the right pattern for repetitive
+form-fill, redaction, or markup workflows where the field shape is stable.
 
 Typical flow:
   1. ` + "`retab edits templates create`" + ` — define the template
-  2. ` + "`retab edits create --template-id`" + ` — apply it to each new document`,
+  2. ` + "`retab edits create --template-id`" + ` — run it with new instructions`,
 }
 
 var editsTemplatesCreateCmd = &cobra.Command{
@@ -264,8 +271,8 @@ Each field must include ` + "`key`" + `, ` + "`description`" + `, ` + "`type`" +
 (supplied via the usual document flags) acts as the blueprint that future
 fills are anchored against.
 
-Once created, apply it to new documents by passing ` + "`--template-id`" + `
-to ` + "`retab edits create`" + `.`,
+Once created, run it by passing ` + "`--template-id`" + ` to
+` + "`retab edits create`" + ` (without another document).`,
 	Example: `  # Define a template from a sample form
   retab edits templates create \
     --name "Standard Invoice Form" \

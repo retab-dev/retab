@@ -11,6 +11,7 @@ import (
 var approvedCLINonWorkflowNonReferenceRoutes = map[string]bool{
 	// SDK conveniences used by CLI commands but not part of the generated
 	// public API reference.
+	"POST /v1/splits/reconstruct": true,
 }
 
 func TestNonWorkflowCLIClientCallsHaveRouteContracts(t *testing.T) {

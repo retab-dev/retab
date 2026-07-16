@@ -63,6 +63,11 @@ func appendKVPairs(into map[string]string, source map[string]string, raws []stri
 		if !ok {
 			return fmt.Errorf("%s expects block-id=path, got %q", flagName, raw)
 		}
+		// Trim the key like the --document-id/--document-url parsers do: an
+		// untrimmed key would dodge the cross-flag duplicate/overlap checks
+		// and start-block alias resolution (kept in sync with the primary
+		// copy in workflows_runs.go).
+		key = strings.TrimSpace(key)
 		if key == "" || path == "" {
 			return fmt.Errorf("%s expects block-id=path, got %q", flagName, raw)
 		}

@@ -283,7 +283,9 @@ func sliceCells(rows [][]string, startCol, startRow, endCol, endRow int) [][]str
 	if endCol > maxExcelColumns {
 		endCol = maxExcelColumns
 	}
-	var out [][]string
+	// Initialize non-nil so a range entirely past the last data row emits
+	// "rows": [] rather than "rows": null in the JSON output.
+	out := [][]string{}
 	for r := startRow; r <= endRow; r++ {
 		if r-1 >= len(rows) {
 			break

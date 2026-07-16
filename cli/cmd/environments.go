@@ -115,7 +115,14 @@ var envSwitchCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		cfg, _ := loadConfig()
+		// Do NOT ignore a load failure here: proceeding with the zero config
+		// and saving would clobber ~/.retab/config.json (OAuth tokens, API
+		// key) with a file containing only the environment fields. loadConfig
+		// returns nil for a missing file, so first-time switch still works.
+		cfg, err := loadConfig()
+		if err != nil {
+			return err
+		}
 		cfg.EnvironmentID = environment.ID
 		// Persist the type so the offline production-confirmation gate can
 		// tell whether this OAuth session targets production.
