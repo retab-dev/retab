@@ -38,6 +38,12 @@ type UsageListPrimitivesParams struct {
 	WorkflowID *string `url:"workflow_id,omitempty" json:"-"`
 	// ProjectID is filter to executions owned by a single project id.
 	ProjectID *string `url:"project_id,omitempty" json:"-"`
+	// APIKeyID is filter to executions triggered by a single API key id (the api_key_id returned under triggered_by).
+	APIKeyID *string `url:"api_key_id,omitempty" json:"-"`
+	// AccessTokenID is filter to executions triggered by a single access token id (the access_token_id returned under triggered_by).
+	AccessTokenID *string `url:"access_token_id,omitempty" json:"-"`
+	// UserID is filter to executions triggered by a single user id (the user_id returned under triggered_by).
+	UserID *string `url:"user_id,omitempty" json:"-"`
 	// RunID is filter to a single workflow run id (origin run).
 	RunID *string `url:"run_id,omitempty" json:"-"`
 	// BlockID is filter to a single workflow block id (origin block).

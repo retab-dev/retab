@@ -34,6 +34,15 @@ namespace Retab
         /// <summary>Filter to executions owned by a single project id.</summary>
         public string? ProjectId { get; set; }
 
+        /// <summary>Filter to executions triggered by a single API key id (the api_key_id returned under triggered_by).</summary>
+        public string? ApiKeyId { get; set; }
+
+        /// <summary>Filter to executions triggered by a single access token id (the access_token_id returned under triggered_by).</summary>
+        public string? AccessTokenId { get; set; }
+
+        /// <summary>Filter to executions triggered by a single user id (the user_id returned under triggered_by).</summary>
+        public string? UserId { get; set; }
+
         /// <summary>Filter to a single workflow run id (origin run).</summary>
         public string? RunId { get; set; }
 

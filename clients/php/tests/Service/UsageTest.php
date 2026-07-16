@@ -37,7 +37,7 @@ class UsageTest extends TestCase
     {
         $fixture = $this->loadFixture('list_usage_primitive_record');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->usage()->listPrimitives(limit: 1, order: \Retab\Resource\EditsOrder::Asc, before: 'test_value', after: 'test_value', environmentId: 'test_value', workflowId: 'test_value', projectId: 'test_value', runId: 'test_value', blockId: 'test_value', operation: 'test_value', status: 'test_value', metadata: 'test_value', fromDate: 'test_value', toDate: 'test_value');
+        $result = $client->usage()->listPrimitives(limit: 1, order: \Retab\Resource\EditsOrder::Asc, before: 'test_value', after: 'test_value', environmentId: 'test_value', workflowId: 'test_value', projectId: 'test_value', apiKeyId: 'test_value', accessTokenId: 'test_value', userId: 'test_value', runId: 'test_value', blockId: 'test_value', operation: 'test_value', status: 'test_value', metadata: 'test_value', fromDate: 'test_value', toDate: 'test_value');
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());
@@ -50,6 +50,9 @@ class UsageTest extends TestCase
         $this->assertSame('test_value', $query['environment_id']);
         $this->assertSame('test_value', $query['workflow_id']);
         $this->assertSame('test_value', $query['project_id']);
+        $this->assertSame('test_value', $query['api_key_id']);
+        $this->assertSame('test_value', $query['access_token_id']);
+        $this->assertSame('test_value', $query['user_id']);
         $this->assertSame('test_value', $query['run_id']);
         $this->assertSame('test_value', $query['block_id']);
         $this->assertSame('test_value', $query['operation']);

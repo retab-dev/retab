@@ -284,12 +284,12 @@ func TestUsageBlocksRejectsInvalidDateRangeBeforeHTTP(t *testing.T) {
 
 func TestUsageBlocksLimitRejectsOutOfRangeValuesLocally(t *testing.T) {
 	isolateUsageBlocksFlags(t)
-	for _, value := range []string{"0", "101", "-1"} {
+	for _, value := range []string{"0", "10001", "-1"} {
 		err := usageBlocksCmd.Flags().Set("limit", value)
 		if err == nil {
 			t.Fatalf("expected --limit=%s to be rejected", value)
 		}
-		if !strings.Contains(err.Error(), "between 1 and 100") {
+		if !strings.Contains(err.Error(), "between 1 and 10000") {
 			t.Fatalf("--limit=%s error %q does not mention range", value, err.Error())
 		}
 	}

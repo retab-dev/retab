@@ -81,7 +81,8 @@ public final class UsageApi {
 
   public List<UsagePrimitiveRecord> listPrimitives() throws IOException, InterruptedException {
     return listPrimitives(
-        null, null, null, null, null, null, null, null, null, null, null, null, null, null);
+        null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
+        null, null);
   }
 
   public List<UsagePrimitiveRecord> listPrimitives(
@@ -92,6 +93,9 @@ public final class UsageApi {
       String environmentId,
       String workflowId,
       String projectId,
+      String apiKeyId,
+      String accessTokenId,
+      String userId,
       String runId,
       String blockId,
       String operation,
@@ -109,6 +113,9 @@ public final class UsageApi {
     appendQueryParam(query, "environment_id", environmentId);
     appendQueryParam(query, "workflow_id", workflowId);
     appendQueryParam(query, "project_id", projectId);
+    appendQueryParam(query, "api_key_id", apiKeyId);
+    appendQueryParam(query, "access_token_id", accessTokenId);
+    appendQueryParam(query, "user_id", userId);
     appendQueryParam(query, "run_id", runId);
     appendQueryParam(query, "block_id", blockId);
     appendQueryParam(query, "operation", operation);
