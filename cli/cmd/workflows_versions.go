@@ -206,7 +206,11 @@ Restores into the DRAFT only — run ` + "`retab workflows publish <workflow-id>
 make the restored graph the live version.`,
 	Args: cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		if err := confirmDestructive(cmd, "workflow draft", fmt.Sprintf("%s from %s", args[0], args[1])); err != nil {
+		// The id is what the user must type back, so it stays the bare workflow
+		// id; the version being restored from is context and belongs in `kind`.
+		// Passing "wrk_x from ver_y" as the id demanded that whole phrase at the
+		// prompt.
+		if err := confirmDestructiveVerb(cmd, "overwrite", fmt.Sprintf("workflow draft (restoring from %s)", args[1]), args[0]); err != nil {
 			return err
 		}
 		client, err := newClient(cmd)

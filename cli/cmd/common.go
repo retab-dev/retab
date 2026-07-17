@@ -2414,7 +2414,20 @@ func redactSensitiveHeaders(h http.Header) {
 // stderr and reads the answer from stdin (TTY only). When stdin is not a TTY
 // — pipes, redirected files, CI — refuses with a clear error rather than
 // auto-accepting a stray newline.
+//
+// `id` is BOTH shown and the exact string the user must type back, so it must
+// be the bare resource id — never a decorated phrase. Callers needing extra
+// context put it in `kind`.
 func confirmDestructive(cmd *cobra.Command, kind, id string) error {
+	return confirmDestructiveVerb(cmd, "delete", kind, id)
+}
+
+// confirmDestructiveVerb is confirmDestructive with the verb spelled out, for
+// the commands that overwrite rather than delete. The restore commands
+// (workflow draft / block version / edge version) replace the draft in place;
+// telling their caller the CLI is about to "permanently delete" the thing they
+// are restoring describes the opposite of what happens.
+func confirmDestructiveVerb(cmd *cobra.Command, verb, kind, id string) error {
 	if yes, _ := cmd.Flags().GetBool("yes"); yes {
 		return nil
 	}
@@ -2428,9 +2441,9 @@ func confirmDestructive(cmd *cobra.Command, kind, id string) error {
 	}
 	stdin, ok := cmd.InOrStdin().(*os.File)
 	if !ok || !term.IsTerminal(int(stdin.Fd())) {
-		return fmt.Errorf("refusing to delete %s %q without --yes (stdin is not a terminal)", kind, id)
+		return fmt.Errorf("refusing to %s %s %q without --yes (stdin is not a terminal)", verb, kind, id)
 	}
-	if _, err := fmt.Fprintf(cmd.ErrOrStderr(), "Permanently delete %s %s? Type the id to confirm: ", kind, id); err != nil {
+	if _, err := fmt.Fprintf(cmd.ErrOrStderr(), "Permanently %s %s %s? Type the id to confirm: ", verb, kind, id); err != nil {
 		return err
 	}
 	answer, err := bufio.NewReader(stdin).ReadString('\n')
@@ -2438,7 +2451,7 @@ func confirmDestructive(cmd *cobra.Command, kind, id string) error {
 		return fmt.Errorf("read confirmation: %w", err)
 	}
 	if strings.TrimSpace(answer) != id {
-		return fmt.Errorf("aborted: %s %q not deleted", kind, id)
+		return fmt.Errorf("aborted: %s %q not %sd", kind, id, verb)
 	}
 	return nil
 }

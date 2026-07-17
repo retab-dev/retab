@@ -3,8 +3,6 @@
 package cmd
 
 import (
-	"fmt"
-
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
 )
@@ -92,7 +90,7 @@ var workflowsBlocksVersionsRestoreCmd = &cobra.Command{
 	Short: "Restore a block version into the draft",
 	Args:  cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		if err := confirmDestructive(cmd, "workflow block", fmt.Sprintf("version %s", args[0])); err != nil {
+		if err := confirmDestructiveVerb(cmd, "overwrite", "workflow block draft from version", args[0]); err != nil {
 			return err
 		}
 		client, err := newClient(cmd)
