@@ -286,12 +286,12 @@ func hydrateFunctionBundle(dir string, config map[string]any, sourceSchema map[s
 	if functionLanguage(config) == "typescript" {
 		return hydrateTypescriptFunctionBundle(dir, config, sourceSchema, force)
 	}
-	return hydratePythonFunctionBundle(dir, config, force)
+	return hydratePythonFunctionBundle(dir, config, sourceSchema, force)
 }
 
-func hydratePythonFunctionBundle(dir string, config map[string]any, force bool) error {
+func hydratePythonFunctionBundle(dir string, config map[string]any, sourceSchema map[string]any, force bool) error {
 	files := map[string]string{
-		"input.py":          generateFunctionInputModule(),
+		"input.py":          generateFunctionInputModule(sourceSchema),
 		"output.py":         generateFunctionOutputModule(config),
 		"models.py":         generateFunctionModelsModule(config),
 		"run.py":            generatedFunctionRunPy,
@@ -303,11 +303,18 @@ func hydratePythonFunctionBundle(dir string, config map[string]any, force bool) 
 		}
 	}
 	if force {
-		for _, rel := range []string{"input_models.py", "output_models.py", "retab_runtime.py", "mounts.local.json", "input_schema.json", "models.generated.ts", "schemas.generated.ts", "tsconfig.json", "run.mjs", ".retab/runtime.mjs"} {
+		for _, rel := range []string{"input_models.py", "output_models.py", "retab_runtime.py", "mounts.local.json", "models.generated.ts", "schemas.generated.ts", "tsconfig.json", "run.mjs", ".retab/runtime.mjs"} {
 			if err := os.Remove(filepath.Join(dir, rel)); err != nil && !os.IsNotExist(err) {
 				return err
 			}
 		}
+	}
+	// Persist the upstream schema so a later bare `functions hydrate <dir>` can
+	// rebuild input.py with the same typing instead of silently degrading to a
+	// permissive Input: hydrate reads it back via readFunctionInputSchemaSidecar,
+	// and only `config pull` can fetch it from the server.
+	if err := writeJSONFile(filepath.Join(dir, "input_schema.json"), functionInputSchema(sourceSchema)); err != nil {
+		return err
 	}
 	return hydrateFunctionCommonFiles(dir, config, force)
 }
@@ -522,37 +529,63 @@ func stringFromAny(value any) string {
 	return str
 }
 
-// functionOutputClassNames returns the sorted model class names that
-// generateFunctionOutputModule emits into output.py: always "Output", plus a
-// class per output-schema $defs/definitions entry.
-func functionOutputClassNames(config map[string]any) []string {
-	classNames := map[string]bool{"Output": true}
-	if schema, ok := config["output_schema"].(map[string]any); ok {
-		for _, defsKey := range []string{"$defs", "definitions"} {
-			if defs, ok := schema[defsKey].(map[string]any); ok {
-				for name := range defs {
-					if className := sanitizePythonClassName(name); className != "" {
-						classNames[className] = true
-					}
-				}
-			}
+// generatedModelPreamble mirrors the import block the engine puts above the same
+// emitted models in BuildExecutionScriptWithEntrypointWithError (core-go
+// function_block.go). The emitted code references these names directly, so the
+// preamble has to stay in sync with that script.
+const generatedModelPreamble = `from __future__ import annotations
+import datetime
+from typing import Any, Optional, Literal, Annotated
+from pydantic import BaseModel, Field, ConfigDict
+
+`
+
+// functionInputSchema mirrors typescriptInputSchema for Python bundles: a
+// function block with no upstream schema still gets a valid (permissive) object
+// schema rather than a nil the emitter would render as an empty Input.
+func functionInputSchema(sourceSchema map[string]any) map[string]any {
+	if sourceSchema == nil {
+		return map[string]any{"type": "object"}
+	}
+	return sourceSchema
+}
+
+// emittedPydanticClassNames returns the class names actually declared by
+// generated model code, in declaration order.
+//
+// It reads the emitted source rather than re-deriving names from $defs because
+// the emitter -- not the caller -- decides the final names: it sanitizes them
+// and de-duplicates collisions with numeric suffixes. Re-deriving produced
+// names that did not exist in output.py, so models.py raised ImportError on
+// exactly the schemas whose names needed rewriting.
+func emittedPydanticClassNames(code string) []string {
+	names := []string{}
+	for _, line := range strings.Split(code, "\n") {
+		if !strings.HasPrefix(line, "class ") || !strings.Contains(line, "(BaseModel):") {
+			continue
+		}
+		name := strings.TrimPrefix(line, "class ")
+		name = strings.Split(name, "(BaseModel):")[0]
+		if name != "" {
+			names = append(names, name)
 		}
 	}
-	names := []string{}
-	for name := range classNames {
-		names = append(names, name)
-	}
-	sort.Strings(names)
 	return names
 }
 
+// functionOutputClassNames returns the model class names generateFunctionOutputModule
+// emits into output.py, as declared by the emitter itself.
+func functionOutputClassNames(config map[string]any) []string {
+	return emittedPydanticClassNames(generateFunctionOutputModule(config))
+}
+
+// generateFunctionOutputModule writes output.py using the same emitter the
+// workflow engine runs server-side (GenerateOutputModelCode, vendored into
+// zz_json_schema_to_pydantic.go). It previously wrote permissive stubs
+// (`class X(_RetabModel): pass`), which could not reproduce production typing:
+// a local run accepted values the engine rejects, and vice versa.
 func generateFunctionOutputModule(config map[string]any) string {
-	var b strings.Builder
-	b.WriteString("from __future__ import annotations\n\nfrom input import _RetabModel\n")
-	for _, name := range functionOutputClassNames(config) {
-		fmt.Fprintf(&b, "\nclass %s(_RetabModel):\n    pass\n", name)
-	}
-	return b.String()
+	return generatedModelPreamble + GenerateOutputModelCode(JSONObject(typescriptOutputSchema(config))) + "\n"
 }
 
 // generateFunctionModelsModule generates the models.py compatibility module that
@@ -576,11 +609,12 @@ func generateFunctionModelsModule(config map[string]any) string {
 	return b.String()
 }
 
-func generateFunctionInputModule() string {
-	var b strings.Builder
-	b.WriteString(generatedModelBasePy)
-	b.WriteString("\nclass Input(_RetabModel):\n    pass\n")
-	return b.String()
+// generateFunctionInputModule writes input.py from the upstream schema with the
+// engine's emitter, so `Input.model_validate` locally rejects what it rejects in
+// production (e.g. a fractional value for an integer field) instead of the old
+// stub silently accepting anything.
+func generateFunctionInputModule(sourceSchema map[string]any) string {
+	return generatedModelPreamble + GenerateInputModelCode(JSONObject(functionInputSchema(sourceSchema))) + "\n"
 }
 
 func generateTypescriptModelModule(sourceSchema map[string]any, config map[string]any) string {
@@ -832,28 +866,6 @@ func cloneShallowJSONMap(value map[string]any) map[string]any {
 	return out
 }
 
-func sanitizePythonClassName(raw string) string {
-	identifier := sanitizeIdentifier(raw)
-	if identifier == "" {
-		return ""
-	}
-	parts := strings.Split(identifier, "_")
-	for i, part := range parts {
-		if part == "" {
-			continue
-		}
-		parts[i] = strings.ToUpper(part[:1]) + part[1:]
-	}
-	name := strings.Join(parts, "")
-	if name == "" {
-		return ""
-	}
-	if name[0] >= '0' && name[0] <= '9' {
-		name = "Model" + name
-	}
-	return name
-}
-
 var nonIdentifierChars = regexp.MustCompile(`[^A-Za-z0-9_]+`)
 
 func sanitizeIdentifier(raw string) string {
@@ -864,42 +876,6 @@ func sanitizeIdentifier(raw string) string {
 	}
 	return value
 }
-
-const generatedModelBasePy = `from __future__ import annotations
-
-
-def _wrap(value):
-    if isinstance(value, dict):
-        return _RetabModel(**value)
-    if isinstance(value, list):
-        return [_wrap(item) for item in value]
-    return value
-
-
-def _dump(value):
-    if isinstance(value, _RetabModel):
-        return {key: _dump(val) for key, val in value.__dict__.items()}
-    if isinstance(value, list):
-        return [_dump(item) for item in value]
-    if isinstance(value, dict):
-        return {key: _dump(val) for key, val in value.items()}
-    return value
-
-
-class _RetabModel:
-    def __init__(self, **kwargs):
-        for key, value in kwargs.items():
-            setattr(self, key, _wrap(value))
-
-    def model_dump(self, *args, **kwargs):
-        return _dump(self)
-
-    def dict(self, *args, **kwargs):
-        return self.model_dump()
-
-    def __repr__(self):
-        return f"{type(self).__name__}({self.__dict__!r})"
-`
 
 const generatedFunctionRunPy = `from __future__ import annotations
 
@@ -1022,7 +998,11 @@ def output_stem_for(input_path):
 
 def run_one(bundle_dir, entrypoint, input_path, out_dir, trace_dir):
     payload = json.loads(input_path.read_text(encoding="utf-8"))
-    input_data = Input(**payload) if isinstance(payload, dict) else payload
+    # Mirror the engine's Input.model_validate(_raw_input). Input(**payload)
+    # bypasses field aliases, so a schema whose property names are not Python
+    # identifiers would silently drop those values locally but populate them in
+    # production.
+    input_data = Input.model_validate(payload) if isinstance(payload, dict) else payload
     result = entrypoint(input_data)
     output = dump_value(result)
     output_stem = output_stem_for(input_path)

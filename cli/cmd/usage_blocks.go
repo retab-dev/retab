@@ -48,7 +48,7 @@ URIs, or provider/API dollar costs. Only workflow blocks appear; standalone
 Filter by workflow, block type, and activity date range. Page with the opaque
 cursors returned in ` + "`list_metadata.before`" + ` / ` + "`list_metadata.after`" + `; block ids are
 not unique enough to use as cursors by themselves. Cap the page size with
-` + "`--limit`" + ` (1-100).`,
+` + "`--limit`" + ` (1-10000).`,
 	Example: `  # Every block's usage for one workflow
   retab usage blocks --workflow-id wf_abc123
 
@@ -155,7 +155,7 @@ func init() {
 	usageBlocksCmd.Flags().String("to-date", "", "inclusive activity upper bound (YYYY-MM-DD, UTC)")
 	usageBlocksCmd.Flags().String("before", "", "cursor from list_metadata.before (mutually exclusive with --after)")
 	usageBlocksCmd.Flags().String("after", "", "cursor from list_metadata.after (mutually exclusive with --before)")
-	usageBlocksCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items to return (1-100)")
+	usageBlocksCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 10000}, "limit", "max items to return (1-10000)")
 	usageBlocksCmd.Flags().Var(&orderFlagValue{}, "order", "asc | desc")
 
 	usageCmd.AddCommand(usageBlocksCmd)

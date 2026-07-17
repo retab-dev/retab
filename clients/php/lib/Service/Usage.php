@@ -68,6 +68,9 @@ class Usage
      * @param string|null $environmentId Scope the export to this environment id within the caller's organization. Defaults to the authenticated identity's environment.
      * @param string|null $workflowId Filter to a single workflow id (origin workflow).
      * @param string|null $projectId Filter to executions owned by a single project id.
+     * @param string|null $apiKeyId Filter to executions triggered by a single API key id (the api_key_id returned under triggered_by).
+     * @param string|null $accessTokenId Filter to executions triggered by a single access token id (the access_token_id returned under triggered_by).
+     * @param string|null $userId Filter to executions triggered by a single user id (the user_id returned under triggered_by).
      * @param string|null $runId Filter to a single workflow run id (origin run).
      * @param string|null $blockId Filter to a single workflow block id (origin block).
      * @param string|null $operation Filter by operation (extraction, classify, split, parse, edit, schema_generation).
@@ -86,6 +89,9 @@ class Usage
         ?string $environmentId = null,
         ?string $workflowId = null,
         ?string $projectId = null,
+        ?string $apiKeyId = null,
+        ?string $accessTokenId = null,
+        ?string $userId = null,
         ?string $runId = null,
         ?string $blockId = null,
         ?string $operation = null,
@@ -103,6 +109,9 @@ class Usage
             'environment_id' => $environmentId,
             'workflow_id' => $workflowId,
             'project_id' => $projectId,
+            'api_key_id' => $apiKeyId,
+            'access_token_id' => $accessTokenId,
+            'user_id' => $userId,
             'run_id' => $runId,
             'block_id' => $blockId,
             'operation' => $operation,

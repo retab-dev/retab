@@ -126,6 +126,92 @@ func TestAutoTableHeaderPrefersCreatedAtOverUpdatedAt(t *testing.T) {
 	}
 }
 
+// `workflows artifacts list` rows carry `operation` (extraction/split/…) and
+// `status` ("completed"), and never `type`. With `status` ahead of `operation`
+// in the TYPE alias list, every artifact rendered TYPE="completed" — a constant
+// that cannot distinguish a split from an extraction, while the field that can
+// was never reached. Observed in staging: a run's split/extraction/classification
+// artifacts all rendered TYPE="completed".
+func TestAutoTableTypeColumnPrefersOperationOverStatus(t *testing.T) {
+	rows := []any{
+		map[string]any{
+			"id":         "splt_1",
+			"operation":  "split",
+			"status":     "completed",
+			"model":      "retab-small",
+			"created_at": "2026-07-16T11:04:55Z",
+		},
+		map[string]any{
+			"id":         "extr_1",
+			"operation":  "extraction",
+			"status":     "completed",
+			"model":      "retab-small",
+			"created_at": "2026-07-16T11:04:36Z",
+		},
+	}
+	cols := pickAutoColumns(rows)
+	var typeCol *TableColumn
+	for i := range cols {
+		if cols[i].Header == "TYPE" {
+			typeCol = &cols[i]
+		}
+	}
+	if typeCol == nil {
+		t.Fatalf("expected a TYPE column for artifact rows, got %v", headersOf(cols))
+	}
+	if got := typeCol.Extract(rows[0]); got != "split" {
+		t.Fatalf("TYPE cell = %q, want %q (operation, not the status constant)", got, "split")
+	}
+	if got := typeCol.Extract(rows[1]); got != "extraction" {
+		t.Fatalf("TYPE cell = %q, want %q (operation, not the status constant)", got, "extraction")
+	}
+}
+
+// The reorder must not steal the TYPE column from rows that legitimately have
+// no `operation`: a status-only row (the shape most list endpoints return) must
+// keep rendering its status under TYPE exactly as before.
+func TestAutoTableTypeColumnStillFallsBackToStatus(t *testing.T) {
+	rows := []any{
+		map[string]any{"id": "run_1", "status": "completed", "created_at": "2026-07-16T11:04:36Z"},
+	}
+	cols := pickAutoColumns(rows)
+	for i := range cols {
+		if cols[i].Header == "TYPE" {
+			if got := cols[i].Extract(rows[0]); got != "completed" {
+				t.Fatalf("TYPE cell = %q, want %q (status fallback preserved)", got, "completed")
+			}
+			return
+		}
+	}
+	t.Fatalf("expected a TYPE column for status-only rows, got %v", headersOf(cols))
+}
+
+// An explicit `type` still outranks `operation` — the reorder only moved
+// `operation` ahead of the status aliases, not ahead of the real type field.
+func TestAutoTableTypeColumnPrefersTypeOverOperation(t *testing.T) {
+	rows := []any{
+		map[string]any{"id": "x_1", "type": "extract", "operation": "extraction", "status": "completed"},
+	}
+	cols := pickAutoColumns(rows)
+	for i := range cols {
+		if cols[i].Header == "TYPE" {
+			if got := cols[i].Extract(rows[0]); got != "extract" {
+				t.Fatalf("TYPE cell = %q, want %q (explicit type wins)", got, "extract")
+			}
+			return
+		}
+	}
+	t.Fatalf("expected a TYPE column, got %v", headersOf(cols))
+}
+
+func headersOf(cols []TableColumn) []string {
+	out := make([]string, 0, len(cols))
+	for i := range cols {
+		out = append(out, cols[i].Header)
+	}
+	return out
+}
+
 // normalizeTimestampCell must leave non-timestamp strings untouched —
 // IDs, filenames, model names all flow through stringifyCell and only
 // genuine RFC3339 values should be rewritten.

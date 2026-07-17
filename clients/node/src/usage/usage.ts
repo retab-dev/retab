@@ -49,6 +49,9 @@ export class Usage {
     environmentId?: string | null | undefined;
     workflowId?: string | null | undefined;
     projectId?: string | null | undefined;
+    apiKeyId?: string | null | undefined;
+    accessTokenId?: string | null | undefined;
+    userId?: string | null | undefined;
     runId?: string | null | undefined;
     blockId?: string | null | undefined;
     operation?: string | null | undefined;
@@ -68,6 +71,9 @@ export class Usage {
         environment_id: options?.environmentId,
         workflow_id: options?.workflowId,
         project_id: options?.projectId,
+        api_key_id: options?.apiKeyId,
+        access_token_id: options?.accessTokenId,
+        user_id: options?.userId,
         run_id: options?.runId,
         block_id: options?.blockId,
         operation: options?.operation,

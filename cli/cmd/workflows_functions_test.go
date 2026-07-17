@@ -206,6 +206,132 @@ func TestHydratePythonFunctionBundleForcePreservesModelsModule(t *testing.T) {
 	}
 }
 
+// TestGenerateFunctionOutputModuleEmitsTypedPydanticFields pins the fix for the
+// gap that made a local `functions run` unable to reproduce a production type
+// error: hydration used to emit permissive duck-typed stubs
+// (`class X(_RetabModel): pass`), so a schema declaring an integer accepted a
+// float locally while the engine raised int_from_float. Hydration must emit the
+// engine's own typed models.
+func TestGenerateFunctionOutputModuleEmitsTypedPydanticFields(t *testing.T) {
+	config := map[string]any{
+		"output_schema": map[string]any{
+			"type": "object",
+			"$defs": map[string]any{
+				"Commodity": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"weight": map[string]any{"type": "integer", "default": 0},
+						"volume": map[string]any{"type": "number", "default": 0},
+					},
+				},
+			},
+			"properties": map[string]any{
+				"items": map[string]any{"type": "array", "items": map[string]any{"$ref": "#/$defs/Commodity"}},
+			},
+		},
+	}
+	module := generateFunctionOutputModule(config)
+
+	if strings.Contains(module, "_RetabModel") {
+		t.Fatalf("output.py must not fall back to the untyped stub base, got:\n%s", module)
+	}
+	for _, want := range []string{
+		"from pydantic import BaseModel, Field, ConfigDict",
+		"class Commodity(BaseModel):",
+		"weight: Optional[int]",
+		"volume: Optional[float]",
+	} {
+		if !strings.Contains(module, want) {
+			t.Fatalf("output.py must contain %q so local typing matches the engine, got:\n%s", want, module)
+		}
+	}
+}
+
+// TestGenerateFunctionInputModuleUsesUpstreamSchema covers the other half of the
+// same gap: hydration ignored the upstream schema entirely and always wrote a
+// permissive `class Input(_RetabModel): pass`, so Input.model_validate could not
+// reject locally what the engine rejects.
+func TestGenerateFunctionInputModuleUsesUpstreamSchema(t *testing.T) {
+	sourceSchema := map[string]any{
+		"type":       "object",
+		"properties": map[string]any{"quantity": map[string]any{"type": "integer"}},
+		"required":   []any{"quantity"},
+	}
+	module := generateFunctionInputModule(sourceSchema)
+
+	if strings.Contains(module, "_RetabModel") {
+		t.Fatalf("input.py must not fall back to the untyped stub base, got:\n%s", module)
+	}
+	if !strings.Contains(module, "class Input(BaseModel):") || !strings.Contains(module, "quantity: int") {
+		t.Fatalf("input.py must type Input from the upstream schema, got:\n%s", module)
+	}
+
+	// No upstream schema is a real case (config pull could not resolve one): stay
+	// permissive rather than emitting an Input that rejects every payload.
+	empty := generateFunctionInputModule(nil)
+	if !strings.Contains(empty, "class Input(BaseModel):") {
+		t.Fatalf("input.py must still define Input without a source schema, got:\n%s", empty)
+	}
+}
+
+// TestHydratePythonFunctionBundleWritesInputSchemaSidecar guards the fidelity of
+// a bare re-hydrate: only `config pull` can fetch the upstream schema from the
+// server, so without the sidecar `functions hydrate <dir>` would silently
+// downgrade input.py to a permissive Input.
+func TestHydratePythonFunctionBundleWritesInputSchemaSidecar(t *testing.T) {
+	dir := t.TempDir()
+	sourceSchema := map[string]any{
+		"type":       "object",
+		"properties": map[string]any{"quantity": map[string]any{"type": "integer"}},
+		"required":   []any{"quantity"},
+	}
+	if err := hydrateFunctionBundle(dir, map[string]any{"entrypoint": "transform"}, sourceSchema, false); err != nil {
+		t.Fatalf("hydrate: %v", err)
+	}
+
+	readBack, err := readFunctionInputSchemaSidecar(dir)
+	if err != nil {
+		t.Fatalf("read input_schema.json sidecar: %v", err)
+	}
+	// Both the type and its requiredness must survive the round-trip: a rehydrate
+	// that lost either would type Input more loosely than the engine does.
+	if got := generateFunctionInputModule(readBack); !strings.Contains(got, "quantity: int") {
+		t.Fatalf("sidecar must round-trip the upstream schema so re-hydrate keeps Input typed, got:\n%s", got)
+	}
+}
+
+// TestFunctionOutputClassNamesMatchEmittedClasses pins models.py against the
+// emitter: the emitter sanitizes and de-duplicates class names, so re-deriving
+// them from $defs produced `from output import <name>` for classes output.py
+// never declared, and models.py raised ImportError.
+func TestFunctionOutputClassNamesMatchEmittedClasses(t *testing.T) {
+	config := map[string]any{
+		"output_schema": map[string]any{
+			"type": "object",
+			"$defs": map[string]any{
+				"line item": map[string]any{
+					"type":       "object",
+					"properties": map[string]any{"sku": map[string]any{"type": "string"}},
+				},
+			},
+			"properties": map[string]any{
+				"item": map[string]any{"$ref": "#/$defs/line item"},
+			},
+		},
+	}
+	module := generateFunctionOutputModule(config)
+	models := generateFunctionModelsModule(config)
+
+	for _, name := range functionOutputClassNames(config) {
+		if !strings.Contains(module, "class "+name+"(BaseModel):") {
+			t.Fatalf("models.py imports %q but output.py never declares it:\n%s", name, module)
+		}
+		if !strings.Contains(models, name) {
+			t.Fatalf("models.py must re-export emitted class %q, got:\n%s", name, models)
+		}
+	}
+}
+
 func TestRunFunctionPythonChildForwardsArgsAndDetachesStdin(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("shell fixture is unix-specific")

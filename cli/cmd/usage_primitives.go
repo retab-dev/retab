@@ -81,7 +81,7 @@ remain excluded.
 
 Filter by workflow, project, run, block, operation, lifecycle status, metadata,
 and created_at date range. Page by execution id with ` + "`--before`" + ` / ` + "`--after`" + `,
-cap the page size with ` + "`--limit`" + ` (1-100).
+cap the page size with ` + "`--limit`" + ` (1-10000).
 
 By default the export is scoped to the environment of the authenticated
 credential; use the global ` + "`--environment-id`" + ` flag (or RETAB_ENVIRONMENT_ID,
@@ -138,6 +138,9 @@ func runUsagePrimitivesList(cmd *cobra.Command, _ []string) error {
 	}
 	addOptionalUsageQuery(cmd, query, "workflow-id", "workflow_id")
 	addOptionalUsageQuery(cmd, query, "project-id", "project_id")
+	addOptionalUsageQuery(cmd, query, "api-key-id", "api_key_id")
+	addOptionalUsageQuery(cmd, query, "access-token-id", "access_token_id")
+	addOptionalUsageQuery(cmd, query, "user-id", "user_id")
 	addOptionalUsageQuery(cmd, query, "run-id", "run_id")
 	addOptionalUsageQuery(cmd, query, "block-id", "block_id")
 	addOptionalUsageQuery(cmd, query, "operation", "operation")
@@ -253,6 +256,9 @@ func usagePrimitiveCell(row any, key string) string {
 func init() {
 	usagePrimitivesCmd.Flags().String("workflow-id", "", "filter to a single workflow id (origin workflow)")
 	usagePrimitivesCmd.Flags().String("project-id", "", "filter to executions owned by a single project id")
+	usagePrimitivesCmd.Flags().String("api-key-id", "", "filter to executions triggered by a single API key id (the api_key_id returned under triggered_by)")
+	usagePrimitivesCmd.Flags().String("access-token-id", "", "filter to executions triggered by a single access token id (the access_token_id returned under triggered_by)")
+	usagePrimitivesCmd.Flags().String("user-id", "", "filter to executions triggered by a single user id (the user_id returned under triggered_by)")
 	usagePrimitivesCmd.Flags().String("run-id", "", "filter to a single workflow run id (origin run)")
 	usagePrimitivesCmd.Flags().String("block-id", "", "filter to a single workflow block id (origin block)")
 	usagePrimitivesCmd.Flags().String("operation", "", "filter by operation (extraction, classify, split, parse, edit, partition, schema_generation)")
@@ -262,7 +268,7 @@ func init() {
 	usagePrimitivesCmd.Flags().String("to-date", "", "inclusive created_at upper bound (YYYY-MM-DD, UTC)")
 	usagePrimitivesCmd.Flags().String("before", "", "execution id: return items before this id (mutually exclusive with --after)")
 	usagePrimitivesCmd.Flags().String("after", "", "execution id: return items after this id (mutually exclusive with --before)")
-	usagePrimitivesCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items to return (1-100)")
+	usagePrimitivesCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 10000}, "limit", "max items to return (1-10000)")
 	usagePrimitivesCmd.Flags().Var(&orderFlagValue{}, "order", "asc | desc")
 
 	usageCmd.AddCommand(usagePrimitivesCmd)

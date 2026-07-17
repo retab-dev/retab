@@ -33,6 +33,9 @@ module Retab
         environment_id: T.nilable(String),
         workflow_id: T.nilable(String),
         project_id: T.nilable(String),
+        api_key_id: T.nilable(String),
+        access_token_id: T.nilable(String),
+        user_id: T.nilable(String),
         run_id: T.nilable(String),
         block_id: T.nilable(String),
         operation: T.nilable(String),
@@ -43,7 +46,7 @@ module Retab
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::PaginatedList[Retab::UsagePrimitiveRecord])
     end
-    def list_primitives(limit:, order:, before:, after:, environment_id:, workflow_id:, project_id:, run_id:, block_id:, operation:, status:, metadata:, from_date:, to_date:, request_options:); end
+    def list_primitives(limit:, order:, before:, after:, environment_id:, workflow_id:, project_id:, api_key_id:, access_token_id:, user_id:, run_id:, block_id:, operation:, status:, metadata:, from_date:, to_date:, request_options:); end
 
     sig do
       params(

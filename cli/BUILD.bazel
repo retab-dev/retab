@@ -61,3 +61,39 @@ test_suite(
         ":api_overlay_inventory_check",
     ],
 )
+
+# The CLI vendors the workflow engine's JSON-Schema -> pydantic emitter because
+# it cannot import retab_core_go across the public/sdk submodule boundary. This
+# gate fails when the vendored copy drifts from core-go, which would make
+# `functions hydrate` write models the engine would never build.
+sh_test(
+    name = "pydantic_emitter_check",
+    srcs = ["//factory/bazel:check_cli_pydantic_emitter_freshness.sh"],
+    data = [
+        ":sources",
+        "//factory/generators/cli_pymodels:vendor_pydantic_emitter",
+        "//packages/core-go/workflow_engine/blocks:pydantic_emitter_sources",
+    ],
+    tags = [
+        "local",
+        "no-sandbox",
+        "requires-venv",
+    ],
+)
+
+sh_binary(
+    name = "pydantic_emitter_update",
+    srcs = ["//factory/bazel:update_cli_pydantic_emitter.sh"],
+    data = [
+        ":sources",
+        "//factory/generators/cli_pymodels:vendor_pydantic_emitter",
+        "//packages/core-go/workflow_engine/blocks:pydantic_emitter_sources",
+    ],
+    tags = [
+        "generated-update",
+        "local",
+        "manual",
+        "no-sandbox",
+        "requires-venv",
+    ],
+)

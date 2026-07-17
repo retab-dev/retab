@@ -1035,14 +1035,16 @@ func functionRuntimeFiles(manifest blockConfigBundleManifest) []string {
 			"traces",
 		}
 	}
-	return []string{"input.py", "output.py", "models.py", "run.py", ".retab/runtime.py", ".env.example", ".env.local", "samples", "outputs", "traces"}
+	// input_schema.json is written for both languages: Python hydration needs it
+	// to rebuild input.py with the upstream typing on a later bare `hydrate`.
+	return []string{"input.py", "output.py", "models.py", "run.py", ".retab/runtime.py", "input_schema.json", ".env.example", ".env.local", "samples", "outputs", "traces"}
 }
 
 func staleFunctionRuntimeFiles(manifest blockConfigBundleManifest) []string {
 	if functionManifestLanguage(manifest) == "typescript" {
 		return []string{"input.py", "output.py", "run.py", ".retab/runtime.py", "models.py", "input_models.py", "output_models.py", "retab_runtime.py", "mounts.local.json"}
 	}
-	return []string{"input_schema.json", "models.generated.ts", "schemas.generated.ts", "tsconfig.json", "run.mjs", ".retab/runtime.mjs", "input_models.py", "output_models.py", "retab_runtime.py", "mounts.local.json"}
+	return []string{"models.generated.ts", "schemas.generated.ts", "tsconfig.json", "run.mjs", ".retab/runtime.mjs", "input_models.py", "output_models.py", "retab_runtime.py", "mounts.local.json"}
 }
 
 const localCheckOutputLimit = 8 * 1024

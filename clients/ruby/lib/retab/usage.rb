@@ -86,6 +86,9 @@ module Retab
     # @param environment_id [String, nil] Scope the export to this environment id within the caller's organization. Defaults to the authenticated identity's environment.
     # @param workflow_id [String, nil] Filter to a single workflow id (origin workflow).
     # @param project_id [String, nil] Filter to executions owned by a single project id.
+    # @param api_key_id [String, nil] Filter to executions triggered by a single API key id (the api_key_id returned under triggered_by).
+    # @param access_token_id [String, nil] Filter to executions triggered by a single access token id (the access_token_id returned under triggered_by).
+    # @param user_id [String, nil] Filter to executions triggered by a single user id (the user_id returned under triggered_by).
     # @param run_id [String, nil] Filter to a single workflow run id (origin run).
     # @param block_id [String, nil] Filter to a single workflow block id (origin block).
     # @param operation [String, nil] Filter by operation (extraction, classify, split, parse, edit, schema_generation).
@@ -103,6 +106,9 @@ module Retab
       environment_id: nil,
       workflow_id: nil,
       project_id: nil,
+      api_key_id: nil,
+      access_token_id: nil,
+      user_id: nil,
       run_id: nil,
       block_id: nil,
       operation: nil,
@@ -120,6 +126,9 @@ module Retab
         "environment_id" => environment_id,
         "workflow_id" => workflow_id,
         "project_id" => project_id,
+        "api_key_id" => api_key_id,
+        "access_token_id" => access_token_id,
+        "user_id" => user_id,
         "run_id" => run_id,
         "block_id" => block_id,
         "operation" => operation,
@@ -144,6 +153,9 @@ module Retab
           environment_id: environment_id,
           workflow_id: workflow_id,
           project_id: project_id,
+          api_key_id: api_key_id,
+          access_token_id: access_token_id,
+          user_id: user_id,
           run_id: run_id,
           block_id: block_id,
           operation: operation,
@@ -164,6 +176,9 @@ module Retab
           environment_id: environment_id,
           workflow_id: workflow_id,
           project_id: project_id,
+          api_key_id: api_key_id,
+          access_token_id: access_token_id,
+          user_id: user_id,
           run_id: run_id,
           block_id: block_id,
           operation: operation,

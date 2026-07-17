@@ -88,6 +88,15 @@ pub struct ListPrimitivesParams {
     /// Filter to executions owned by a single project id.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub project_id: Option<String>,
+    /// Filter to executions triggered by a single API key id (the api_key_id returned under triggered_by).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub api_key_id: Option<String>,
+    /// Filter to executions triggered by a single access token id (the access_token_id returned under triggered_by).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub access_token_id: Option<String>,
+    /// Filter to executions triggered by a single user id (the user_id returned under triggered_by).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub user_id: Option<String>,
     /// Filter to a single workflow run id (origin run).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub run_id: Option<String>,
@@ -122,6 +131,9 @@ impl Default for ListPrimitivesParams {
             environment_id: Default::default(),
             workflow_id: Default::default(),
             project_id: Default::default(),
+            api_key_id: Default::default(),
+            access_token_id: Default::default(),
+            user_id: Default::default(),
             run_id: Default::default(),
             block_id: Default::default(),
             operation: Default::default(),
