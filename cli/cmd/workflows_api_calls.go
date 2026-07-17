@@ -118,6 +118,15 @@ type localAPICallSecret struct {
 	Required bool
 }
 
+// indexedAPICallInput pairs a sample path with its position in the original
+// input list so the parallel runner can report the lowest-index failure
+// deterministically (matching the sequential runner) instead of whichever
+// worker fails first in wall-clock time.
+type indexedAPICallInput struct {
+	index int
+	path  string
+}
+
 type apiCallHydrateResult struct {
 	Files             []string
 	Directories       []string
@@ -270,27 +279,36 @@ func runLocalAPICallsSequential(ctx context.Context, bundleDir string, outDir st
 
 func runLocalAPICallsParallel(ctx context.Context, bundleDir string, outDir string, traceDir string, config map[string]any, env map[string]string, inputs []string, jobsRaw string, executeHTTP bool, absolutePaths bool, continueOnError bool) error {
 	workers := localAPICallWorkerCount(jobsRaw, len(inputs))
-	inputCh := make(chan string)
+	inputCh := make(chan indexedAPICallInput)
 	var wg sync.WaitGroup
 	var printMu sync.Mutex
 	var stateMu sync.Mutex
 	sawFailure := false
+	firstErrIndex := -1
 	var firstErr error
 	for index := 0; index < workers; index++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			for input := range inputCh {
-				result, err := runOneLocalAPICall(ctx, bundleDir, outDir, traceDir, config, env, input, executeHTTP, absolutePaths)
+			for item := range inputCh {
+				result, err := runOneLocalAPICall(ctx, bundleDir, outDir, traceDir, config, env, item.path, executeHTTP, absolutePaths)
 				if err != nil {
 					stateMu.Lock()
 					sawFailure = true
-					if firstErr == nil {
+					// Return the lowest-index sample's error, not whichever
+					// worker happened to fail first in wall-clock time, so the
+					// surfaced fail-fast error matches the sequential runner
+					// (which stops at the first failing input in order). With
+					// several workers in flight a later-indexed sample can fail
+					// before an earlier one, so compare indices rather than
+					// taking the first non-nil error.
+					if firstErrIndex == -1 || item.index < firstErrIndex {
+						firstErrIndex = item.index
 						firstErr = err
 					}
 					stateMu.Unlock()
 					result = map[string]any{
-						"input": input,
+						"input": item.path,
 						"ok":    false,
 						"error": err.Error(),
 					}
@@ -301,7 +319,7 @@ func runLocalAPICallsParallel(ctx context.Context, bundleDir string, outDir stri
 			}
 		}()
 	}
-	for _, input := range inputs {
+	for index, input := range inputs {
 		// Fail-fast mode (--jobs without --continue-on-error): stop handing
 		// out new samples once one has failed; in-flight samples finish.
 		if !continueOnError {
@@ -312,7 +330,7 @@ func runLocalAPICallsParallel(ctx context.Context, bundleDir string, outDir stri
 				break
 			}
 		}
-		inputCh <- input
+		inputCh <- indexedAPICallInput{index: index, path: input}
 	}
 	close(inputCh)
 	wg.Wait()

@@ -42,8 +42,13 @@ func safeDownloadName(serverName string) string {
 		return ""
 	}
 	// filepath.Base strips both / and \ separators; guard against any residual
-	// separator (or a Windows drive-relative remnant like "C:") just in case.
-	if strings.ContainsAny(base, `/\`) {
+	// separator just in case. Also reject ':' — on the Windows target it is
+	// the NTFS alternate-data-stream separator, so a server name like
+	// "report:2024.pdf" (no valid drive letter for filepath.VolumeName to
+	// strip) would otherwise write into a hidden stream on a zero-length
+	// "report" file instead of a normal file. ':' is invalid in a Windows
+	// filename component regardless, so falling back to the file id is safe.
+	if strings.ContainsAny(base, `/\:`) {
 		return ""
 	}
 	return base

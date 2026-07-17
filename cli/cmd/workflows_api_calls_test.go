@@ -524,6 +524,14 @@ func TestRunLocalAPICallsParallelFailFastSemantics(t *testing.T) {
 		if strings.Contains(err.Error(), "one or more local api_call samples failed") {
 			t.Errorf("fail-fast: got aggregate error %q, want the first sample's error", err)
 		}
+		// The surfaced error must be the lowest-index sample's (missing-1),
+		// matching the sequential runner, regardless of which of the two
+		// in-flight workers happened to fail first in wall-clock time. Both
+		// missing-1 and missing-2 are dispatched before fail-fast can stop
+		// dispatching, so index ordering — not completion order — decides.
+		if !strings.Contains(err.Error(), "missing-1.json") {
+			t.Errorf("fail-fast: got %q, want the lowest-index sample (missing-1.json)", err)
+		}
 	})
 	_ = stdout
 

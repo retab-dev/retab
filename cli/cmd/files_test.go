@@ -129,6 +129,11 @@ func TestSafeDownloadName(t *testing.T) {
 		".":                "",
 		"..":               "",
 		"/":                "",
+		// A ':' is the NTFS alternate-data-stream separator on the Windows
+		// target; a name like this (no valid single-letter drive for
+		// filepath.VolumeName to strip on any platform) must fall back to the
+		// file id rather than writing into a hidden stream.
+		"report:2024.pdf": "",
 	}
 	for in, want := range cases {
 		if got := safeDownloadName(in); got != want {
