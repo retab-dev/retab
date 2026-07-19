@@ -200,6 +200,49 @@ func TestWorkflowsRunsCancelStaysSilentWhenCancellationIsFinalized(t *testing.T)
 	}
 }
 
+func TestWorkflowsRunsCancelReportsRaceLossWhenRunAlreadyTerminal(t *testing.T) {
+	// Race: the run reaches a terminal state (e.g. ``completed``) between the
+	// engine accepting the cancel and serializing the response, so the server
+	// still reports cancellation_status="cancellation_failed". The generic
+	// "poll until terminal" advice is wrong here — the embedded run is already
+	// terminal — so the note must report the actual state and NOT tell the user
+	// to poll.
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"run": map[string]any{
+				"id":        "run_raced",
+				"lifecycle": map[string]any{"status": "completed"},
+			},
+			"redis_available":     true,
+			"cancellation_status": "cancellation_failed",
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	_, stderr := captureStd(t, func() {
+		if err := workflowsRunsCancelCmd.RunE(workflowsRunsCancelCmd, []string{"run_raced"}); err != nil {
+			t.Fatalf("runs cancel: %v", err)
+		}
+	})
+	for _, want := range []string{
+		"cancellation_status=\"cancellation_failed\"",
+		"reached a terminal state",
+		"lifecycle.status=\"completed\"",
+	} {
+		if !strings.Contains(stderr, want) {
+			t.Fatalf("expected stderr to contain %q, got:\n%s", want, stderr)
+		}
+	}
+	if strings.Contains(stderr, "Poll `retab workflows runs get") {
+		t.Fatalf("did not expect poll advice when the run is already terminal, got:\n%s", stderr)
+	}
+}
+
 func TestWorkflowsRunsCreateResolvesStartAliasToGeneratedStartBlock(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())

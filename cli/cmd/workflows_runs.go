@@ -1338,13 +1338,34 @@ make the cancel idempotent if you may retry the request.`,
 		// into a script can spot it. The JSON on stdout still carries
 		// the full ``cancellation_status`` field for programmatic
 		// consumers.
+		//
+		// But a cancel can lose a race: the run reaches a terminal state
+		// (typically ``completed``) between the engine accepting the
+		// cancel and serializing the response, which still reports
+		// cancellation_status="cancellation_failed". In that case the
+		// generic "poll until terminal" advice is wrong — the embedded run
+		// is already terminal — so key the note on the run's actual
+		// lifecycle status, not on cancellation_status alone.
 		if result != nil && result.CancellationStatus != nil && *result.CancellationStatus != retab.CancelWorkflowResponseCancellationStatusCancelled {
-			fmt.Fprintf(
-				os.Stderr,
-				"note: cancellation_status=%q — the cancel request was accepted but the run has not yet reached a terminal state. Poll `retab workflows runs get %s` until lifecycle.status is one of cancelled / completed / error.\n",
-				string(*result.CancellationStatus),
-				args[0],
-			)
+			runStatus := result.Run.Lifecycle.Status()
+			// Only completed/error/cancelled are settled here. awaiting_review
+			// is a pause that is still cancellable, so it does not defuse the
+			// "poll until terminal" advice.
+			if runStatus == "completed" || runStatus == "error" || runStatus == "cancelled" {
+				fmt.Fprintf(
+					os.Stderr,
+					"note: cancellation_status=%q — the run reached a terminal state (lifecycle.status=%q) before the cancel took effect, so it was not cancelled.\n",
+					string(*result.CancellationStatus),
+					runStatus,
+				)
+			} else {
+				fmt.Fprintf(
+					os.Stderr,
+					"note: cancellation_status=%q — the cancel request was accepted but the run has not yet reached a terminal state. Poll `retab workflows runs get %s` until lifecycle.status is one of cancelled / completed / error.\n",
+					string(*result.CancellationStatus),
+					args[0],
+				)
+			}
 		}
 		return printResult(cmd, result)
 	}),
