@@ -16,8 +16,8 @@ java {
 }
 
 dependencies {
-  api("com.fasterxml.jackson.core:jackson-databind:2.17.2")
-  api("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.17.2")
+  api("com.fasterxml.jackson.core:jackson-databind:2.18.9")
+  api("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.18.9")
   testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
   testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.11.4")
 }
