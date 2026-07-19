@@ -353,8 +353,9 @@ otherwise the command refuses to delete when stdin is not a terminal.`,
 var extractionsCancelCmd = &cobra.Command{
 	Use:   "cancel <extraction-id>",
 	Short: "Cancel an extraction",
-	Long: `Cancel a pending or in-flight extraction. Completed extractions
-cannot be cancelled and the API returns an error.`,
+	Long: `Cancel a pending or in-flight extraction. Cancelling an extraction
+that has already reached a terminal status (completed, error, or cancelled) is
+an idempotent no-op: the API returns the existing record unchanged.`,
 	Example: `  # Cancel a running extraction
   retab extractions cancel extr_xyz789`,
 	Args: cobra.ExactArgs(1),

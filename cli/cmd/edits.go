@@ -219,8 +219,9 @@ otherwise the command refuses to delete when stdin is not a terminal.`,
 var editsCancelCmd = &cobra.Command{
 	Use:   "cancel <edit-id>",
 	Short: "Cancel an edit",
-	Long: `Cancel a pending or in-flight edit. Completed edits cannot be
-cancelled and the API returns an error.`,
+	Long: `Cancel a pending or in-flight edit. Cancelling an edit that has
+already reached a terminal status (completed, error, or cancelled) is an
+idempotent no-op: the API returns the existing record unchanged.`,
 	Example: `  # Cancel a running edit
   retab edits cancel edit_xyz789`,
 	Args: cobra.ExactArgs(1),

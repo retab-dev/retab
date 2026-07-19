@@ -1376,12 +1376,20 @@ var workflowsRunsRestartCmd = &cobra.Command{
 	Short: "Restart a workflow run",
 	Long: `Re-execute a previous run, reusing the original inputs.
 By default the restarted run uses the latest published workflow config.
-Use ` + "`--config-source draft`" + ` after tweaking draft block config.`,
+Use ` + "`--config-source draft`" + ` after tweaking draft block config.
+
+Restart mints a new run, so it accepts the same ` + "`--wait`" + ` contract as
+` + "`runs create`" + `: pass ` + "`--wait`" + ` to block until the restarted run
+settles (` + "`completed`/`error`/`cancelled`" + ` or ` + "`awaiting_review`" + `)
+instead of hand-rolling a poll loop around ` + "`runs get`" + `.`,
 	Example: `  # Restart a previous run with the same inputs
   retab workflows runs restart run_xyz789
 
   # Restart against the current draft config
-  retab workflows runs restart run_xyz789 --config-source draft`,
+  retab workflows runs restart run_xyz789 --config-source draft
+
+  # Restart and block until the new run settles
+  retab workflows runs restart run_xyz789 --wait`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		configSourceValue, _ := cmd.Flags().GetString("config-source")
@@ -1443,7 +1451,11 @@ Use ` + "`--config-source draft`" + ` after tweaking draft block config.`,
 		if err != nil {
 			return err
 		}
-		return printResult(cmd, result)
+		// restart mints a brand-new run just like `create`, so it honours the
+		// same --wait contract: without --wait, print the pending run; with it,
+		// poll the new run id until it settles. Closes the gap where restart
+		// forced callers to hand-roll a poll loop that `create` spares them.
+		return maybeWaitForWorkflowRun(cmd, result)
 	}),
 }
 
@@ -1653,6 +1665,10 @@ func init() {
 	workflowsRunsDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
 	workflowsRunsCancelCmd.Flags().String("command-id", "", "idempotency command id")
 	workflowsRunsRestartCmd.Flags().String("config-source", "published", "published | draft")
+	// restart creates a new run, so it mirrors `runs create`'s --wait contract:
+	// block until the restarted run settles, tuned by the shared poll flags.
+	workflowsRunsRestartCmd.Flags().Bool("wait", false, "block until the restarted run reaches a terminal status (completed/error/cancelled/awaiting_review), then print the final run")
+	addPrimitiveWaitTuningFlags(workflowsRunsRestartCmd, true)
 
 	workflowsRunsExportCmd.Flags().String("workflow-id", "", "workflow id (deprecated; pass as positional)")
 	workflowsRunsExportCmd.Flags().String("block-id", "", "block id (required)")

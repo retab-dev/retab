@@ -1678,6 +1678,84 @@ func TestWorkflowsRunsRestartCreatesFreshRunFromSourceInputs(t *testing.T) {
 	}
 }
 
+// restart mints a new run, so --wait must poll that new run id (not the source
+// run) until it settles — mirroring `runs create --wait`. Guards the wait flags
+// staying wired on restart and the poll targeting the restarted run.
+func TestWorkflowsRunsRestartWaitPollsRestartedRun(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	if flag := workflowsRunsRestartCmd.Flags().Lookup("wait"); flag == nil {
+		t.Fatalf("restart should expose --wait to match runs create")
+	}
+
+	var restartedGets int
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/workflows/runs/run_123":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"id":                  "run_123",
+				"workflow_id":         "wf_123",
+				"workflow_version_id": "ver_old",
+				"trigger":             map[string]any{"type": "manual"},
+				"lifecycle":           map[string]any{"status": "error"},
+				"inputs": map[string]any{
+					"json_data": map[string]any{
+						"start_json": map[string]any{"invoice_id": "INV-1"},
+					},
+				},
+			})
+		case r.Method == http.MethodPost && r.URL.Path == "/v1/workflows/runs":
+			// The restarted run starts non-terminal so --wait must poll it.
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"id":                  "run_456",
+				"workflow_id":         "wf_123",
+				"workflow_version_id": "ver_123",
+				"trigger":             map[string]any{"type": "restart"},
+				"lifecycle":           map[string]any{"status": "running"},
+			})
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/workflows/runs/run_456":
+			restartedGets++
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"id":                  "run_456",
+				"workflow_id":         "wf_123",
+				"workflow_version_id": "ver_123",
+				"trigger":             map[string]any{"type": "restart"},
+				"lifecycle":           map[string]any{"status": "completed"},
+			})
+		default:
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := workflowsRunsRestartCmd.Flags().Set("wait", "true"); err != nil {
+		t.Fatal(err)
+	}
+	if err := workflowsRunsRestartCmd.Flags().Set("poll-interval-ms", "1"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_ = workflowsRunsRestartCmd.Flags().Set("wait", "false")
+		_ = workflowsRunsRestartCmd.Flags().Set("poll-interval-ms", "2000")
+		_ = workflowsRunsRestartCmd.Flags().Set("config-source", "published")
+	})
+
+	stdout, _ := captureStd(t, func() {
+		if err := workflowsRunsRestartCmd.RunE(workflowsRunsRestartCmd, []string{"run_123"}); err != nil {
+			t.Fatalf("runs restart --wait: %v", err)
+		}
+	})
+	if restartedGets == 0 {
+		t.Fatalf("--wait did not poll the restarted run run_456")
+	}
+	if !strings.Contains(stdout, "run_456") || !strings.Contains(stdout, "completed") {
+		t.Fatalf("expected final completed run_456 on stdout, got:\n%s", stdout)
+	}
+}
+
 func TestWorkflowsRunsRestartMapsDraftConfigSourceToDraftVersion(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())

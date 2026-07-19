@@ -191,8 +191,9 @@ otherwise the command refuses to delete when stdin is not a terminal.`,
 var parsesCancelCmd = &cobra.Command{
 	Use:   "cancel <parse-id>",
 	Short: "Cancel a parse",
-	Long: `Cancel a pending or in-flight parse. Completed parses cannot be
-cancelled and the API returns an error.`,
+	Long: `Cancel a pending or in-flight parse. Cancelling a parse that has
+already reached a terminal status (completed, error, or cancelled) is an
+idempotent no-op: the API returns the existing record unchanged.`,
 	Example: `  # Cancel a running parse
   retab parses cancel parse_xyz789`,
 	Args: cobra.ExactArgs(1),

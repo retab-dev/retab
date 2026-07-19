@@ -242,8 +242,9 @@ otherwise the command refuses to delete when stdin is not a terminal.`,
 var splitsCancelCmd = &cobra.Command{
 	Use:   "cancel <split-id>",
 	Short: "Cancel a split",
-	Long: `Cancel a pending or in-flight split. Completed splits cannot be
-cancelled and the API returns an error.`,
+	Long: `Cancel a pending or in-flight split. Cancelling a split that has
+already reached a terminal status (completed, error, or cancelled) is an
+idempotent no-op: the API returns the existing record unchanged.`,
 	Example: `  # Cancel a running split
   retab splits cancel split_xyz789`,
 	Args: cobra.ExactArgs(1),

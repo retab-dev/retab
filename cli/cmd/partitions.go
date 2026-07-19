@@ -196,8 +196,9 @@ otherwise the command refuses to delete when stdin is not a terminal.`,
 var partitionsCancelCmd = &cobra.Command{
 	Use:   "cancel <partition-id>",
 	Short: "Cancel a partition",
-	Long: `Cancel a pending or in-flight partition. Completed partitions
-cannot be cancelled and the API returns an error.`,
+	Long: `Cancel a pending or in-flight partition. Cancelling a partition that
+has already reached a terminal status (completed, error, or cancelled) is an
+idempotent no-op: the API returns the existing record unchanged.`,
 	Example: `  # Cancel a running partition
   retab partitions cancel part_xyz789`,
 	Args: cobra.ExactArgs(1),

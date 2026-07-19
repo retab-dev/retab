@@ -252,8 +252,9 @@ otherwise the command refuses to delete when stdin is not a terminal.`,
 var classificationsCancelCmd = &cobra.Command{
 	Use:   "cancel <classification-id>",
 	Short: "Cancel a classification",
-	Long: `Cancel a pending or in-flight classification. Completed
-classifications cannot be cancelled and the API returns an error.`,
+	Long: `Cancel a pending or in-flight classification. Cancelling a
+classification that has already reached a terminal status (completed, error, or
+cancelled) is an idempotent no-op: the API returns the existing record unchanged.`,
 	Example: `  # Cancel a running classification
   retab classifications cancel clas_xyz789`,
 	Args: cobra.ExactArgs(1),
