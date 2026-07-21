@@ -9,7 +9,17 @@ use retab::{Error, Retab};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpListener;
 
-const REGISTERED_LIST_MODULES: &[&str] = &[
+// Cross-language pagination contract registry for the Rust SDK.
+//
+// A "list method" is `pub async fn list` OR any `pub async fn list_*`
+// variant. An earlier version of the scan below matched `pub async fn list(`
+// only, which silently excluded every `list_*` route — `usage.list_primitives`,
+// `workflows.list_versions` and friends all return a cursor-paginated stream
+// and carry the same auto-paging obligation.
+//
+// Labels follow the cross-language rule: the module filename alone for a bare
+// `list`, and `module.rs::method` for a `list_*` variant.
+const REGISTERED_LIST_METHODS: &[&str] = &[
     "classifications.rs",
     "edit_templates.rs",
     "edits.rs",
@@ -20,10 +30,15 @@ const REGISTERED_LIST_MODULES: &[&str] = &[
     "parses.rs",
     "partitions.rs",
     "splits.rs",
+    "usage.rs::list_blocks",
+    "usage.rs::list_primitives",
+    "usage.rs::list_runs",
     "workflow_artifacts.rs",
     "workflow_block_executions.rs",
     "workflow_blocks.rs",
+    "workflow_blocks.rs::list_versions",
     "workflow_edges.rs",
+    "workflow_edges.rs::list_versions",
     "workflow_experiments.rs",
     "workflow_review_versions.rs",
     "workflow_reviews.rs",
@@ -33,9 +48,51 @@ const REGISTERED_LIST_MODULES: &[&str] = &[
     "workflow_eval_runs.rs",
     "workflow_evals.rs",
     "workflows.rs",
+    "workflows.rs::list_versions",
 ];
 
-const NON_CURSOR_LIST_MODULES: &[&str] = &["tables.rs"];
+// List methods that legitimately return a non-cursor envelope, so the
+// auto-paging contract does not apply. Each entry carries its reason; stale
+// entries fail `registry_covers_every_resource_list_method` alongside stale
+// registry rows.
+const NON_CURSOR_LIST_METHODS: &[(&str, &str)] = &[
+    (
+        "tables.rs",
+        "list returns WorkflowTableListResponse ({tables: [...]}), no cursor envelope",
+    ),
+    (
+        "secrets.rs::list_secrets",
+        "returns SecretListResponse, an unpaginated envelope",
+    ),
+    (
+        "secrets.rs::list_secret_value",
+        "returns SecretValueResponse; 'list' is the API verb for a single value read, not a collection",
+    ),
+    (
+        "workflows.rs::list_diff",
+        "returns a single WorkflowGraphVersionDiff",
+    ),
+    (
+        "workflow_blocks.rs::list_diff",
+        "returns a single WorkflowBlockVersionDiff",
+    ),
+    (
+        "workflow_edges.rs::list_diff",
+        "returns a single WorkflowEdgeVersionDiff",
+    ),
+];
+
+// The `list_*` variants that MUST stay registered. If the scan ever narrows
+// back to `pub async fn list(`, these drop out silently and every remaining
+// case still passes.
+const PAGINATED_LIST_STAR_METHODS: &[&str] = &[
+    "usage.rs::list_blocks",
+    "usage.rs::list_primitives",
+    "usage.rs::list_runs",
+    "workflows.rs::list_versions",
+    "workflow_blocks.rs::list_versions",
+    "workflow_edges.rs::list_versions",
+];
 
 async fn start_two_page_server() -> (String, Arc<Mutex<Vec<String>>>) {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
@@ -353,14 +410,76 @@ pagination_case!(workflows_list_auto_pages, "/v1/workflows", |client| {
         .list(retab::resources::workflows::ListParams::default())
         .await
 });
+pagination_case!(
+    workflows_list_versions_auto_pages,
+    "/v1/workflows/versions",
+    |client| {
+        client
+            .workflows()
+            .list_versions(retab::resources::workflows::ListVersionsParams::new("wf_x"))
+            .await
+    }
+);
+pagination_case!(
+    workflow_blocks_list_versions_auto_pages,
+    "/v1/workflows/blocks/versions",
+    |client| {
+        client
+            .workflows()
+            .blocks()
+            .list_versions(retab::resources::workflow_blocks::ListVersionsParams::new(
+                "wf_x",
+            ))
+            .await
+    }
+);
+pagination_case!(
+    workflow_edges_list_versions_auto_pages,
+    "/v1/workflows/edges/versions",
+    |client| {
+        client
+            .workflows()
+            .edges()
+            .list_versions(retab::resources::workflow_edges::ListVersionsParams::new(
+                "wf_x",
+            ))
+            .await
+    }
+);
+pagination_case!(usage_list_blocks_auto_pages, "/v1/usage/blocks", |client| {
+    client
+        .usage()
+        .list_blocks(retab::resources::usage::ListBlocksParams::default())
+        .await
+});
+pagination_case!(
+    usage_list_primitives_auto_pages,
+    "/v1/usage/primitives",
+    |client| {
+        client
+            .usage()
+            .list_primitives(retab::resources::usage::ListPrimitivesParams::default())
+            .await
+    }
+);
+pagination_case!(usage_list_runs_auto_pages, "/v1/usage/runs", |client| {
+    client
+        .usage()
+        .list_runs(retab::resources::usage::ListRunsParams::default())
+        .await
+});
 
-#[test]
-fn registry_covers_every_resource_list_method() -> io::Result<()> {
+/// Scan `src/resources/` and return the discovery label of every list method:
+/// the module filename for a bare `pub async fn list`, and `module.rs::method`
+/// for every `pub async fn list_*` variant.
+///
+/// The `*_with_options` siblings are the same route with an explicit
+/// `RequestOptions` argument (every list method has one), not routes of their
+/// own, so they are excluded by name.
+fn discover_list_methods() -> io::Result<BTreeSet<String>> {
     let resources_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("src")
         .join("resources");
-    let registered: BTreeSet<&str> = REGISTERED_LIST_MODULES.iter().copied().collect();
-    let non_cursor: BTreeSet<&str> = NON_CURSOR_LIST_MODULES.iter().copied().collect();
     let mut discovered = BTreeSet::new();
 
     for entry in fs::read_dir(resources_dir)? {
@@ -373,29 +492,91 @@ fn registry_covers_every_resource_list_method() -> io::Result<()> {
             continue;
         };
         let contents = fs::read_to_string(&path)?;
-        if contents.contains("pub async fn list(") && !non_cursor.contains(file_name) {
-            discovered.insert(file_name.to_string());
+        for line in contents.lines() {
+            const PREFIX: &str = "pub async fn ";
+            let Some(rest) = line.trim_start().strip_prefix(PREFIX) else {
+                continue;
+            };
+            let Some(name) = rest.split('(').next() else {
+                continue;
+            };
+            if name != "list" && !name.starts_with("list_") {
+                continue;
+            }
+            if name.ends_with("_with_options") {
+                continue;
+            }
+            if name == "list" {
+                discovered.insert(file_name.to_string());
+            } else {
+                discovered.insert(format!("{file_name}::{name}"));
+            }
         }
     }
 
+    Ok(discovered)
+}
+
+#[test]
+fn registry_covers_every_resource_list_method() -> io::Result<()> {
+    let registered: BTreeSet<&str> = REGISTERED_LIST_METHODS.iter().copied().collect();
+    let non_cursor: BTreeSet<&str> = NON_CURSOR_LIST_METHODS
+        .iter()
+        .map(|(label, _reason)| *label)
+        .collect();
+    let discovered = discover_list_methods()?;
+
     let missing: Vec<_> = discovered
         .iter()
-        .filter(|name| !registered.contains(name.as_str()))
+        .filter(|name| !registered.contains(name.as_str()) && !non_cursor.contains(name.as_str()))
         .cloned()
         .collect();
     let stale: Vec<_> = registered
         .iter()
+        .chain(non_cursor.iter())
         .filter(|name| !discovered.contains(**name))
         .copied()
         .collect();
 
     assert!(
         missing.is_empty(),
-        "Resources with list() missing from pagination contract registry: {missing:?}"
+        "List methods missing from the pagination contract registry: {missing:?}. \
+         Register them, or add them to NON_CURSOR_LIST_METHODS with a reason."
     );
     assert!(
         stale.is_empty(),
-        "Pagination contract registry entries without a list() method: {stale:?}"
+        "Pagination contract entries without a matching list method: {stale:?}"
     );
     Ok(())
+}
+
+/// Pin the widened scan. The bug this guards is a discovery walk that narrows
+/// back to `pub async fn list(`: every `list_*` route would drop out of the
+/// registry check and the suite would still be green.
+#[test]
+fn discovery_covers_list_star_variants() -> io::Result<()> {
+    let discovered = discover_list_methods()?;
+    let missing: Vec<_> = PAGINATED_LIST_STAR_METHODS
+        .iter()
+        .filter(|name| !discovered.contains(**name))
+        .copied()
+        .collect();
+    assert!(
+        missing.is_empty(),
+        "These list_* methods were not discovered: {missing:?}. \
+         The scan regressed to matching only `pub async fn list(`."
+    );
+    Ok(())
+}
+
+/// Every non-cursor exemption needs a reason, so the allowlist documents
+/// itself rather than accumulating bare strings.
+#[test]
+fn non_cursor_entries_are_documented() {
+    for (label, reason) in NON_CURSOR_LIST_METHODS {
+        assert!(
+            !reason.trim().is_empty(),
+            "NON_CURSOR_LIST_METHODS entry {label:?} needs a reason explaining why the cursor contract does not apply"
+        );
+    }
 }

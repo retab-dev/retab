@@ -31,13 +31,24 @@ paths keeps the discovery deterministic and makes drift impossible to miss
 when someone adds a new resource: they have to update this list, which is
 exactly the prompt to think about the closure contract.
 
-The contract is "every ``PaginatedList[T]``-returning ``.list()`` method goes
-through ``request_page``". Methods that return a different envelope type
+The contract is "every ``PaginatedList[T]``-returning list method goes
+through ``request_page``". Methods that return a different envelope type are
 *not* paginated lists in the contract's sense — they don't claim to support
-``auto_paging_iter()``. We filter those out by inspecting the return annotation.
-If a future resource needs to bypass ``request_page`` for a genuinely paginated
-route, add it to ``KNOWN_BYPASS`` with a comment pointing at the "Acceptable
-exceptions" section of the contract doc.
+``auto_paging_iter()``. Those must be named explicitly in ``NON_CURSOR``
+with a reason; a list method that is neither registered nor bypassed fails
+discovery rather than being silently dropped. If a future resource needs to
+bypass ``request_page`` for a genuinely paginated route, add it to
+``KNOWN_BYPASS`` with a comment pointing at the "Acceptable exceptions"
+section of the contract doc.
+
+"List method" here means ``list`` *or* any ``list_*`` variant
+-----------------------------------------------------------
+An earlier version of this walk matched the exact name ``list`` only, which
+silently excluded every ``list_*`` variant from the contract —
+``usage.list_primitives``, ``workflows.list_versions`` and friends all return
+``PaginatedList[T]`` and carry the same closure obligation. The discovery
+below matches ``list`` and ``list_*`` alike, so a new ``list_*`` route cannot
+land without either passing the contract or being justified in ``NON_CURSOR``.
 """
 
 from __future__ import annotations
@@ -73,12 +84,30 @@ KNOWN_BYPASS: set[str] = set()
 
 
 # ---------------------------------------------------------------------------
+# Non-cursor list methods
+# ---------------------------------------------------------------------------
+# List methods that legitimately return something other than
+# ``PaginatedList[T]``, so the closure contract does not apply to them. These
+# are excluded from the contract cases but still have to *exist* — a stale row
+# here fails ``test_non_cursor_entries_all_resolve`` — so this doubles as
+# documentation of every deliberate exemption. Every entry carries its reason.
+NON_CURSOR: dict[str, str] = {
+    "tables.list": "returns WorkflowTableListResponse ({tables: [...]}), no cursor envelope",
+    "secrets.list_secrets": "returns SecretListResponse, an unpaginated envelope",
+    "secrets.list_secret_value": "returns SecretValueResponse; 'list' is the API verb for a single value read, not a collection",
+    "workflows.list_diff": "returns a single WorkflowGraphVersionDiff object",
+    "workflows.blocks.list_diff": "returns a single WorkflowBlockVersionDiff object",
+    "workflows.edges.list_diff": "returns a single WorkflowEdgeVersionDiff object",
+}
+
+
+# ---------------------------------------------------------------------------
 # Resource enumeration — hardcoded so adding a new resource forces a test edit
 # ---------------------------------------------------------------------------
 # Each entry is a dotted attribute path off the root client (Retab /
-# AsyncRetab). The walk follows the dots and resolves the ``.list`` method
-# at the leaf. New resources MUST be appended here (alongside their
-# ``request_page`` rewire) so the contract test covers them.
+# AsyncRetab). The walk follows the dots and collects every ``list`` /
+# ``list_*`` method at the leaf. New resources MUST be appended here
+# (alongside their ``request_page`` rewire) so the contract test covers them.
 RESOURCE_PATHS: tuple[str, ...] = (
     # Top-level
     "extractions",
@@ -89,6 +118,11 @@ RESOURCE_PATHS: tuple[str, ...] = (
     "edits",
     "files",
     "workflows",
+    "usage",
+    # Non-cursor resources are enumerated too: their list methods are exempted
+    # by name in NON_CURSOR, not by being invisible to the walk.
+    "tables",
+    "secrets",
     # Sub-resources on `edits`
     "edits.templates",
     # Sub-resources on `workflows`
@@ -180,11 +214,23 @@ def _build_kwargs_for_required_params(method: Callable[..., Any]) -> dict[str, A
     return kwargs
 
 
-def _discover_methods(client: Any) -> list[tuple[str, Callable[..., Any]]]:
-    """Walk ``RESOURCE_PATHS`` and collect ``(full_path, bound_method)`` for
-    every ``.list`` method whose return annotation is a paginated envelope.
+def _is_list_method_name(name: str) -> bool:
+    """True for the bare ``list`` and for every ``list_*`` variant.
 
-    Methods listed in ``KNOWN_BYPASS`` are skipped explicitly.
+    ``list_*`` variants (``usage.list_primitives``, ``workflows.list_versions``)
+    carry the same closure contract as the bare ``list``; matching only the
+    exact name ``list`` is what left them uncovered.
+    """
+    return name == "list" or name.startswith("list_")
+
+
+def _discover_list_methods(client: Any) -> list[tuple[str, Callable[..., Any]]]:
+    """Walk ``RESOURCE_PATHS`` and collect ``(full_path, bound_method)`` for
+    every ``list`` / ``list_*`` method, cursor-paginated or not.
+
+    Classification into "must honour the contract" vs. "legitimately
+    non-cursor" happens in the callers, so an unclassified method surfaces as
+    a failure instead of vanishing.
     """
     discovered: list[tuple[str, Callable[..., Any]]] = []
     for resource_path in RESOURCE_PATHS:
@@ -195,16 +241,29 @@ def _discover_methods(client: Any) -> list[tuple[str, Callable[..., Any]]]:
         assert isinstance(resource, (SyncAPIResource, AsyncAPIResource)), (
             f"RESOURCE_PATHS entry {resource_path!r} resolved to {type(resource).__name__}, not a SyncAPIResource/AsyncAPIResource. Update the enumeration."
         )
-        list_method = getattr(resource, "list", None)
-        if list_method is None or not callable(list_method):
-            continue
-        full_path = f"{resource_path}.list"
-        if full_path in KNOWN_BYPASS:
-            continue
-        if not _returns_paginated_list(list_method):
-            continue
-        discovered.append((full_path, list_method))
+        for name in sorted(dir(resource)):
+            if not _is_list_method_name(name):
+                continue
+            method = getattr(resource, name, None)
+            if method is None or not callable(method):
+                continue
+            discovered.append((f"{resource_path}.{name}", method))
     return discovered
+
+
+def _contract_methods(client: Any) -> list[tuple[str, Callable[..., Any]]]:
+    """The subset of discovered list methods that must wire the closure.
+
+    Drops the documented ``NON_CURSOR`` exemptions and the ``KNOWN_BYPASS``
+    escape hatch. Anything left that does *not* return a paginated envelope is
+    kept anyway — ``test_every_list_method_is_paginated_or_exempt`` is what
+    reports it, so a broken return type can't quietly shrink coverage here.
+    """
+    return [
+        (full_path, method)
+        for full_path, method in _discover_list_methods(client)
+        if full_path not in NON_CURSOR and full_path not in KNOWN_BYPASS
+    ]
 
 
 # Resolve the discovery once at module import — the parametrize IDs come from
@@ -212,8 +271,10 @@ def _discover_methods(client: Any) -> list[tuple[str, Callable[..., Any]]]:
 _SYNC_CLIENT_FOR_DISCOVERY = Retab(api_key="contract-test", base_url="http://localhost")
 _ASYNC_CLIENT_FOR_DISCOVERY = AsyncRetab(api_key="contract-test", base_url="http://localhost")
 
-_SYNC_METHODS = _discover_methods(_SYNC_CLIENT_FOR_DISCOVERY)
-_ASYNC_METHODS = _discover_methods(_ASYNC_CLIENT_FOR_DISCOVERY)
+_SYNC_ALL_LIST_METHODS = _discover_list_methods(_SYNC_CLIENT_FOR_DISCOVERY)
+_ASYNC_ALL_LIST_METHODS = _discover_list_methods(_ASYNC_CLIENT_FOR_DISCOVERY)
+_SYNC_METHODS = _contract_methods(_SYNC_CLIENT_FOR_DISCOVERY)
+_ASYNC_METHODS = _contract_methods(_ASYNC_CLIENT_FOR_DISCOVERY)
 _SYNC_CLIENT_FOR_DISCOVERY.close()
 asyncio.run(_ASYNC_CLIENT_FOR_DISCOVERY.close())
 
@@ -230,6 +291,59 @@ def test_discovery_found_methods() -> None:
     """
     assert len(_SYNC_METHODS) >= 10, f"Sync discovery returned only {len(_SYNC_METHODS)} method(s); the resource enumeration or return-annotation filter is likely broken."
     assert len(_ASYNC_METHODS) >= 10, f"Async discovery returned only {len(_ASYNC_METHODS)} method(s); the resource enumeration or return-annotation filter is likely broken."
+
+
+def test_discovery_covers_list_star_variants() -> None:
+    """Pin the widened discovery itself.
+
+    The bug this guards is a discovery walk that silently narrows back to the
+    exact name ``list`` — every ``list_*`` route would drop out of the
+    parametrized cases below and the suite would still be green.
+    """
+    expected = {
+        "usage.list_blocks",
+        "usage.list_primitives",
+        "usage.list_runs",
+        "workflows.list_versions",
+        "workflows.blocks.list_versions",
+        "workflows.edges.list_versions",
+    }
+    for label, methods in (("sync", _SYNC_METHODS), ("async", _ASYNC_METHODS)):
+        found = {full_path for full_path, _ in methods}
+        assert expected <= found, f"{label} discovery lost paginated list_* method(s): {sorted(expected - found)}"
+
+
+def test_every_list_method_is_paginated_or_exempt() -> None:
+    """Every discovered list method must either return a paginated envelope or
+    be named in ``NON_CURSOR`` / ``KNOWN_BYPASS`` with a reason.
+
+    A ``list_*`` that stops returning ``PaginatedList[T]`` is a real bug — the
+    route is cursor-paginated on the wire — so it fails here rather than being
+    quietly filtered out of the contract cases.
+    """
+    for label, methods in (("sync", _SYNC_METHODS), ("async", _ASYNC_METHODS)):
+        offenders = [full_path for full_path, method in methods if not _returns_paginated_list(method)]
+        assert not offenders, (
+            f"{label}: these list methods do not return a paginated envelope and are not in "
+            f"NON_CURSOR/KNOWN_BYPASS: {sorted(offenders)}. Either fix the return type (the route "
+            "is cursor-paginated) or add the method to NON_CURSOR with a documented reason."
+        )
+
+
+def test_non_cursor_entries_all_resolve() -> None:
+    """Stale-row guard: every ``NON_CURSOR`` key must still name a live list
+    method. A renamed or deleted resource leaves a dead exemption behind that
+    would silently swallow a future method reusing the name.
+    """
+    for label, methods in (("sync", _SYNC_ALL_LIST_METHODS), ("async", _ASYNC_ALL_LIST_METHODS)):
+        discovered = {full_path for full_path, _ in methods}
+        stale = sorted(set(NON_CURSOR) - discovered)
+        assert not stale, f"{label}: NON_CURSOR entries that no longer match a list method: {stale}. Remove them."
+
+
+def test_non_cursor_entries_are_documented() -> None:
+    for full_path, reason in NON_CURSOR.items():
+        assert reason.strip(), f"NON_CURSOR[{full_path!r}] needs a reason explaining why the cursor contract does not apply."
 
 
 def test_discovery_clients_are_closed_after_param_generation() -> None:

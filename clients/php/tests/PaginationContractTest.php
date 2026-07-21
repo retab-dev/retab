@@ -8,8 +8,9 @@ declare(strict_types=1);
 // suites in the Python, Node, and Go SDKs
 // (docs/blueprints/sdk-pagination-contract.md).
 //
-// For every Retab\Service\* class that exposes a `list(...)` method
-// returning `Retab\PaginatedResponse`, this suite:
+// For every Retab\Service\* class that exposes a `list(...)` — or any
+// `list<Suffix>(...)` — method returning `Retab\PaginatedResponse`, this
+// suite:
 //
 //   1. Mocks the HTTP transport with TWO canned responses — a first page
 //      that advertises a non-null `after` cursor and a second page that
@@ -22,9 +23,22 @@ declare(strict_types=1);
 //      request fires, and this test names the offender.
 //
 // A second discovery test scans `lib/Service/` via glob() and asserts
-// every service with a `public function list(...)` method appears in the
-// registry below — so a freshly-generated service that forgets to register
-// itself fails CI instead of silently bypassing the contract.
+// every `public function list(...)` / `public function list<Suffix>(...)`
+// method appears in the registry below or in NON_CURSOR — so a
+// freshly-generated service that forgets to register itself fails CI
+// instead of silently bypassing the contract.
+//
+// The scan matches on METHOD NAME, not return type. An earlier version
+// matched `public function list(` alone, which silently excluded every
+// `list*` variant — `Usage::listBlocks`, `Workflows::listVersions` and
+// friends all return `PaginatedResponse` and carry the same closure
+// obligation. Matching by name also means a genuinely-paginated route that
+// regressed to the wrong return type FAILS rather than quietly dropping out
+// of coverage.
+//
+// Registry / NON_CURSOR keys follow the cross-language labelling rule: the
+// service name alone for a bare `list`, and `Service::methodName` for a
+// `list*` variant.
 
 namespace Tests;
 
@@ -46,6 +60,39 @@ class PaginationContractTest extends TestCase
      * @var array<int, string>
      */
     private const KNOWN_BYPASS = [];
+
+    /**
+     * List methods that legitimately return a non-cursor envelope, so the
+     * PaginatedResponse contract does not apply. Keyed by discovery label,
+     * valued by the reason. Stale rows fail
+     * `testNonCursorEntriesAllResolve`, so this stays honest.
+     *
+     * @var array<string, string>
+     */
+    private const NON_CURSOR = [
+        'Tables' => 'list() returns WorkflowTableListResponse ({tables: [...]}), no cursor envelope',
+        'Secrets::listSecrets' => 'returns \Retab\Resource\SecretListResponse, an unpaginated envelope',
+        'Secrets::listSecretValue' => 'returns \Retab\Resource\SecretValueResponse; "list" is the API verb for a single value read, not a collection',
+        'Workflows::listDiff' => 'returns a single WorkflowGraphVersionDiff object',
+        'WorkflowBlocks::listDiff' => 'returns a single WorkflowBlockVersionDiff object',
+        'WorkflowEdges::listDiff' => 'returns a single WorkflowEdgeVersionDiff object',
+    ];
+
+    /**
+     * The `list*` variants that MUST stay in the registry. If the discovery
+     * scan ever narrows back to the bare `list(`, these drop out silently
+     * and every remaining case still passes.
+     *
+     * @var array<int, string>
+     */
+    private const PAGINATED_LIST_STAR_METHODS = [
+        'Usage::listBlocks',
+        'Usage::listPrimitives',
+        'Usage::listRuns',
+        'Workflows::listVersions',
+        'WorkflowBlocks::listVersions',
+        'WorkflowEdges::listVersions',
+    ];
 
     /**
      * Each entry pins one service's `list(...)` invocation. Keys:
@@ -208,6 +255,42 @@ class PaginationContractTest extends TestCase
                 'listFixture' => 'list_workflow',
                 'invoke' => static fn(Client $c) => $c->workflows()->list(),
             ],
+            'Workflows::listVersions' => [
+                'serviceClass' => \Retab\Service\Workflows::class,
+                'clientAccessor' => 'workflows',
+                'listFixture' => 'list_workflow_graph_version',
+                'invoke' => static fn(Client $c) => $c->workflows()->listVersions('test_workflow_id'),
+            ],
+            'WorkflowBlocks::listVersions' => [
+                'serviceClass' => \Retab\Service\WorkflowBlocks::class,
+                'clientAccessor' => 'workflows.blocks',
+                'listFixture' => 'list_workflow_block_version',
+                'invoke' => static fn(Client $c) => $c->workflows()->blocks()->listVersions('test_workflow_id'),
+            ],
+            'WorkflowEdges::listVersions' => [
+                'serviceClass' => \Retab\Service\WorkflowEdges::class,
+                'clientAccessor' => 'workflows.edges',
+                'listFixture' => 'list_workflow_edge_version',
+                'invoke' => static fn(Client $c) => $c->workflows()->edges()->listVersions('test_workflow_id'),
+            ],
+            'Usage::listBlocks' => [
+                'serviceClass' => \Retab\Service\Usage::class,
+                'clientAccessor' => 'usage',
+                'listFixture' => 'list_usage_block_record',
+                'invoke' => static fn(Client $c) => $c->usage()->listBlocks(),
+            ],
+            'Usage::listPrimitives' => [
+                'serviceClass' => \Retab\Service\Usage::class,
+                'clientAccessor' => 'usage',
+                'listFixture' => 'list_usage_primitive_record',
+                'invoke' => static fn(Client $c) => $c->usage()->listPrimitives(),
+            ],
+            'Usage::listRuns' => [
+                'serviceClass' => \Retab\Service\Usage::class,
+                'clientAccessor' => 'usage',
+                'listFixture' => 'list_usage_run_record',
+                'invoke' => static fn(Client $c) => $c->usage()->listRuns(),
+            ],
         ];
     }
 
@@ -323,30 +406,66 @@ class PaginationContractTest extends TestCase
     }
 
     /**
-     * Glob `lib/Service/` and verify every `*.php` file with a
-     * `public function list(...)` method whose return type is
-     * `PaginatedResponse` shows up in the registry. A newly-generated
-     * service that forgets to register itself here fails CI.
+     * Scan `lib/Service/` for every `public function list(...)` /
+     * `public function list<Suffix>(...)` method and return a map of
+     * discovery label => declared return type.
+     *
+     * The label is the service name alone for a bare `list`, and
+     * `Service::methodName` for a `list*` variant.
+     *
+     * @return array<string, string>
      */
-    public function testRegistryCoversEveryListMethod(): void
+    private function discoverListMethods(): array
     {
         $servicesDir = __DIR__ . '/../lib/Service';
         $files = glob($servicesDir . '/*.php');
         $this->assertNotFalse($files, 'glob() failed to read lib/Service/');
 
-        $expected = [];
+        $discovered = [];
         foreach ($files as $file) {
             $svc = basename($file, '.php');
-            if (in_array($svc, self::KNOWN_BYPASS, true)) {
+            $contents = (string) file_get_contents($file);
+            // `list` or `list<Suffix>` (listVersions, listBlocks, listDiff,
+            // listSecretValue, ...), capturing the declared return type so
+            // the caller can tell cursor envelopes from everything else.
+            // Signatures span lines, hence the `s` modifier.
+            $matched = preg_match_all(
+                '/public\s+function\s+(list[A-Z]\w*|list)\s*\([^)]*\)\s*:\s*(\\\\?[\w\\\\]+)/s',
+                $contents,
+                $matches,
+                PREG_SET_ORDER,
+            );
+            if ($matched === false || $matched === 0) {
                 continue;
             }
-            $contents = (string) file_get_contents($file);
-            // Match a `public function list(...)` whose return type
-            // declaration mentions `PaginatedResponse`. Multi-line
-            // signature, so use the `s` modifier.
-            if (preg_match('/public\s+function\s+list\s*\([^)]*\)\s*:\s*\\\\?Retab\\\\PaginatedResponse/s', $contents) === 1) {
-                $expected[] = $svc;
+            foreach ($matches as $match) {
+                $method = $match[1];
+                $returnType = ltrim($match[2], '\\');
+                $label = $method === 'list' ? $svc : $svc . '::' . $method;
+                $discovered[$label] = $returnType;
             }
+        }
+        ksort($discovered);
+
+        return $discovered;
+    }
+
+    /**
+     * Every discovered list method must either be registered (and return
+     * `PaginatedResponse`) or be exempted in NON_CURSOR / KNOWN_BYPASS.
+     * A newly-generated service that forgets to register itself fails here,
+     * and so does a registry row whose method disappeared.
+     */
+    public function testRegistryCoversEveryListMethod(): void
+    {
+        $discovered = $this->discoverListMethods();
+
+        $expected = [];
+        foreach ($discovered as $label => $_returnType) {
+            if (in_array($label, self::KNOWN_BYPASS, true) || isset(self::NON_CURSOR[$label])) {
+                continue;
+            }
+            $expected[] = $label;
         }
         sort($expected);
 
@@ -359,17 +478,95 @@ class PaginationContractTest extends TestCase
         $this->assertSame(
             [],
             array_values($missing),
-            'Services with a list()->PaginatedResponse method that are not in the pagination-contract registry: '
+            'List methods that are not in the pagination-contract registry: '
             . implode(', ', $missing)
-            . '. Add an entry to PaginationContractTest::registry() so the contract covers it.',
+            . '. Add an entry to PaginationContractTest::registry() so the contract covers it '
+            . '(or, if the route is genuinely not cursor-paginated, to NON_CURSOR with a reason).',
         );
         $this->assertSame(
             [],
             array_values($extra),
-            'Services in the registry that no longer expose list()->PaginatedResponse: '
+            'Registry rows that no longer match a list method under lib/Service/: '
             . implode(', ', $extra)
             . '. Drop them from PaginationContractTest::registry().',
         );
+    }
+
+    /**
+     * Every registered list method must actually declare
+     * `PaginatedResponse`. A `list*` that regressed to some other envelope
+     * is a real bug — the route is cursor-paginated on the wire — so it
+     * fails here instead of being filtered out of discovery.
+     */
+    public function testRegisteredListMethodsReturnPaginatedResponse(): void
+    {
+        $discovered = $this->discoverListMethods();
+
+        $offenders = [];
+        foreach (array_keys($this->registry()) as $label) {
+            $returnType = $discovered[$label] ?? null;
+            if ($returnType !== null && $returnType !== 'Retab\PaginatedResponse') {
+                $offenders[] = sprintf('%s (returns %s)', $label, $returnType);
+            }
+        }
+
+        $this->assertSame(
+            [],
+            $offenders,
+            'Registered list methods that do not return Retab\PaginatedResponse: '
+            . implode(', ', $offenders)
+            . '. Either fix the return type or move the method to NON_CURSOR with a documented reason.',
+        );
+    }
+
+    /**
+     * Pin the widened scan. The bug this guards is a regex that narrows
+     * back to the bare `list(` — every `list*` route would drop out of the
+     * registry check and the suite would still be green.
+     */
+    public function testDiscoveryCoversListStarVariants(): void
+    {
+        $discovered = $this->discoverListMethods();
+
+        foreach (self::PAGINATED_LIST_STAR_METHODS as $label) {
+            $this->assertArrayHasKey(
+                $label,
+                $discovered,
+                sprintf('%s was not discovered — the list* scan regressed to matching only the bare `list(`.', $label),
+            );
+            $this->assertSame(
+                'Retab\PaginatedResponse',
+                $discovered[$label],
+                sprintf('%s no longer returns PaginatedResponse; the route is cursor-paginated, so this is a real bug.', $label),
+            );
+        }
+    }
+
+    /**
+     * Stale-row guard for the exemption list: every NON_CURSOR key must
+     * still name a live list method that is still non-cursor.
+     */
+    public function testNonCursorEntriesAllResolve(): void
+    {
+        $discovered = $this->discoverListMethods();
+
+        foreach (self::NON_CURSOR as $label => $reason) {
+            $this->assertArrayHasKey(
+                $label,
+                $discovered,
+                sprintf('NON_CURSOR entry "%s" no longer matches a list method under lib/Service/; remove it.', $label),
+            );
+            $this->assertNotSame('', trim($reason), sprintf('NON_CURSOR entry "%s" needs a reason.', $label));
+            $this->assertNotSame(
+                'Retab\PaginatedResponse',
+                $discovered[$label],
+                sprintf(
+                    '%s is exempted as non-cursor but now returns PaginatedResponse — that is an improvement; '
+                    . 'move it into registry() so the contract covers it.',
+                    $label,
+                ),
+            );
+        }
     }
 
     /** @return list<array{request: \Psr\Http\Message\RequestInterface}> */
