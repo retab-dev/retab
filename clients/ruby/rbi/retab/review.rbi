@@ -63,10 +63,10 @@ module Retab
     sig { params(value: String).returns(String) }
     def block_type=(value); end
 
-    sig { returns(T.any(Retab::ReviewAlways, Retab::ReviewValidationFailed, Retab::ReviewConfidenceLt, Retab::ReviewCategoryIn, Retab::ReviewTopMarginLt, Retab::ReviewSplitCountNeq, Retab::ReviewAnySplitPagesLt, Retab::ReviewBoundaryConfidenceLt, Retab::ReviewAnyRequiredFieldNull, Retab::ReviewFieldConfidenceLt, Retab::ReviewJsonCondition, Retab::ReviewBranchIn, Retab::ReviewAnyOf, Retab::ReviewAllOf)) }
+    sig { returns(T.any(Retab::ReviewAlways, Retab::ReviewValidationFailed, Retab::ReviewConfidenceLt, Retab::ReviewCategoryIn, Retab::ReviewTopMarginLt, Retab::ReviewSplitCountNeq, Retab::ReviewAnySplitPagesLt, Retab::ReviewBoundaryConfidenceLt, Retab::ReviewAnyRequiredFieldNull, Retab::ReviewJsonCondition, Retab::ReviewBranchIn, Retab::ReviewAnyOf, Retab::ReviewAllOf)) }
     def triggered_by; end
 
-    sig { params(value: T.any(Retab::ReviewAlways, Retab::ReviewValidationFailed, Retab::ReviewConfidenceLt, Retab::ReviewCategoryIn, Retab::ReviewTopMarginLt, Retab::ReviewSplitCountNeq, Retab::ReviewAnySplitPagesLt, Retab::ReviewBoundaryConfidenceLt, Retab::ReviewAnyRequiredFieldNull, Retab::ReviewFieldConfidenceLt, Retab::ReviewJsonCondition, Retab::ReviewBranchIn, Retab::ReviewAnyOf, Retab::ReviewAllOf)).returns(T.any(Retab::ReviewAlways, Retab::ReviewValidationFailed, Retab::ReviewConfidenceLt, Retab::ReviewCategoryIn, Retab::ReviewTopMarginLt, Retab::ReviewSplitCountNeq, Retab::ReviewAnySplitPagesLt, Retab::ReviewBoundaryConfidenceLt, Retab::ReviewAnyRequiredFieldNull, Retab::ReviewFieldConfidenceLt, Retab::ReviewJsonCondition, Retab::ReviewBranchIn, Retab::ReviewAnyOf, Retab::ReviewAllOf)) }
+    sig { params(value: T.any(Retab::ReviewAlways, Retab::ReviewValidationFailed, Retab::ReviewConfidenceLt, Retab::ReviewCategoryIn, Retab::ReviewTopMarginLt, Retab::ReviewSplitCountNeq, Retab::ReviewAnySplitPagesLt, Retab::ReviewBoundaryConfidenceLt, Retab::ReviewAnyRequiredFieldNull, Retab::ReviewJsonCondition, Retab::ReviewBranchIn, Retab::ReviewAnyOf, Retab::ReviewAllOf)).returns(T.any(Retab::ReviewAlways, Retab::ReviewValidationFailed, Retab::ReviewConfidenceLt, Retab::ReviewCategoryIn, Retab::ReviewTopMarginLt, Retab::ReviewSplitCountNeq, Retab::ReviewAnySplitPagesLt, Retab::ReviewBoundaryConfidenceLt, Retab::ReviewAnyRequiredFieldNull, Retab::ReviewJsonCondition, Retab::ReviewBranchIn, Retab::ReviewAnyOf, Retab::ReviewAllOf)) }
     def triggered_by=(value); end
 
     sig { returns(String) }

@@ -2851,20 +2851,6 @@ class ModelRoundTripTest < Minitest::Test
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
-  def test_review_field_confidence_lt_round_trip
-    fixture = {
-      "kind" => "field_confidence_lt",
-      "path" => "stub",
-      "threshold" => 1.0
-    }
-    model = Retab::ReviewFieldConfidenceLt.new(fixture.to_json)
-    json = model.to_h
-    assert_kind_of(Hash, json)
-    assert_equal(fixture["path"], json[:path])
-    assert_equal(fixture["threshold"], json[:threshold])
-    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
-  end
-
   def test_review_json_condition_round_trip
     fixture = {
       "kind" => "json_condition",

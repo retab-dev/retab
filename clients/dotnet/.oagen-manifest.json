@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "dotnet",
-  "generatedAt": "2026-07-15T00:45:43.742Z",
+  "generatedAt": "2026-07-21T11:23:36.535Z",
   "files": [
     "README.md",
     "Retab.csproj",
@@ -178,7 +178,6 @@
     "src/Entities/ReviewConfidenceLt.cs",
     "src/Entities/ReviewDecision.cs",
     "src/Entities/ReviewEvaluation.cs",
-    "src/Entities/ReviewFieldConfidenceLt.cs",
     "src/Entities/ReviewJsonCondition.cs",
     "src/Entities/ReviewSplitCountNeq.cs",
     "src/Entities/ReviewTopMarginLt.cs",

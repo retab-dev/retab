@@ -67,8 +67,6 @@ module Retab
           Retab::ReviewCategoryIn.new(hash[:triggered_by])
         when "confidence_lt"
           Retab::ReviewConfidenceLt.new(hash[:triggered_by])
-        when "field_confidence_lt"
-          Retab::ReviewFieldConfidenceLt.new(hash[:triggered_by])
         when "json_condition"
           Retab::ReviewJsonCondition.new(hash[:triggered_by])
         when "split_count_neq"

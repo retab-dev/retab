@@ -219,7 +219,6 @@
     "src/main/java/com/retab/models/ReviewConfidenceLt.java",
     "src/main/java/com/retab/models/ReviewDecision.java",
     "src/main/java/com/retab/models/ReviewEvaluation.java",
-    "src/main/java/com/retab/models/ReviewFieldConfidenceLt.java",
     "src/main/java/com/retab/models/ReviewJsonCondition.java",
     "src/main/java/com/retab/models/ReviewKind.java",
     "src/main/java/com/retab/models/ReviewSplitCountNeq.java",

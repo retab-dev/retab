@@ -17,7 +17,6 @@ export * from './review-branch-in.interface.js';
 export * from './review-category-in.interface.js';
 export * from './review-confidence-lt.interface.js';
 export * from './review-decision.interface.js';
-export * from './review-field-confidence-lt.interface.js';
 export * from './review-json-condition.interface.js';
 export * from './review-split-count-neq.interface.js';
 export * from './review-top-margin-lt.interface.js';

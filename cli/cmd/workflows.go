@@ -88,8 +88,8 @@ Both act on the review's latest version by default; pass
 ` + "`--version-id rvr_...`" + ` to pin an exact one.
 For low-confidence review, enable consensus on the reviewed block
 (` + "`n_consensus > 1`" + `) and use predicates such as
-` + "`confidence_lt`" + `, ` + "`field_confidence_lt`" + `,
-` + "`top_margin_lt`" + `, ` + "`boundary_confidence_lt`" + `, or
+` + "`confidence_lt`" + `, ` + "`top_margin_lt`" + `,
+` + "`boundary_confidence_lt`" + `, or
 ` + "`json_condition`" + ` over ` + "`likelihoods.*`" + ` paths.
 
 Typical lifecycle:

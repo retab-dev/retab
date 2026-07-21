@@ -147,7 +147,6 @@ func TestWorkflowHelpMentionsConsensusReviewCriteria(t *testing.T) {
 	for _, want := range []string{
 		"n_consensus > 1",
 		"confidence_lt",
-		"field_confidence_lt",
 		"top_margin_lt",
 		"boundary_confidence_lt",
 		"json_condition",
@@ -177,7 +176,6 @@ func TestWorkflowRenderedHelpMentionsConsensusReviewCriteria(t *testing.T) {
 		"awaiting_review",
 		"n_consensus > 1",
 		"confidence_lt",
-		"field_confidence_lt",
 		"top_margin_lt",
 		"boundary_confidence_lt",
 		"json_condition",

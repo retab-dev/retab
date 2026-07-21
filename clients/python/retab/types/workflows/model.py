@@ -208,7 +208,6 @@ __all__ = [
     "ReviewDecisionStatus",
     "ReviewEvaluation",
     "ReviewEvaluationReviewDecision",
-    "ReviewFieldConfidenceLt",
     "ReviewJsonCondition",
     "ReviewSplitCountNeq",
     "ReviewTopMarginLt",

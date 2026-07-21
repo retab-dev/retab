@@ -40,8 +40,6 @@ module Retab
             Retab::ReviewCategoryIn.new(item)
           when "confidence_lt"
             Retab::ReviewConfidenceLt.new(item)
-          when "field_confidence_lt"
-            Retab::ReviewFieldConfidenceLt.new(item)
           when "json_condition"
             Retab::ReviewJsonCondition.new(item)
           when "split_count_neq"

@@ -80,7 +80,6 @@ class ReviewAllOf(BaseModel):
         | ReviewAnySplitPagesLt
         | ReviewBoundaryConfidenceLt
         | ReviewAnyRequiredFieldNull
-        | ReviewFieldConfidenceLt
         | ReviewJsonCondition
         | ReviewBranchIn
         | ReviewAnyOf
@@ -113,7 +112,6 @@ class ReviewAnyOf(BaseModel):
         | ReviewAnySplitPagesLt
         | ReviewBoundaryConfidenceLt
         | ReviewAnyRequiredFieldNull
-        | ReviewFieldConfidenceLt
         | ReviewJsonCondition
         | ReviewBranchIn
         | ReviewAnyOf
@@ -175,16 +173,6 @@ class ReviewConfidenceLt(BaseModel):
 
     kind: Literal["confidence_lt"] = Field(default="confidence_lt")
     threshold: float = Field(..., description="Gate fires when consensus likelihood < threshold")
-
-
-class ReviewFieldConfidenceLt(BaseModel):
-    """Gate when the field at `path` has consensus likelihood below `threshold`."""
-
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
-
-    kind: Literal["field_confidence_lt"] = Field(default="field_confidence_lt")
-    path: str = Field(..., description="JSONPath-style path, e.g. '$.invoice.total' or 'invoice.total'")
-    threshold: float
 
 
 class ReviewJsonCondition(BaseModel):
@@ -251,7 +239,6 @@ class Review(BaseModel):
         | ReviewAnySplitPagesLt
         | ReviewBoundaryConfidenceLt
         | ReviewAnyRequiredFieldNull
-        | ReviewFieldConfidenceLt
         | ReviewJsonCondition
         | ReviewBranchIn
         | ReviewAnyOf
@@ -297,7 +284,6 @@ __all__ = [
     "ReviewConfidenceLt",
     "ReviewDecision",
     "ReviewDecisionStatus",
-    "ReviewFieldConfidenceLt",
     "ReviewJsonCondition",
     "ReviewSplitCountNeq",
     "ReviewTopMarginLt",
@@ -327,7 +313,6 @@ ReviewBoundaryConfidenceLt.model_rebuild()
 ReviewBranchIn.model_rebuild()
 ReviewCategoryIn.model_rebuild()
 ReviewConfidenceLt.model_rebuild()
-ReviewFieldConfidenceLt.model_rebuild()
 ReviewJsonCondition.model_rebuild()
 ReviewSplitCountNeq.model_rebuild()
 ReviewTopMarginLt.model_rebuild()

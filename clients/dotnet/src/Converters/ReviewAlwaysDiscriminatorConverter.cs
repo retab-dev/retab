@@ -27,7 +27,6 @@ namespace Retab
                 case "branch_in": return jObject.ToObject<ReviewBranchIn>(serializer);
                 case "category_in": return jObject.ToObject<ReviewCategoryIn>(serializer);
                 case "confidence_lt": return jObject.ToObject<ReviewConfidenceLt>(serializer);
-                case "field_confidence_lt": return jObject.ToObject<ReviewFieldConfidenceLt>(serializer);
                 case "json_condition": return jObject.ToObject<ReviewJsonCondition>(serializer);
                 case "split_count_neq": return jObject.ToObject<ReviewSplitCountNeq>(serializer);
                 case "top_margin_lt": return jObject.ToObject<ReviewTopMarginLt>(serializer);

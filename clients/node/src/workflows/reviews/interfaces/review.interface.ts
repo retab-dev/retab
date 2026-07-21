@@ -74,15 +74,6 @@ import {
   serializeReviewDecision,
 } from './review-decision.interface.js';
 import type {
-  ReviewFieldConfidenceLt,
-  ReviewFieldConfidenceLtResponse,
-} from './review-field-confidence-lt.interface.js';
-import {
-  ZReviewFieldConfidenceLt,
-  deserializeReviewFieldConfidenceLt,
-  serializeReviewFieldConfidenceLt,
-} from './review-field-confidence-lt.interface.js';
-import type {
   ReviewJsonCondition,
   ReviewJsonConditionResponse,
 } from './review-json-condition.interface.js';
@@ -142,7 +133,6 @@ export interface Review {
     | ReviewAnySplitPagesLt
     | ReviewBoundaryConfidenceLt
     | ReviewAnyRequiredFieldNull
-    | ReviewFieldConfidenceLt
     | ReviewJsonCondition
     | ReviewBranchIn
     | ReviewAnyOf
@@ -172,7 +162,6 @@ export interface ReviewResponse {
     | ReviewAnySplitPagesLtResponse
     | ReviewBoundaryConfidenceLtResponse
     | ReviewAnyRequiredFieldNullResponse
-    | ReviewFieldConfidenceLtResponse
     | ReviewJsonConditionResponse
     | ReviewBranchInResponse
     | ReviewAnyOfResponse
@@ -201,7 +190,6 @@ export const ZReview = z.object({
     ZReviewAnySplitPagesLt,
     ZReviewBoundaryConfidenceLt,
     ZReviewAnyRequiredFieldNull,
-    ZReviewFieldConfidenceLt,
     ZReviewJsonCondition,
     ZReviewBranchIn,
     ZReviewAnyOf,
@@ -244,10 +232,6 @@ export function deserializeReview(wire: ReviewResponse): Review {
             deserializeReviewCategoryIn(wire['triggered_by'] as ReviewCategoryInResponse),
           confidence_lt: () =>
             deserializeReviewConfidenceLt(wire['triggered_by'] as ReviewConfidenceLtResponse),
-          field_confidence_lt: () =>
-            deserializeReviewFieldConfidenceLt(
-              wire['triggered_by'] as ReviewFieldConfidenceLtResponse
-            ),
           json_condition: () =>
             deserializeReviewJsonCondition(wire['triggered_by'] as ReviewJsonConditionResponse),
           split_count_neq: () =>
@@ -270,7 +254,6 @@ export function deserializeReview(wire: ReviewResponse): Review {
             | ReviewAnySplitPagesLt
             | ReviewBoundaryConfidenceLt
             | ReviewAnyRequiredFieldNull
-            | ReviewFieldConfidenceLt
             | ReviewJsonCondition
             | ReviewBranchIn
             | ReviewAnyOf
@@ -287,7 +270,6 @@ export function deserializeReview(wire: ReviewResponse): Review {
         | ReviewAnySplitPagesLt
         | ReviewBoundaryConfidenceLt
         | ReviewAnyRequiredFieldNull
-        | ReviewFieldConfidenceLt
         | ReviewJsonCondition
         | ReviewBranchIn
         | ReviewAnyOf
@@ -333,8 +315,6 @@ export function serializeReview(domain: Review): ReviewResponse {
           category_in: () => serializeReviewCategoryIn(domain['triggeredBy'] as ReviewCategoryIn),
           confidence_lt: () =>
             serializeReviewConfidenceLt(domain['triggeredBy'] as ReviewConfidenceLt),
-          field_confidence_lt: () =>
-            serializeReviewFieldConfidenceLt(domain['triggeredBy'] as ReviewFieldConfidenceLt),
           json_condition: () =>
             serializeReviewJsonCondition(domain['triggeredBy'] as ReviewJsonCondition),
           split_count_neq: () =>
@@ -355,7 +335,6 @@ export function serializeReview(domain: Review): ReviewResponse {
             | ReviewAnySplitPagesLtResponse
             | ReviewBoundaryConfidenceLtResponse
             | ReviewAnyRequiredFieldNullResponse
-            | ReviewFieldConfidenceLtResponse
             | ReviewJsonConditionResponse
             | ReviewBranchInResponse
             | ReviewAnyOfResponse
@@ -372,7 +351,6 @@ export function serializeReview(domain: Review): ReviewResponse {
         | ReviewAnySplitPagesLtResponse
         | ReviewBoundaryConfidenceLtResponse
         | ReviewAnyRequiredFieldNullResponse
-        | ReviewFieldConfidenceLtResponse
         | ReviewJsonConditionResponse
         | ReviewBranchInResponse
         | ReviewAnyOfResponse

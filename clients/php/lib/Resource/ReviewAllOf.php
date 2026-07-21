@@ -12,7 +12,7 @@ readonly class ReviewAllOf implements \JsonSerializable
     use JsonSerializableTrait;
 
     public function __construct(
-        /** @var array<\Retab\Resource\ReviewAlways|\Retab\Resource\ReviewValidationFailed|\Retab\Resource\ReviewConfidenceLt|\Retab\Resource\ReviewCategoryIn|\Retab\Resource\ReviewTopMarginLt|\Retab\Resource\ReviewSplitCountNeq|\Retab\Resource\ReviewAnySplitPagesLt|\Retab\Resource\ReviewBoundaryConfidenceLt|\Retab\Resource\ReviewAnyRequiredFieldNull|\Retab\Resource\ReviewFieldConfidenceLt|\Retab\Resource\ReviewJsonCondition|\Retab\Resource\ReviewBranchIn|\Retab\Resource\ReviewAnyOf|\Retab\Resource\ReviewAllOf> */
+        /** @var array<\Retab\Resource\ReviewAlways|\Retab\Resource\ReviewValidationFailed|\Retab\Resource\ReviewConfidenceLt|\Retab\Resource\ReviewCategoryIn|\Retab\Resource\ReviewTopMarginLt|\Retab\Resource\ReviewSplitCountNeq|\Retab\Resource\ReviewAnySplitPagesLt|\Retab\Resource\ReviewBoundaryConfidenceLt|\Retab\Resource\ReviewAnyRequiredFieldNull|\Retab\Resource\ReviewJsonCondition|\Retab\Resource\ReviewBranchIn|\Retab\Resource\ReviewAnyOf|\Retab\Resource\ReviewAllOf> */
         public array $predicates,
         public string $kind = 'all_of',
     ) {}

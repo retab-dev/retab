@@ -466,8 +466,6 @@ pub enum ReviewAllOfPredicatesOneOf {
     ReviewBoundaryConfidenceLt(Box<ReviewBoundaryConfidenceLt>),
     #[serde(rename = "any_required_field_null")]
     ReviewAnyRequiredFieldNull(Box<ReviewAnyRequiredFieldNull>),
-    #[serde(rename = "field_confidence_lt")]
-    ReviewFieldConfidenceLt(Box<ReviewFieldConfidenceLt>),
     #[serde(rename = "json_condition")]
     ReviewJsonCondition(Box<ReviewJsonCondition>),
     #[serde(rename = "branch_in")]
@@ -529,12 +527,6 @@ impl From<ReviewBoundaryConfidenceLt> for ReviewAllOfPredicatesOneOf {
 impl From<ReviewAnyRequiredFieldNull> for ReviewAllOfPredicatesOneOf {
     fn from(v: ReviewAnyRequiredFieldNull) -> Self {
         ReviewAllOfPredicatesOneOf::ReviewAnyRequiredFieldNull(Box::new(v))
-    }
-}
-
-impl From<ReviewFieldConfidenceLt> for ReviewAllOfPredicatesOneOf {
-    fn from(v: ReviewFieldConfidenceLt) -> Self {
-        ReviewAllOfPredicatesOneOf::ReviewFieldConfidenceLt(Box::new(v))
     }
 }
 

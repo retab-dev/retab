@@ -406,16 +406,16 @@ and ` + "`for_each`" + ` only when ` + "`config.map_method`" + ` is ` + "`split_
 ` + "`config.key`" + ` is set.
 Common review predicates are ` + "`always`" + ` and ` + "`validation_failed`" + `.
 Extract also supports ` + "`any_required_field_null`" + `, ` + "`confidence_lt`" + `,
-` + "`field_confidence_lt`" + `, and ` + "`json_condition`" + `;
+and ` + "`json_condition`" + `;
 split and split-by-key ` + "`for_each`" + ` support ` + "`split_count_neq`" + `,
 ` + "`any_split_pages_lt`" + `, ` + "`boundary_confidence_lt`" + `, and
 ` + "`json_condition`" + `; classifier supports ` + "`category_in`" + `,
 ` + "`confidence_lt`" + `, ` + "`top_margin_lt`" + `, and ` + "`json_condition`" + `.
 Consensus criteria require ` + "`n_consensus > 1`" + ` on the reviewed block.
 Use ` + "`confidence_lt`" + ` for the block's overall consensus likelihood,
-` + "`field_confidence_lt`" + ` for extract field scores, ` + "`top_margin_lt`" + `
-for close classifier categories, and ` + "`boundary_confidence_lt`" + ` for split
-boundary scores. Numeric predicate fields are type-specific: confidence-style
+a ` + "`json_condition`" + ` over ` + "`likelihoods.<field>`" + ` for extract field
+scores, ` + "`top_margin_lt`" + ` for close classifier categories, and
+` + "`boundary_confidence_lt`" + ` for split boundary scores. Numeric predicate fields are type-specific: confidence-style
 predicates use ` + "`threshold`" + `, while classifier ` + "`top_margin_lt`" + ` uses
 ` + "`margin`" + `. ` + "`json_condition`" + ` can target the block output through
 ` + "`data.*`" + ` (or extract's ` + "`output-json-0.*`" + ` alias) and consensus

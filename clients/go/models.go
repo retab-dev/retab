@@ -1789,14 +1789,6 @@ type ReviewEvaluation struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-// ReviewFieldConfidenceLt gate when the field at `path` has consensus likelihood below `threshold`.
-type ReviewFieldConfidenceLt struct {
-	Kind *string `json:"kind,omitempty"`
-	// Path is jsonPath-style path, e.g. '$.invoice.total' or 'invoice.total'
-	Path      string  `json:"path"`
-	Threshold float64 `json:"threshold"`
-}
-
 // ReviewJSONCondition gate when a conditional-block-style JSON condition matches.
 // The `condition` payload uses the same shape as workflow conditional blocks:
 // one condition group with `sub_conditions` and a `logical_operator`. Paths are
@@ -3878,7 +3870,7 @@ func HandleInputTypeFromJSONHandleInput(v JSONHandleInput) HandleInputType {
 // ReviewKind is a discriminated union keyed by the "kind" field.
 // It stores the exact wire payload so round-trips never drop variant fields;
 // inspect it with Kind()/As*() and build one with ReviewKindFrom*().
-// Variants: ReviewAllOf, ReviewAlways, ReviewAnyOf, ReviewAnyRequiredFieldNull, ReviewAnySplitPagesLt, ReviewBoundaryConfidenceLt, ReviewBranchIn, ReviewCategoryIn, ReviewConfidenceLt, ReviewFieldConfidenceLt, ReviewJSONCondition, ReviewSplitCountNeq, ReviewTopMarginLt, ReviewValidationFailed.
+// Variants: ReviewAllOf, ReviewAlways, ReviewAnyOf, ReviewAnyRequiredFieldNull, ReviewAnySplitPagesLt, ReviewBoundaryConfidenceLt, ReviewBranchIn, ReviewCategoryIn, ReviewConfidenceLt, ReviewJSONCondition, ReviewSplitCountNeq, ReviewTopMarginLt, ReviewValidationFailed.
 type ReviewKind struct {
 	raw json.RawMessage
 }
@@ -4075,25 +4067,6 @@ func (u ReviewKind) AsReviewConfidenceLt() (*ReviewConfidenceLt, error) {
 func ReviewKindFromReviewConfidenceLt(v ReviewConfidenceLt) ReviewKind {
 	data, _ := json.Marshal(v)
 	data = withUnionDiscriminator(data, "kind", "confidence_lt")
-	return ReviewKind{raw: data}
-}
-
-// AsReviewFieldConfidenceLt decodes the union payload as ReviewFieldConfidenceLt.
-func (u ReviewKind) AsReviewFieldConfidenceLt() (*ReviewFieldConfidenceLt, error) {
-	if len(u.raw) == 0 {
-		return nil, nil
-	}
-	var v ReviewFieldConfidenceLt
-	if err := json.Unmarshal(u.raw, &v); err != nil {
-		return nil, err
-	}
-	return &v, nil
-}
-
-// ReviewKindFromReviewFieldConfidenceLt builds a ReviewKind from a ReviewFieldConfidenceLt.
-func ReviewKindFromReviewFieldConfidenceLt(v ReviewFieldConfidenceLt) ReviewKind {
-	data, _ := json.Marshal(v)
-	data = withUnionDiscriminator(data, "kind", "field_confidence_lt")
 	return ReviewKind{raw: data}
 }
 

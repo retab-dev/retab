@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "php",
-  "generatedAt": "2026-07-14T23:44:02.029Z",
+  "generatedAt": "2026-07-21T11:23:37.056Z",
   "files": [
     "composer.json",
     "lib/Client.php",
@@ -237,7 +237,6 @@
     "lib/Resource/ReviewDecision.php",
     "lib/Resource/ReviewDecisionStatus.php",
     "lib/Resource/ReviewEvaluation.php",
-    "lib/Resource/ReviewFieldConfidenceLt.php",
     "lib/Resource/ReviewJsonCondition.php",
     "lib/Resource/ReviewSplitCountNeq.php",
     "lib/Resource/ReviewTopMarginLt.php",
@@ -623,7 +622,6 @@
     "tests/Fixtures/review_confidence_lt.json",
     "tests/Fixtures/review_decision.json",
     "tests/Fixtures/review_evaluation.json",
-    "tests/Fixtures/review_field_confidence_lt.json",
     "tests/Fixtures/review_json_condition.json",
     "tests/Fixtures/review_split_count_neq.json",
     "tests/Fixtures/review_top_margin_lt.json",
