@@ -115,6 +115,14 @@ d('files.get (live)', () => {
 });
 
 d('files upload lifecycle (live, storage-only)', () => {
+  // Unlike every other test here, this one leaves the Retab API: the signed PUT
+  // goes straight to the storage backend (storage.googleapis.com), so it pays
+  // real upload latency on top of four API round-trips. Bun's default 5s
+  // budget applies whenever `bun test` runs from a cwd that doesn't pick up
+  // this package's bunfig.toml, and that is tight enough to flake — so pin an
+  // explicit per-test timeout instead of depending on ambient config.
+  const STORAGE_ROUND_TRIP_TIMEOUT_MS = 30_000;
+
   test('create_upload -> signed PUT -> complete_upload -> get round-trips', async () => {
     const client = liveClient();
     const { fileId, filename } = await uploadTinyPdf(client);
@@ -131,7 +139,7 @@ d('files upload lifecycle (live, storage-only)', () => {
     expect(typeof link.downloadUrl).toBe('string');
     // NOTE: the files resource exposes no delete; uploaded test blobs cannot be
     // cleaned up via the SDK (see report — this is a known gap).
-  });
+  }, STORAGE_ROUND_TRIP_TIMEOUT_MS);
 
   test('create_upload returns a signed-URL envelope (fileId + http PUT url + headers)', async () => {
     const client = liveClient();

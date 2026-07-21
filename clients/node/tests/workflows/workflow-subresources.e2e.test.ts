@@ -6,7 +6,7 @@
 
 import { describe, expect, test } from 'bun:test';
 
-import { RetabError, type Retab } from '../../src/index.js';
+import { RetabError, RetabNotFoundError, type Retab } from '../../src/index.js';
 import { LIVE, LIVE_SKIP_REASON, liveClient } from '../live.js';
 
 const d = describe.skipIf(!LIVE);
@@ -151,10 +151,22 @@ d('workflow runtime sub-resources (live, read-only)', () => {
       expect(typeof review.runId).toBe('string');
       expect(review.createdAt).toBeInstanceOf(Date);
     }
-    if (reviews.data.length > 0) {
-      const fetched = await client.workflows.reviews.get(reviews.data[0].id);
-      expect(fetched.id).toBe(reviews.data[0].id);
-      expect(fetched.runId).toBe(reviews.data[0].runId);
+    // GET /workflows/reviews/{id} resolves authz through the review's parent
+    // workflow, so a review whose workflow row is gone 404s "Workflow not
+    // found" even though it still lists. Long-lived dev/staging orgs carry such
+    // orphans (reviews written before the workflow-delete cascade existed), so
+    // round-trip the first review that still has a live parent rather than
+    // assuming data[0] does.
+    for (const review of reviews.data) {
+      try {
+        const fetched = await client.workflows.reviews.get(review.id);
+        expect(fetched.id).toBe(review.id);
+        expect(fetched.runId).toBe(review.runId);
+        break;
+      } catch (error) {
+        if (error instanceof RetabNotFoundError) continue;
+        throw error;
+      }
     }
 
     let thrown: unknown;
