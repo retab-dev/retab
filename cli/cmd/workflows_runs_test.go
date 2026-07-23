@@ -2368,6 +2368,80 @@ func TestWorkflowsRunsListRejectsReversedCostRange(t *testing.T) {
 	}
 }
 
+// TestWorkflowsRunsListRejectsCostFilters pins that --min-cost / --max-cost
+// fail instead of being silently dropped. GET /v1/workflows/runs has no cost
+// filter, so the old wiring parsed the flag, compared the bounds, and then
+// issued an UNFILTERED request — the user got a full page of runs believing a
+// cost bound had been applied. A single bound (no reversed-range check to hide
+// behind) is the case that used to sail straight through, so assert on that.
+func TestWorkflowsRunsListRejectsCostFilters(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Fatalf("server should NOT be reached when a cost filter is passed, got %s %s", r.Method, r.URL.RequestURI())
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	for _, flag := range []string{"min-cost", "max-cost"} {
+		t.Run(flag, func(t *testing.T) {
+			if err := workflowsRunsListCmd.Flags().Set(flag, "5"); err != nil {
+				t.Fatalf("set --%s: %v", flag, err)
+			}
+			t.Cleanup(func() { resetWorkflowRunsFlag(t, workflowsRunsListCmd, flag) })
+
+			err := workflowsRunsListCmd.RunE(workflowsRunsListCmd, nil)
+			if err == nil {
+				t.Fatalf("expected --%s to be rejected, got nil (filter silently ignored)", flag)
+			}
+			if !strings.Contains(err.Error(), "--"+flag) {
+				t.Fatalf("error %q should name --%s", err.Error(), flag)
+			}
+		})
+	}
+}
+
+// TestWorkflowsRunsListSendsMetadataFilter pins that `--metadata k=v` reaches
+// the wire as the single JSON-object `metadata` query param the API expects.
+// The flag was missing entirely: `runs create --metadata` wrote metadata that
+// `runs list` then had no way to filter on.
+func TestWorkflowsRunsListSendsMetadataFilter(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	gotMetadata := ""
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotMetadata = r.URL.Query().Get("metadata")
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"data": []any{}, "list_metadata": map[string]any{}})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	for _, pair := range []string{"suite=q20260723", "case=q1"} {
+		if err := workflowsRunsListCmd.Flags().Set("metadata", pair); err != nil {
+			t.Fatalf("set --metadata %s: %v", pair, err)
+		}
+	}
+	t.Cleanup(func() { resetWorkflowRunsFlag(t, workflowsRunsListCmd, "metadata") })
+
+	if err := workflowsRunsListCmd.RunE(workflowsRunsListCmd, nil); err != nil {
+		t.Fatalf("runs list with --metadata: %v", err)
+	}
+
+	var decoded map[string]string
+	if err := json.Unmarshal([]byte(gotMetadata), &decoded); err != nil {
+		t.Fatalf("metadata query param %q is not a JSON object: %v", gotMetadata, err)
+	}
+	want := map[string]string{"suite": "q20260723", "case": "q1"}
+	for k, v := range want {
+		if decoded[k] != v {
+			t.Fatalf("metadata param = %v, want %v", decoded, want)
+		}
+	}
+}
+
 func TestWorkflowsRunsListRejectsReversedDurationRange(t *testing.T) {
 	// Mirror of the cost-range test for duration. ``--min-duration 1000
 	// --max-duration 100`` is impossible — surface it client-side so

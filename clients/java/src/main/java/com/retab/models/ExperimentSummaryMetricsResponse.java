@@ -19,6 +19,8 @@ public final class ExperimentSummaryMetricsResponse implements Experiment {
   private final Double score;
   private final Double priorScore;
   private final List<ExperimentSummaryMetricDocument> documents;
+  private final Long scoredDocumentCount;
+  private final Long totalDocumentCount;
   private final Object aggregate;
   private final String priorRunId;
 
@@ -36,6 +38,8 @@ public final class ExperimentSummaryMetricsResponse implements Experiment {
       @JsonProperty(value = "prior_score", required = false) Double priorScore,
       @JsonProperty(value = "documents", required = false)
           List<ExperimentSummaryMetricDocument> documents,
+      @JsonProperty(value = "scored_document_count", required = false) Long scoredDocumentCount,
+      @JsonProperty(value = "total_document_count", required = false) Long totalDocumentCount,
       @JsonProperty(value = "aggregate", required = false) Object aggregate,
       @JsonProperty(value = "prior_run_id", required = false) String priorRunId) {
     this.experimentId = experimentId;
@@ -47,6 +51,8 @@ public final class ExperimentSummaryMetricsResponse implements Experiment {
     this.score = score;
     this.priorScore = priorScore;
     this.documents = documents;
+    this.scoredDocumentCount = scoredDocumentCount;
+    this.totalDocumentCount = totalDocumentCount;
     this.aggregate = aggregate;
     this.priorRunId = priorRunId;
   }
@@ -94,6 +100,16 @@ public final class ExperimentSummaryMetricsResponse implements Experiment {
   @JsonProperty("documents")
   public List<ExperimentSummaryMetricDocument> getDocuments() {
     return documents;
+  }
+
+  @JsonProperty("scored_document_count")
+  public Long getScoredDocumentCount() {
+    return scoredDocumentCount;
+  }
+
+  @JsonProperty("total_document_count")
+  public Long getTotalDocumentCount() {
+    return totalDocumentCount;
   }
 
   @JsonProperty("aggregate")

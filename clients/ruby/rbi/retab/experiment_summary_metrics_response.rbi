@@ -63,6 +63,18 @@ module Retab
     sig { params(value: T.nilable(T::Array[Retab::ExperimentSummaryMetricDocument])).returns(T.nilable(T::Array[Retab::ExperimentSummaryMetricDocument])) }
     def documents=(value); end
 
+    sig { returns(T.nilable(Integer)) }
+    def scored_document_count; end
+
+    sig { params(value: T.nilable(Integer)).returns(T.nilable(Integer)) }
+    def scored_document_count=(value); end
+
+    sig { returns(T.nilable(Integer)) }
+    def total_document_count; end
+
+    sig { params(value: T.nilable(Integer)).returns(T.nilable(Integer)) }
+    def total_document_count=(value); end
+
     sig { returns(T.nilable(T.any(Retab::ExperimentExtractSummaryAggregate, Retab::ExperimentConfusionSummaryAggregate))) }
     def aggregate; end
 

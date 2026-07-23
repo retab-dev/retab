@@ -479,6 +479,49 @@ func TestPrintResultTableTypedNilPointerCellDoesNotPanic(t *testing.T) {
 	}
 }
 
+// TestPrintResultTableWorkflowStepShowsStatus pins the column set of a real
+// `workflows steps list` row. Steps carry BOTH `block_type` and
+// `lifecycle.status`; while STATUS was folded into TYPE as a lower-priority
+// alias, `block_type` always matched first and the status cell was dropped
+// entirely — so the table could not answer "which block failed?", the one
+// question steps list exists to answer. A run whose second block raised and
+// whose third never started must render error and skipped.
+func TestPrintResultTableWorkflowStepShowsStatus(t *testing.T) {
+	steps := map[string]any{
+		"data": []any{
+			map[string]any{
+				"step_id":     "run_1_block_boom",
+				"block_label": "Raise on purpose",
+				"block_type":  "function",
+				"lifecycle":   map[string]any{"status": "error"},
+				"created_at":  "2026-05-15T10:15:49Z",
+			},
+			map[string]any{
+				"step_id":     "run_1_block_after",
+				"block_label": "Downstream",
+				"block_type":  "function",
+				"lifecycle":   map[string]any{"status": "skipped"},
+				"created_at":  "2026-05-15T10:15:49Z",
+			},
+		},
+	}
+
+	stdout, stderr := captureStd(t, func() {
+		if err := printResultTable(steps); err != nil {
+			t.Fatalf("printResultTable: %v", err)
+		}
+	})
+	if stderr != "" {
+		t.Fatalf("unexpected stderr for workflow step list: %q", stderr)
+	}
+	// TYPE keeps block_type; STATUS is its own column carrying lifecycle.status.
+	for _, want := range []string{"TYPE", "STATUS", "function", "error", "skipped"} {
+		if !strings.Contains(stdout, want) {
+			t.Fatalf("expected %q in workflow step table, got:\n%s", want, stdout)
+		}
+	}
+}
+
 func TestPrintResultTableWorkflowStepColumns(t *testing.T) {
 	startedAt := time.Date(2026, 5, 15, 10, 15, 49, 0, time.UTC)
 	steps := map[string]any{
@@ -540,7 +583,9 @@ func TestPrintResultTableWorkflowRunNestedColumns(t *testing.T) {
 	if stderr != "" {
 		t.Fatalf("unexpected stderr for workflow run list: %q", stderr)
 	}
-	for _, want := range []string{"ID", "NAME", "TYPE", "CREATED_AT", "run_1", "Invoice workflow", "completed", "2026-05-15"} {
+	// `lifecycle.status` renders under STATUS, not TYPE: the two are separate
+	// columns so a row carrying both a type-ish field and a status shows both.
+	for _, want := range []string{"ID", "NAME", "STATUS", "CREATED_AT", "run_1", "Invoice workflow", "completed", "2026-05-15"} {
 		if !strings.Contains(stdout, want) {
 			t.Fatalf("expected %q in workflow run table, got:\n%s", want, stdout)
 		}
@@ -553,7 +598,7 @@ func TestPrintResultTableWorkflowRunNestedColumns(t *testing.T) {
 // `raw json.RawMessage` reachable only through MarshalJSON, so the dotted-path
 // alias `lifecycle.status` can only resolve if rowFieldSingle falls back to
 // marshalling the value and looking the key up in the JSON object. Without that
-// fallback the TYPE column would silently go blank for every list endpoint
+// fallback the STATUS column would silently go blank for every list endpoint
 // whose rows carry a union field — exactly the regression this guards.
 func TestPrintResultTableEnvelopeFieldNavigable(t *testing.T) {
 	status := "completed"
@@ -581,7 +626,7 @@ func TestPrintResultTableEnvelopeFieldNavigable(t *testing.T) {
 	if stderr != "" {
 		t.Fatalf("unexpected stderr for typed envelope run list: %q", stderr)
 	}
-	for _, want := range []string{"ID", "TYPE", "run_1", "completed"} {
+	for _, want := range []string{"ID", "STATUS", "run_1", "completed"} {
 		if !strings.Contains(stdout, want) {
 			t.Fatalf("expected %q in typed-envelope run table, got:\n%s", want, stdout)
 		}

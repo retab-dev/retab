@@ -4,6 +4,7 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -1122,8 +1123,10 @@ whole workspace; with one (passed positionally OR via ` + "`--workflow-id`" + `)
 the result is scoped to that workflow. Passing both forms is accepted
 when they reference the same workflow id; an error is only raised when
 they disagree, so a real typo isn't silently masked. Other filters
-available: status, trigger type, date range, cost, and duration. Page by
-run id (` + "`--after`" + ` / ` + "`--before`" + ` / ` + "`--limit`" + `).`,
+available: status, trigger type, date range, duration, run-id prefix
+(` + "`--search`" + `), and run metadata (` + "`--metadata k=v`" + `,
+repeatable, AND-ed). There is no cost filter. Page by run id
+(` + "`--after`" + ` / ` + "`--before`" + ` / ` + "`--limit`" + `).`,
 	Example: `  # Scope to a single workflow (positional, matches the rest of workflows)
   retab workflows runs list wf_abc123 --limit 50
 
@@ -1131,7 +1134,10 @@ run id (` + "`--after`" + ` / ` + "`--before`" + ` / ` + "`--limit`" + `).`,
   retab workflows runs list --workflow-id wf_abc123 --status error --from-date 2026-05-13
 
   # Workspace-wide (omit the workflow id entirely)
-  retab workflows runs list --status error --limit 50`,
+  retab workflows runs list --status error --limit 50
+
+  # Filter by the metadata stamped at create time (pairs AND together)
+  retab workflows runs list --metadata tenant=acme --metadata suite=nightly`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		if err := validateWorkflowRunsListFilters(cmd); err != nil {
@@ -1180,6 +1186,23 @@ run id (` + "`--after`" + ` / ` + "`--before`" + ` / ` + "`--limit`" + `).`,
 		if v, _ := cmd.Flags().GetString("search"); v != "" {
 			params.Search = ptr(v)
 		}
+		// `--metadata k=v` (repeatable) mirrors `runs create --metadata` and
+		// serializes to the single JSON-object `metadata` query param the API
+		// expects; pairs AND together server-side. Without this flag the metadata
+		// you stamped on a run at create time was unfilterable from the CLI.
+		if metaPairs, _ := cmd.Flags().GetStringArray("metadata"); len(metaPairs) > 0 {
+			metadata, err := parseKVStringList(metaPairs)
+			if err != nil {
+				return fmt.Errorf("--metadata: %w", err)
+			}
+			if len(metadata) > 0 {
+				encoded, err := json.Marshal(metadata)
+				if err != nil {
+					return fmt.Errorf("--metadata: %w", err)
+				}
+				params.Metadata = ptr(string(encoded))
+			}
+		}
 		if v, _ := cmd.Flags().GetString("sort-by"); v != "" {
 			params.SortBy = ptr(v)
 		}
@@ -1200,12 +1223,14 @@ run id (` + "`--after`" + ` / ` + "`--before`" + ` / ` + "`--limit`" + `).`,
 		if v, _ := cmd.Flags().GetString("order"); v != "" {
 			params.Order = ptr(v)
 		}
-		// `--min-cost`, `--max-cost`, `--min-duration`, `--max-duration` were
-		// available on the legacy SDK list params but are no longer projected
-		// onto the regenerated `WorkflowRunsListParams`. Keep the flag wiring
-		// so existing scripts don't fail, but only honour the duration filters
-		// against the typed shape — the cost filters drop silently until the
-		// SDK exposes them again.
+		// `--min-duration`/`--max-duration` map onto the typed list params.
+		// `--min-cost`/`--max-cost` do not: neither the SDK params nor the
+		// GET /v1/workflows/runs handler has a cost filter at all. They used to
+		// be accepted, validated against each other, and then dropped on the
+		// floor — the request went out unfiltered and the user got a full page
+		// of runs that silently ignored the bound they asked for. A filter that
+		// quietly returns the wrong rows is worse than one that refuses, so
+		// they now fail loudly (see rejectUnsupportedCostFilters below).
 		var minDuration, maxDuration *int
 		if cmd.Flags().Changed("min-duration") {
 			v, _ := cmd.Flags().GetInt("min-duration")
@@ -1220,17 +1245,8 @@ run id (` + "`--after`" + ` / ` + "`--before`" + ` / ` + "`--limit`" + `).`,
 		if minDuration != nil && maxDuration != nil && *minDuration > *maxDuration {
 			return fmt.Errorf("--min-duration (%d) cannot be greater than --max-duration (%d)", *minDuration, *maxDuration)
 		}
-		var minCost, maxCost *float64
-		if cmd.Flags().Changed("min-cost") {
-			v, _ := cmd.Flags().GetFloat64("min-cost")
-			minCost = &v
-		}
-		if cmd.Flags().Changed("max-cost") {
-			v, _ := cmd.Flags().GetFloat64("max-cost")
-			maxCost = &v
-		}
-		if minCost != nil && maxCost != nil && *minCost > *maxCost {
-			return fmt.Errorf("--min-cost (%g) cannot be greater than --max-cost (%g)", *minCost, *maxCost)
+		if err := rejectUnsupportedCostFilters(cmd); err != nil {
+			return err
 		}
 		result, err := client.Workflows.Runs.List(ctx, &params)
 		if err != nil {
@@ -1238,6 +1254,30 @@ run id (` + "`--after`" + ` / ` + "`--before`" + ` / ` + "`--limit`" + `).`,
 		}
 		return printWorkflowRunListResult(cmd, result)
 	}),
+}
+
+// rejectUnsupportedCostFilters fails when --min-cost / --max-cost are passed to
+// `runs list`. GET /v1/workflows/runs has no cost filter — listRunsInput carries
+// status/trigger/date/duration/search/metadata and nothing else — so these flags
+// never reached the wire. Returning the unfiltered page while the user believes
+// a cost bound was applied is a silently wrong answer; refusing is not. The
+// error names the filters that DO exist so the message is actionable.
+func rejectUnsupportedCostFilters(cmd *cobra.Command) error {
+	var passed []string
+	for _, name := range []string{"min-cost", "max-cost"} {
+		if cmd.Flags().Changed(name) {
+			passed = append(passed, "--"+name)
+		}
+	}
+	if len(passed) == 0 {
+		return nil
+	}
+	return fmt.Errorf(
+		"%s: filtering runs by cost is not supported by the API and was previously ignored silently; "+
+			"available filters are --status, --exclude-status, --trigger-type, --from-date, --to-date, "+
+			"--min-duration, --max-duration, --metadata and --search",
+		strings.Join(passed, " / "),
+	)
 }
 
 func printWorkflowRunListResult(cmd *cobra.Command, result any) error {
@@ -1651,14 +1691,26 @@ func init() {
 	workflowsRunsListCmd.Flags().String("trigger-type", "", "filter by trigger type")
 	workflowsRunsListCmd.Flags().Var(&rfc3339FlagValue{}, "from-date", "filter from this date (YYYY-MM-DD or RFC3339)")
 	workflowsRunsListCmd.Flags().Var(&rfc3339FlagValue{}, "to-date", "filter to this date (YYYY-MM-DD or RFC3339)")
-	workflowsRunsListCmd.Flags().String("search", "", "search by run id (partial match) — does NOT match document filenames")
+	// Server-side this is an index-friendly prefix range ({$gte: s, $lt: s+"￿"}),
+	// not a substring regex — `--search hsOy` matches nothing for
+	// run_hsOyWePs..., only `--search run_hsOy` does. The help said "partial
+	// match", which reads as substring and sends people hunting for a run that
+	// the filter silently excluded.
+	workflowsRunsListCmd.Flags().String("search", "", "filter by run id PREFIX (e.g. run_abc — not a substring match); does NOT match document filenames")
+	workflowsRunsListCmd.Flags().StringArray("metadata", nil, "filter by run metadata as key=value (repeatable; pairs AND together)")
 	workflowsRunsListCmd.Flags().Var(newEnumStringFlagValue("--sort-by", "timing.created_at", "timing.started_at"), "sort-by", "sort field: timing.created_at | timing.started_at")
 	workflowsRunsListCmd.Flags().String("before", "", "run id: return items before this id (mutually exclusive with --after)")
 	workflowsRunsListCmd.Flags().String("after", "", "run id: return items after this id (mutually exclusive with --before)")
 	workflowsRunsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items to return (1-100)")
 	workflowsRunsListCmd.Flags().Var(&orderFlagValue{}, "order", "asc | desc")
-	workflowsRunsListCmd.Flags().Var(&nonNegativeFloatFlagValue{}, "min-cost", "min cost")
-	workflowsRunsListCmd.Flags().Var(&nonNegativeFloatFlagValue{}, "max-cost", "max cost")
+	// Kept registered (scripts that pass them get a clear error rather than
+	// "unknown flag"), but hidden and marked deprecated: the API has no cost
+	// filter, so they never did anything. rejectUnsupportedCostFilters turns
+	// either one into an error at RunE time.
+	workflowsRunsListCmd.Flags().Var(&nonNegativeFloatFlagValue{}, "min-cost", "min cost (unsupported by the API)")
+	workflowsRunsListCmd.Flags().Var(&nonNegativeFloatFlagValue{}, "max-cost", "max cost (unsupported by the API)")
+	_ = workflowsRunsListCmd.Flags().MarkHidden("min-cost")
+	_ = workflowsRunsListCmd.Flags().MarkHidden("max-cost")
 	workflowsRunsListCmd.Flags().Var(&nonNegativeIntFlagValue{}, "min-duration", "min duration (ms)")
 	workflowsRunsListCmd.Flags().Var(&nonNegativeIntFlagValue{}, "max-duration", "max duration (ms)")
 

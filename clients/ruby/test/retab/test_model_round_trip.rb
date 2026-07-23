@@ -1771,6 +1771,8 @@ class ModelRoundTripTest < Minitest::Test
       "score" => nil,
       "prior_score" => nil,
       "documents" => [],
+      "scored_document_count" => 1,
+      "total_document_count" => 1,
       "aggregate" => nil,
       "prior_run_id" => nil
     }

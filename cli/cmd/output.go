@@ -399,16 +399,18 @@ var preferredColumnOrder = []struct {
 	// ``target_type``/``target`` covers spec-plan resource_changes; the
 	// trailing ``actions`` (array of {add|update|delete}) also rounds
 	// back into TYPE when the change-shape is what's being listed.
-	//
-	// ``operation`` MUST precede the status aliases. Every *WorkflowArtifact
-	// variant carries ``operation`` and none carries ``type``, but six of them
-	// (extraction/split/classification/parse/partition/edit) also carry
-	// ``status`` — with ``status`` first those rendered TYPE="completed", a
-	// constant that says nothing, while the field that actually distinguishes
-	// the rows was never reached. The status-less artifact variants
-	// (api_call/conditional/function/review/while_loop) picked ``operation``
-	// up and looked fine, which is why the shadowing went unnoticed.
-	{"TYPE", []string{"type", "operation", "status", "block_type", "trigger_type", "lifecycle.status", "trigger.type", "actions"}},
+	{"TYPE", []string{"type", "operation", "block_type", "trigger_type", "trigger.type", "actions"}},
+	// STATUS is its own column, never a TYPE alias. Folding status into TYPE
+	// made the two mutually exclusive: whichever alias came first won and the
+	// other field vanished. That silently hid the single most important cell on
+	// ``workflows steps list`` — a step row carries both ``block_type`` and
+	// ``lifecycle.status``, ``block_type`` matched first, and the table rendered
+	// ID/NAME/TYPE/CREATED_AT with no way to see which block failed, despite the
+	// command's own help promising "Includes status". Same shadowing in reverse
+	// on workflow artifacts (``operation`` won, ``status`` was dropped). Splitting
+	// the two applies the rule the timestamp columns already follow below: a
+	// header names the field it actually shows.
+	{"STATUS", []string{"status", "lifecycle.status"}},
 	{"MODEL", []string{"model"}},
 	// Timestamp columns are split per field so the rendered header matches the
 	// field actually shown. Lying about which timestamp a column shows is

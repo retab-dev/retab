@@ -8,6 +8,9 @@ use serde::{Deserialize, Serialize};
 /// Run-level summary plus block-specific diagnostics.
 /// `prior_run_id` + `prior_score` populate when the request opts into
 /// prior-comparison and a completed prior run exists.
+/// `score` and `documents` cover only the documents that produced a result.
+/// Compare `scored_document_count` against `total_document_count` to see
+/// whether any of the run's documents failed and were left out.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExperimentSummaryMetricsResponse {
     pub experiment_id: String,
@@ -28,6 +31,10 @@ pub struct ExperimentSummaryMetricsResponse {
     /// Defaults to `[]`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub documents: Option<Vec<ExperimentSummaryMetricDocument>>,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub scored_document_count: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub total_document_count: Option<i64>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub aggregate: Option<ExperimentSummaryMetricsResponseAggregateOneOf>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
@@ -51,6 +58,8 @@ impl ExperimentSummaryMetricsResponse {
             score: Default::default(),
             prior_score: Default::default(),
             documents: Default::default(),
+            scored_document_count: Default::default(),
+            total_document_count: Default::default(),
             aggregate: Default::default(),
             prior_run_id: Default::default(),
         }

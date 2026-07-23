@@ -15,6 +15,8 @@ module Retab
       score: :score,
       prior_score: :prior_score,
       documents: :documents,
+      scored_document_count: :scored_document_count,
+      total_document_count: :total_document_count,
       aggregate: :aggregate,
       prior_run_id: :prior_run_id
     }.freeze
@@ -29,6 +31,8 @@ module Retab
       :score,
       :prior_score,
       :documents,
+      :scored_document_count,
+      :total_document_count,
       :aggregate,
       :prior_run_id
     )
@@ -47,6 +51,8 @@ module Retab
       @documents = (hash[:documents] || []).map { |item|
         item ? Retab::ExperimentSummaryMetricDocument.new(item) : nil
       }
+      @scored_document_count = hash[:scored_document_count]
+      @total_document_count = hash[:total_document_count]
       @aggregate = hash[:aggregate] ? Retab::ExperimentExtractSummaryAggregate.new(hash[:aggregate]) : nil
       @prior_run_id = hash[:prior_run_id]
     end

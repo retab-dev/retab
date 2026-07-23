@@ -37,6 +37,8 @@ export interface ExperimentSummaryMetricsResponse {
   priorScore?: number | null;
   /** @default [] */
   documents?: ExperimentSummaryMetricDocument[];
+  scoredDocumentCount?: number;
+  totalDocumentCount?: number;
   aggregate?: (ExperimentExtractSummaryAggregate | ExperimentConfusionSummaryAggregate) | null;
   priorRunId?: string | null;
 }
@@ -51,6 +53,8 @@ export interface ExperimentSummaryMetricsResponseResponse {
   score?: number | null;
   prior_score?: number | null;
   documents?: ExperimentSummaryMetricDocumentResponse[];
+  scored_document_count?: number;
+  total_document_count?: number;
   aggregate?:
     | (ExperimentExtractSummaryAggregateResponse | ExperimentConfusionSummaryAggregateResponse)
     | null;
@@ -67,6 +71,8 @@ export const ZExperimentSummaryMetricsResponse = z.object({
   score: z.number().nullable().optional(),
   priorScore: z.number().nullable().optional(),
   documents: ZExperimentSummaryMetricDocument.array().optional(),
+  scoredDocumentCount: z.number().int().optional(),
+  totalDocumentCount: z.number().int().optional(),
   aggregate: z
     .union([ZExperimentExtractSummaryAggregate, ZExperimentConfusionSummaryAggregate])
     .nullable()
@@ -90,6 +96,8 @@ export function deserializeExperimentSummaryMetricsResponse(
       wire['documents'] == null
         ? (wire['documents'] as undefined)
         : wire['documents'].map((__i) => deserializeExperimentSummaryMetricDocument(__i)),
+    scoredDocumentCount: wire['scored_document_count'],
+    totalDocumentCount: wire['total_document_count'],
     aggregate:
       wire['aggregate'] == null
         ? (wire['aggregate'] as undefined)
@@ -118,6 +126,8 @@ export function serializeExperimentSummaryMetricsResponse(
       domain['documents'] == null
         ? (domain['documents'] as undefined)
         : domain['documents'].map((__i) => serializeExperimentSummaryMetricDocument(__i)),
+    scored_document_count: domain['scoredDocumentCount'],
+    total_document_count: domain['totalDocumentCount'],
     aggregate:
       domain['aggregate'] == null
         ? (domain['aggregate'] as undefined)

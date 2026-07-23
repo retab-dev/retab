@@ -170,20 +170,47 @@ func TestAutoTableTypeColumnPrefersOperationOverStatus(t *testing.T) {
 // The reorder must not steal the TYPE column from rows that legitimately have
 // no `operation`: a status-only row (the shape most list endpoints return) must
 // keep rendering its status under TYPE exactly as before.
-func TestAutoTableTypeColumnStillFallsBackToStatus(t *testing.T) {
+// A status-only row renders its status under STATUS — its own column, not a
+// TYPE fallback. Folding the two together made them mutually exclusive and
+// dropped whichever alias lost, which is how `workflows steps list` (rows carry
+// block_type AND lifecycle.status) ended up with no status cell at all.
+func TestAutoTableStatusColumnRendersStatus(t *testing.T) {
 	rows := []any{
 		map[string]any{"id": "run_1", "status": "completed", "created_at": "2026-07-16T11:04:36Z"},
 	}
 	cols := pickAutoColumns(rows)
 	for i := range cols {
-		if cols[i].Header == "TYPE" {
+		if cols[i].Header == "STATUS" {
 			if got := cols[i].Extract(rows[0]); got != "completed" {
-				t.Fatalf("TYPE cell = %q, want %q (status fallback preserved)", got, "completed")
+				t.Fatalf("STATUS cell = %q, want %q", got, "completed")
 			}
 			return
 		}
 	}
-	t.Fatalf("expected a TYPE column for status-only rows, got %v", headersOf(cols))
+	t.Fatalf("expected a STATUS column for status-only rows, got %v", headersOf(cols))
+}
+
+// A row carrying both a type-ish field and a status renders BOTH — the
+// regression that motivated splitting STATUS out of the TYPE alias list.
+func TestAutoTableTypeAndStatusCoexist(t *testing.T) {
+	rows := []any{
+		map[string]any{
+			"step_id":    "run_1_block_boom",
+			"block_type": "function",
+			"lifecycle":  map[string]any{"status": "error"},
+		},
+	}
+	cols := pickAutoColumns(rows)
+	got := map[string]string{}
+	for i := range cols {
+		got[cols[i].Header] = cols[i].Extract(rows[0])
+	}
+	if got["TYPE"] != "function" {
+		t.Fatalf("TYPE cell = %q, want %q; headers %v", got["TYPE"], "function", headersOf(cols))
+	}
+	if got["STATUS"] != "error" {
+		t.Fatalf("STATUS cell = %q, want %q; headers %v", got["STATUS"], "error", headersOf(cols))
+	}
 }
 
 // An explicit `type` still outranks `operation` — the reorder only moved

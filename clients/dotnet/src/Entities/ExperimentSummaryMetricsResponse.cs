@@ -8,6 +8,9 @@ namespace Retab
     /// <remarks>
     /// `prior_run_id` + `prior_score` populate when the request opts into
     /// prior-comparison and a completed prior run exists.
+    /// `score` and `documents` cover only the documents that produced a result.
+    /// Compare `scored_document_count` against `total_document_count` to see
+    /// whether any of the run's documents failed and were left out.
     /// </remarks>
     public class ExperimentSummaryMetricsResponse
     {
@@ -22,6 +25,8 @@ namespace Retab
         public double? Score { get; set; }
         public double? PriorScore { get; set; }
         public List<ExperimentSummaryMetricDocument>? Documents { get; set; }
+        public long? ScoredDocumentCount { get; set; }
+        public long? TotalDocumentCount { get; set; }
         public OneOf.OneOf<ExperimentExtractSummaryAggregate, ExperimentConfusionSummaryAggregate>? Aggregate { get; set; }
         public string? PriorRunId { get; set; }
 

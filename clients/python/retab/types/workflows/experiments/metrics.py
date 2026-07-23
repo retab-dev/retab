@@ -161,7 +161,11 @@ class ExperimentSummaryMetricsResponse(BaseModel):
     """Run-level summary plus block-specific diagnostics.
 
     `prior_run_id` + `prior_score` populate when the request opts into
-    prior-comparison and a completed prior run exists."""
+    prior-comparison and a completed prior run exists.
+
+    `score` and `documents` cover only the documents that produced a result.
+    Compare `scored_document_count` against `total_document_count` to see
+    whether any of the run's documents failed and were left out."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -174,6 +178,8 @@ class ExperimentSummaryMetricsResponse(BaseModel):
     score: float | None = None
     prior_score: float | None = None
     documents: list[ExperimentSummaryMetricDocument] | None = Field(default=[])
+    scored_document_count: int | None = None
+    total_document_count: int | None = None
     aggregate: ExperimentExtractSummaryAggregate | ExperimentConfusionSummaryAggregate | None = None
     prior_run_id: str | None = None
 

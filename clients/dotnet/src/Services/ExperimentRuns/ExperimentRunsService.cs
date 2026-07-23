@@ -98,9 +98,11 @@ namespace Retab
         /// <remarks>
         /// Cancel an experiment run.
         /// Identified by `run_id`. Cancels the run and any of its pending or
-        /// in-flight results, returning the run's new `cancelled` lifecycle. Returns
-        /// 404 if the run does not exist or is not in a cancellable (pending, queued,
-        /// or running) state.
+        /// in-flight results, returning the run's new `cancelled` lifecycle.
+        /// Cancelling an already-cancelled run is idempotent and succeeds. Returns
+        /// 404 if the run does not exist, or if it has already reached a terminal
+        /// `completed` or `error` status — only a pending, queued, or running run
+        /// can be cancelled.
         /// </remarks>
         /// <param name="runId">The run id.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>

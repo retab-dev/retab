@@ -11,6 +11,10 @@ namespace Retab\Resource;
  *
  * `prior_run_id` + `prior_score` populate when the request opts into
  * prior-comparison and a completed prior run exists.
+ *
+ * `score` and `documents` cover only the documents that produced a result.
+ * Compare `scored_document_count` against `total_document_count` to see
+ * whether any of the run's documents failed and were left out.
  */
 readonly class ExperimentSummaryMetricsResponse implements \JsonSerializable
 {
@@ -25,6 +29,8 @@ readonly class ExperimentSummaryMetricsResponse implements \JsonSerializable
         public ?float $priorScore = null,
         /** @var array<\Retab\Resource\ExperimentSummaryMetricDocument>|null */
         public ?array $documents = null,
+        public ?int $scoredDocumentCount = null,
+        public ?int $totalDocumentCount = null,
         public ExperimentExtractSummaryAggregate|ExperimentConfusionSummaryAggregate|null $aggregate = null,
         public ?string $priorRunId = null,
         public string $kind = 'summary',
@@ -51,6 +57,8 @@ readonly class ExperimentSummaryMetricsResponse implements \JsonSerializable
             score: $data['score'] ?? null,
             priorScore: $data['prior_score'] ?? null,
             documents: isset($data['documents']) ? array_map(fn($item) => ExperimentSummaryMetricDocument::fromArray($item), $data['documents']) : null,
+            scoredDocumentCount: $data['scored_document_count'] ?? null,
+            totalDocumentCount: $data['total_document_count'] ?? null,
             aggregate: isset($data['aggregate']) ? (static function (array $__value) {
                 return match (true) {
                     array_intersect_key($__value, ['likelihoods' => true]) !== [] => ExperimentExtractSummaryAggregate::fromArray($__value), array_intersect_key($__value, ['diag' => true, 'flows' => true]) !== [] => ExperimentConfusionSummaryAggregate::fromArray($__value), default => ExperimentExtractSummaryAggregate::fromArray($__value),
@@ -73,6 +81,8 @@ readonly class ExperimentSummaryMetricsResponse implements \JsonSerializable
             'score' => $this->score,
             'prior_score' => $this->priorScore,
             'documents' => $this->documents !== null ? array_map(fn($item) => $item->toArray(), $this->documents) : null,
+            'scored_document_count' => $this->scoredDocumentCount,
+            'total_document_count' => $this->totalDocumentCount,
             'aggregate' => $this->aggregate?->toArray(),
             'prior_run_id' => $this->priorRunId,
             'kind' => $this->kind,

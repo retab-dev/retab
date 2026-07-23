@@ -1062,6 +1062,9 @@ type ExperimentSummaryMetricDocument struct {
 // ExperimentSummaryMetricsResponse run-level summary plus block-specific diagnostics.
 // `prior_run_id` + `prior_score` populate when the request opts into
 // prior-comparison and a completed prior run exists.
+// `score` and `documents` cover only the documents that produced a result.
+// Compare `scored_document_count` against `total_document_count` to see
+// whether any of the run's documents failed and were left out.
 type ExperimentSummaryMetricsResponse struct {
 	ExperimentID              string                                    `json:"experiment_id"`
 	RunID                     string                                    `json:"run_id"`
@@ -1072,6 +1075,8 @@ type ExperimentSummaryMetricsResponse struct {
 	Score                     *float64                                  `json:"score,omitempty"`
 	PriorScore                *float64                                  `json:"prior_score,omitempty"`
 	Documents                 []*ExperimentSummaryMetricDocument        `json:"documents,omitempty"`
+	ScoredDocumentCount       *int                                      `json:"scored_document_count,omitempty"`
+	TotalDocumentCount        *int                                      `json:"total_document_count,omitempty"`
 	Aggregate                 *interface{}                              `json:"aggregate,omitempty"`
 	PriorRunID                *string                                   `json:"prior_run_id,omitempty"`
 }

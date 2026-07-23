@@ -73,7 +73,7 @@ class ExperimentRunsMixin:
         return PreparedRequest(method="GET", url=f"/v1/workflows/experiments/runs/{run_id}", params=params or None, data=data)
 
     def prepare_cancel(self, run_id: str, **extra_params: Any) -> PreparedRequest:
-        """Cancel Experiment Run Cancel an experiment run. Identified by `run_id`. Cancels the run and any of its pending or in-flight results, returning the run's new `cancelled` lifecycle. Returns 404 if the run does not exist or is not in a cancellable (pending, queued, or running) state."""
+        """Cancel Experiment Run Cancel an experiment run. Identified by `run_id`. Cancels the run and any of its pending or in-flight results, returning the run's new `cancelled` lifecycle. Cancelling an already-cancelled run is idempotent and succeeds. Returns 404 if the run does not exist, or if it has already reached a terminal `completed` or `error` status — only a pending, queued, or running run can…"""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -134,7 +134,7 @@ class ExperimentRuns(SyncAPIResource, ExperimentRunsMixin):
         return ExperimentRun.model_validate(response)
 
     def cancel(self, run_id: str, **extra_params: Any) -> CancelWorkflowExperimentRunResponse:
-        """Cancel Experiment Run Cancel an experiment run. Identified by `run_id`. Cancels the run and any of its pending or in-flight results, returning the run's new `cancelled` lifecycle. Returns 404 if the run does not exist or is not in a cancellable (pending, queued, or running) state."""
+        """Cancel Experiment Run Cancel an experiment run. Identified by `run_id`. Cancels the run and any of its pending or in-flight results, returning the run's new `cancelled` lifecycle. Cancelling an already-cancelled run is idempotent and succeeds. Returns 404 if the run does not exist, or if it has already reached a terminal `completed` or `error` status — only a pending, queued, or running run can…"""
         prepared_request = self.prepare_cancel(run_id, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return CancelWorkflowExperimentRunResponse.model_validate(response)
@@ -192,7 +192,7 @@ class AsyncExperimentRuns(AsyncAPIResource, ExperimentRunsMixin):
         return ExperimentRun.model_validate(response)
 
     async def cancel(self, run_id: str, **extra_params: Any) -> CancelWorkflowExperimentRunResponse:
-        """Cancel Experiment Run Cancel an experiment run. Identified by `run_id`. Cancels the run and any of its pending or in-flight results, returning the run's new `cancelled` lifecycle. Returns 404 if the run does not exist or is not in a cancellable (pending, queued, or running) state."""
+        """Cancel Experiment Run Cancel an experiment run. Identified by `run_id`. Cancels the run and any of its pending or in-flight results, returning the run's new `cancelled` lifecycle. Cancelling an already-cancelled run is idempotent and succeeds. Returns 404 if the run does not exist, or if it has already reached a terminal `completed` or `error` status — only a pending, queued, or running run can…"""
         prepared_request = self.prepare_cancel(run_id, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return CancelWorkflowExperimentRunResponse.model_validate(response)

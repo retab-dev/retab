@@ -5,5 +5,5 @@
 # @oagen-ignore-file
 
 module Retab
-  VERSION = "0.1.11"
+  VERSION = "0.1.0"
 end
