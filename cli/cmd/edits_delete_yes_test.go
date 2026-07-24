@@ -11,7 +11,7 @@ import (
 )
 
 func TestEditsTemplatesDeleteWithYesFlagProceedsWithoutPrompt(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var sawDelete atomic.Int32
@@ -40,7 +40,7 @@ func TestEditsTemplatesDeleteWithYesFlagProceedsWithoutPrompt(t *testing.T) {
 }
 
 func TestEditsTemplatesDeleteWithoutYesAndNonTTYStdinRefuses(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32

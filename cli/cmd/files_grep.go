@@ -90,7 +90,7 @@ regular expression and --case-sensitive to match case.`,
 			return err
 		}
 
-		matches, truncated := grepParseResult(result, kind, matcher, contextChars, maxResults, withBbox)
+		matches, totalMatches, truncated := grepParseResult(result, kind, matcher, contextChars, maxResults, withBbox)
 		out := grepResult{
 			Filename:      result.Filename,
 			MIMEType:      result.MIMEType,
@@ -99,7 +99,7 @@ regular expression and --case-sensitive to match case.`,
 			Regex:         isRegex,
 			CaseSensitive: caseSensitive,
 			TotalPages:    result.TotalPages,
-			TotalMatches:  len(matches),
+			TotalMatches:  totalMatches,
 			Truncated:     truncated,
 			Matches:       matches,
 		}
@@ -129,15 +129,30 @@ func buildMatcher(pattern string, isRegex, caseSensitive bool) (*regexp.Regexp, 
 	return re, nil
 }
 
-// grepParseResult dispatches matching by document kind and returns the
-// collected matches plus whether the result was truncated at maxResults.
-func grepParseResult(result *ParseResult, kind docKind, matcher *regexp.Regexp, contextChars, maxResults int, withBbox bool) ([]grepMatch, bool) {
-	var matches []grepMatch
-	// Collect one past maxResults so we can distinguish "exactly filled" from
-	// "there were more": the caller trims to maxResults and reports truncation.
+// grepParseResult dispatches matching by document kind and returns the matches
+// retained (at most maxResults), the TOTAL number of matches in the document,
+// and whether the retained set was truncated.
+//
+// The walk deliberately runs to completion instead of stopping one past
+// maxResults. It used to stop early, and the caller then reported
+// `total_matches: len(matches)` — a count that was by construction identical to
+// the number of matches returned, so with `truncated: true` it said "showing 2
+// of 2" while the document held more. A field named total_matches has to be the
+// document total or it carries no information a caller can't already compute
+// from the array length.
+//
+// Cost: the document is already parsed in memory, so this is a regex walk over
+// extracted text; matches beyond maxResults are counted and discarded rather
+// than retained, so memory stays bounded by maxResults.
+func grepParseResult(result *ParseResult, kind docKind, matcher *regexp.Regexp, contextChars, maxResults int, withBbox bool) ([]grepMatch, int, bool) {
+	matches := make([]grepMatch, 0, maxResults)
+	total := 0
 	add := func(m grepMatch) bool {
-		matches = append(matches, m)
-		return len(matches) <= maxResults
+		total++
+		if len(matches) < maxResults {
+			matches = append(matches, m)
+		}
+		return true
 	}
 	switch kind {
 	case kindCSV, kindSpreadsheet:
@@ -147,10 +162,7 @@ func grepParseResult(result *ParseResult, kind docKind, matcher *regexp.Regexp, 
 	default: // pdf, image
 		grepPages(result, kind, matcher, contextChars, withBbox, add)
 	}
-	if len(matches) > maxResults {
-		return matches[:maxResults], true
-	}
-	return matches, false
+	return matches, total, total > len(matches)
 }
 
 // grepPages matches against per-page projected text and emits pdf_page/image

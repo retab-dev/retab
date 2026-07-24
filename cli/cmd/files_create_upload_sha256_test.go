@@ -20,7 +20,7 @@ import (
 // validation with a 422 — making a documented-optional flag effectively
 // required.
 func TestFilesCreateUploadOmitsEmptySha256(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var body map[string]any
@@ -57,7 +57,7 @@ func TestFilesCreateUploadOmitsEmptySha256(t *testing.T) {
 // TestFilesCreateUploadSendsProvidedSha256 pins the positive path: a real
 // digest is forwarded verbatim.
 func TestFilesCreateUploadSendsProvidedSha256(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	const digest = "0a20b374fb23d6d03dd89109d773c9bb365b0d47ea45b03b83a796e3fe3e46db"
@@ -95,7 +95,7 @@ func TestFilesCreateUploadSendsProvidedSha256(t *testing.T) {
 // provided digest against the stored object's sha256 and would overwrite a real
 // stored digest with "" when the flag is unset.
 func TestFilesCompleteUploadOmitsEmptySha256(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	bodyPresent := true

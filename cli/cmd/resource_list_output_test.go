@@ -30,7 +30,7 @@ func TestDocumentResourceListCommandsHonorOutputTable(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			t.Setenv("RETAB_API_KEY", "test-key")
+			t.Setenv("RETAB_API_KEY", "rt_test_key")
 			t.Setenv("HOME", t.TempDir())
 
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -92,7 +92,7 @@ func TestDocumentResourceListCommandsHonorOutputTable(t *testing.T) {
 }
 
 func TestEditTemplatesListHonorsOutputTable(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

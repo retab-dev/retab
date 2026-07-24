@@ -14,7 +14,7 @@ import (
 // list, instead of erroring "required". This removes the old 3-call dance
 // (reviews list -> reviews versions list -> approve --version-id).
 func TestReviewsApproveDefaultsToLatestVersion(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	const older = "rvr_AAAAAAAAAAAAAAAAAAAAAAAAAA"
@@ -66,7 +66,7 @@ func TestReviewsApproveDefaultsToLatestVersion(t *testing.T) {
 // TestReviewsApproveNoVersionsIsCleanError pins that a review with zero versions
 // gives a clear error rather than a confusing API failure.
 func TestReviewsApproveNoVersionsIsCleanError(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

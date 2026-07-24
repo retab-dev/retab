@@ -14,7 +14,7 @@ import (
 )
 
 func TestWorkflowsBlocksRunsListsStepsForBlock(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var sawRequest bool
@@ -26,8 +26,8 @@ func TestWorkflowsBlocksRunsListsStepsForBlock(t *testing.T) {
 		if query.Get("block_id") != "blk_extract" || query.Get("limit") != "25" {
 			t.Fatalf("query = %s, want block_id=blk_extract&limit=25", r.URL.RawQuery)
 		}
-		if got := r.Header.Get("Authorization"); got != "Bearer test-key" {
-			t.Fatalf("Authorization = %q, want Bearer test-key", got)
+		if got := r.Header.Get("Authorization"); got != "Bearer rt_test_key" {
+			t.Fatalf("Authorization = %q, want Bearer rt_test_key", got)
 		}
 		sawRequest = true
 		writeBlockRunsTestResponse(t, w)
@@ -54,7 +54,7 @@ func TestWorkflowsBlocksRunsListsStepsForBlock(t *testing.T) {
 }
 
 func TestWorkflowsBlocksRunsListPassesRunAndStatusFilters(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var gotQuery string
@@ -92,7 +92,7 @@ func TestWorkflowsBlocksRunsListPassesRunAndStatusFilters(t *testing.T) {
 }
 
 func TestWorkflowsBlocksRunsRejectsInvalidStatus(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -116,7 +116,7 @@ func TestWorkflowsBlocksRunsRejectsInvalidStatus(t *testing.T) {
 }
 
 func TestWorkflowsBlocksRunsVerifiesWorkflowScopedBlock(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var blockGetCount atomic.Int32
@@ -166,7 +166,7 @@ func TestWorkflowsBlocksRunsVerifiesWorkflowScopedBlock(t *testing.T) {
 }
 
 func TestWorkflowsBlocksRunsRejectsConflictingWorkflowID(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

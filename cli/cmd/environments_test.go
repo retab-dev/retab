@@ -110,7 +110,7 @@ func TestResolveEnvironmentSelectionFailsLoudlyWhenNotFound(t *testing.T) {
 func TestEnvSwitchPersistsIDAndDoesNotSendStaleEnvironmentHeader(t *testing.T) {
 	resetEnvironmentCommandPersistentFlags(t)
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 
 	if err := saveConfig(retabConfig{EnvironmentID: "env_stale"}); err != nil {
 		t.Fatalf("saveConfig: %v", err)
@@ -146,7 +146,7 @@ func TestEnvSwitchPersistsIDAndDoesNotSendStaleEnvironmentHeader(t *testing.T) {
 func TestNewClientDoesNotUseSelectedEnvironmentForAPIKeyAuth(t *testing.T) {
 	resetEnvironmentCommandPersistentFlags(t)
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 
 	if err := saveConfig(retabConfig{EnvironmentID: "env_staging"}); err != nil {
 		t.Fatalf("saveConfig: %v", err)
@@ -184,8 +184,8 @@ func TestNewClientDoesNotUseSelectedEnvironmentForAPIKeyAuth(t *testing.T) {
 	if seenAPIKey != "" {
 		t.Fatalf("legacy credential header = %q, want empty", seenAPIKey)
 	}
-	if seenAuth != "Bearer test-key" {
-		t.Fatalf("Authorization = %q, want Bearer test-key", seenAuth)
+	if seenAuth != "Bearer rt_test_key" {
+		t.Fatalf("Authorization = %q, want Bearer rt_test_key", seenAuth)
 	}
 }
 
@@ -408,7 +408,7 @@ func TestEnvSwitchUsesRawOAuthAndDoesNotMintDashboardContext(t *testing.T) {
 func TestEnvWhichShowsSelectedEnvironment(t *testing.T) {
 	resetEnvironmentCommandPersistentFlags(t)
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("RETAB_API_BASE_URL", "")
 	t.Setenv("RETAB_BASE_URL", "")
 
@@ -422,8 +422,8 @@ func TestEnvWhichShowsSelectedEnvironment(t *testing.T) {
 		if r.Header.Get(legacyCredentialHeaderNameForTest()) != "" {
 			t.Fatalf("legacy credential header = %q, want empty", r.Header.Get(legacyCredentialHeaderNameForTest()))
 		}
-		if r.Header.Get("Authorization") != "Bearer test-key" {
-			t.Fatalf("Authorization = %q, want Bearer test-key", r.Header.Get("Authorization"))
+		if r.Header.Get("Authorization") != "Bearer rt_test_key" {
+			t.Fatalf("Authorization = %q, want Bearer rt_test_key", r.Header.Get("Authorization"))
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(cliEnvironment{

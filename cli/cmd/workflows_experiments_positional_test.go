@@ -52,7 +52,7 @@ func TestResolveExperimentIDArg(t *testing.T) {
 // and routes to the experiment id (the LAST positional) — the leading
 // workflow id is a scoping hint and must not change which resource is fetched.
 func TestWorkflowsExperimentsGetTwoArgForm(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var requests []string
@@ -83,7 +83,7 @@ func TestWorkflowsExperimentsGetTwoArgForm(t *testing.T) {
 // TestWorkflowsExperimentsGetSingleArgStillWorks guards the original
 // one-positional form against regression.
 func TestWorkflowsExperimentsGetSingleArgStillWorks(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var requests []string
@@ -113,7 +113,7 @@ func TestWorkflowsExperimentsGetSingleArgStillWorks(t *testing.T) {
 // convenience form. The leading workflow id is first validated with a GET (it
 // matches here), then the PATCH is issued to the experiment id.
 func TestWorkflowsExperimentsUpdateTwoArgForm(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var requests []string
@@ -148,7 +148,7 @@ func TestWorkflowsExperimentsUpdateTwoArgForm(t *testing.T) {
 // before any PATCH is issued — matching the server-side guard `runs create`
 // enforces, so `update wf_wrong exp_x` cannot silently mutate exp_x.
 func TestWorkflowsExperimentsUpdateRejectsMismatchedWorkflow(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var requests []string
@@ -183,7 +183,7 @@ func TestWorkflowsExperimentsUpdateRejectsMismatchedWorkflow(t *testing.T) {
 // DELETE to the experiment id (last positional) in the two-positional form,
 // after validating the leading workflow id with a GET (it matches here).
 func TestWorkflowsExperimentsDeleteTwoArgForm(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var requests []string
@@ -218,7 +218,7 @@ func TestWorkflowsExperimentsDeleteTwoArgForm(t *testing.T) {
 // footgun fix: `delete wf_wrong exp_x --yes` must NOT delete exp_x when the
 // leading workflow id names a different workflow — no DELETE may be issued.
 func TestWorkflowsExperimentsDeleteRejectsMismatchedWorkflow(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var requests []string
@@ -257,7 +257,7 @@ func TestWorkflowsExperimentsDeleteRejectsMismatchedWorkflow(t *testing.T) {
 // a mismatched leading workflow id (validated against the fetched experiment)
 // rather than silently returning an experiment from another workflow.
 func TestWorkflowsExperimentsGetRejectsMismatchedWorkflow(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

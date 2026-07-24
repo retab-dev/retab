@@ -29,7 +29,7 @@ func resetExperimentRunWaitFlags(t *testing.T) {
 // (here: queued → running → completed) and prints the FINAL run record, not
 // the freshly-queued one. This removes the hand-rolled `until` poll loop.
 func TestWorkflowsExperimentsRunsCreateWaitPollsUntilTerminal(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var posts, gets atomic.Int32
@@ -95,7 +95,7 @@ func TestWorkflowsExperimentsRunsCreateWaitPollsUntilTerminal(t *testing.T) {
 // TestWorkflowsExperimentsRunsWaitStandalone pins `runs wait <run-id>`:
 // it polls GET until terminal and prints the final run.
 func TestWorkflowsExperimentsRunsWaitStandalone(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var gets atomic.Int32
@@ -142,7 +142,7 @@ func TestWorkflowsExperimentsRunsWaitStandalone(t *testing.T) {
 // non-nil error so the shell sees a non-zero exit — the run record is still
 // printed for forensic context.
 func TestWorkflowsExperimentsRunsWaitErrorStatusExitsNonZero(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -183,7 +183,7 @@ func TestWorkflowsExperimentsRunsWaitErrorStatusExitsNonZero(t *testing.T) {
 // /v1/workflows/experiments/runs with `experiment_id=exp_abc` in the body and
 // no `workflow_id` (the server derives it from the experiment record).
 func TestWorkflowsExperimentsRunsCreateSingleArg(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var body map[string]any
@@ -227,7 +227,7 @@ func TestWorkflowsExperimentsRunsCreateSingleArg(t *testing.T) {
 }
 
 func TestWorkflowsExperimentsRunsListTableRendersStatusAndCounts(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -276,7 +276,7 @@ func TestWorkflowsExperimentsRunsListTableRendersStatusAndCounts(t *testing.T) {
 }
 
 func TestWorkflowsExperimentsResultsGetUsesFlatResultIDRoute(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var requests []string
@@ -313,7 +313,7 @@ func TestWorkflowsExperimentsResultsGetUsesFlatResultIDRoute(t *testing.T) {
 }
 
 func TestWorkflowsExperimentsRunsCancelPrintsCompactResponse(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var requests []string
@@ -355,7 +355,7 @@ func TestWorkflowsExperimentsRunsCancelPrintsCompactResponse(t *testing.T) {
 // <experiment-id>` while we transition to the 1-arg shape. The CLI accepts
 // it without surfacing an error and reaches the same flat endpoint.
 func TestWorkflowsExperimentsRunsCreateTwoArgsBackwardCompat(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var body map[string]any
@@ -394,7 +394,7 @@ func TestWorkflowsExperimentsRunsCreateTwoArgsBackwardCompat(t *testing.T) {
 // slot was silently dropped — the server derived `workflow_id` from the
 // experiment record and the run executed against the wrong workflow.
 func TestWorkflowsExperimentsRunsCreateTwoArgsForwardsWorkflowID(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var body map[string]any
@@ -449,7 +449,7 @@ func TestWorkflowsExperimentsMetricsGetRequiresDependentFlags(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			t.Setenv("RETAB_API_KEY", "test-key")
+			t.Setenv("RETAB_API_KEY", "rt_test_key")
 			t.Setenv("HOME", t.TempDir())
 
 			var hits atomic.Int32
@@ -512,7 +512,7 @@ func TestWorkflowsExperimentsRunsListValidatesFlags(t *testing.T) {
 	})
 
 	t.Run("rejects reversed date range before any request", func(t *testing.T) {
-		t.Setenv("RETAB_API_KEY", "test-key")
+		t.Setenv("RETAB_API_KEY", "rt_test_key")
 		t.Setenv("HOME", t.TempDir())
 
 		var hits atomic.Int32

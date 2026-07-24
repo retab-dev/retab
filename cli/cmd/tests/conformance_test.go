@@ -109,7 +109,14 @@ func scopeIfNeeded(t *testing.T, c *cobra.Command) {
 // test via t.Setenv.
 func newCredentials(t *testing.T, serverURL string) {
 	t.Helper()
-	t.Setenv("RETAB_API_KEY", "test-key")
+	// A test-scoped key prefix, not an arbitrary string. The production gate
+	// now fails SAFE: a key whose environment cannot be placed from its prefix
+	// is treated as production, so an unplaceable fixture key would make every
+	// high-risk command in this suite hit the production confirmation before
+	// reaching the behaviour under test (a delete would report "requires
+	// --confirm" instead of its own "--yes" refusal). Real Retab keys carry a
+	// recognizable prefix; the fixture should too.
+	t.Setenv("RETAB_API_KEY", "rt_test_conformance")
 	t.Setenv("RETAB_API_BASE_URL", serverURL)
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("USERPROFILE", t.TempDir())

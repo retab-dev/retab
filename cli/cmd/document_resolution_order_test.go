@@ -39,7 +39,7 @@ func fakeFileLinkServer(t *testing.T, hits *atomic.Int32) *httptest.Server {
 }
 
 func TestClassificationValidatesCategoriesFileBeforeResolvingFileID(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32
@@ -111,7 +111,7 @@ func TestClassificationReadsCategoriesFileBeforeCredentials(t *testing.T) {
 }
 
 func TestClassificationRejectsMalformedCategoriesBeforeResolvingFileID(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32
@@ -151,7 +151,7 @@ func TestClassificationRejectsMalformedCategoriesBeforeResolvingFileID(t *testin
 }
 
 func TestSplitValidatesSubdocumentsFileBeforeResolvingFileID(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32
@@ -219,7 +219,7 @@ func TestSplitReadsSubdocumentsFileBeforeCredentials(t *testing.T) {
 }
 
 func TestSplitRejectsMalformedSubdocumentsBeforeResolvingFileID(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32
@@ -257,7 +257,7 @@ func TestSplitRejectsMalformedSubdocumentsBeforeResolvingFileID(t *testing.T) {
 }
 
 func TestEditTemplateCreateValidatesFormFieldsBeforeResolvingFileID(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32
@@ -319,7 +319,7 @@ func TestEditTemplateCreateReadsFormFieldsBeforeCredentials(t *testing.T) {
 }
 
 func TestEditTemplateCreateRejectsBlankNameBeforeResolvingFileID(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32
@@ -504,7 +504,7 @@ func TestExtractionStreamReadsSchemaBeforeCredentials(t *testing.T) {
 }
 
 func TestSchemasGenerateValidatesDocumentsFileBeforeResolvingFileID(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32
@@ -539,7 +539,7 @@ func TestSchemasGenerateValidatesDocumentsFileBeforeResolvingFileID(t *testing.T
 }
 
 func TestSchemasGenerateRejectsBlankURLBeforeResolvingFileID(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32
@@ -574,7 +574,7 @@ func TestSchemasGenerateRejectsBlankURLBeforeResolvingFileID(t *testing.T) {
 }
 
 func TestClassificationRejectsBlankModelBeforeResolvingFileID(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32
@@ -614,7 +614,7 @@ func TestClassificationRejectsBlankModelBeforeResolvingFileID(t *testing.T) {
 }
 
 func TestPartitionRejectsBlankRequiredStringsBeforeResolvingFileID(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32
@@ -651,7 +651,7 @@ func TestPartitionRejectsBlankRequiredStringsBeforeResolvingFileID(t *testing.T)
 }
 
 func TestPartitionCreateForwardsAllowOverlapFlag(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var capturedBody map[string]any
@@ -707,7 +707,7 @@ func TestPartitionCreateForwardsAllowOverlapFlag(t *testing.T) {
 }
 
 func TestPartitionCreateForwardsExplicitFalseAllowOverlapFlag(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var capturedBody map[string]any

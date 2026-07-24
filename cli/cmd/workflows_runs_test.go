@@ -61,7 +61,7 @@ func TestWorkflowsRunsCreateReadsDocumentBeforeCredentials(t *testing.T) {
 }
 
 func TestWorkflowsRunsGetHonorsTableOutputFallback(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -101,7 +101,7 @@ func TestWorkflowsRunsGetHonorsTableOutputFallback(t *testing.T) {
 }
 
 func TestWorkflowsRunsGetRejectsEmptyRunIDBeforeRequest(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32
@@ -133,7 +133,7 @@ func TestWorkflowsRunsCancelSurfacesPendingCancellationStatusToStderr(t *testing
 	// just printed the run object, making the response look like the
 	// run was already cancelled when it was still ``cancellation_requested``.
 	// The fix prints a one-line note to stderr so the user knows to poll.
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -173,7 +173,7 @@ func TestWorkflowsRunsCancelStaysSilentWhenCancellationIsFinalized(t *testing.T)
 	// If the server reports ``cancellation_status=cancelled`` (synchronous
 	// terminal state) the CLI should NOT emit the pending-state note —
 	// that would be misleading the other direction.
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -207,7 +207,7 @@ func TestWorkflowsRunsCancelReportsRaceLossWhenRunAlreadyTerminal(t *testing.T) 
 	// "poll until terminal" advice is wrong here — the embedded run is already
 	// terminal — so the note must report the actual state and NOT tell the user
 	// to poll.
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -244,7 +244,7 @@ func TestWorkflowsRunsCancelReportsRaceLossWhenRunAlreadyTerminal(t *testing.T) 
 }
 
 func TestWorkflowsRunsCreateResolvesStartAliasToGeneratedStartBlock(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var postedDocuments map[string]any
@@ -310,7 +310,7 @@ func TestWorkflowsRunsCreateResolvesStartAliasToGeneratedStartBlock(t *testing.T
 }
 
 func TestWorkflowsRunsCreateSendsDocumentURLPayload(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var postedDocuments map[string]any
@@ -386,7 +386,7 @@ func TestWorkflowsRunsCreateSendsDocumentURLPayload(t *testing.T) {
 // bytes, mirroring the edit-template `--url` path. This pins that behavior: the
 // posted document carries inline content, not a bare external url.
 func TestWorkflowsRunsCreateMaterializesExternalDocumentURL(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	pdfBytes := []byte("%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n")
@@ -457,7 +457,7 @@ func TestWorkflowsRunsCreateMaterializesExternalDocumentURL(t *testing.T) {
 }
 
 func TestWorkflowsRunsCreateAcceptsDocumentsFileDescriptors(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var postedDocuments map[string]any
@@ -532,7 +532,7 @@ func TestWorkflowsRunsCreateAcceptsDocumentsFileDescriptors(t *testing.T) {
 }
 
 func TestWorkflowsRunsCreateResolvesDocumentIDToStorageURL(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var postedDocuments map[string]any
@@ -618,7 +618,7 @@ func TestWorkflowsRunsCreateResolvesDocumentIDToStorageURL(t *testing.T) {
 }
 
 func TestWorkflowsRunsCreateResolvesFileRefIDFromDocumentsFile(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var postedDocuments map[string]any
@@ -705,7 +705,7 @@ func TestWorkflowsRunsCreateResolvesFileRefIDFromDocumentsFile(t *testing.T) {
 }
 
 func TestWorkflowsRunsCreateRejectsConflictingDocumentIDAndURL(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	cmd := &cobra.Command{Use: "eval-run-create", RunE: workflowsRunsCreateCmd.RunE}
@@ -734,7 +734,7 @@ func TestWorkflowsRunsCreateRejectsConflictingDocumentIDAndURL(t *testing.T) {
 }
 
 func TestWorkflowsRunsCreateResolvesStartAliasFromDocumentsFile(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var postedDocuments map[string]any
@@ -807,7 +807,7 @@ func TestWorkflowsRunsCreateResolvesStartAliasFromDocumentsFile(t *testing.T) {
 // the start block and leak the friendly "start" alias into the request body;
 // walking all pages must resolve it to the page-2 block id.
 func TestWorkflowsRunsCreateResolvesStartAliasAcrossBlockPages(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var postedDocuments map[string]any
@@ -872,7 +872,7 @@ func TestWorkflowsRunsCreateResolvesStartAliasAcrossBlockPages(t *testing.T) {
 }
 
 func TestWorkflowsRunsCreateResolvesDeclarativeDocumentSourceIDFromDocumentsFile(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var postedDocuments map[string]any
@@ -938,7 +938,7 @@ func TestWorkflowsRunsCreateResolvesDeclarativeDocumentSourceIDFromDocumentsFile
 }
 
 func TestWorkflowsRunsCreateResolvesBlockPrefixedDeclarativeDocumentIDFromDocumentsFile(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var postedBody map[string]any
@@ -1013,7 +1013,7 @@ func TestWorkflowsRunsCreateResolvesBlockPrefixedDeclarativeDocumentIDFromDocume
 }
 
 func TestWorkflowsRunsCreateResolvesStartJSONAliasFromJSONInputsFile(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var postedJSONInputs map[string]any
@@ -1090,7 +1090,7 @@ func TestWorkflowsRunsCreateResolvesStartJSONAliasFromJSONInputsFile(t *testing.
 }
 
 func TestWorkflowsRunsCreateValidatesJSONInputsBeforeResolvingStartAlias(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32
@@ -1142,7 +1142,7 @@ func TestWorkflowsRunsCreateValidatesJSONInputsBeforeResolvingStartAlias(t *test
 // produced a 500 from the server's document-fetch path. Reject the
 // conflict up-front with a clear message instead.
 func TestWorkflowsRunsCreateRejectsConflictingDocumentSourcesForSameBlock(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32
@@ -1196,7 +1196,7 @@ func TestWorkflowsRunsCreateRejectsDuplicateDocumentFlag(t *testing.T) {
 	// `retab workflows runs create wf_x --document start=a --document start=b`
 	// used to silently keep the last entry. Now the second occurrence is a
 	// hard error so users notice the misconfiguration.
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32
@@ -1253,7 +1253,7 @@ func TestWorkflowsRunsCreateRejectsDuplicateAcrossDocumentAndDocumentUrl(t *test
 	// Pin the existing cross-source guard: when the same block id appears
 	// in both `--document` and `--document-url`, the command must refuse
 	// before any server call.
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32
@@ -1304,7 +1304,7 @@ func TestWorkflowsRunsCreateRejectsDuplicateAcrossDocumentAndDocumentUrl(t *test
 }
 
 func TestWorkflowsRunsCreateRejectsEmptyDocumentURLBlockIDBeforeRequest(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32
@@ -1357,7 +1357,7 @@ func keysOfAnyMap(values map[string]any) []string {
 // (the SDK guard rejects empty workflowIDs), so the two forms used to
 // disagree on what an empty arg means.
 func TestWorkflowsRunsListRejectsEmptyWorkflowIDFlag(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32
@@ -1481,7 +1481,7 @@ func TestWorkflowsRunsCommandsRejectInvalidEnumFiltersBeforeRequest(t *testing.T
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			t.Setenv("RETAB_API_KEY", "test-key")
+			t.Setenv("RETAB_API_KEY", "rt_test_key")
 			t.Setenv("HOME", t.TempDir())
 
 			hits := 0
@@ -1553,7 +1553,7 @@ func TestWorkflowsRunsCommandsAcceptAllSDKEnumFilters(t *testing.T) {
 }
 
 func TestWorkflowsRunsRestartCreatesFreshRunFromSourceInputs(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	if flag := workflowsRunsRestartCmd.Flags().Lookup("command-id"); flag != nil {
@@ -1682,7 +1682,7 @@ func TestWorkflowsRunsRestartCreatesFreshRunFromSourceInputs(t *testing.T) {
 // run) until it settles — mirroring `runs create --wait`. Guards the wait flags
 // staying wired on restart and the poll targeting the restarted run.
 func TestWorkflowsRunsRestartWaitPollsRestartedRun(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	if flag := workflowsRunsRestartCmd.Flags().Lookup("wait"); flag == nil {
@@ -1757,7 +1757,7 @@ func TestWorkflowsRunsRestartWaitPollsRestartedRun(t *testing.T) {
 }
 
 func TestWorkflowsRunsRestartMapsDraftConfigSourceToDraftVersion(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var body map[string]any
@@ -1816,7 +1816,7 @@ func TestWorkflowsRunsRestartMapsDraftConfigSourceToDraftVersion(t *testing.T) {
 }
 
 func TestWorkflowsRunsRestartRejectsInvalidConfigSourceLocally(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	hits := 0
@@ -1912,7 +1912,7 @@ func TestWorkflowsStepsGetExampleNamesARealResponseField(t *testing.T) {
 // keeps `runs delete` aligned: without --yes and without a TTY stdin,
 // the command refuses, and the server is never contacted.
 func TestWorkflowsRunsDeleteRefusesWithoutYesWhenStdinNotATTY(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32
@@ -1946,7 +1946,7 @@ func TestWorkflowsRunsDeleteRefusesWithoutYesWhenStdinNotATTY(t *testing.T) {
 }
 
 func TestWorkflowsRunsDeleteWithYesSendsDelete(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var sawDelete atomic.Bool
@@ -1979,7 +1979,7 @@ func TestWorkflowsRunsDeleteWithYesSendsDelete(t *testing.T) {
 }
 
 func TestWorkflowsStepsGetUsesStepIDRoute(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -2141,7 +2141,7 @@ func TestWorkflowsRunsExportRejectsInvalidDateFlagsLocally(t *testing.T) {
 }
 
 func TestWorkflowsRunsExportSendsTriggerType(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var body map[string]any
@@ -2197,7 +2197,7 @@ func TestWorkflowsRunsExportRawFlagWritesPlainCSVToStdout(t *testing.T) {
 	// (``{"csv_data": "...", "rows": N, "columns": M}``) regardless of
 	// --output. Users had to ``jq -r .csv_data`` to get usable CSV. The
 	// --raw flag dumps the CSV body straight to stdout.
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -2249,7 +2249,7 @@ func TestWorkflowsRunsExportOutputCSVWritesPlainCSVToStdout(t *testing.T) {
 	// output value) fell through to printResult and emitted the JSON envelope
 	// instead of the CSV the user asked for — only --raw / table / a TTY
 	// triggered the raw dump. ``--output csv`` must behave like --raw here.
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -2302,7 +2302,7 @@ func TestWorkflowsRunsListRejectsReversedDateRange(t *testing.T) {
 	// from "no runs match", which is the most common trigger of the
 	// "where did my runs go?" support thread. The fix rejects the
 	// reversed range at the CLI before any request leaves the client.
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -2341,7 +2341,7 @@ func TestWorkflowsRunsListRejectsReversedCostRange(t *testing.T) {
 	// returned rows verbatim — the server-side cost filter silently
 	// accepts swapped bounds. Reject the impossible range at the CLI
 	// so the user sees the typo immediately.
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -2375,7 +2375,7 @@ func TestWorkflowsRunsListRejectsReversedCostRange(t *testing.T) {
 // cost bound had been applied. A single bound (no reversed-range check to hide
 // behind) is the case that used to sail straight through, so assert on that.
 func TestWorkflowsRunsListRejectsCostFilters(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -2407,7 +2407,7 @@ func TestWorkflowsRunsListRejectsCostFilters(t *testing.T) {
 // The flag was missing entirely: `runs create --metadata` wrote metadata that
 // `runs list` then had no way to filter on.
 func TestWorkflowsRunsListSendsMetadataFilter(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	gotMetadata := ""
@@ -2446,7 +2446,7 @@ func TestWorkflowsRunsListRejectsReversedDurationRange(t *testing.T) {
 	// Mirror of the cost-range test for duration. ``--min-duration 1000
 	// --max-duration 100`` is impossible — surface it client-side so
 	// the user can fix the typo immediately.
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -2477,7 +2477,7 @@ func TestWorkflowsRunsListAcceptsEqualDateRange(t *testing.T) {
 	// Equal from/to is a legitimate "single-day window" filter — must
 	// NOT be rejected as a reversed range. Pin so the validator can't
 	// drift to a stricter < (strictly less) check.
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	hits := 0
@@ -2511,7 +2511,7 @@ func TestWorkflowsRunsListAcceptsEqualDateRange(t *testing.T) {
 }
 
 func TestWorkflowsRunsExportRejectsBlankStringArrayFlagsBeforeRequest(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	cases := []struct {
@@ -2749,7 +2749,7 @@ func TestParseDocumentArgs_NilWarnSinkDoesNotPanic(t *testing.T) {
 // command to a positional first argument, keeping the flag as a hidden
 // deprecated fallback.
 func TestWorkflowsRunsExportAcceptsPositionalWorkflowID(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var body map[string]any
@@ -2794,7 +2794,7 @@ func TestWorkflowsRunsExportAcceptsPositionalWorkflowID(t *testing.T) {
 }
 
 func TestWorkflowsRunsExportFlagFormStillWorksWithDeprecationWarning(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var body map[string]any
@@ -2935,7 +2935,7 @@ func TestWorkflowsRunsListHelpReflectsImplementedBehavior(t *testing.T) {
 // with the SAME value must be accepted (no error, no fallback to
 // workspace-wide). This is the case the help text used to forbid.
 func TestWorkflowsRunsListAcceptsPositionalAndFlagWhenTheyMatch(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var captured string
@@ -2967,7 +2967,7 @@ func TestWorkflowsRunsListAcceptsPositionalAndFlagWhenTheyMatch(t *testing.T) {
 // regression guard so a future "simplify" pass doesn't drop the
 // disagreement check and then quietly start picking one over the other.
 func TestWorkflowsRunsListRejectsPositionalAndFlagWhenTheyDisagree(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -2995,7 +2995,7 @@ func TestWorkflowsRunsListRejectsPositionalAndFlagWhenTheyDisagree(t *testing.T)
 // `experiments runs wait`, closing the gap where workflow runs had
 // `create --wait` but no standalone poller.
 func TestWorkflowsRunsWaitStandalone(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var gets atomic.Int32
@@ -3043,7 +3043,7 @@ func TestWorkflowsRunsWaitStandalone(t *testing.T) {
 // TestWorkflowsRunsWaitErrorStatusExitsNonZero pins that a run settling in
 // error surfaces a non-nil error while still printing the record.
 func TestWorkflowsRunsWaitErrorStatusExitsNonZero(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -3083,7 +3083,7 @@ func TestWorkflowsRunsWaitErrorStatusExitsNonZero(t *testing.T) {
 // exits non-zero, matching experiments/tests/primitives (workflow runs used to
 // treat cancelled as success — the one --wait inconsistency across families).
 func TestWorkflowsRunsWaitCancelledStatusExitsNonZero(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

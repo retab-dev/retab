@@ -275,7 +275,7 @@ func TestMergeWorkflowBlockConfigNullDeletesKey(t *testing.T) {
 }
 
 func TestWorkflowsBlocksGetUsesBlockEndpoint(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var sawGet bool
@@ -305,7 +305,7 @@ func TestWorkflowsBlocksGetUsesBlockEndpoint(t *testing.T) {
 }
 
 func TestWorkflowsBlocksUpdateMergeConfigSendsPatchMode(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	patchPath := t.TempDir() + "/review.json"
@@ -368,7 +368,7 @@ func TestWorkflowsBlocksUpdateMergeConfigSendsPatchMode(t *testing.T) {
 }
 
 func TestWorkflowsBlocksUpdateRejectsReplaceAndMergeConfigTogether(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	cmd := &cobra.Command{Use: "update", RunE: workflowsBlocksUpdateCmd.RunE}
@@ -397,7 +397,7 @@ func TestWorkflowsBlocksUpdateRejectsReplaceAndMergeConfigTogether(t *testing.T)
 }
 
 func TestWorkflowsRejectBlankNamesBeforeRequest(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	cases := []struct {
@@ -462,7 +462,7 @@ func TestWorkflowsGetExampleUsesPublishedObjectShape(t *testing.T) {
 }
 
 func TestWorkflowsPublishRejectsMalformedSuccessResponse(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -597,7 +597,7 @@ func TestWarnIfEmptyWorkflowOnPublish_NetworkError(t *testing.T) {
 }
 
 func TestWorkflowsDeleteWithYesFlagProceedsWithoutPrompt(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var sawDelete atomic.Int32
@@ -631,7 +631,7 @@ func TestWorkflowsDeleteWithoutYesAndNonTTYStdinRefuses(t *testing.T) {
 	// Without --yes and stdin not a TTY (any test environment, CI, pipe),
 	// the command must refuse before hitting the server. A stray newline
 	// or empty pipe could otherwise auto-confirm and nuke a workflow.
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32
@@ -663,7 +663,7 @@ func TestWorkflowsDeleteWithoutYesAndNonTTYStdinRefuses(t *testing.T) {
 // command POSTs to the discard-draft action route when --yes skips the
 // confirmation prompt.
 func TestWorkflowsDiscardDraftWithYesFlagProceedsWithoutPrompt(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var sawDiscard atomic.Int32
@@ -698,7 +698,7 @@ func TestWorkflowsDiscardDraftWithYesFlagProceedsWithoutPrompt(t *testing.T) {
 // destructive-confirmation guard: discarding draft edits without --yes and
 // without a TTY must refuse before hitting the server.
 func TestWorkflowsDiscardDraftWithoutYesAndNonTTYStdinRefuses(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32

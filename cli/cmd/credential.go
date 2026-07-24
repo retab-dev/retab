@@ -112,20 +112,48 @@ func (r resolvedCredential) KeyPreview() string {
 
 // environmentFromKeyPrefix maps an API key prefix to the customer
 // environment the CLI expects. Legacy `sk_retab_` keys resolve to
-// production. Unknown prefixes return "".
+// production. Unknown prefixes return "" — see expectedEnvironmentForKey,
+// which is what the safety gate must use.
 func environmentFromKeyPrefix(key string) string {
 	switch {
 	case strings.HasPrefix(key, "rt_test_"):
 		return slugTest
-	case strings.HasPrefix(key, "rt_live_"):
-		return slugProduction
 	case strings.HasPrefix(key, "sk_retab_test_"):
 		return slugTest
+	case strings.HasPrefix(key, "sk_test_"):
+		return slugTest
+	case strings.HasPrefix(key, "rt_live_"):
+		return slugProduction
+	case strings.HasPrefix(key, "sk_live_"):
+		return slugProduction
 	case strings.HasPrefix(key, "sk_retab_"):
 		return slugProduction
 	default:
 		return ""
 	}
+}
+
+// expectedEnvironmentForKey is the safety gate's view of an API key: the
+// prefix when the CLI can place it, and production when it cannot.
+//
+// Failing SAFE here is the whole point. environmentFromKeyPrefix returns ""
+// for anything outside its table, and productionGate skips entirely when the
+// expected environment is not "production" — so an unrecognized prefix used to
+// disable the gate outright. That is the opposite of the stance every other
+// branch takes: OAuth sessions with no persisted type fail safe to production
+// (oauthExpectedEnvironment), and so do stored legacy keys. It also fired on
+// perfectly ordinary keys: `sk_live_` appears in this CLI's own `auth login`
+// examples and `rtb_` in `setup`'s, and neither was in the table, so the
+// highest-risk credentials were the ones silently exempted.
+//
+// A credential whose environment cannot be proven non-production is gated. The
+// server stays authoritative; this only drives the local confirmation prompt,
+// which --confirm satisfies.
+func expectedEnvironmentForKey(key string) string {
+	if environment := environmentFromKeyPrefix(key); environment != "" {
+		return environment
+	}
+	return slugProduction
 }
 
 // oauthExpectedEnvironment maps an OAuth session's persisted environment
@@ -230,7 +258,7 @@ func resolveCredential(cmd *cobra.Command) (resolvedCredential, error) {
 			Override:            true,
 			APIKey:              flagKey,
 			BaseURL:             resolveBaseURL(cmd, cfg, nil),
-			ExpectedEnvironment: environmentFromKeyPrefix(flagKey),
+			ExpectedEnvironment: expectedEnvironmentForKey(flagKey),
 		}, nil
 	}
 
@@ -241,7 +269,7 @@ func resolveCredential(cmd *cobra.Command) (resolvedCredential, error) {
 			Override:            true,
 			APIKey:              envKey,
 			BaseURL:             resolveBaseURL(cmd, cfg, nil),
-			ExpectedEnvironment: environmentFromKeyPrefix(envKey),
+			ExpectedEnvironment: expectedEnvironmentForKey(envKey),
 		}, nil
 	}
 
@@ -253,7 +281,7 @@ func resolveCredential(cmd *cobra.Command) (resolvedCredential, error) {
 		}
 		profile := cfg.Environments[slug]
 		if profile == nil || profile.APIKey == "" {
-			return resolvedCredential{}, fmt.Errorf("no credential configured for environment %q. Run `retab env add %s --api-key <key>`", slug, slug)
+			return resolvedCredential{}, fmt.Errorf("no credential configured for environment %q. Run `retab auth login --env %s --api-key <key>`", slug, slug)
 		}
 		return profileCredential(cmd, cfg, slug, profile, sourceEnvFlag, true), nil
 	}

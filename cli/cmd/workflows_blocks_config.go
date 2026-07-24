@@ -605,7 +605,7 @@ func writeBlockConfigBundle(dir string, block retab.WorkflowBlock, force bool) e
 				return err
 			}
 		case "mounts":
-			if err := writeJSONFile(path, block.Config["mounts"]); err != nil {
+			if err := writeMountsFilePreservingLocalPaths(path, block.Config["mounts"]); err != nil {
 				return err
 			}
 		case "subdocuments":
@@ -1358,4 +1358,29 @@ func init() {
 		workflowsBlocksDoctorConfigCmd,
 	)
 	workflowsBlocksCmd.AddCommand(workflowsBlocksConfigCmd)
+}
+
+// writeMountsFilePreservingLocalPaths writes mounts.json from the server's
+// config while keeping any `local_path` bindings already on disk.
+//
+// `local_path` is a purely local fixture binding — it points at a CSV on the
+// developer's machine and the server never stores or returns it. Writing the
+// server config verbatim therefore erased it. `pull` papered over this by
+// re-hydrating afterwards (writeHydratedMountsFile), but `push` refreshes the
+// bundle through this same writer and never re-hydrated, so a push silently
+// unbound every table fixture. The generated runners skip a table whose
+// local_path is empty, so the next local run simply had no table data and no
+// error to explain why. `pull --force` clobbered it the same way.
+//
+// Preserving here, at the single point where mounts.json is written, fixes both
+// paths at once and keeps the invariant with the file rather than the caller.
+func writeMountsFilePreservingLocalPaths(path string, value any) error {
+	mounts, ok := value.(map[string]any)
+	if !ok {
+		return writeJSONFile(path, value)
+	}
+	if existing, err := readJSONMap(path); err == nil {
+		preserveExistingTableLocalPaths(mounts, existing)
+	}
+	return writeJSONFile(path, mounts)
 }

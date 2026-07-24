@@ -14,7 +14,7 @@ import (
 )
 
 func TestParsesCreateRejectsBlankModelBeforeRequest(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32
@@ -52,7 +52,7 @@ func TestParsesCreateRejectsBlankModelBeforeRequest(t *testing.T) {
 }
 
 func TestFilesCreateUploadRejectsBlankRequiredStringsBeforeRequest(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32
@@ -89,7 +89,7 @@ func TestFilesCreateUploadRejectsBlankRequiredStringsBeforeRequest(t *testing.T)
 }
 
 func TestEditsCreateRejectsBlankInstructionsBeforeRequest(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32

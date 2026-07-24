@@ -14,7 +14,7 @@ import (
 func TestWorkflowsAccessListHitsMembershipsEndpoint(t *testing.T) {
 	resetEnvironmentCommandPersistentFlags(t)
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 
 	var seenPath, seenMethod, seenQuery string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -52,7 +52,7 @@ func TestWorkflowsAccessListHitsMembershipsEndpoint(t *testing.T) {
 func TestWorkflowsAccessGrantResolvesEmail(t *testing.T) {
 	resetEnvironmentCommandPersistentFlags(t)
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 
 	var membersListed bool
 	var seenPostBody map[string]any
@@ -102,7 +102,7 @@ func TestWorkflowsAccessGrantResolvesEmail(t *testing.T) {
 func TestWorkflowsAccessUpdatePatchesRole(t *testing.T) {
 	resetEnvironmentCommandPersistentFlags(t)
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 
 	var seenPath, seenMethod string
 	var seenBody map[string]any
@@ -139,7 +139,7 @@ func TestWorkflowsAccessUpdatePatchesRole(t *testing.T) {
 func TestWorkflowsAccessUpdateRejectsBadRole(t *testing.T) {
 	resetEnvironmentCommandPersistentFlags(t)
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("RETAB_API_BASE_URL", "http://127.0.0.1:0")
 
 	if err := workflowsAccessUpdateCmd.Flags().Set("role", "project-viewer"); err != nil {
@@ -159,7 +159,7 @@ func TestWorkflowsAccessUpdateRejectsBadRole(t *testing.T) {
 func TestWorkflowsAccessRevokeDeletes(t *testing.T) {
 	resetEnvironmentCommandPersistentFlags(t)
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 
 	var seenPath, seenMethod string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

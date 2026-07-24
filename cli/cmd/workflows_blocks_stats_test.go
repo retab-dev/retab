@@ -13,7 +13,7 @@ import (
 )
 
 func TestWorkflowsStatsUsesWorkflowEndpoint(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var sawRequest bool
@@ -21,8 +21,8 @@ func TestWorkflowsStatsUsesWorkflowEndpoint(t *testing.T) {
 		if r.Method != http.MethodGet || r.URL.Path != "/v1/workflows/wf_123/stats" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
-		if got := r.Header.Get("Authorization"); got != "Bearer test-key" {
-			t.Fatalf("Authorization = %q, want Bearer test-key", got)
+		if got := r.Header.Get("Authorization"); got != "Bearer rt_test_key" {
+			t.Fatalf("Authorization = %q, want Bearer rt_test_key", got)
 		}
 		sawRequest = true
 		w.Header().Set("Content-Type", "application/json")
@@ -45,7 +45,7 @@ func TestWorkflowsStatsUsesWorkflowEndpoint(t *testing.T) {
 }
 
 func TestWorkflowsStatsGetForwardsWindowFlags(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var gotQuery string
@@ -88,7 +88,7 @@ func TestWorkflowsStatsGetForwardsWindowFlags(t *testing.T) {
 }
 
 func TestWorkflowsStatsTableSummarizesWorkflowShape(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -121,7 +121,7 @@ func TestWorkflowsStatsTableSummarizesWorkflowShape(t *testing.T) {
 }
 
 func TestWorkflowsStatsBlocksNamespaceUsesBlockEndpoint(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var sawRequest bool
@@ -153,7 +153,7 @@ func TestWorkflowsStatsBlocksNamespaceUsesBlockEndpoint(t *testing.T) {
 }
 
 func TestWorkflowsStatsBlocksNamespaceForwardsWindowFlags(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var gotQuery string
@@ -196,7 +196,7 @@ func TestWorkflowsStatsBlocksNamespaceForwardsWindowFlags(t *testing.T) {
 }
 
 func TestWorkflowsStatsBlocksNamespaceAcceptsWorkflowIDFlag(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var gotQuery string
@@ -227,7 +227,7 @@ func TestWorkflowsStatsBlocksNamespaceAcceptsWorkflowIDFlag(t *testing.T) {
 }
 
 func TestWorkflowsStatsBlocksNamespaceRequiresWorkflowID(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -246,7 +246,7 @@ func TestWorkflowsStatsBlocksNamespaceRequiresWorkflowID(t *testing.T) {
 }
 
 func TestWorkflowsStatsBlocksNamespaceRejectsConflictingWorkflowID(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -270,7 +270,7 @@ func TestWorkflowsStatsBlocksNamespaceRejectsConflictingWorkflowID(t *testing.T)
 }
 
 func TestWorkflowsBlocksStatsGetAcceptsWorkflowIDFlag(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var gotQuery string
@@ -317,7 +317,7 @@ func TestWorkflowsBlocksStatsGetAcceptsWorkflowIDFlag(t *testing.T) {
 }
 
 func TestWorkflowsBlocksStatsTableUsesOutputShape(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -389,7 +389,7 @@ func TestWorkflowsBlocksStatsTableSummarizesClassifierSplitAndForEachShapes(t *t
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			t.Setenv("RETAB_API_KEY", "test-key")
+			t.Setenv("RETAB_API_KEY", "rt_test_key")
 			t.Setenv("HOME", t.TempDir())
 
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -427,7 +427,7 @@ func TestWorkflowsBlocksStatsTableSummarizesClassifierSplitAndForEachShapes(t *t
 }
 
 func TestWorkflowsBlocksStatsRequiresWorkflowID(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -446,7 +446,7 @@ func TestWorkflowsBlocksStatsRequiresWorkflowID(t *testing.T) {
 }
 
 func TestWorkflowsBlocksStatsRejectsConflictingWorkflowID(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

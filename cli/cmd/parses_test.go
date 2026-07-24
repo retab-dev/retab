@@ -11,7 +11,7 @@ import (
 )
 
 func TestParsesCreateRejectsInvalidTableParsingFormatBeforeRequest(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32

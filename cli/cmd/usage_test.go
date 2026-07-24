@@ -32,7 +32,7 @@ func usageRunsFixture() usageRunListResponse {
 }
 
 func TestUsageRunsUsesHiddenEndpoint(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var sawRequest bool
@@ -40,8 +40,8 @@ func TestUsageRunsUsesHiddenEndpoint(t *testing.T) {
 		if r.Method != http.MethodGet || r.URL.Path != "/v1/usage/runs" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
-		if got := r.Header.Get("Authorization"); got != "Bearer test-key" {
-			t.Fatalf("Authorization = %q, want Bearer test-key", got)
+		if got := r.Header.Get("Authorization"); got != "Bearer rt_test_key" {
+			t.Fatalf("Authorization = %q, want Bearer rt_test_key", got)
 		}
 		sawRequest = true
 		w.Header().Set("Content-Type", "application/json")
@@ -66,7 +66,7 @@ func TestUsageRunsUsesHiddenEndpoint(t *testing.T) {
 }
 
 func TestUsageRunsForwardsFilterFlags(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var gotQuery string
@@ -119,7 +119,7 @@ func TestUsageRunsForwardsFilterFlags(t *testing.T) {
 }
 
 func TestUsageRunsTableExposesUsageColumnsOnly(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -153,7 +153,7 @@ func TestUsageRunsTableExposesUsageColumnsOnly(t *testing.T) {
 }
 
 func TestUsageRunsRejectsBeforeAndAfterTogether(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

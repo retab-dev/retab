@@ -17,7 +17,7 @@ import (
 // are parsed, attached to the request, and posted as a JSON `metadata` object.
 // A value containing '=' must survive (strings.Cut splits on the first '=' only).
 func TestWorkflowsRunsCreateSendsMetadataPayload(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var postedMetadata map[string]any
@@ -85,7 +85,7 @@ func TestWorkflowsRunsCreateSendsMetadataPayload(t *testing.T) {
 // flag name in the message (RunE wraps parseKVStringList's error as "--metadata:
 // ...").
 func TestWorkflowsRunsCreateRejectsMalformedMetadata(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	cmd := &cobra.Command{Use: "eval-run-create", RunE: workflowsRunsCreateCmd.RunE}

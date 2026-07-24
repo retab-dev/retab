@@ -18,7 +18,7 @@ import (
 // upload the SDK's Files.Upload does (create-upload + direct PUT +
 // complete-upload), so the test mocks all three legs.
 func TestFilesUploadFromStdinSendsFilenameToCreateUpload(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	const payload = "hello from stdin"

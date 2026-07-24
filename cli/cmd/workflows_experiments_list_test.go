@@ -12,7 +12,7 @@ import (
 // reach the request query. The backend already accepted these; the CLI just
 // hadn't exposed them.
 func TestWorkflowsExperimentsListForwardsPagination(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var seenQuery string

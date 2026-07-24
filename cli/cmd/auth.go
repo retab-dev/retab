@@ -87,10 +87,18 @@ override and takes precedence over anything written to disk.`,
 			return runAccessTokenLogin(accessToken, baseURL)
 		}
 
+		// --env <slug> / --live route the key into a stored environment
+		// profile instead of the single legacy slot, which is what makes
+		// those selectors resolvable on later invocations.
+		profileSlug, err := loginProfileSlug(cmd)
+		if err != nil {
+			return err
+		}
+
 		// Explicit API-key path. Direct, no browser. Backward compatible
 		// with the original login UX.
 		if apiKey != "" || (!useBrowser && os.Getenv("RETAB_API_KEY") != "") {
-			return runAPIKeyLogin(apiKey, baseURL)
+			return runAPIKeyLoginForProfile(apiKey, baseURL, profileSlug)
 		}
 
 		// If `--no-browser` was requested and no key was given, prompt.
@@ -100,7 +108,7 @@ override and takes precedence over anything written to disk.`,
 				return err
 			}
 			if strings.TrimSpace(prompted) != "" {
-				return runAPIKeyLogin(prompted, baseURL)
+				return runAPIKeyLoginForProfile(prompted, baseURL, profileSlug)
 			}
 			// fall through to browser flow
 		}
@@ -226,25 +234,105 @@ func chooseLoginEnvironment(currentEnvironmentID string, list *cliPaginatedList[
 	return nil
 }
 
-// runAPIKeyLogin persists an organization API key. Access tokens must use
-// runAccessTokenLogin so they are stored separately and sent as Bearer.
-func runAPIKeyLogin(apiKey, baseURL string) error {
+// loginProfileSlug returns the environment profile slug an API-key login should
+// write to, from the root's --env / --live selectors, or "" for the default
+// (non-profile) slot.
+//
+// Without this, nothing in the CLI ever wrote cfg.Environments: branches 3 and
+// 4 of resolveCredential (--env / --live) were unreachable except by hand-
+// editing ~/.retab/config.json, and their own error text told users to run
+// `retab auth login --live --api-key ...` — which stored the key in the legacy
+// cfg.APIKey slot instead, so the very next `--live` invocation failed with the
+// identical message, forever.
+func loginProfileSlug(cmd *cobra.Command) (string, error) {
+	if cmd == nil || cmd.Root() == nil {
+		return "", nil
+	}
+	if live, _ := cmd.Root().PersistentFlags().GetBool("live"); live {
+		if envFlag, _ := cmd.Root().PersistentFlags().GetString("env"); strings.TrimSpace(envFlag) != "" {
+			return "", fmt.Errorf("--live and --env are mutually exclusive")
+		}
+		return slugProduction, nil
+	}
+	envFlag, _ := cmd.Root().PersistentFlags().GetString("env")
+	if strings.TrimSpace(envFlag) == "" {
+		return "", nil
+	}
+	return validateSlug(envFlag)
+}
+
+// runAPIKeyLoginForProfile stores apiKey under the named environment profile so
+// `--env <slug>` / `--live` can select it later. slug "" falls back to the
+// legacy single-key slot.
+func runAPIKeyLoginForProfile(apiKey, baseURL, slug string) error {
+	if slug == "" {
+		return runAPIKeyLogin(apiKey, baseURL)
+	}
+	resolved, err := resolveLoginAPIKey(apiKey)
+	if err != nil {
+		return err
+	}
+	cfg, _ := loadConfig()
+	if cfg.Environments == nil {
+		cfg.Environments = map[string]*environmentProfile{}
+	}
+	profile := cfg.Environments[slug]
+	if profile == nil {
+		profile = &environmentProfile{}
+		cfg.Environments[slug] = profile
+	}
+	profile.APIKey = resolved
+	profile.APIKeyPreview = redactKey(resolved)
+	if profile.Name == "" {
+		profile.Name = slug
+	}
+	if resolvedBaseURL := stripLegacyV1Suffix(configuredLoginBaseURL(baseURL)); resolvedBaseURL != "" {
+		profile.BaseURL = resolvedBaseURL
+	}
+	// First profile written becomes the default, so a plain `retab ...` uses it
+	// without needing --env on every invocation.
+	if cfg.DefaultEnvironment == "" {
+		cfg.DefaultEnvironment = slug
+	}
+	if err := saveConfig(cfg); err != nil {
+		return err
+	}
+	path, _ := configPath()
+	fmt.Fprintf(os.Stderr, "Saved API key for environment %q to %s\n", slug, path)
+	return nil
+}
+
+// resolveLoginAPIKey resolves the key from the flag, the environment, or an
+// interactive prompt, and rejects access tokens. Shared by the profile and
+// legacy login paths so they validate identically.
+func resolveLoginAPIKey(apiKey string) (string, error) {
 	if apiKey == "" {
 		apiKey = os.Getenv("RETAB_API_KEY")
 	}
 	if apiKey == "" {
 		prompted, err := promptSecret("API key: ")
 		if err != nil {
-			return err
+			return "", err
 		}
 		apiKey = strings.TrimSpace(prompted)
 	}
 	if apiKey == "" {
-		return fmt.Errorf("api key is required")
+		return "", fmt.Errorf("api key is required")
 	}
 	if strings.HasPrefix(apiKey, "acctk_") {
-		return fmt.Errorf("access tokens must be passed with --access-token, not --api-key")
+		return "", fmt.Errorf("access tokens must be passed with --access-token, not --api-key")
 	}
+	return apiKey, nil
+}
+
+// runAPIKeyLogin persists an organization API key. Access tokens must use
+// runAccessTokenLogin so they are stored separately and sent as Bearer.
+func runAPIKeyLogin(apiKey, baseURL string) error {
+	resolved, err := resolveLoginAPIKey(apiKey)
+	if err != nil {
+		return err
+	}
+	apiKey = resolved
 	cfg, _ := loadConfig()
 	cfg.APIKey = apiKey
 	// Wipe stale bearer state — explicit API-key login is the user's intent.

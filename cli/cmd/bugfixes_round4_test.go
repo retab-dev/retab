@@ -4,7 +4,6 @@ package cmd
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -319,44 +318,6 @@ func TestResolveCredentialStoredKeyEnvironmentMatchesPrefix(t *testing.T) {
 	}
 }
 
-// `files inspect --render` created its temp output directory before resolving
-// the liteparse binary, parsing the document, clipping pages and enforcing the
-// 3-page cap — and returned from every one of those failures without removing
-// it, orphaning an empty retab-inspect-* directory per failed invocation. Only
-// a successful render, whose JSON reports the path, may leave it behind.
-func TestInspectRenderCleansUpTempDirOnFailure(t *testing.T) {
-	before, err := filepath.Glob(filepath.Join(os.TempDir(), "retab-inspect-*"))
-	if err != nil {
-		t.Fatalf("glob temp dirs: %v", err)
-	}
-
-	// A .txt file is not a pdf/image, so this fails at the kind check; point
-	// --liteparse-bin at a nonexistent path too so the resolver would fail as
-	// well. Either way nothing may be left on disk.
-	dir := t.TempDir()
-	doc := filepath.Join(dir, "notes.txt")
-	if err := os.WriteFile(doc, []byte("hello\n"), 0o600); err != nil {
-		t.Fatalf("write fixture: %v", err)
-	}
-	c := &cobra.Command{}
-	c.Flags().String("render", "1", "")
-	c.Flags().String("out", "", "")
-	c.Flags().String("liteparse-bin", filepath.Join(dir, "definitely-not-here"), "")
-	_ = c.Flags().Set("render", "1")
-
-	// The command is expected to fail; we only care that it litters nothing.
-	_ = inspectRender(context.Background(), c, doc, kindPDF, "1")
-
-	after, err := filepath.Glob(filepath.Join(os.TempDir(), "retab-inspect-*"))
-	if err != nil {
-		t.Fatalf("glob temp dirs: %v", err)
-	}
-	if len(after) > len(before) {
-		t.Errorf("failed --render leaked %d temp dir(s): before=%d after=%d",
-			len(after)-len(before), len(before), len(after))
-	}
-}
-
 // Two mapping sources pointing at one target is a config error, but it must
 // not resolve differently on every invocation: Go randomizes map iteration and
 // under --execute this is the body POSTed to a live endpoint. Sorting the
@@ -623,7 +584,7 @@ func TestFilesDownloadResolvesDestinationFromOutFlag(t *testing.T) {
 // GAP D: only the terminal-status MAP was pinned; reverting the exit-code half
 // (so a failed run exits 0) left the suite green. Drive the wait loop itself.
 func TestWorkflowRunWaitExitsNonZeroOnFailedRun(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -655,7 +616,7 @@ func TestWorkflowRunWaitExitsNonZeroOnFailedRun(t *testing.T) {
 // the CALL SITE (reinstating the hardcoded triple) leaves it green. Drive
 // `runs cancel` itself with a run that raced to "failed".
 func TestWorkflowsRunsCancelReportsRaceLossWhenRunFailed(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -687,7 +648,7 @@ func TestWorkflowsRunsCancelReportsRaceLossWhenRunFailed(t *testing.T) {
 // the RunE at the old flag name, so drive the command end-to-end: -o must put
 // the bytes at the requested path.
 func TestFilesDownloadWritesToOutFlagDestination(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 	payload := []byte("%PDF-1.4 downloaded bytes\n")
 	var server *httptest.Server

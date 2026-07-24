@@ -63,7 +63,7 @@ func TestValidateWorkflowFamilyNamesTrimPaddedInput(t *testing.T) {
 // the validator is invoked but its trimmed value is not propagated to the
 // outgoing request.
 func TestWorkflowsCreateTrimsNameInRequestBody(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var body map[string]any
@@ -106,7 +106,7 @@ func TestWorkflowsCreateTrimsNameInRequestBody(t *testing.T) {
 // for `workflows update --name "  padded  "`. The patch endpoint only sees
 // `name` because that's the only flag the user passed.
 func TestWorkflowsUpdateTrimsNameInRequestBody(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var patchBody map[string]any
@@ -146,7 +146,7 @@ func TestWorkflowsUpdateTrimsNameInRequestBody(t *testing.T) {
 // contract for experiments create: --name "  padded  " must arrive on the
 // server as name=padded.
 func TestWorkflowsExperimentsCreateTrimsNameInRequestBody(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	dir := t.TempDir()
@@ -205,7 +205,7 @@ func TestWorkflowsExperimentsCreateTrimsNameInRequestBody(t *testing.T) {
 // TestWorkflowsExperimentsUpdateTrimsNameInRequestBody pins the same
 // trim contract on the experiments update endpoint.
 func TestWorkflowsExperimentsUpdateTrimsNameInRequestBody(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var body map[string]any
@@ -247,7 +247,7 @@ func TestWorkflowsExperimentsUpdateTrimsNameInRequestBody(t *testing.T) {
 // TestWorkflowsEvalsCreateTrimsNameInRequestBody pins the trim contract
 // for workflows evals create.
 func TestWorkflowsEvalsCreateTrimsNameInRequestBody(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	dir := t.TempDir()
@@ -312,7 +312,7 @@ func TestWorkflowsEvalsCreateTrimsNameInRequestBody(t *testing.T) {
 // TestWorkflowsEvalsUpdateTrimsNameInRequestBody pins the trim contract
 // on the evals update endpoint.
 func TestWorkflowsEvalsUpdateTrimsNameInRequestBody(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var body map[string]any
@@ -437,7 +437,7 @@ func TestWorkflowsExperimentsListTableRendersBlockKindColumn(t *testing.T) {
 // helper, so this guards against accidentally introducing a difference
 // in the JSON path.
 func TestWorkflowsExperimentsListJSONOutputUnchanged(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -465,7 +465,7 @@ func TestWorkflowsExperimentsListJSONOutputUnchanged(t *testing.T) {
 // the empty-after-trim check. A whitespace-only name must still fail —
 // the trim does NOT loosen the contract, it just cleans valid input.
 func TestWorkflowsCreateBlankNameStillRejectedAfterTrim(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32

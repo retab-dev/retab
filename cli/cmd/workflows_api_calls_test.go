@@ -82,7 +82,7 @@ func TestHydrateAPICallBundleWritesRuntimeAndEnvPlaceholders(t *testing.T) {
 
 func TestWorkflowsBlocksPullConfigAutoHydratesAPICallRuntime(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -302,7 +302,7 @@ func TestAPICallLocalRunCanEmitAbsolutePaths(t *testing.T) {
 
 func TestAPICallHydrateFillSecretsWritesEnvLocalWithoutPrintingValues(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet || r.URL.Path != "/v1/secrets/api_token/value" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)

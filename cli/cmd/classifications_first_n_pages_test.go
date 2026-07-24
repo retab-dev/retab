@@ -19,7 +19,7 @@ import (
 // fake server with the given flag setters and returns the decoded request body.
 func captureClassifyRequestBody(t *testing.T, set func(*cobra.Command)) map[string]any {
 	t.Helper()
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	docPath := filepath.Join(t.TempDir(), "doc.pdf")

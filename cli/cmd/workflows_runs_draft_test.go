@@ -27,7 +27,7 @@ func newRunsCreateTestCmd() *cobra.Command {
 // TestWorkflowsRunsCreateDraftFlagSendsDraftVersion pins that --draft maps to
 // version "draft" in the request body (alias for --version draft).
 func TestWorkflowsRunsCreateDraftFlagSendsDraftVersion(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var sentVersion any
@@ -67,7 +67,7 @@ func TestWorkflowsRunsCreateDraftFlagSendsDraftVersion(t *testing.T) {
 // TestWorkflowsRunsCreateDraftConflictsWithVersion pins that --draft together
 // with an explicit non-draft --version is rejected before any request.
 func TestWorkflowsRunsCreateDraftConflictsWithVersion(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		t.Fatalf("request must not be sent on a flag conflict: %s %s", r.Method, r.URL.Path)

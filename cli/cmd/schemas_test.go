@@ -78,7 +78,7 @@ func TestWriteGeneratedSchemaJSONFormatPreservesEnvelope(t *testing.T) {
 // generate should stat the path upfront like resolveDocument does and
 // report a clear "file not found:" instead.
 func TestSchemasGenerateFileMissingReportsClearError(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32
@@ -150,7 +150,7 @@ func TestSchemasGenerateLongDisambiguatesFormatVsOutput(t *testing.T) {
 }
 
 func TestSchemasGenerateRejectsUnknownFormatBeforeRequest(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32
@@ -199,7 +199,7 @@ func TestSchemasGenerateRejectsUnknownFormatBeforeRequest(t *testing.T) {
 // prints the queued record (which has no schema yet) rather than erroring on the
 // missing json_schema.
 func TestSchemasGenerateBackgroundSendsFlagAndPrintsRecord(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var gotBackground atomic.Bool
@@ -248,7 +248,7 @@ func TestSchemasGenerateBackgroundSendsFlagAndPrintsRecord(t *testing.T) {
 // TestSchemasGenerateForwardsInstructions pins that --instructions is wired
 // into the request body.
 func TestSchemasGenerateForwardsInstructions(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var gotInstr atomic.Value
@@ -294,7 +294,7 @@ func TestSchemasGenerateForwardsInstructions(t *testing.T) {
 // passing both --instructions and --instructions-file is rejected before any
 // request is made.
 func TestSchemasGenerateInstructionsFileForwardedAndConflicts(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var gotInstr atomic.Value
@@ -361,7 +361,7 @@ func TestSchemasGenerateInstructionsFileForwardedAndConflicts(t *testing.T) {
 // (the orchestrator "context deadline exceeded") is automatically resubmitted,
 // and the recovered schema is emitted.
 func TestSchemasGenerateRetriesTransientServerFailure(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var posts atomic.Int32
@@ -431,7 +431,7 @@ func TestSchemasGenerateRetriesTransientServerFailure(t *testing.T) {
 // failure that is NOT transient (e.g. a real document/schema error) is
 // surfaced immediately without resubmitting.
 func TestSchemasGenerateDoesNotRetryNonTransientFailure(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var posts atomic.Int32
@@ -489,7 +489,7 @@ func TestSchemasGenerateDoesNotRetryNonTransientFailure(t *testing.T) {
 // is the behaviour the help text promises ("Each attempt waits up to
 // --timeout-seconds ... to abandon a stuck job and resubmit sooner").
 func TestSchemasGenerateSyncTimesOutAttemptAndRetries(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var posts atomic.Int32
@@ -552,7 +552,7 @@ func TestSchemasGenerateSyncTimesOutAttemptAndRetries(t *testing.T) {
 // commands target /v1/schemas/generate/{id}[/cancel] (the background-primitive
 // routes), not /v1/schemas/{id}.
 func TestSchemasGetAndCancelHitGenerationSubpaths(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var gotPath, gotMethod atomic.Value

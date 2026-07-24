@@ -568,7 +568,12 @@ func upsertJSONMCPConfig(path string, key string, serverName string, serverConfi
 	if err != nil {
 		return err
 	}
-	return writeFileCreatingParents(path, append(raw, '\n'), 0o644)
+	// 0600: this file carries an `Authorization: Bearer <api key>` header, so it
+	// holds the same secret ~/.retab/config.json does and gets the same
+	// owner-only mode. 0644 left it group/world readable — and these are exactly
+	// the files (.mcp.json, .cursor/mcp.json, opencode.json) whose whole purpose
+	// is to sit in a working tree.
+	return writeFileCreatingParents(path, append(raw, '\n'), mcpConfigFileMode)
 }
 
 func upsertTomlMCPConfig(path string, serverName string, config mcpServerConfig) error {
@@ -609,7 +614,9 @@ func upsertTomlMCPConfig(path string, serverName string, config mcpServerConfig)
 			block.WriteString("\"\n")
 		}
 	}
-	return writeFileCreatingParents(path, []byte(block.String()), 0o644)
+	// 0600 for the same reason as upsertJSONMCPConfig: this TOML block carries
+	// the Authorization header.
+	return writeFileCreatingParents(path, []byte(block.String()), mcpConfigFileMode)
 }
 
 func removeTomlSection(raw string, section string) string {
@@ -781,11 +788,29 @@ func copyFile(src string, dst string, perm os.FileMode) error {
 	return out.Close()
 }
 
+// mcpConfigFileMode is the permission for any file this command writes that can
+// contain the user's API key. It matches the 0600 saveConfig applies to
+// ~/.retab/config.json — the same secret must not become more readable just
+// because it landed in an agent's MCP config.
+const mcpConfigFileMode = 0o600
+
 func writeFileCreatingParents(path string, raw []byte, perm os.FileMode) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err
 	}
-	return os.WriteFile(path, raw, perm)
+	if err := os.WriteFile(path, raw, perm); err != nil {
+		return err
+	}
+	// os.WriteFile only applies perm when it CREATES the file, and these
+	// writers upsert into files that usually already exist — so a .mcp.json
+	// created before this change would silently keep its old 0644. Enforce the
+	// mode explicitly, and for the secret-bearing files reuse the same
+	// owner-only helper saveConfig applies to ~/.retab/config.json (which also
+	// sets a restrictive DACL on Windows, where chmod alone is nearly a no-op).
+	if perm == mcpConfigFileMode {
+		return secureConfigFile(path)
+	}
+	return os.Chmod(path, perm)
 }
 
 func xdgConfigHome() string {

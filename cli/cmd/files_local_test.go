@@ -380,7 +380,7 @@ func TestGrepTextSpans(t *testing.T) {
 		Pages: []ParsedPage{{Page: 1, Text: "alpha beta\ngamma beta delta\n"}},
 	}
 	m, _ := buildMatcher("beta", false, false)
-	matches, trunc := grepParseResult(res, kindText, m, 0, 50, false)
+	matches, _, trunc := grepParseResult(res, kindText, m, 0, 50, false)
 	if trunc {
 		t.Fatal("unexpected truncation")
 	}
@@ -402,7 +402,7 @@ func TestGrepSheetsCSV(t *testing.T) {
 		Sheets: []SheetData{{Index: 0, Rows: [][]string{{"name", "amount"}, {"ACME", "42000"}}}},
 	}
 	m, _ := buildMatcher("42000", false, false)
-	matches, _ := grepParseResult(res, kindCSV, m, 0, 50, false)
+	matches, _, _ := grepParseResult(res, kindCSV, m, 0, 50, false)
 	if len(matches) != 1 {
 		t.Fatalf("want 1 match, got %d", len(matches))
 	}
@@ -421,7 +421,7 @@ func TestGrepSheetsSpreadsheet(t *testing.T) {
 		Sheets: []SheetData{{Index: 0, Name: "Budget", Rows: [][]string{{"Item", "Cost"}, {"Rent", "1200"}}}},
 	}
 	m, _ := buildMatcher("1200", false, false)
-	matches, _ := grepParseResult(res, kindSpreadsheet, m, 0, 50, false)
+	matches, _, _ := grepParseResult(res, kindSpreadsheet, m, 0, 50, false)
 	if len(matches) != 1 {
 		t.Fatalf("want 1 match, got %d", len(matches))
 	}
@@ -447,7 +447,7 @@ func TestGrepPagesPDFAndBbox(t *testing.T) {
 		}},
 	}
 	m, _ := buildMatcher("Total Due", false, false)
-	matches, _ := grepParseResult(res, kindPDF, m, 0, 50, true)
+	matches, _, _ := grepParseResult(res, kindPDF, m, 0, 50, true)
 	if len(matches) != 1 {
 		t.Fatalf("want 1 match, got %d", len(matches))
 	}
@@ -469,7 +469,7 @@ func TestGrepTruncation(t *testing.T) {
 		Pages: []ParsedPage{{Page: 1, Text: "x x x x x"}},
 	}
 	m, _ := buildMatcher("x", false, false)
-	matches, trunc := grepParseResult(res, kindPDF, m, 0, 3, false)
+	matches, _, trunc := grepParseResult(res, kindPDF, m, 0, 3, false)
 	if !trunc || len(matches) != 3 {
 		t.Fatalf("want truncated to 3, got %d trunc=%v", len(matches), trunc)
 	}

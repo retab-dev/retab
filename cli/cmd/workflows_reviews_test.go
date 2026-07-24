@@ -80,7 +80,7 @@ func reviewQueueItemBody(reviewID string, runID string, blockID string, blockTyp
 }
 
 func TestReviewsListCommand(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var seenPath, seenQuery string
@@ -128,7 +128,7 @@ func TestReviewsListCommand(t *testing.T) {
 }
 
 func TestReviewsListTableUsesPureQueueColumns(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -276,7 +276,7 @@ func TestReviewsRejectHelpDoesNotPromiseRunCancellation(t *testing.T) {
 }
 
 func TestReviewsGetCommand(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var seenPath string
@@ -312,7 +312,7 @@ func TestReviewsGetCommand(t *testing.T) {
 }
 
 func TestReviewsGetCommandHonorsOutputTable(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -346,7 +346,7 @@ func TestReviewsGetCommandHonorsOutputTable(t *testing.T) {
 }
 
 func TestReviewsVersionsListCommandRequiresReviewIDAndQueriesFlatRoute(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var seenPath, seenQuery string
@@ -384,7 +384,7 @@ func TestReviewsVersionsListCommandRequiresReviewIDAndQueriesFlatRoute(t *testin
 }
 
 func TestReviewsVersionsGetCommandFetchesFlatVersion(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var seenPath string
@@ -411,7 +411,7 @@ func TestReviewsVersionsGetCommandFetchesFlatVersion(t *testing.T) {
 }
 
 func TestReviewsSchemaCommandPrintsBlockSpecificSnapshotContract(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var seenPaths []string
@@ -492,7 +492,7 @@ func TestReviewsSchemaCommandPrintsBlockSpecificSnapshotContract(t *testing.T) {
 }
 
 func TestReviewsSchemaCommandUsesExtractBlockJSONSchema(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -606,7 +606,7 @@ func TestReviewsSchemaCommandCoversEveryReviewableBlockType(t *testing.T) {
 		},
 	} {
 		t.Run(tc.blockType, func(t *testing.T) {
-			t.Setenv("RETAB_API_KEY", "test-key")
+			t.Setenv("RETAB_API_KEY", "rt_test_key")
 			t.Setenv("HOME", t.TempDir())
 
 			var requests int
@@ -663,7 +663,7 @@ func TestReviewsSchemaCommandCoversEveryReviewableBlockType(t *testing.T) {
 }
 
 func TestReviewsSchemaCommandHonorsOutputTable(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -696,7 +696,7 @@ func TestReviewsSchemaCommandHonorsOutputTable(t *testing.T) {
 }
 
 func TestReviewsSchemaCommandRejectsNonReviewableBlockType(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var requests int
@@ -728,7 +728,7 @@ func TestReviewsSchemaCommandRejectsNonReviewableBlockType(t *testing.T) {
 }
 
 func TestReviewsSchemaCommandPropagatesMissingOverlay(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -751,7 +751,7 @@ func TestReviewsSchemaCommandPropagatesMissingOverlay(t *testing.T) {
 }
 
 func TestReviewsApproveSendsVersionID(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var seenPath string
@@ -803,7 +803,7 @@ func TestReviewsApproveSendsVersionID(t *testing.T) {
 // version on page 1 (with an `after` cursor) and the newer version on page 2;
 // a first-page-only scan would approve the stale older version.
 func TestReviewsApproveResolvesLatestVersionAcrossPages(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	const olderVersionID = "rvr_AAAAAAAAAAAAAAAAAAAAAAAAAA"
@@ -872,7 +872,7 @@ func TestReviewsApproveResolvesLatestVersionAcrossPages(t *testing.T) {
 }
 
 func TestReviewsApproveTableRendersConciseDecisionResponse(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	body := reviewOverlayBody(reviewDecisionBody("approved", reviewTestVersionID))
@@ -913,7 +913,7 @@ func TestReviewsApproveTableRendersConciseDecisionResponse(t *testing.T) {
 }
 
 func TestReviewsVersionsCreateSendsSnapshotReviewIDAndParentID(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	snapshotPath := filepath.Join(t.TempDir(), "snapshot.json")
@@ -1134,7 +1134,7 @@ func TestReviewsApproveAcceptsRvrPrefixedAndRejectsLegacyShapes(t *testing.T) {
 }
 
 func TestReviewsRejectSendsVersionIDAndReason(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var seenPath string

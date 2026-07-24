@@ -55,7 +55,7 @@ spec:
 // that carries metadata.id with --project-id (create-new) warns about the
 // silent-duplicate footgun and points at --to.
 func TestWorkflowsSpecApplyWarnsOnMetadataIDWithProjectID(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 	server := specApplyTestServer(t)
 	defer server.Close()
@@ -82,7 +82,7 @@ func TestWorkflowsSpecApplyWarnsOnMetadataIDWithProjectID(t *testing.T) {
 // TestWorkflowsSpecApplyNoWarnWithoutMetadataID pins that a spec with no
 // metadata.id applies cleanly with no footgun warning.
 func TestWorkflowsSpecApplyNoWarnWithoutMetadataID(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 	server := specApplyTestServer(t)
 	defer server.Close()
