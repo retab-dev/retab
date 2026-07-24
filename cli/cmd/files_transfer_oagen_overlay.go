@@ -56,6 +56,7 @@ store and a hint for content-type inference.`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		uploadPath := args[0]
+		filenameOverride := ""
 		if uploadPath == "-" {
 			stdinPath, cleanup, err := stageStdinUpload(cmd)
 			if err != nil {
@@ -67,6 +68,13 @@ store and a hint for content-type inference.`,
 			if _, err := inferFileMIMEData(uploadPath); err != nil {
 				return err
 			}
+			// --filename overrides the recorded name on a path upload; on the
+			// stdin branch it is already the staged file's basename.
+			override, err := uploadFilenameOverride(cmd)
+			if err != nil {
+				return err
+			}
+			filenameOverride = override
 		}
 		client, err := newClient(cmd)
 		if err != nil {
@@ -74,7 +82,7 @@ store and a hint for content-type inference.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, detectedContentType, err := uploadFile(ctx, client, uploadPath, "")
+		result, detectedContentType, err := uploadFile(ctx, client, uploadPath, filenameOverride)
 		if err != nil {
 			return err
 		}
@@ -98,7 +106,10 @@ func uploadFile(ctx context.Context, client *retab.Client, uploadPath string, fi
 		return nil, "", err
 	}
 	filename := filepath.Base(uploadPath)
-	contentType := detectUploadContentType(uploadPath, data)
+	if filenameOverride != "" {
+		filename = filenameOverride
+	}
+	contentType := detectUploadContentType(filename, data)
 	sum := sha256.Sum256(data)
 	sha256Hash := hex.EncodeToString(sum[:])
 	prepared, err := client.Files.CreateUpload(ctx, &retab.FilesCreateUploadParams{
@@ -148,16 +159,37 @@ func uploadFile(ctx context.Context, client *retab.Client, uploadPath string, fi
 // path further down. --filename is required (no sensible default for a piped
 // blob; we'd otherwise label it "stdin" or similar and silently mis-type the
 // content).
+// uploadFilenameOverride reads --filename for a path upload, applying the same
+// bare-basename rule stageStdinUpload enforces. Returns "" when unset.
+func uploadFilenameOverride(cmd *cobra.Command) (string, error) {
+	raw, _ := cmd.Flags().GetString("filename")
+	filename := strings.TrimSpace(raw)
+	if filename == "" {
+		return "", nil
+	}
+	if err := validateBareUploadFilename(filename); err != nil {
+		return "", err
+	}
+	return filename, nil
+}
+
+// validateBareUploadFilename rejects anything that is not a plain basename.
+func validateBareUploadFilename(filename string) error {
+	if strings.ContainsAny(filename, `/\`) || filename == "." || filename == ".." {
+		return fmt.Errorf("--filename must be a bare filename, not a path: %q", filename)
+	}
+	return nil
+}
+
 func stageStdinUpload(cmd *cobra.Command) (string, func(), error) {
 	filename, _ := cmd.Flags().GetString("filename")
 	if strings.TrimSpace(filename) == "" {
 		return "", func() {}, fmt.Errorf("--filename is required when uploading from stdin (-)")
 	}
-	// Disallow path separators in the filename — we use it as a basename
-	// for the staging file and we don't want a `..` or `/` to escape the
-	// temp dir or be passed to the server as a path.
-	if strings.ContainsAny(filename, `/\`) {
-		return "", func() {}, fmt.Errorf("--filename must be a bare filename, not a path: %q", filename)
+	// Must be a plain basename: it is filepath.Joined into the staging dir, so
+	// a separator or `..`/`.` would escape it or resolve to the dir itself.
+	if err := validateBareUploadFilename(strings.TrimSpace(filename)); err != nil {
+		return "", func() {}, err
 	}
 	body, err := io.ReadAll(cmd.InOrStdin())
 	if err != nil {

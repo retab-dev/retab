@@ -224,6 +224,9 @@ var workflowsBlocksListCmd = &cobra.Command{
 	Example: "  # List all blocks (positional)\n  retab workflows blocks list wf_abc123\n\n  # Same, with the flag form\n  retab workflows blocks list --workflow-id wf_abc123\n\n  # First page of 50\n  retab workflows blocks list wf_abc123 --limit 50\n\n  # Next page, using the cursor from the previous response\n  retab workflows blocks list wf_abc123 --limit 50 \\\n    --after $(retab workflows blocks list wf_abc123 --limit 50 --output json | jq -r '.list_metadata.after')\n\n  # Get the ids only\n  retab workflows blocks list wf_abc123 | jq -r '.data[].id'",
 	Args:    cobra.MaximumNArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		if err := validateBeforeAfterMutex(cmd); err != nil {
+			return err
+		}
 		// Workflow id positionally OR via --workflow-id (co-equal forms);
 		// required here — blocks have no org-wide listing.
 		workflowID, err := resolveWorkflowScope(cmd, args, true)
@@ -340,7 +343,6 @@ func init() {
 	workflowsBlocksListCmd.Flags().String("workflow-id", "", "workflow id (alternative to the positional form)")
 	workflowsBlocksListCmd.Flags().String("before", "", "block id: return the page before this id (mutually exclusive with --after)")
 	workflowsBlocksListCmd.Flags().String("after", "", "block id: return the page after this id (mutually exclusive with --before)")
-	workflowsBlocksListCmd.MarkFlagsMutuallyExclusive("before", "after")
 	workflowsBlocksListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 200}, "limit", "max items to return (1-200)")
 	workflowsBlocksUpdateCmd.Flags().String("label", "", "update label")
 	workflowsBlocksUpdateCmd.Flags().Float64("position-x", 0, "update X position")

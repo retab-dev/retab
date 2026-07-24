@@ -3,6 +3,9 @@
 package cmd
 
 import (
+	"context"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -245,31 +248,6 @@ func TestFilesDownloadHelpMatchesFlags(t *testing.T) {
 	}
 }
 
-// `tables query --output csv` wrote cells and column names straight into the
-// csv.Writer, while every other CSV path in the CLI goes through writeCSV ->
-// sanitizeCSVCell. A cell (or a user-uploaded column name) beginning =/+/-/@
-// was therefore emitted verbatim for a spreadsheet to execute on open, in the
-// same command family whose sibling neutralizes it.
-func TestSanitizeCSVCellNeutralizesFormulaTriggers(t *testing.T) {
-	for _, raw := range []string{
-		`=HYPERLINK("http://evil","x")`,
-		`@SUM(A1)`,
-		`+1+1`,
-		`-1-1`,
-		"\tlead-tab",
-	} {
-		if got := sanitizeCSVCell(raw); got != "'"+raw {
-			t.Errorf("sanitizeCSVCell(%q) = %q, want it prefixed with an apostrophe", raw, got)
-		}
-	}
-	// Real negative numbers must stay numeric, not become text.
-	for _, raw := range []string{"-12.5", "+3", "0", "12"} {
-		if got := sanitizeCSVCell(raw); got != raw {
-			t.Errorf("sanitizeCSVCell(%q) = %q, want it unchanged", raw, got)
-		}
-	}
-}
-
 // An explicit field_mappings entry must beat a payload key that happens to be
 // named like the mapping's TARGET. The passthrough loop overwrote
 // unconditionally, so {"order_id":"id"} against {"order_id":..,"id":..} posted
@@ -297,23 +275,178 @@ func TestAPICallFieldMappingBeatsCollidingPayloadKey(t *testing.T) {
 }
 
 // `auth login --api-key rt_test_...` stores the key in cfg.APIKey, and the
-// stored-key branch hardcoded production — so a test key demanded the
-// production confirmation (and hard-failed CI) purely because it had been
-// saved rather than passed via --api-key, which classifies it correctly.
-func TestStoredAPIKeyEnvironmentMatchesItsPrefix(t *testing.T) {
-	for key, want := range map[string]string{
-		"rt_test_abc":       slugTest,
-		"sk_retab_test_abc": slugTest,
-		"rt_live_abc":       slugProduction,
-		"sk_retab_abc":      slugProduction,
+// stored-key branch of resolveCredential hardcoded production — so a test key
+// demanded the production confirmation (and hard-failed CI with "production
+// write requires --confirm") purely because it had been saved rather than
+// passed via --api-key, which classifies the identical key correctly.
+//
+// This drives resolveCredential itself: asserting on environmentFromKeyPrefix
+// would pass against the unfixed code, since that helper was already correct —
+// the bug was that the stored-key branch never consulted it.
+func TestResolveCredentialStoredKeyEnvironmentMatchesPrefix(t *testing.T) {
+	for _, tc := range []struct {
+		key  string
+		want string
+	}{
+		{"rt_test_abc123", slugTest},
+		{"sk_retab_test_abc123", slugTest},
+		{"rt_live_abc123", slugProduction},
+		{"sk_retab_abc123", slugProduction},
+		// An unplaceable prefix must still fail safe to production.
+		{"weird_prefix_abc123", slugProduction},
 	} {
-		if got := environmentFromKeyPrefix(key); got != want {
-			t.Errorf("environmentFromKeyPrefix(%q) = %q, want %q", key, got, want)
+		t.Run(tc.key, func(t *testing.T) {
+			isolateHome(t)
+			if err := saveConfig(retabConfig{APIKey: tc.key}); err != nil {
+				t.Fatal(err)
+			}
+			cred, err := resolveCredential(newTestRootCmd())
+			if err != nil {
+				t.Fatal(err)
+			}
+			if cred.Source != sourceLegacyKey {
+				t.Fatalf("source = %q, want %q", cred.Source, sourceLegacyKey)
+			}
+			if cred.ExpectedEnvironment != tc.want {
+				t.Errorf("stored key %q resolved to environment %q, want %q",
+					tc.key, cred.ExpectedEnvironment, tc.want)
+			}
+		})
+	}
+}
+
+// `files inspect --render` created its temp output directory before resolving
+// the liteparse binary, parsing the document, clipping pages and enforcing the
+// 3-page cap — and returned from every one of those failures without removing
+// it, orphaning an empty retab-inspect-* directory per failed invocation. Only
+// a successful render, whose JSON reports the path, may leave it behind.
+func TestInspectRenderCleansUpTempDirOnFailure(t *testing.T) {
+	before, err := filepath.Glob(filepath.Join(os.TempDir(), "retab-inspect-*"))
+	if err != nil {
+		t.Fatalf("glob temp dirs: %v", err)
+	}
+
+	// A .txt file is not a pdf/image, so this fails at the kind check; point
+	// --liteparse-bin at a nonexistent path too so the resolver would fail as
+	// well. Either way nothing may be left on disk.
+	dir := t.TempDir()
+	doc := filepath.Join(dir, "notes.txt")
+	if err := os.WriteFile(doc, []byte("hello\n"), 0o600); err != nil {
+		t.Fatalf("write fixture: %v", err)
+	}
+	c := &cobra.Command{}
+	c.Flags().String("render", "1", "")
+	c.Flags().String("out", "", "")
+	c.Flags().String("liteparse-bin", filepath.Join(dir, "definitely-not-here"), "")
+	_ = c.Flags().Set("render", "1")
+
+	// The command is expected to fail; we only care that it litters nothing.
+	_ = inspectRender(context.Background(), c, doc, kindPDF, "1")
+
+	after, err := filepath.Glob(filepath.Join(os.TempDir(), "retab-inspect-*"))
+	if err != nil {
+		t.Fatalf("glob temp dirs: %v", err)
+	}
+	if len(after) > len(before) {
+		t.Errorf("failed --render leaked %d temp dir(s): before=%d after=%d",
+			len(after)-len(before), len(before), len(after))
+	}
+}
+
+// Two mapping sources pointing at one target is a config error, but it must
+// not resolve differently on every invocation: Go randomizes map iteration and
+// under --execute this is the body POSTed to a live endpoint. Sorting the
+// sources makes the winner stable.
+func TestAPICallFieldMappingIsDeterministic(t *testing.T) {
+	seen := map[string]int{}
+	for i := 0; i < 200; i++ {
+		got := mapAndFilterLocalAPICallInput(
+			map[string]any{"a": "from_a", "b": "from_b", "x": "from_payload_x"},
+			nil,
+			map[string]string{"a": "x", "b": "x"},
+		)
+		value, _ := got["x"].(string)
+		seen[value]++
+	}
+	if len(seen) != 1 {
+		t.Fatalf("duplicate mapping targets resolved nondeterministically across runs: %v", seen)
+	}
+}
+
+// --filename must be honored on a path upload and must stay a bare basename.
+// The flag was previously read only on the stdin branch.
+func TestUploadFilenameOverride(t *testing.T) {
+	newCmd := func(value string, set bool) *cobra.Command {
+		c := &cobra.Command{}
+		c.Flags().String("filename", "", "")
+		if set {
+			_ = c.Flags().Set("filename", value)
+		}
+		return c
+	}
+	got, err := uploadFilenameOverride(newCmd("Q3 Invoice.pdf", true))
+	if err != nil {
+		t.Fatalf("valid override rejected: %v", err)
+	}
+	if got != "Q3 Invoice.pdf" {
+		t.Errorf("override = %q, want %q", got, "Q3 Invoice.pdf")
+	}
+	if got, err = uploadFilenameOverride(newCmd("", false)); err != nil || got != "" {
+		t.Errorf("unset --filename = (%q, %v), want empty and no error", got, err)
+	}
+	// Anything that is not a plain basename is rejected — "." and ".." matter
+	// because stageStdinUpload filepath.Joins this into a temp dir.
+	for _, bad := range []string{"../../etc/passwd", "a/b.pdf", `a\b.pdf`, "..", "."} {
+		if _, err := uploadFilenameOverride(newCmd(bad, true)); err == nil {
+			t.Errorf("--filename %q was accepted", bad)
 		}
 	}
-	// An unplaceable prefix must still fall back to production in the stored
-	// branch — the safe default for a key the CLI cannot classify.
-	if got := environmentFromKeyPrefix("weird_prefix_abc"); got != "" {
-		t.Errorf("environmentFromKeyPrefix(unknown) = %q, want empty", got)
+}
+
+// The content type must be derived from the name actually recorded, so the
+// stored filename and declared mime agree, and so the path branch matches the
+// stdin branch (where the staged file is already named after --filename).
+func TestUploadContentTypeFollowsEffectiveFilename(t *testing.T) {
+	pdf := []byte("%PDF-1.4\n")
+	if got := detectUploadContentType("report.txt", pdf); got != "text/plain; charset=utf-8" && got != "text/plain" {
+		t.Errorf("detectUploadContentType(report.txt) = %q, want a text/plain type", got)
+	}
+	if got := detectUploadContentType("report.pdf", pdf); got != "application/pdf" {
+		t.Errorf("detectUploadContentType(report.pdf) = %q, want application/pdf", got)
+	}
+	// A bare basename and a full path with the same extension must agree, so
+	// switching to the effective filename cannot change the no-override case.
+	if a, b := detectUploadContentType("x.pdf", pdf), detectUploadContentType("/tmp/deep/x.pdf", pdf); a != b {
+		t.Errorf("basename vs path disagree: %q vs %q", a, b)
+	}
+}
+
+// usage primitives' timestamp columns must canonicalize like every other
+// timestamp column in the CLI; normalizeTimestampCell must leave non-timestamps
+// untouched rather than mangling them.
+func TestUsagePrimitiveTimestampColumnsAreNormalized(t *testing.T) {
+	row := map[string]any{
+		"created_at":   "2026-07-16T11:04:36.389000Z",
+		"completed_at": "2026-07-16T11:05:01.120000Z",
+	}
+	for _, header := range []string{"CREATED_AT", "COMPLETED_AT"} {
+		var column *TableColumn
+		for i := range usagePrimitiveColumns {
+			if usagePrimitiveColumns[i].Header == header {
+				column = &usagePrimitiveColumns[i]
+			}
+		}
+		if column == nil {
+			t.Fatalf("usage primitives has no %s column", header)
+		}
+		got := column.Extract(row)
+		if strings.Contains(got, ".") {
+			t.Errorf("%s = %q, want a canonicalized second-precision timestamp", header, got)
+		}
+	}
+	for _, passthrough := range []string{"", "-", "not a time"} {
+		if got := normalizeTimestampCell(passthrough); got != passthrough {
+			t.Errorf("normalizeTimestampCell(%q) = %q, want it unchanged", passthrough, got)
+		}
 	}
 }

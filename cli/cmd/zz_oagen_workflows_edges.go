@@ -359,7 +359,6 @@ func init() {
 	workflowsEdgesListCmd.Flags().String("workflow-id", "", "workflow id (alternative to the positional form)")
 	workflowsEdgesListCmd.Flags().String("before", "", "edge id: return the page before this id (mutually exclusive with --after)")
 	workflowsEdgesListCmd.Flags().String("after", "", "edge id: return the page after this id (mutually exclusive with --before)")
-	workflowsEdgesListCmd.MarkFlagsMutuallyExclusive("before", "after")
 	workflowsEdgesListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 200}, "limit", "max items to return (1-200)")
 	workflowsEdgesListCmd.Flags().String("source-block", "", "filter by source block")
 	workflowsEdgesListCmd.Flags().String("target-block", "", "filter by target block")

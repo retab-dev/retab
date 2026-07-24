@@ -301,10 +301,24 @@ func uploadFilenameOverride(cmd *cobra.Command) (string, error) {
 	if filename == "" {
 		return "", nil
 	}
-	if strings.ContainsAny(filename, `/\`) {
-		return "", fmt.Errorf("--filename must be a bare filename, not a path: %q", raw)
+	if err := validateBareUploadFilename(filename); err != nil {
+		return "", err
 	}
 	return filename, nil
+}
+
+// validateBareUploadFilename rejects anything that is not a plain basename.
+// Separators are the obvious case; "." and ".." matter too because
+// stageStdinUpload filepath.Joins this value into a temp directory, where they
+// would resolve to the directory itself or escape it.
+func validateBareUploadFilename(filename string) error {
+	if strings.ContainsAny(filename, `/\`) {
+		return fmt.Errorf("--filename must be a bare filename, not a path: %q", filename)
+	}
+	if filename == "." || filename == ".." {
+		return fmt.Errorf("--filename must be a bare filename, not a path: %q", filename)
+	}
+	return nil
 }
 
 func uploadFile(ctx context.Context, client *retab.Client, uploadPath string, filenameOverride string) (*retab.MIMEData, string, error) {
@@ -316,7 +330,13 @@ func uploadFile(ctx context.Context, client *retab.Client, uploadPath string, fi
 	if filenameOverride != "" {
 		filename = filenameOverride
 	}
-	contentType := detectUploadContentType(uploadPath, data)
+	// Derive the content type from the name actually being recorded, not from
+	// the local path. The server re-applies extension->mime to the stored
+	// filename, so declaring application/pdf alongside a stored name of
+	// "report.txt" leaves the record self-contradictory. This also makes the
+	// path branch agree with the stdin branch, where the staged file is already
+	// named after --filename.
+	contentType := detectUploadContentType(filename, data)
 	sum := sha256.Sum256(data)
 	sha256Hash := hex.EncodeToString(sum[:])
 	prepared, err := client.Files.CreateUpload(ctx, &retab.FilesCreateUploadParams{
@@ -371,11 +391,12 @@ func stageStdinUpload(cmd *cobra.Command) (string, func(), error) {
 	if strings.TrimSpace(filename) == "" {
 		return "", func() {}, fmt.Errorf("--filename is required when uploading from stdin (-)")
 	}
-	// Disallow path separators in the filename — we use it as a basename
-	// for the staging file and we don't want a `..` or `/` to escape the
-	// temp dir or be passed to the server as a path.
-	if strings.ContainsAny(filename, `/\`) {
-		return "", func() {}, fmt.Errorf("--filename must be a bare filename, not a path: %q", filename)
+	// Disallow anything that is not a plain basename — we filepath.Join this
+	// into the staging dir, so a separator or a `..`/`.` would escape it or
+	// resolve to the directory itself, and it must not reach the server as a
+	// path either. Shared with the path-upload branch so both agree.
+	if err := validateBareUploadFilename(filename); err != nil {
+		return "", func() {}, err
 	}
 	body, err := io.ReadAll(cmd.InOrStdin())
 	if err != nil {

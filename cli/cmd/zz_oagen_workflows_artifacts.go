@@ -100,7 +100,6 @@ var workflowsArtifactsListCmd = &cobra.Command{
 func init() {
 	workflowsArtifactsListCmd.Flags().String("before", "", "step id: return the page before this step (mutually exclusive with --after)")
 	workflowsArtifactsListCmd.Flags().String("after", "", "step id: return the page after this step (mutually exclusive with --before)")
-	workflowsArtifactsListCmd.MarkFlagsMutuallyExclusive("before", "after")
 	workflowsArtifactsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 200}, "limit", "max items to return (1-200)")
 	workflowsArtifactsListCmd.Flags().String("operation", "", "filter by operation")
 	workflowsArtifactsListCmd.Flags().String("block-id", "", "filter by block id")

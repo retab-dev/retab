@@ -934,7 +934,13 @@ func writeAuthStatusCSV(w io.Writer, out map[string]any) error {
 		return err
 	}
 	for _, r := range authStatusRows(out) {
-		if err := cw.Write([]string{r[0], r[1]}); err != nil {
+		// Sanitize like writeCSV does for every other metadata listing: the
+		// values include server-supplied ORGANIZATION / ENVIRONMENT / ERROR /
+		// HINT text, so a leading =/+/-/@ would otherwise be handed to a
+		// spreadsheet to execute on open. This is a status dump, not a
+		// re-importable data export, so there is no round-trip contract to
+		// preserve (unlike `tables query --output csv`).
+		if err := cw.Write([]string{sanitizeCSVCell(r[0]), sanitizeCSVCell(r[1])}); err != nil {
 			return err
 		}
 	}

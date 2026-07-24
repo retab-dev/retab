@@ -102,15 +102,17 @@ var extMIME = map[string]string{
 	".rst": "text/x-rst",
 }
 
+// mimeForExt maps a file extension to the content type reported by
+// `files parse --format json`, `files grep`, and the parse cache. The table
+// above is deliberately the only source: deferring to mime.TypeByExtension
+// would make the output host-dependent, since Go consults the Windows registry
+// there (.zip becomes application/x-zip-compressed on some machines and
+// application/zip on others) and these values land in a cache that is compared
+// across runs. Every extension loadParse accepts has an entry, so the fallback
+// is only reached for a kind that would already have been rejected as an
+// unsupported file type.
 func mimeForExt(ext string) string {
-	ext = strings.ToLower(ext)
-	if m, ok := extMIME[ext]; ok {
-		return m
-	}
-	// Fall back to the shared extension table (which consults Go's mime
-	// package) before giving up, so an extension this map hasn't enumerated
-	// still gets a real content type where one is known.
-	if m := mimeTypeFromExtension("x" + ext); m != "" {
+	if m, ok := extMIME[strings.ToLower(ext)]; ok {
 		return m
 	}
 	return "application/octet-stream"

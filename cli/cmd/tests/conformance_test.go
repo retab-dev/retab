@@ -206,24 +206,30 @@ func TestListCommandsForwardFileDateFilters(t *testing.T) {
 // mutual exclusion — either via cobra's flag-group mechanism or a RunE check.
 // Regression: `workflows experiments list` had neither, silently sending both.
 func TestListCommandsEnforceBeforeAfterExclusivity(t *testing.T) {
+	// Discover by FLAG, not by command name. Selecting only commands named
+	// "list" left five flag-carrying commands unchecked — `usage runs`,
+	// `usage blocks`, `usage primitives`, `workflows blocks history` and
+	// `workflows blocks runs` — which mattered once cobra's flag-group backstop
+	// was removed in favour of the uniform RunE message.
 	var lists []*cobra.Command
-	for _, c := range commandsNamed("list") {
-		if hasFlag(c, "before") && hasFlag(c, "after") {
+	walk(cmd.RootCommand(), func(c *cobra.Command) {
+		if c.RunE != nil && hasFlag(c, "before") && hasFlag(c, "after") {
 			lists = append(lists, c)
 		}
-	}
+	})
 	if len(lists) == 0 {
 		t.Fatal("discovered no before/after list commands; discovery is broken")
 	}
 
 	for _, c := range lists {
 		t.Run(c.CommandPath(), func(t *testing.T) {
-			// Cobra enforces the pair during arg parsing, which RunE bypasses,
-			// so for those commands assert the declaration rather than running.
+			// Cobra's flag-group mechanism must NOT be used: its
+			// validateFlagGroups stage runs before RunE and emits a noisy
+			// message that shadows the concise one every other command prints.
 			if hasCobraMutex(c, "before") {
-				return
+				t.Fatalf("%s declares before/after via cobra's flag group; that shadows the concise RunE message", c.CommandPath())
 			}
-			// Otherwise the command must reject the collision itself at RunE.
+			// The command must reject the collision itself at RunE.
 			// Pass the scope positionally (a dummy workflow id) rather than via
 			// --workflow-id: scoped lists accept either form, and supplying both
 			// would trip their "specified twice" guard before the mutex check.

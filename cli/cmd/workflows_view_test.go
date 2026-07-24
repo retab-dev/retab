@@ -3,6 +3,7 @@ package cmd
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -692,18 +693,25 @@ func TestRenderWorkflowASCIIViewHandlesNonASCIIEdgeHandles(t *testing.T) {
 		}
 	})
 
-	t.Run("full render survives a non-ASCII handle", func(t *testing.T) {
-		workflow := &workflowGraph{
-			Workflow: retab.Workflow{ID: "wf_unicode", Name: "Unicode handles"},
-			Blocks: []retab.WorkflowBlock{
-				{ID: "start", Type: "start_document", Label: ptr("Document"), PositionX: ptr(float64(0)), PositionY: ptr(float64(0))},
-				{ID: "split", Type: "split", Label: ptr("Split"), PositionX: ptr(float64(300)), PositionY: ptr(float64(0))},
-			},
-			Edges: []retab.WorkflowEdgeDoc{
-				{ID: "e1", SourceBlock: "start", TargetBlock: "split", TargetHandle: ptr("output-file-請求書処理請求書処理請求書処理")},
-			},
-		}
-		// Must not panic.
-		renderWorkflowASCIIViewString(t, workflow)
-	})
+	// The blocks must sit CLOSE together. With a wide gap the label fits the
+	// inline drawEdgeLabel slot and drawFloatingEdgeLabel — the function that
+	// actually panicked — is never reached, which makes the test vacuous. Each
+	// of these spacings routes through the floating path and panics against the
+	// pre-fix renderer.
+	for _, positionX := range []float64{40, 80, 120, 160} {
+		t.Run(fmt.Sprintf("full render survives a non-ASCII handle at x=%.0f", positionX), func(t *testing.T) {
+			workflow := &workflowGraph{
+				Workflow: retab.Workflow{ID: "wf_unicode", Name: "Unicode handles"},
+				Blocks: []retab.WorkflowBlock{
+					{ID: "start", Type: "start_document", Label: ptr("Document"), PositionX: ptr(float64(0)), PositionY: ptr(float64(0))},
+					{ID: "split", Type: "split", Label: ptr("Split"), PositionX: ptr(positionX), PositionY: ptr(float64(0))},
+				},
+				Edges: []retab.WorkflowEdgeDoc{
+					{ID: "e1", SourceBlock: "start", TargetBlock: "split", TargetHandle: ptr("output-file-請求書処理請求書処理請求書処理")},
+				},
+			}
+			// Must not panic.
+			renderWorkflowASCIIViewString(t, workflow)
+		})
+	}
 }

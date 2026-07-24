@@ -605,9 +605,19 @@ func compileLocalAPICallRequest(config map[string]any, env map[string]string, pa
 func mapAndFilterLocalAPICallInput(payload map[string]any, requestSchema map[string]any, fieldMappings map[string]string) map[string]any {
 	mapped := map[string]any{}
 	if len(fieldMappings) > 0 {
-		for source, target := range fieldMappings {
+		// Walk the mappings in sorted source order. Two sources pointing at one
+		// target is a config error, but it must not resolve differently on every
+		// invocation: Go randomizes map iteration, and under --execute this is
+		// the body actually POSTed to a live endpoint. Sorting makes the winner
+		// (the last source alphabetically) stable across runs.
+		sources := make([]string, 0, len(fieldMappings))
+		for source := range fieldMappings {
+			sources = append(sources, source)
+		}
+		sort.Strings(sources)
+		for _, source := range sources {
 			if value, ok := payload[source]; ok {
-				mapped[target] = value
+				mapped[fieldMappings[source]] = value
 			}
 		}
 		for key, value := range payload {
