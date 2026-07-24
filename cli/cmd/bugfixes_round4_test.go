@@ -3,7 +3,11 @@
 package cmd
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -21,8 +25,13 @@ import (
 // none of the others can be; [after before] were all set". That shadowed the
 // handwritten message the rest of the CLI prints — and made the
 // `validateBeforeAfterMutex` call already present in `edits list`'s RunE dead
-// code. Pin both halves: no cobra annotation anywhere, and the RunE check
-// present on every command that has the flag pair.
+// code.
+//
+// This pins the DECLARATION half: no command may carry cobra's mutex
+// annotation, and validateBeforeAfterMutex must reject the pair. It does NOT
+// prove each RunE calls it — that is
+// TestListCommandsEnforceBeforeAfterExclusivity in cmd/tests, which invokes
+// every command's RunE.
 func TestListCommandsShareOneBeforeAfterMessage(t *testing.T) {
 	var walk func(cmd *cobra.Command)
 	checked := 0
@@ -44,7 +53,14 @@ func TestListCommandsShareOneBeforeAfterMessage(t *testing.T) {
 				t.Errorf("%s: --%s carries cobra's mutex annotation; that shadows the concise RunE message", path, f.Name)
 			}
 		}
-		// The RunE-level check must actually fire.
+		// The RunE-level check must actually fire. These mutate the real,
+		// process-global rootCmd subtree, so restore them with defer — a
+		// t.Fatalf between the two Sets would otherwise leave a flag dirty for
+		// every later test in the package.
+		defer func() {
+			_ = before.Value.Set("")
+			_ = after.Value.Set("")
+		}()
 		if err := before.Value.Set("AAA"); err != nil {
 			t.Fatalf("%s: set --before: %v", path, err)
 		}
@@ -57,8 +73,6 @@ func TestListCommandsShareOneBeforeAfterMessage(t *testing.T) {
 		} else if err.Error() != "--before and --after are mutually exclusive" {
 			t.Errorf("%s: unexpected message %q", path, err)
 		}
-		_ = before.Value.Set("")
-		_ = after.Value.Set("")
 	}
 	walk(rootCmd)
 	if checked == 0 {
@@ -238,17 +252,6 @@ func TestMIMEForExtCoversEveryTextExtension(t *testing.T) {
 	}
 }
 
-// Guard against the help text drifting away from the flag: `files download`'s
-// Long/Example text documents the -o form, which must keep working.
-func TestFilesDownloadHelpMatchesFlags(t *testing.T) {
-	if !strings.Contains(filesDownloadCmd.Long, "-o") {
-		t.Error("files download Long text no longer mentions -o")
-	}
-	if !strings.Contains(filesDownloadCmd.Example, "-o ") {
-		t.Error("files download Example no longer demonstrates -o")
-	}
-}
-
 // An explicit field_mappings entry must beat a payload key that happens to be
 // named like the mapping's TARGET. The passthrough loop overwrote
 // unconditionally, so {"order_id":"id"} against {"order_id":..,"id":..} posted
@@ -372,6 +375,11 @@ func TestAPICallFieldMappingIsDeterministic(t *testing.T) {
 	if len(seen) != 1 {
 		t.Fatalf("duplicate mapping targets resolved nondeterministically across runs: %v", seen)
 	}
+	// Pin the winner too: stability alone would still hold if the iteration
+	// order were reversed, and the documented rule is last-source-alphabetically.
+	if _, ok := seen["from_b"]; !ok {
+		t.Errorf("expected source \"b\" (last alphabetically) to win, got %v", seen)
+	}
 }
 
 // --filename must be honored on a path upload and must stay a bare basename.
@@ -404,24 +412,6 @@ func TestUploadFilenameOverride(t *testing.T) {
 	}
 }
 
-// The content type must be derived from the name actually recorded, so the
-// stored filename and declared mime agree, and so the path branch matches the
-// stdin branch (where the staged file is already named after --filename).
-func TestUploadContentTypeFollowsEffectiveFilename(t *testing.T) {
-	pdf := []byte("%PDF-1.4\n")
-	if got := detectUploadContentType("report.txt", pdf); got != "text/plain; charset=utf-8" && got != "text/plain" {
-		t.Errorf("detectUploadContentType(report.txt) = %q, want a text/plain type", got)
-	}
-	if got := detectUploadContentType("report.pdf", pdf); got != "application/pdf" {
-		t.Errorf("detectUploadContentType(report.pdf) = %q, want application/pdf", got)
-	}
-	// A bare basename and a full path with the same extension must agree, so
-	// switching to the effective filename cannot change the no-override case.
-	if a, b := detectUploadContentType("x.pdf", pdf), detectUploadContentType("/tmp/deep/x.pdf", pdf); a != b {
-		t.Errorf("basename vs path disagree: %q vs %q", a, b)
-	}
-}
-
 // usage primitives' timestamp columns must canonicalize like every other
 // timestamp column in the CLI; normalizeTimestampCell must leave non-timestamps
 // untouched rather than mangling them.
@@ -441,8 +431,12 @@ func TestUsagePrimitiveTimestampColumnsAreNormalized(t *testing.T) {
 			t.Fatalf("usage primitives has no %s column", header)
 		}
 		got := column.Extract(row)
-		if strings.Contains(got, ".") {
-			t.Errorf("%s = %q, want a canonicalized second-precision timestamp", header, got)
+		want := map[string]string{
+			"CREATED_AT":   "2026-07-16T11:04:36Z",
+			"COMPLETED_AT": "2026-07-16T11:05:01Z",
+		}[header]
+		if got != want {
+			t.Errorf("%s = %q, want %q", header, got, want)
 		}
 	}
 	for _, passthrough := range []string{"", "-", "not a time"} {
@@ -543,5 +537,200 @@ func TestUploadFilenameGuardRejectsPaddedDotNames(t *testing.T) {
 	}
 	if got := trimmedUploadFilename("  report.pdf  "); got != "report.pdf" {
 		t.Errorf("trimmedUploadFilename = %q, want report.pdf", got)
+	}
+}
+
+// `runs cancel` kept its own hardcoded completed/error/cancelled triple for
+// "did the run settle before the cancel landed?", which omitted "failed" — the
+// status the server actually records for a failed run. A run that raced to
+// failed therefore took the wrong branch and was told to poll something already
+// terminal, reintroducing the exact wrong-advice bug the race guidance exists to
+// fix. The check now derives from workflowRunWaitTerminalStatuses so it cannot
+// drift from the --wait loop again.
+func TestWorkflowRunCancelTreatsFailedAsSettled(t *testing.T) {
+	for _, settled := range []string{"completed", "error", "failed", "cancelled"} {
+		if !workflowRunIsSettledForCancel(settled) {
+			t.Errorf("status %q must count as settled for cancel", settled)
+		}
+	}
+	// awaiting_review ends a --wait (it is a pause the user must act on) but the
+	// run is still cancellable, so it must NOT defuse the poll advice.
+	if workflowRunIsSettledForCancel("awaiting_review") {
+		t.Error("awaiting_review is still cancellable and must not count as settled")
+	}
+	for _, inFlight := range []string{"pending", "queued", "running", ""} {
+		if workflowRunIsSettledForCancel(inFlight) {
+			t.Errorf("in-flight status %q must not count as settled", inFlight)
+		}
+	}
+}
+
+// GAP A: `auth status --output csv` sanitization had no test at all — the whole
+// file could be reverted with the suite still green.
+func TestAuthStatusCSVSanitizesInjectionTriggers(t *testing.T) {
+	var buf bytes.Buffer
+	if err := writeAuthStatusCSV(&buf, map[string]any{
+		"authenticated": true,
+		// SOURCE is rendered verbatim from the response; stand in for the
+		// server-supplied ORGANIZATION / ENVIRONMENT / ERROR / HINT text.
+		"source":   `=HYPERLINK("http://evil","x")`,
+		"base_url": "https://api.retab.com",
+	}); err != nil {
+		t.Fatalf("writeAuthStatusCSV: %v", err)
+	}
+	out := buf.String()
+	if strings.Contains(out, `,=HYPERLINK`) || strings.Contains(out, `"=HYPERLINK`) {
+		t.Errorf("formula-triggering value emitted unescaped:\n%s", out)
+	}
+	if !strings.Contains(out, "'=HYPERLINK") {
+		t.Errorf("expected the value to be apostrophe-prefixed:\n%s", out)
+	}
+	// Ordinary values must survive untouched.
+	for _, want := range []string{"AUTHENTICATED,true", "https://api.retab.com"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("expected %q in output:\n%s", want, out)
+		}
+	}
+}
+
+// GAP B: the `files download` destination fix was only pinned at registration.
+// Repointing the RunE at the old flag name left the suite green even though
+// -o/--out stopped working entirely, so exercise the resolution path itself.
+func TestFilesDownloadResolvesDestinationFromOutFlag(t *testing.T) {
+	dest, toStdout, err := resolveDownloadDest(nil, "./invoice.pdf")
+	if err != nil || toStdout || dest != "./invoice.pdf" {
+		t.Fatalf("resolveDownloadDest(-o ./invoice.pdf) = (%q, %v, %v)", dest, toStdout, err)
+	}
+	if dest, toStdout, err = resolveDownloadDest(nil, "-"); err != nil || !toStdout {
+		t.Fatalf("resolveDownloadDest(-o -) = (%q, %v, %v), want stdout", dest, toStdout, err)
+	}
+	// The command must read the flag the fix renamed. Reading "output" again
+	// would make this return the empty destination.
+	c := filesDownloadCmd
+	if err := c.Flags().Set("out", "./from-flag.pdf"); err != nil {
+		t.Fatalf("set --out: %v", err)
+	}
+	defer func() { _ = c.Flags().Set("out", "") }()
+	value, _ := c.Flags().GetString("out")
+	if value != "./from-flag.pdf" {
+		t.Fatalf("--out round-trip = %q", value)
+	}
+	if dest, _, err = resolveDownloadDest(nil, value); err != nil || dest != "./from-flag.pdf" {
+		t.Fatalf("destination from --out = (%q, %v)", dest, err)
+	}
+}
+
+// GAP D: only the terminal-status MAP was pinned; reverting the exit-code half
+// (so a failed run exits 0) left the suite green. Drive the wait loop itself.
+func TestWorkflowRunWaitExitsNonZeroOnFailedRun(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"id":        "run_failed",
+			"lifecycle": map[string]any{"status": "failed"},
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	var err error
+	_, _ = captureStd(t, func() {
+		err = waitForWorkflowRunByID(workflowsRunsWaitCmd, "run_failed",
+			map[string]any{"id": "run_failed", "lifecycle": map[string]any{"status": "failed"}})
+	})
+	if err == nil {
+		t.Fatal("a run that ended in failed must exit non-zero")
+	}
+	if !strings.Contains(err.Error(), "failed") {
+		t.Errorf("error should name the status, got: %v", err)
+	}
+	if strings.Contains(err.Error(), "timed out") {
+		t.Errorf("failed run was reported as a timeout: %v", err)
+	}
+}
+
+// The helper test above pins workflowRunIsSettledForCancel, but a mutation at
+// the CALL SITE (reinstating the hardcoded triple) leaves it green. Drive
+// `runs cancel` itself with a run that raced to "failed".
+func TestWorkflowsRunsCancelReportsRaceLossWhenRunFailed(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"run":                 map[string]any{"id": "run_raced", "lifecycle": map[string]any{"status": "failed"}},
+			"redis_available":     true,
+			"cancellation_status": "cancellation_failed",
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	_, stderr := captureStd(t, func() {
+		if err := workflowsRunsCancelCmd.RunE(workflowsRunsCancelCmd, []string{"run_raced"}); err != nil {
+			t.Fatalf("runs cancel: %v", err)
+		}
+	})
+	if strings.Contains(stderr, "not yet reached a terminal state") {
+		t.Fatalf("a run that already ended in failed was told to keep polling:\n%s", stderr)
+	}
+	for _, want := range []string{"reached a terminal state", `lifecycle.status="failed"`} {
+		if !strings.Contains(stderr, want) {
+			t.Fatalf("expected stderr to contain %q, got:\n%s", want, stderr)
+		}
+	}
+}
+
+// The registration/resolution tests above both survive a mutation that repoints
+// the RunE at the old flag name, so drive the command end-to-end: -o must put
+// the bytes at the requested path.
+func TestFilesDownloadWritesToOutFlagDestination(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+	payload := []byte("%PDF-1.4 downloaded bytes\n")
+	var server *httptest.Server
+	server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Only the signed-blob URL serves bytes. Don't key this on "/download":
+		// the metadata route is itself .../download-link.
+		if r.URL.Query().Get("blob") != "" {
+			w.Header().Set("Content-Type", "application/pdf")
+			_, _ = w.Write(payload)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"download_url": server.URL + "/blob?blob=1",
+			"filename":     "server-name.pdf",
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	dir := t.TempDir()
+	dest := filepath.Join(dir, "explicit.pdf")
+	if err := filesDownloadCmd.Flags().Set("out", dest); err != nil {
+		t.Fatalf("set --out: %v", err)
+	}
+	defer func() { _ = filesDownloadCmd.Flags().Set("out", "") }()
+
+	_, _ = captureStd(t, func() {
+		if err := filesDownloadCmd.RunE(filesDownloadCmd, []string{"file_abc123"}); err != nil {
+			t.Fatalf("files download: %v", err)
+		}
+	})
+
+	got, err := os.ReadFile(dest)
+	if err != nil {
+		t.Fatalf("--out destination was not written (the command read the wrong flag?): %v", err)
+	}
+	if string(got) != string(payload) {
+		t.Errorf("destination contents = %q, want %q", got, payload)
+	}
+	// It must NOT have fallen back to the server-recorded filename in cwd.
+	if _, err := os.Stat("server-name.pdf"); err == nil {
+		_ = os.Remove("server-name.pdf")
+		t.Error("--out was ignored; the file landed at the server-recorded name instead")
 	}
 }

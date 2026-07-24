@@ -1397,10 +1397,7 @@ make the cancel idempotent if you may retry the request.`,
 		// lifecycle status, not on cancellation_status alone.
 		if result != nil && result.CancellationStatus != nil && *result.CancellationStatus != retab.CancelWorkflowResponseCancellationStatusCancelled {
 			runStatus := result.Run.Lifecycle.Status()
-			// Only completed/error/cancelled are settled here. awaiting_review
-			// is a pause that is still cancellable, so it does not defuse the
-			// "poll until terminal" advice.
-			if runStatus == "completed" || runStatus == "error" || runStatus == "cancelled" {
+			if workflowRunIsSettledForCancel(runStatus) {
 				fmt.Fprintf(
 					os.Stderr,
 					"note: cancellation_status=%q — the run reached a terminal state (lifecycle.status=%q) before the cancel took effect, so it was not cancelled.\n",
@@ -1410,7 +1407,7 @@ make the cancel idempotent if you may retry the request.`,
 			} else {
 				fmt.Fprintf(
 					os.Stderr,
-					"note: cancellation_status=%q — the cancel request was accepted but the run has not yet reached a terminal state. Poll `retab workflows runs get %s` until lifecycle.status is one of cancelled / completed / error.\n",
+					"note: cancellation_status=%q — the cancel request was accepted but the run has not yet reached a terminal state. Poll `retab workflows runs get %s` until lifecycle.status is one of cancelled / completed / error / failed.\n",
 					string(*result.CancellationStatus),
 					args[0],
 				)
@@ -1418,6 +1415,25 @@ make the cancel idempotent if you may retry the request.`,
 		}
 		return printResult(cmd, result)
 	}),
+}
+
+
+// workflowRunIsSettledForCancel reports whether a run's lifecycle status means
+// the cancel can no longer take effect, so `runs cancel` can say the run
+// finished on its own rather than telling the user to poll something that is
+// already terminal.
+//
+// It derives from workflowRunWaitTerminalStatuses so this check and the --wait
+// loop cannot drift: the hardcoded completed/error/cancelled triple here was
+// missing "failed", the status the server actually records for a failed run,
+// which reintroduced the wrong-advice bug for exactly the race this note
+// exists to describe. awaiting_review is terminal for the wait loop (it is a
+// pause the user must act on) but is still cancellable, so it is excluded.
+func workflowRunIsSettledForCancel(status string) bool {
+	if status == "awaiting_review" {
+		return false
+	}
+	return workflowRunWaitTerminalStatuses[status]
 }
 
 var workflowsRunsRestartCmd = &cobra.Command{
