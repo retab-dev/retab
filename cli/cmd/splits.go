@@ -184,6 +184,9 @@ Page by split id with ` + "`--before`" + ` / ` + "`--after`" + `, cap page size 
   # Walk pages from a known id
   retab splits list --after split_xyz789 --limit 50`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		if err := validateBeforeAfterMutex(cmd); err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err

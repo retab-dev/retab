@@ -384,7 +384,7 @@ truncates an existing file or leaves a half-written one behind.`,
   retab files download file_abc123 -o - | pdftotext - -`,
 	Args: cobra.RangeArgs(1, 2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		oFlag, _ := cmd.Flags().GetString("output")
+		oFlag, _ := cmd.Flags().GetString("out")
 		dest, toStdout, err := resolveDownloadDest(args, oFlag)
 		if err != nil {
 			return err
@@ -514,7 +514,7 @@ func shapeCreateUploadResponse(result *retab.CreateUploadResponse) (uploadRespon
 }
 
 func init() {
-	filesDownloadCmd.Flags().StringP("output", "o", "", "output path, - for stdout (alternative to the [dest] positional; default: server filename)")
+	filesDownloadCmd.Flags().StringP("out", "o", "", "output path, - for stdout (alternative to the [dest] positional; default: server filename)")
 
 	filesUploadCmd.Flags().String("filename", "", "filename to record on the server (required when reading from stdin)")
 

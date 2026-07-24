@@ -125,6 +125,9 @@ one. The two are mutually exclusive.`,
     --after $(retab workflows artifacts list run_xyz789 --limit 50 --output json | jq -r '.list_metadata.after')`,
 	Args: cobra.RangeArgs(1, 2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		if err := validateBeforeAfterMutex(cmd); err != nil {
+			return err
+		}
 		runID, err := scopedResourceID(args, "run id")
 		if err != nil {
 			return err
@@ -161,7 +164,6 @@ func init() {
 	workflowsArtifactsListCmd.Flags().String("block-id", "", "filter by block id")
 	workflowsArtifactsListCmd.Flags().String("before", "", "step id: return the page before this step (mutually exclusive with --after)")
 	workflowsArtifactsListCmd.Flags().String("after", "", "step id: return the page after this step (mutually exclusive with --before)")
-	workflowsArtifactsListCmd.MarkFlagsMutuallyExclusive("before", "after")
 	workflowsArtifactsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 200}, "limit", "max items to return (1-200)")
 
 	workflowsArtifactsCmd.AddCommand(workflowsArtifactsGetCmd, workflowsArtifactsListCmd)

@@ -110,6 +110,9 @@ block execution history should be returned.`,
   retab workflows blocks executions list run_xyz789 --block-id block_extract_1 --limit 10`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		if err := validateBeforeAfterMutex(cmd); err != nil {
+			return err
+		}
 		runID := strings.TrimSpace(args[0])
 		if runID == "" {
 			return fmt.Errorf("expected the run id")
@@ -183,7 +186,6 @@ func init() {
 	// is stuck on the first page. Mirror the sibling list commands.
 	workflowsBlocksExecutionsListCmd.Flags().String("before", "", "execution id: return the page before this id (mutually exclusive with --after)")
 	workflowsBlocksExecutionsListCmd.Flags().String("after", "", "execution id: return the page after this id (mutually exclusive with --before)")
-	workflowsBlocksExecutionsListCmd.MarkFlagsMutuallyExclusive("before", "after")
 	workflowsBlocksExecutionsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items to return (1-100)")
 	_ = workflowsBlocksExecutionsListCmd.MarkFlagRequired("block-id")
 

@@ -186,6 +186,9 @@ Paginate by passing the cursor from a previous response's
   retab workflows blocks list wf_abc123 | jq -r '.data[].id'`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		if err := validateBeforeAfterMutex(cmd); err != nil {
+			return err
+		}
 		// Workflow id positionally OR via --workflow-id (co-equal forms);
 		// required here — blocks have no org-wide listing.
 		workflowID, err := resolveWorkflowScope(cmd, args, true)
@@ -753,7 +756,6 @@ func init() {
 	workflowsBlocksListCmd.Flags().String("workflow-id", "", "workflow id (alternative to the positional form)")
 	workflowsBlocksListCmd.Flags().String("before", "", "block id: return the page before this id (mutually exclusive with --after)")
 	workflowsBlocksListCmd.Flags().String("after", "", "block id: return the page after this id (mutually exclusive with --before)")
-	workflowsBlocksListCmd.MarkFlagsMutuallyExclusive("before", "after")
 	workflowsBlocksListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 200}, "limit", "max items to return (1-200)")
 
 	// `--workflow-id` is an optional disambiguator for legacy duplicate

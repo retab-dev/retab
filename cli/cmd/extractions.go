@@ -219,6 +219,9 @@ to walk backwards. Filter by arbitrary tags set at create time with
   # Page from a known extraction id
   retab extractions list --after extr_xyz789 --limit 50`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		if err := validateBeforeAfterMutex(cmd); err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err

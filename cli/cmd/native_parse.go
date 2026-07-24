@@ -87,11 +87,30 @@ var extMIME = map[string]string{
 	".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 	".xlsm": "application/vnd.ms-excel.sheet.macroEnabled.12",
 	".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-	".txt":  "text/plain", ".md": "text/markdown", ".json": "application/json",
+	// Every extension in textExtensions needs an entry here. Only .txt/.md/.json
+	// used to be listed, so the other twelve text kinds this parser happily
+	// reads reported "application/octet-stream" as their mime_type in
+	// `files parse --format json`, `files grep`, and the parse cache — a binary
+	// content type for content the CLI just decoded as text.
+	".txt": "text/plain", ".text": "text/plain", ".log": "text/plain",
+	".ini": "text/plain",
+	".md":  "text/markdown", ".markdown": "text/markdown",
+	".json": "application/json", ".jsonl": "application/x-ndjson",
+	".yaml": "application/yaml", ".yml": "application/yaml",
+	".xml": "application/xml", ".toml": "application/toml",
+	".html": "text/html", ".htm": "text/html",
+	".rst": "text/x-rst",
 }
 
 func mimeForExt(ext string) string {
-	if m, ok := extMIME[strings.ToLower(ext)]; ok {
+	ext = strings.ToLower(ext)
+	if m, ok := extMIME[ext]; ok {
+		return m
+	}
+	// Fall back to the shared extension table (which consults Go's mime
+	// package) before giving up, so an extension this map hasn't enumerated
+	// still gets a real content type where one is known.
+	if m := mimeTypeFromExtension("x" + ext); m != "" {
 		return m
 	}
 	return "application/octet-stream"

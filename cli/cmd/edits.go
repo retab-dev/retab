@@ -396,6 +396,9 @@ Filter by name substring with ` + "`--name`" + `. Page by template id with
   # Find a template by name fragment
   retab edits templates list --name invoice`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		if err := validateBeforeAfterMutex(cmd); err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err

@@ -1428,18 +1428,18 @@ func splitKV(raw string) (string, string, bool) {
 // most list commands. baseOnly skips filename/from-date/to-date (which only
 // apply to file-shaped resources).
 //
-// `--before` and `--after` are declared mutually exclusive at the cobra
-// level — cobra.Execute() will reject any invocation that passes both
-// before the RunE body fires. Commands invoked directly from tests via
-// `cmd.RunE(...)` bypass that validation; those code paths must also
-// run an explicit `validateBeforeAfterMutex` check, otherwise the two
-// flags silently end up in the outbound query string together (and the
-// server's planner uses whichever the SDK serialized last, dropping the
-// other).
+// `--before` and `--after` are mutually exclusive, but the pair is deliberately
+// NOT registered with cobra's `MarkFlagsMutuallyExclusive`. Cobra's
+// validateFlagGroups stage runs before RunE and emits "if any flags in the
+// group [before after] are set none of the others can be; [after before] were
+// all set", which shadowed the concise message the rest of the CLI prints. Each
+// list command enforces the constraint from its RunE via
+// `validateBeforeAfterMutex` instead, so every list command reports the same
+// `--before and --after are mutually exclusive` string. Commands invoked
+// directly from tests via `cmd.RunE(...)` go through the same check.
 func addListFlags(cmd *cobra.Command, baseOnly bool) {
 	cmd.Flags().String("before", "", "item id: return items before this id (mutually exclusive with --after)")
 	cmd.Flags().String("after", "", "item id: return items after this id (mutually exclusive with --before)")
-	cmd.MarkFlagsMutuallyExclusive("before", "after")
 	cmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items to return (1-100)")
 	cmd.Flags().Var(&orderFlagValue{}, "order", "asc | desc")
 	if !baseOnly {
@@ -1639,20 +1639,23 @@ func (v *dateFlagValue) Set(raw string) error {
 // — indistinguishable from "no runs match the filter", which is a common
 // source of confusion when triaging "where did my runs go?".
 //
-// Both args are YYYY-MM-DD strings already validated by dateFlagValue.Set
-// (or equivalent), so this function trusts the format. Empty strings mean
-// the user didn't pass that side of the range — the function returns nil
-// in that case so the existing partial-range semantics keep working.
+// Both args have already been validated by the flag's Set method — either
+// dateFlagValue (YYYY-MM-DD only) or rfc3339FlagValue, which deliberately also
+// accepts a full RFC3339 timestamp. Parsing only "2006-01-02" here therefore
+// silently skipped the check for every RFC3339 bound (and every mixed pair),
+// which is exactly the swapped-values typo the guard exists to catch. Empty
+// strings mean the user didn't pass that side of the range — the function
+// returns nil in that case so the existing partial-range semantics keep
+// working. A bound that parses under no known layout is still deferred to the
+// server: this validator is not the right place to surface a format error a
+// second time.
 func validateDateRange(fromDateFlag, toDateFlag, fromVal, toVal string) error {
 	if fromVal == "" || toVal == "" {
 		return nil
 	}
-	from, fromErr := time.Parse("2006-01-02", fromVal)
-	to, toErr := time.Parse("2006-01-02", toVal)
-	if fromErr != nil || toErr != nil {
-		// Shouldn't happen — dateFlagValue.Set rejects bad input. If it
-		// does, defer to the server: this validator is not the right
-		// place to surface a format error a second time.
+	from, fromOK := parseListDateBound(fromVal, false)
+	to, toOK := parseListDateBound(toVal, true)
+	if !fromOK || !toOK {
 		return nil
 	}
 	if from.After(to) {
@@ -1662,6 +1665,28 @@ func validateDateRange(fromDateFlag, toDateFlag, fromVal, toVal string) error {
 		)
 	}
 	return nil
+}
+
+// parseListDateBound parses one end of a list date range using the same layouts
+// rfc3339FlagValue accepts, and pins a bare YYYY-MM-DD to the start or end of
+// that UTC day exactly as the backend's parseISO does (StartOfDayUTC for the
+// lower bound, EndOfDayUTC for the upper). Anchoring the upper bound at
+// end-of-day is what keeps a legitimate mixed pair such as
+// `--from-date 2026-06-01T12:00:00Z --to-date 2026-06-01` from being reported
+// as reversed. Returns ok=false when no layout matches.
+func parseListDateBound(value string, endOfDay bool) (time.Time, bool) {
+	if parsed, err := time.Parse("2006-01-02", value); err == nil {
+		if endOfDay {
+			return parsed.Add(24*time.Hour - time.Nanosecond), true
+		}
+		return parsed, true
+	}
+	for _, layout := range []string{time.RFC3339, "2006-01-02T15:04:05"} {
+		if parsed, err := time.Parse(layout, value); err == nil {
+			return parsed, true
+		}
+	}
+	return time.Time{}, false
 }
 
 // validateOrderFlag and validateDateFlag let plain `String` flags reuse

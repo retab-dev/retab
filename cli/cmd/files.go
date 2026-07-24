@@ -89,6 +89,9 @@ need.`,
   # Extract ids only, one per line
   retab files list | jq -r '.data[].id'`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		if err := validateBeforeAfterMutex(cmd); err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
@@ -624,7 +627,7 @@ truncates an existing file or leaves a half-written one behind.`,
   retab files download file_abc123 -o - | pdftotext - -`,
 	Args: cobra.RangeArgs(1, 2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		oFlag, _ := cmd.Flags().GetString("output")
+		oFlag, _ := cmd.Flags().GetString("out")
 		dest, toStdout, err := resolveDownloadDest(args, oFlag)
 		if err != nil {
 			return err
@@ -870,7 +873,15 @@ func init() {
 	filesListCmd.Flags().String("mime-type", "", "filter by MIME type")
 	filesListCmd.Flags().Var(newEnumStringFlagValue("--sort-by", "created_at", "updated_at"), "sort-by", "sort field: created_at | updated_at (default: created_at)")
 
-	filesDownloadCmd.Flags().StringP("output", "o", "", "output path, - for stdout (alternative to the [dest] positional; default: server filename)")
+	// Named --out, not --output: a local "output" flag shadows the root's
+	// persistent --output (json|table|csv), because cobra's AddFlagSet skips
+	// names already present in the local set. That made the global format flag
+	// unreachable here and, worse, silently repurposed it as a path — so the
+	// reflexive `retab files download <id> --output json` wrote the file to a
+	// local file literally named "json". --out matches every sibling that
+	// writes bytes (files parse, files inspect, tables download), and the -o
+	// shorthand this command's help and examples document is unchanged.
+	filesDownloadCmd.Flags().StringP("out", "o", "", "output path, - for stdout (alternative to the [dest] positional; default: server filename)")
 
 	filesUploadCmd.Flags().String("file", "", "path to the local file (alternative to the positional <path>)")
 	filesUploadCmd.Flags().String("filename", "", "filename to record on the server (required when reading from stdin)")

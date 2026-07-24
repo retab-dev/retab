@@ -736,14 +736,20 @@ func (c *workflowASCIICanvas) drawEdgeLabel(x1 int, x2 int, y int, label string)
 		x1, x2 = x2, x1
 	}
 	available := x2 - x1 - 1
-	if available >= len(label)+2 {
-		label = " " + label + " "
+	// Measure and index in runes, not bytes. `available` and the canvas are
+	// column counts, so a non-ASCII handle label (accents, CJK) must not be
+	// sized with len() — that over-measures by up to 3x and rejects a label
+	// from a slot it would fit in. Same rune-vs-byte rule the box labels
+	// already follow (see drawBox).
+	runes := []rune(label)
+	if available >= len(runes)+2 {
+		runes = append([]rune{' '}, append(runes, ' ')...)
 	}
-	if available < len(label) {
+	if available < len(runes) {
 		return false
 	}
-	start := x1 + (available-len(label))/2 + 1
-	for i, ch := range label {
+	start := x1 + (available-len(runes))/2 + 1
+	for i, ch := range runes {
 		c.put(start+i, y, ch)
 	}
 	return true
@@ -753,25 +759,34 @@ func (c *workflowASCIICanvas) drawFloatingEdgeLabel(anchorX int, y int, label st
 	if label == "" || y < 0 || y >= len(c.cells) {
 		return
 	}
-	if len(label) > len(c.cells[y]) {
+	// Rune counts throughout: c.cells[y] is a []rune row, so its length is a
+	// column count. Comparing it against len(label) (bytes) let a multibyte
+	// label survive the fit above and then drive x negative below, indexing
+	// c.cells[y] out of range — a hard panic on `workflows view` for any edge
+	// whose handle contains non-ASCII text.
+	if len([]rune(label)) > len(c.cells[y]) {
 		label = workflowASCIIFit(label, len(c.cells[y]))
 	}
+	runes := []rune(label)
 	x := anchorX + 2
 	if leftOfAnchor {
-		x = anchorX - len(label) - 1
+		x = anchorX - len(runes) - 1
 	}
 	if x < 0 {
 		x = 0
 	}
-	if x+len(label) > len(c.cells[y]) {
-		x = len(c.cells[y]) - len(label)
+	if x+len(runes) > len(c.cells[y]) {
+		x = len(c.cells[y]) - len(runes)
 	}
-	for i := range label {
+	if x < 0 {
+		return
+	}
+	for i := range runes {
 		if c.cells[y][x+i] != ' ' {
 			return
 		}
 	}
-	for i, ch := range label {
+	for i, ch := range runes {
 		c.put(x+i, y, ch)
 	}
 }

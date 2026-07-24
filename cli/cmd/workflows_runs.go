@@ -558,9 +558,18 @@ removed in a future release.`,
 	}),
 }
 
+// workflowRunWaitTerminalStatuses is the set of lifecycle statuses that end a
+// `--wait` / `runs wait` poll. It must stay in sync with
+// allowedWorkflowRunStatuses (the --status filter allowlist) — "failed" is the
+// status the server actually records for a failed run, and omitting it here
+// meant a failed run was never recognized as settled: the poll ran to the full
+// --timeout-seconds and then reported a timeout instead of the failure. Same
+// defect primitive_wait.go already fixed for the primitives, where "error" is
+// only kept as a defensive alias for lifecycle-style statuses.
 var workflowRunWaitTerminalStatuses = map[string]bool{
 	"completed":       true,
 	"error":           true,
+	"failed":          true,
 	"cancelled":       true,
 	"awaiting_review": true,
 }
@@ -606,11 +615,11 @@ func waitForWorkflowRunByID(cmd *cobra.Command, id string, initial map[string]an
 			if err := printResult(cmd, last); err != nil {
 				return err
 			}
-			// error/cancelled are failures (non-zero exit), matching the
+			// error/failed/cancelled are failures (non-zero exit), matching the
 			// contract on every other run family (experiments, tests) and the
 			// primitives. completed and awaiting_review — a pause for human
 			// review, not a failure — exit 0.
-			if status == "error" || status == "cancelled" {
+			if status == "error" || status == "failed" || status == "cancelled" {
 				return fmt.Errorf("workflow run %s ended with status %s", id, status)
 			}
 			return nil

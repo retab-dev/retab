@@ -651,3 +651,59 @@ func TestWorkflowsViewCommandRegistered(t *testing.T) {
 		t.Fatalf("resolved command = %q, want view", cmd.Name())
 	}
 }
+
+// TestRenderWorkflowASCIIViewHandlesNonASCIIEdgeHandles pins the rune-vs-byte
+// contract of the two edge-label writers.
+//
+// `workflowASCIICanvas.cells` is a [][]rune, so a row's length is a COLUMN
+// count. Both drawEdgeLabel and drawFloatingEdgeLabel used to size the label
+// with len(label), which is a BYTE count. For a non-ASCII handle (accents,
+// CJK) the two diverge by up to 3x, with two distinct symptoms:
+//
+//  1. drawFloatingEdgeLabel drove `x` negative (canvasColumns - labelBytes)
+//     and indexed c.cells[y][x+i] out of range — a hard panic that took down
+//     `retab workflows view` entirely. Edge handles are user-supplied
+//     (`workflows edges create --target-handle ...`), so this was reachable
+//     with ordinary input.
+//  2. drawEdgeLabel advanced the write cursor by byte offset (`range label`
+//     yields byte indices), so every rune after a multibyte one landed one or
+//     more columns too far right — "données" rendered as "donné-es", with the
+//     edge line showing through the gap. This is the same defect already fixed
+//     for box labels; the edge writers were missed.
+func TestRenderWorkflowASCIIViewHandlesNonASCIIEdgeHandles(t *testing.T) {
+	t.Run("floating label does not panic", func(t *testing.T) {
+		c := newWorkflowASCIICanvas(47, 5)
+		// 24 runes — within workflowASCIIMaxEdgeText — but 72 bytes.
+		label := "請求書処理請求書処理請求書処理請求書処理請求書処"
+		if len(label) <= 47 {
+			t.Fatalf("fixture no longer exceeds the canvas in bytes (%d)", len(label))
+		}
+		c.drawFloatingEdgeLabel(30, 2, label, true)
+	})
+
+	t.Run("inline label is written at column offsets", func(t *testing.T) {
+		c := newWorkflowASCIICanvas(40, 3)
+		if ok := c.drawEdgeLabel(0, 20, 1, "données"); !ok {
+			t.Fatal("drawEdgeLabel rejected a 7-column label from a 19-column slot")
+		}
+		row := string(c.cells[1])
+		if !strings.Contains(row, "données") {
+			t.Fatalf("label written at byte offsets, not column offsets: %q", row)
+		}
+	})
+
+	t.Run("full render survives a non-ASCII handle", func(t *testing.T) {
+		workflow := &workflowGraph{
+			Workflow: retab.Workflow{ID: "wf_unicode", Name: "Unicode handles"},
+			Blocks: []retab.WorkflowBlock{
+				{ID: "start", Type: "start_document", Label: ptr("Document"), PositionX: ptr(float64(0)), PositionY: ptr(float64(0))},
+				{ID: "split", Type: "split", Label: ptr("Split"), PositionX: ptr(float64(300)), PositionY: ptr(float64(0))},
+			},
+			Edges: []retab.WorkflowEdgeDoc{
+				{ID: "e1", SourceBlock: "start", TargetBlock: "split", TargetHandle: ptr("output-file-請求書処理請求書処理請求書処理")},
+			},
+		}
+		// Must not panic.
+		renderWorkflowASCIIViewString(t, workflow)
+	})
+}

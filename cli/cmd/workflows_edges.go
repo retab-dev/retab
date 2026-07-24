@@ -336,6 +336,9 @@ Paginate by passing the cursor from a previous response's
     --after $(retab workflows edges list wf_abc123 --limit 50 --output json | jq -r '.list_metadata.after')`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		if err := validateBeforeAfterMutex(cmd); err != nil {
+			return err
+		}
 		// Workflow id positionally OR via --workflow-id (co-equal forms);
 		// required here — edges have no org-wide listing.
 		workflowID, err := resolveWorkflowScope(cmd, args, true)
@@ -601,7 +604,6 @@ func init() {
 	workflowsEdgesListCmd.Flags().String("target-block", "", "filter by target block")
 	workflowsEdgesListCmd.Flags().String("before", "", "edge id: return the page before this id (mutually exclusive with --after)")
 	workflowsEdgesListCmd.Flags().String("after", "", "edge id: return the page after this id (mutually exclusive with --before)")
-	workflowsEdgesListCmd.MarkFlagsMutuallyExclusive("before", "after")
 	workflowsEdgesListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 200}, "limit", "max items to return (1-200)")
 
 	workflowsEdgesCreateCmd.Flags().String("id", "", "edge id (optional)")

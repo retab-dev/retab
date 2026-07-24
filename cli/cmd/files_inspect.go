@@ -182,11 +182,24 @@ func inspectRender(ctx context.Context, cmd *cobra.Command, path string, kind do
 	}
 
 	outDir, _ := cmd.Flags().GetString("out")
+	// A temp dir we create is ours until the render succeeds and its path is
+	// handed to the caller in the JSON output. Every failure below (missing
+	// liteparse binary, unparseable document, pages outside document bounds,
+	// the >3-page cap, a failed screenshot) used to return without removing
+	// it, orphaning an empty retab-inspect-* directory per failed run. A
+	// user-supplied --out directory is never cleaned up.
+	ownedTempDir := ""
 	if outDir == "" {
 		outDir, err = os.MkdirTemp("", "retab-inspect-*")
 		if err != nil {
 			return fmt.Errorf("create temp output dir: %w", err)
 		}
+		ownedTempDir = outDir
+		defer func() {
+			if ownedTempDir != "" {
+				_ = os.RemoveAll(ownedTempDir)
+			}
+		}()
 	}
 
 	parser, err := resolveLiteParser(liteBinFromCmd(cmd))
@@ -216,6 +229,9 @@ func inspectRender(ctx context.Context, cmd *cobra.Command, path string, kind do
 	if err != nil {
 		return err
 	}
+	// The render succeeded and the directory is about to be reported to the
+	// caller, so it must survive this function.
+	ownedTempDir = ""
 	return printJSON(inspectRenderResult{
 		Filename:     fileBase(path),
 		DocumentType: kind.documentType(),
@@ -250,18 +266,37 @@ func selectSheet(cmd *cobra.Command, result *ParseResult, kind docKind) (SheetDa
 	if sel == "" || kind == kindCSV {
 		return result.Sheets[0], nil
 	}
+	// --sheet accepts a 1-based index or a sheet name. An all-digit selector is
+	// ambiguous, and year-named tabs ("2024", "2025") are extremely common in
+	// real workbooks. Resolve the index first so every invocation that works
+	// today keeps resolving to the same sheet, but fall back to name matching
+	// when the number isn't a usable index instead of hard-erroring — that
+	// error made a sheet named e.g. "2024" unreachable by any selector.
 	if idx, err := strconv.Atoi(sel); err == nil {
-		if idx < 1 || idx > len(result.Sheets) {
-			return SheetData{}, fmt.Errorf("sheet index %d out of range (1-%d)", idx, len(result.Sheets))
+		if idx >= 1 && idx <= len(result.Sheets) {
+			return result.Sheets[idx-1], nil
 		}
-		return result.Sheets[idx-1], nil
+		if sheet, ok := sheetByName(result.Sheets, sel); ok {
+			return sheet, nil
+		}
+		return SheetData{}, fmt.Errorf(
+			"sheet index %d out of range (1-%d) and no sheet is named %q",
+			idx, len(result.Sheets), sel,
+		)
 	}
-	for _, s := range result.Sheets {
-		if strings.EqualFold(s.Name, sel) {
-			return s, nil
-		}
+	if sheet, ok := sheetByName(result.Sheets, sel); ok {
+		return sheet, nil
 	}
 	return SheetData{}, fmt.Errorf("no sheet named %q", sel)
+}
+
+func sheetByName(sheets []SheetData, name string) (SheetData, bool) {
+	for _, s := range sheets {
+		if strings.EqualFold(s.Name, name) {
+			return s, true
+		}
+	}
+	return SheetData{}, false
 }
 
 // sliceCells extracts the rectangular [startRow,endRow] x [startCol,endCol]
