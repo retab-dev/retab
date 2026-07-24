@@ -381,3 +381,96 @@ func TestClassification_KnownCommands(t *testing.T) {
 		t.Errorf("workflows runs restart should expose --confirm")
 	}
 }
+
+// The gate must actually FIRE for a key whose environment cannot be placed
+// from its prefix. Asserting on expectedEnvironmentForKey alone would not prove
+// this: the gate short-circuits on the resolved credential, so the fail-safe
+// only matters if it survives all the way through productionGate.
+//
+// `sk_live_` is used in this CLI's own `auth login` examples and `rtb_` in
+// `setup`'s, and neither was in the prefix table — so these were exactly the
+// keys the gate silently exempted.
+func TestProductionGate_HighRisk_UnplaceableKeyPrefix_FailsSafeToGated(t *testing.T) {
+	for _, key := range []string{"rtb_looks_like_a_real_key", "sk_live_abc123", "totally_unknown_prefix"} {
+		t.Run(key, func(t *testing.T) {
+			isolateHome(t)
+			cmd := newSafetyTestCmd(t, classHighRisk, key)
+			err := productionGate(cmd, &fakeDecider{interactive: false})
+			if err == nil {
+				t.Fatalf("key %q with an unplaceable prefix must be gated, not silently exempt", key)
+			}
+			if !strings.Contains(err.Error(), "production write requires --confirm in non-interactive mode") {
+				t.Fatalf("unexpected error for %q: %v", key, err)
+			}
+		})
+	}
+}
+
+// ...and must still stay out of the way for a genuinely test-scoped key, or the
+// gate becomes noise everyone learns to bypass.
+func TestProductionGate_HighRisk_TestKeyPrefixes_NeverGated(t *testing.T) {
+	for _, key := range []string{"rt_test_abc", "sk_retab_test_abc", "sk_test_abc"} {
+		t.Run(key, func(t *testing.T) {
+			isolateHome(t)
+			cmd := newSafetyTestCmd(t, classHighRisk, key)
+			if err := productionGate(cmd, &fakeDecider{interactive: false}); err != nil {
+				t.Fatalf("test-scoped key %q must not be gated, got: %v", key, err)
+			}
+		})
+	}
+}
+
+// A stored profile's slug is an unvalidated label the user typed. With profile
+// writing now reachable (`auth login --env <slug> --api-key ...`), trusting it
+// would reopen the fail-open hole: a profile named "prod-eu" holding a key with
+// an unplaceable prefix would report environment "prod-eu", which is not
+// "production", and skip the gate. Only the canonical `test` slug is honored
+// without corroboration from the server or the key prefix.
+func TestProfileCredentialFailsSafeForUnplaceableKey(t *testing.T) {
+	cases := []struct {
+		name    string
+		slug    string
+		profile *environmentProfile
+		want    string
+	}{
+		{
+			name:    "unplaceable key under an arbitrary slug is production",
+			slug:    "prod-eu",
+			profile: &environmentProfile{APIKey: "rtb_unplaceable"},
+			want:    slugProduction,
+		},
+		{
+			name:    "canonical test slug is honored",
+			slug:    slugTest,
+			profile: &environmentProfile{APIKey: "rtb_unplaceable"},
+			want:    slugTest,
+		},
+		{
+			name:    "key prefix beats the slug",
+			slug:    "staging",
+			profile: &environmentProfile{APIKey: "rt_live_key"},
+			want:    slugProduction,
+		},
+		{
+			name:    "test key prefix beats the slug",
+			slug:    "prod-eu",
+			profile: &environmentProfile{APIKey: "rt_test_key"},
+			want:    slugTest,
+		},
+		{
+			name:    "server-confirmed slug wins over everything",
+			slug:    "prod-eu",
+			profile: &environmentProfile{APIKey: "rtb_unplaceable", ServerEnvironmentSlug: slugTest},
+			want:    slugTest,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			root := newTestRootCmd()
+			cred := profileCredential(root, retabConfig{}, tc.slug, tc.profile, sourceEnvFlag, true)
+			if cred.ExpectedEnvironment != tc.want {
+				t.Errorf("ExpectedEnvironment = %q, want %q", cred.ExpectedEnvironment, tc.want)
+			}
+		})
+	}
+}

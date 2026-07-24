@@ -350,13 +350,32 @@ func resolveCredential(cmd *cobra.Command) (resolvedCredential, error) {
 }
 
 // profileCredential builds a resolvedCredential from a stored profile.
+//
+// Environment precedence, most to least authoritative:
+//
+//  1. ServerEnvironmentSlug — confirmed by an /v1/auth/status probe.
+//  2. The key prefix.
+//  3. The canonical `test` slug the user selected.
+//  4. Otherwise production (fail SAFE).
+//
+// Step 4 matters because the local slug is an unvalidated label the user typed:
+// `auth login --env prod-eu --api-key <unplaceable-key>` would otherwise report
+// environment "prod-eu", which is not "production", and so skip the gate on a
+// key that is very plausibly a production one. That would reopen the same
+// fail-open hole expectedEnvironmentForKey closes for --api-key / RETAB_API_KEY
+// — a key is treated as production exactly when nothing can prove otherwise,
+// regardless of which branch resolved it. `--env test` still resolves to test,
+// so the ordinary non-production workflow is never gated.
 func profileCredential(cmd *cobra.Command, cfg retabConfig, slug string, profile *environmentProfile, source credentialSource, override bool) resolvedCredential {
 	expected := profile.ServerEnvironmentSlug
 	if expected == "" {
 		expected = environmentFromKeyPrefix(profile.APIKey)
 	}
+	if expected == "" && slug == slugTest {
+		expected = slugTest
+	}
 	if expected == "" {
-		expected = slug
+		expected = slugProduction
 	}
 	return resolvedCredential{
 		Source:              source,
