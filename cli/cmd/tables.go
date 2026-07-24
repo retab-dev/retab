@@ -1065,6 +1065,15 @@ func renderWorkflowTableRowsCSV(result *retab.WorkflowTableRowsResponse, options
 		header = append(header, "position")
 	}
 	header = append(header, columnNames...)
+	// Sanitize like every other CSV path in the CLI (writeCSV -> sanitizeCSVCell).
+	// This renderer wrote cells straight through, so `tables list --output csv`
+	// neutralized a leading =/+/-/@ while `tables query --output csv` emitted it
+	// verbatim for a spreadsheet to execute on open. Column names matter as much
+	// as cells here: unlike the static headers writeCSV deals with, these come
+	// from the user-uploaded table's own header row.
+	for i, cell := range header {
+		header[i] = sanitizeCSVCell(cell)
+	}
 	if err := writer.Write(header); err != nil {
 		return err
 	}
@@ -1083,7 +1092,7 @@ func renderWorkflowTableRowsCSV(result *retab.WorkflowTableRowsResponse, options
 			record = append(record, strconv.Itoa(row.Position))
 		}
 		for _, name := range columnNames {
-			record = append(record, workflowTableCellText(row.Data[name], options))
+			record = append(record, sanitizeCSVCell(workflowTableCellText(row.Data[name], options)))
 		}
 		if err := writer.Write(record); err != nil {
 			return err

@@ -74,7 +74,7 @@ store and a hint for content-type inference.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, detectedContentType, err := uploadFile(ctx, client, uploadPath)
+		result, detectedContentType, err := uploadFile(ctx, client, uploadPath, "")
 		if err != nil {
 			return err
 		}
@@ -92,7 +92,7 @@ store and a hint for content-type inference.`,
 // server response carries an empty MIMEType and extension inference fails —
 // so the caller never has to re-read the bytes to recover what we already
 // sniffed here.
-func uploadFile(ctx context.Context, client *retab.Client, uploadPath string) (*retab.MIMEData, string, error) {
+func uploadFile(ctx context.Context, client *retab.Client, uploadPath string, filenameOverride string) (*retab.MIMEData, string, error) {
 	data, err := os.ReadFile(uploadPath)
 	if err != nil {
 		return nil, "", err

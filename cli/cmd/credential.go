@@ -297,11 +297,23 @@ func resolveCredential(cmd *cobra.Command) (resolvedCredential, error) {
 
 	// --- 8. legacy stored api_key ------------------------------------------
 	if cfg.APIKey != "" {
+		// Classify by prefix exactly as branches 1 and 2 do for the same key
+		// supplied via --api-key / RETAB_API_KEY. `auth login --api-key` stores
+		// ANY non-acctk_ key here, including an rt_test_ one, so hardcoding
+		// production meant a test key demanded the production confirmation (and
+		// hard-failed CI with "production write requires --confirm") purely
+		// because it had been saved rather than passed. Unknown and legacy
+		// prefixes still resolve to production — the safe default for a key the
+		// CLI cannot place.
+		expected := environmentFromKeyPrefix(cfg.APIKey)
+		if expected == "" {
+			expected = slugProduction
+		}
 		return resolvedCredential{
 			Source:              sourceLegacyKey,
 			APIKey:              cfg.APIKey,
 			BaseURL:             resolveBaseURL(cmd, cfg, nil),
-			ExpectedEnvironment: slugProduction, // legacy keys are production-scoped
+			ExpectedEnvironment: expected,
 		}, nil
 	}
 

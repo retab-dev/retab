@@ -244,3 +244,76 @@ func TestFilesDownloadHelpMatchesFlags(t *testing.T) {
 		t.Error("files download Example no longer demonstrates -o")
 	}
 }
+
+// `tables query --output csv` wrote cells and column names straight into the
+// csv.Writer, while every other CSV path in the CLI goes through writeCSV ->
+// sanitizeCSVCell. A cell (or a user-uploaded column name) beginning =/+/-/@
+// was therefore emitted verbatim for a spreadsheet to execute on open, in the
+// same command family whose sibling neutralizes it.
+func TestSanitizeCSVCellNeutralizesFormulaTriggers(t *testing.T) {
+	for _, raw := range []string{
+		`=HYPERLINK("http://evil","x")`,
+		`@SUM(A1)`,
+		`+1+1`,
+		`-1-1`,
+		"\tlead-tab",
+	} {
+		if got := sanitizeCSVCell(raw); got != "'"+raw {
+			t.Errorf("sanitizeCSVCell(%q) = %q, want it prefixed with an apostrophe", raw, got)
+		}
+	}
+	// Real negative numbers must stay numeric, not become text.
+	for _, raw := range []string{"-12.5", "+3", "0", "12"} {
+		if got := sanitizeCSVCell(raw); got != raw {
+			t.Errorf("sanitizeCSVCell(%q) = %q, want it unchanged", raw, got)
+		}
+	}
+}
+
+// An explicit field_mappings entry must beat a payload key that happens to be
+// named like the mapping's TARGET. The passthrough loop overwrote
+// unconditionally, so {"order_id":"id"} against {"order_id":..,"id":..} posted
+// the stale `id` — silently, and to the live endpoint under --execute.
+func TestAPICallFieldMappingBeatsCollidingPayloadKey(t *testing.T) {
+	got := mapAndFilterLocalAPICallInput(
+		map[string]any{"order_id": "ord_123", "id": "legacy", "other": "kept"},
+		nil,
+		map[string]string{"order_id": "id"},
+	)
+	if got["id"] != "ord_123" {
+		t.Errorf("mapped id = %v, want ord_123 (the explicit mapping)", got["id"])
+	}
+	if _, ok := got["order_id"]; ok {
+		t.Error("mapping source order_id leaked into the request body")
+	}
+	if got["other"] != "kept" {
+		t.Errorf("unmapped key dropped: %v", got["other"])
+	}
+	// No mappings at all: everything passes through untouched.
+	plain := mapAndFilterLocalAPICallInput(map[string]any{"a": 1, "b": 2}, nil, nil)
+	if plain["a"] != 1 || plain["b"] != 2 || len(plain) != 2 {
+		t.Errorf("unmapped passthrough changed: %v", plain)
+	}
+}
+
+// `auth login --api-key rt_test_...` stores the key in cfg.APIKey, and the
+// stored-key branch hardcoded production — so a test key demanded the
+// production confirmation (and hard-failed CI) purely because it had been
+// saved rather than passed via --api-key, which classifies it correctly.
+func TestStoredAPIKeyEnvironmentMatchesItsPrefix(t *testing.T) {
+	for key, want := range map[string]string{
+		"rt_test_abc":       slugTest,
+		"sk_retab_test_abc": slugTest,
+		"rt_live_abc":       slugProduction,
+		"sk_retab_abc":      slugProduction,
+	} {
+		if got := environmentFromKeyPrefix(key); got != want {
+			t.Errorf("environmentFromKeyPrefix(%q) = %q, want %q", key, got, want)
+		}
+	}
+	// An unplaceable prefix must still fall back to production in the stored
+	// branch — the safe default for a key the CLI cannot classify.
+	if got := environmentFromKeyPrefix("weird_prefix_abc"); got != "" {
+		t.Errorf("environmentFromKeyPrefix(unknown) = %q, want empty", got)
+	}
+}

@@ -611,9 +611,19 @@ func mapAndFilterLocalAPICallInput(payload map[string]any, requestSchema map[str
 			}
 		}
 		for key, value := range payload {
-			if _, mappedKey := fieldMappings[key]; !mappedKey {
-				mapped[key] = value
+			if _, isMappingSource := fieldMappings[key]; isMappingSource {
+				continue
 			}
+			// A payload key can collide with a mapping TARGET rather than a
+			// source. The passthrough used to overwrite unconditionally, so a
+			// mapping like {"order_id": "id"} against a payload carrying both
+			// order_id and id silently discarded the mapping and posted the
+			// stale `id` — to the live endpoint under --execute. An explicit
+			// mapping is the more specific instruction, so it wins.
+			if _, claimedByMapping := mapped[key]; claimedByMapping {
+				continue
+			}
+			mapped[key] = value
 		}
 	} else {
 		for key, value := range payload {

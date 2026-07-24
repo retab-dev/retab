@@ -244,6 +244,14 @@ store and a hint for content-type inference.`,
 		if err != nil {
 			return err
 		}
+		// --filename overrides the name recorded server-side. On the stdin path
+		// it is required and is already used as the staging basename, so the
+		// override falls out of filepath.Base. On a path upload it used to be
+		// read nowhere at all: `files upload ./scan_0001.pdf --filename "Q3
+		// Invoice.pdf"` silently stored scan_0001.pdf, with no warning and no
+		// error, despite the flag's help presenting it as optional-here /
+		// required-for-stdin.
+		filenameOverride := ""
 		if uploadPath == "-" {
 			stdinPath, cleanup, err := stageStdinUpload(cmd)
 			if err != nil {
@@ -255,6 +263,10 @@ store and a hint for content-type inference.`,
 			if _, err := inferFileMIMEData(uploadPath); err != nil {
 				return err
 			}
+			filenameOverride, err = uploadFilenameOverride(cmd)
+			if err != nil {
+				return err
+			}
 		}
 		client, err := newClient(cmd)
 		if err != nil {
@@ -262,7 +274,7 @@ store and a hint for content-type inference.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, detectedContentType, err := uploadFile(ctx, client, uploadPath)
+		result, detectedContentType, err := uploadFile(ctx, client, uploadPath, filenameOverride)
 		if err != nil {
 			return err
 		}
@@ -280,12 +292,30 @@ store and a hint for content-type inference.`,
 // server response carries an empty MIMEType and extension inference fails —
 // so the caller never has to re-read the bytes to recover what we already
 // sniffed here.
-func uploadFile(ctx context.Context, client *retab.Client, uploadPath string) (*retab.MIMEData, string, error) {
+// uploadFilenameOverride reads --filename for a path upload, applying the same
+// bare-basename rule stageStdinUpload enforces so a `..` or separator can't be
+// sent to the server as a path. Returns "" when the flag was not given.
+func uploadFilenameOverride(cmd *cobra.Command) (string, error) {
+	raw, _ := cmd.Flags().GetString("filename")
+	filename := strings.TrimSpace(raw)
+	if filename == "" {
+		return "", nil
+	}
+	if strings.ContainsAny(filename, `/\`) {
+		return "", fmt.Errorf("--filename must be a bare filename, not a path: %q", raw)
+	}
+	return filename, nil
+}
+
+func uploadFile(ctx context.Context, client *retab.Client, uploadPath string, filenameOverride string) (*retab.MIMEData, string, error) {
 	data, err := os.ReadFile(uploadPath)
 	if err != nil {
 		return nil, "", err
 	}
 	filename := filepath.Base(uploadPath)
+	if filenameOverride != "" {
+		filename = filenameOverride
+	}
 	contentType := detectUploadContentType(uploadPath, data)
 	sum := sha256.Sum256(data)
 	sha256Hash := hex.EncodeToString(sum[:])
