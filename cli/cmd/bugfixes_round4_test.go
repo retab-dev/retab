@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -448,5 +449,99 @@ func TestUsagePrimitiveTimestampColumnsAreNormalized(t *testing.T) {
 		if got := normalizeTimestampCell(passthrough); got != passthrough {
 			t.Errorf("normalizeTimestampCell(%q) = %q, want it unchanged", passthrough, got)
 		}
+	}
+}
+
+// The mime_type printed to the user must be derived from the same name that
+// was declared to the server. shapeUploadResponse used to resolve its extension
+// fallback against the LOCAL path, so `files upload ./scan.pdf --filename
+// report.txt` declared text/plain on the wire and printed application/pdf — the
+// exact self-contradiction the --filename fix set out to remove. The fallback
+// now prefers the filename the server echoed (which is the name the upload
+// declared), so the two agree by construction.
+//
+// This drives shapeUploadResponse itself rather than the helpers, so it fails
+// if the call site is rewired to pass the local path again.
+// pdfMagicBytes is enough for http.DetectContentType to sniff application/pdf.
+var pdfMagicBytes = []byte("%PDF-1.4\n")
+
+func TestUploadResponseMIMETypeFollowsEffectiveFilename(t *testing.T) {
+	mimeTypeOf := func(out uploadResponse) string {
+		for _, p := range out.pairs {
+			if p.Key == "mime_type" {
+				value, _ := p.Value.(string)
+				return value
+			}
+		}
+		return ""
+	}
+
+	// Server recorded the overridden name and returned no mime_type (the case
+	// the upload code notes happens often).
+	declared := detectUploadContentType(effectiveUploadFilename("/tmp/scan.pdf", "report.txt"), pdfMagicBytes)
+	out, err := shapeUploadResponse(
+		&retab.MIMEData{Filename: "report.txt", URL: "https://x/v1/files/file_abc123.pdf"},
+		"/tmp/scan.pdf", declared)
+	if err != nil {
+		t.Fatalf("shapeUploadResponse: %v", err)
+	}
+	if got := mimeTypeOf(out); got != declared {
+		t.Errorf("printed mime_type %q contradicts the declared content type %q", got, declared)
+	}
+	if got := mimeTypeOf(out); !strings.HasPrefix(got, "text/plain") {
+		t.Errorf("printed mime_type = %q, want it to follow the .txt override", got)
+	}
+
+	// No override: unchanged behaviour.
+	declared = detectUploadContentType(effectiveUploadFilename("/tmp/scan.pdf", ""), pdfMagicBytes)
+	out, err = shapeUploadResponse(
+		&retab.MIMEData{Filename: "scan.pdf", URL: "https://x/v1/files/file_abc123.pdf"},
+		"/tmp/scan.pdf", declared)
+	if err != nil {
+		t.Fatalf("shapeUploadResponse: %v", err)
+	}
+	if got := mimeTypeOf(out); got != "application/pdf" {
+		t.Errorf("no-override case changed: printed %q, want application/pdf", got)
+	}
+
+	// Server returned no filename at all: fall back to the local path.
+	out, err = shapeUploadResponse(
+		&retab.MIMEData{URL: "https://x/v1/files/file_abc123.pdf"}, "/tmp/scan.pdf", "")
+	if err != nil {
+		t.Fatalf("shapeUploadResponse: %v", err)
+	}
+	if got := mimeTypeOf(out); got != "application/pdf" {
+		t.Errorf("empty server filename should fall back to the local path, got %q", got)
+	}
+
+	// An explicit server mime_type still wins over both.
+	if got := resolveUploadMIMEType("image/png", "report.txt", "text/plain"); got != "image/png" {
+		t.Errorf("server mime_type should win, got %q", got)
+	}
+	// The shared effective-name helper.
+	if got := effectiveUploadFilename("/tmp/scan.pdf", "report.txt"); got != "report.txt" {
+		t.Errorf("effectiveUploadFilename with override = %q, want report.txt", got)
+	}
+	if got := effectiveUploadFilename("/tmp/deep/scan.pdf", ""); got != "scan.pdf" {
+		t.Errorf("effectiveUploadFilename without override = %q, want scan.pdf", got)
+	}
+}
+
+// --filename is trimmed and validated identically on the path and stdin
+// branches. `".. "` used to pass the guard and then resolve to the parent
+// directory, because Windows strips trailing spaces when resolving a path.
+func TestUploadFilenameGuardRejectsPaddedDotNames(t *testing.T) {
+	for _, bad := range []string{"..", ".", ".. ", " ..", ". ", "  ..  ", "a/b", `a\b`} {
+		if err := validateBareUploadFilename(bad); err == nil {
+			t.Errorf("validateBareUploadFilename(%q) accepted it", bad)
+		}
+	}
+	for _, ok := range []string{"a.pdf", "..a.pdf", "a..pdf", "...", " report.pdf "} {
+		if err := validateBareUploadFilename(ok); err != nil {
+			t.Errorf("validateBareUploadFilename(%q) rejected a legitimate name: %v", ok, err)
+		}
+	}
+	if got := trimmedUploadFilename("  report.pdf  "); got != "report.pdf" {
+		t.Errorf("trimmedUploadFilename = %q, want report.pdf", got)
 	}
 }

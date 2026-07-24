@@ -63,6 +63,9 @@ var filesListCmd = &cobra.Command{
 	Example: "  # Five most recent files\n  retab files list --limit 5\n\n  # Just PDFs, newest first\n  retab files list --mime-type application/pdf\n\n  # Extract ids only, one per line\n  retab files list | jq -r '.data[].id'",
 	Args:    cobra.NoArgs,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		if err := validateBeforeAfterMutex(cmd); err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err

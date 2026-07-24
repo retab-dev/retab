@@ -140,6 +140,9 @@ var tablesListCmd = &cobra.Command{
 	Short: "Table.List",
 	Args:  cobra.NoArgs,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		if err := validateBeforeAfterMutex(cmd); err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err

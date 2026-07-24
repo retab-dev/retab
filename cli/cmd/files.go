@@ -278,7 +278,7 @@ store and a hint for content-type inference.`,
 		if err != nil {
 			return err
 		}
-		out, err := shapeUploadResponse(result, uploadPath, detectedContentType)
+		out, err := shapeUploadResponse(result, effectiveUploadFilename(uploadPath, filenameOverride), detectedContentType)
 		if err != nil {
 			return err
 		}
@@ -297,7 +297,7 @@ store and a hint for content-type inference.`,
 // sent to the server as a path. Returns "" when the flag was not given.
 func uploadFilenameOverride(cmd *cobra.Command) (string, error) {
 	raw, _ := cmd.Flags().GetString("filename")
-	filename := strings.TrimSpace(raw)
+	filename := trimmedUploadFilename(raw)
 	if filename == "" {
 		return "", nil
 	}
@@ -311,14 +311,38 @@ func uploadFilenameOverride(cmd *cobra.Command) (string, error) {
 // Separators are the obvious case; "." and ".." matter too because
 // stageStdinUpload filepath.Joins this value into a temp directory, where they
 // would resolve to the directory itself or escape it.
+//
+// The dot checks are made against the TRIMMED name: Windows strips trailing
+// spaces when resolving a path, so `--filename ".. "` survives a naive equality
+// check and then still resolves to the parent directory. Callers must also use
+// the trimmed value as the actual filename — see trimmedUploadFilename.
 func validateBareUploadFilename(filename string) error {
 	if strings.ContainsAny(filename, `/\`) {
 		return fmt.Errorf("--filename must be a bare filename, not a path: %q", filename)
 	}
-	if filename == "." || filename == ".." {
+	switch strings.TrimSpace(filename) {
+	case ".", "..":
 		return fmt.Errorf("--filename must be a bare filename, not a path: %q", filename)
 	}
 	return nil
+}
+
+// trimmedUploadFilename is the single place the raw --filename value is turned
+// into the name actually used, so the path-upload and stdin branches cannot
+// disagree about whitespace.
+func trimmedUploadFilename(raw string) string {
+	return strings.TrimSpace(raw)
+}
+
+// effectiveUploadFilename is the name recorded server-side: the --filename
+// override when given, else the local basename. Shared by the upload call and
+// the response renderer so the declared content type and the printed mime_type
+// are always derived from the same name.
+func effectiveUploadFilename(uploadPath string, filenameOverride string) string {
+	if filenameOverride != "" {
+		return filenameOverride
+	}
+	return filepath.Base(uploadPath)
 }
 
 func uploadFile(ctx context.Context, client *retab.Client, uploadPath string, filenameOverride string) (*retab.MIMEData, string, error) {
@@ -326,10 +350,7 @@ func uploadFile(ctx context.Context, client *retab.Client, uploadPath string, fi
 	if err != nil {
 		return nil, "", err
 	}
-	filename := filepath.Base(uploadPath)
-	if filenameOverride != "" {
-		filename = filenameOverride
-	}
+	filename := effectiveUploadFilename(uploadPath, filenameOverride)
 	// Derive the content type from the name actually being recorded, not from
 	// the local path. The server re-applies extension->mime to the stored
 	// filename, so declaring application/pdf alongside a stored name of
@@ -387,8 +408,9 @@ func uploadFile(ctx context.Context, client *retab.Client, uploadPath string, fi
 // blob; we'd otherwise label it "stdin" or similar and silently mis-type the
 // content).
 func stageStdinUpload(cmd *cobra.Command) (string, func(), error) {
-	filename, _ := cmd.Flags().GetString("filename")
-	if strings.TrimSpace(filename) == "" {
+	rawFilename, _ := cmd.Flags().GetString("filename")
+	filename := trimmedUploadFilename(rawFilename)
+	if filename == "" {
 		return "", func() {}, fmt.Errorf("--filename is required when uploading from stdin (-)")
 	}
 	// Disallow anything that is not a plain basename — we filepath.Join this
@@ -460,7 +482,8 @@ func shapeUploadResponse(result *retab.MIMEData, uploadPath, detectedContentType
 			{"url", result.URL},
 		},
 	}
-	if mimeType := resolveUploadMIMEType(result.MIMEType, uploadPath, detectedContentType); mimeType != "" {
+	// Resolve the extension fallback against the filename the server echoed —
+	if mimeType := resolveUploadMIMEType(result.MIMEType, uploadNameForMIME(result.Filename, uploadPath), detectedContentType); mimeType != "" {
 		out.pairs = append(out.pairs, uploadResponseField{"mime_type", mimeType})
 	}
 	return out, nil
@@ -956,4 +979,18 @@ func init() {
 
 	filesCmd.AddCommand(filesListCmd, filesGetCmd, filesUploadCmd, filesDownloadLinkCmd, filesDownloadCmd, filesCreateUploadCmd, filesCompleteUploadCmd)
 	rootCmd.AddCommand(filesCmd)
+}
+
+// uploadNameForMIME picks the name whose extension drives the mime_type
+// fallback in shapeUploadResponse. The server echoes back the filename it
+// recorded, which is exactly the name the upload declared (including a
+// --filename override), so preferring it makes the printed mime_type agree with
+// the declared content type by construction — no caller can pass a different
+// name and reintroduce the mismatch. Falls back to the local path only when the
+// server returned no filename.
+func uploadNameForMIME(serverFilename, uploadPath string) string {
+	if strings.TrimSpace(serverFilename) != "" {
+		return serverFilename
+	}
+	return uploadPath
 }
