@@ -83,16 +83,22 @@ override and takes precedence over anything written to disk.`,
 		if cmd.Flags().Changed("api-key") && cmd.Flags().Changed("access-token") {
 			return fmt.Errorf("--api-key cannot be combined with --access-token")
 		}
-		if cmd.Flags().Changed("access-token") {
-			return runAccessTokenLogin(accessToken, baseURL)
-		}
 
 		// --env <slug> / --live route the key into a stored environment
 		// profile instead of the single legacy slot, which is what makes
-		// those selectors resolvable on later invocations.
+		// those selectors resolvable on later invocations. Resolve the slug
+		// BEFORE the access-token branch: environment profiles hold API keys
+		// only, so silently ignoring --env there would store the token in the
+		// default slot while the user believed they had scoped it.
 		profileSlug, err := loginProfileSlug(cmd)
 		if err != nil {
 			return err
+		}
+		if cmd.Flags().Changed("access-token") {
+			if profileSlug != "" {
+				return fmt.Errorf("--env / --live select an API-key profile and cannot be combined with --access-token")
+			}
+			return runAccessTokenLogin(accessToken, baseURL)
 		}
 
 		// Explicit API-key path. Direct, no browser. Backward compatible
@@ -111,6 +117,19 @@ override and takes precedence over anything written to disk.`,
 				return runAPIKeyLoginForProfile(prompted, baseURL, profileSlug)
 			}
 			// fall through to browser flow
+		}
+
+		// The browser flow mints an OAuth session, which has nowhere to live in
+		// an environment profile — profiles hold API keys. Falling through with
+		// the selector silently ignored is how the original bug felt from the
+		// user's side: `auth login --live` would appear to succeed and the next
+		// `retab --live ...` would still report "no live credential configured",
+		// pointing back at the command just run.
+		if profileSlug != "" {
+			return fmt.Errorf(
+				"--env / --live store an API key in an environment profile, so they need --api-key;\n"+
+					"  run `retab auth login --env %s --api-key <key>`, or drop the flag to sign in with the browser",
+				profileSlug)
 		}
 
 		ctx, cancel := ctxFor(cmd)
@@ -248,14 +267,26 @@ func loginProfileSlug(cmd *cobra.Command) (string, error) {
 	if cmd == nil || cmd.Root() == nil {
 		return "", nil
 	}
+	envFlag, _ := cmd.Root().PersistentFlags().GetString("env")
+	envFlag = strings.TrimSpace(envFlag)
 	if live, _ := cmd.Root().PersistentFlags().GetBool("live"); live {
-		if envFlag, _ := cmd.Root().PersistentFlags().GetString("env"); strings.TrimSpace(envFlag) != "" {
-			return "", fmt.Errorf("--live and --env are mutually exclusive")
+		if envFlag == "" {
+			return slugProduction, nil
+		}
+		// --live is an alias for --env production, so the pair is only a
+		// conflict when they name different environments. resolveCredential
+		// already treats them as equivalent; rejecting the agreeing case here
+		// would make login stricter than the selector it feeds.
+		slug, err := validateSlug(envFlag)
+		if err != nil {
+			return "", err
+		}
+		if slug != slugProduction {
+			return "", fmt.Errorf("--live selects the production environment; it cannot be combined with --env %s", envFlag)
 		}
 		return slugProduction, nil
 	}
-	envFlag, _ := cmd.Root().PersistentFlags().GetString("env")
-	if strings.TrimSpace(envFlag) == "" {
+	if envFlag == "" {
 		return "", nil
 	}
 	return validateSlug(envFlag)
@@ -286,19 +317,30 @@ func runAPIKeyLoginForProfile(apiKey, baseURL, slug string) error {
 	if profile.Name == "" {
 		profile.Name = slug
 	}
-	if resolvedBaseURL := stripLegacyV1Suffix(configuredLoginBaseURL(baseURL)); resolvedBaseURL != "" {
-		profile.BaseURL = resolvedBaseURL
+	// Only overwrite the profile's deployment URL when the user actually asked
+	// for one. configuredLoginBaseURL falls back to the public default, so
+	// writing it unconditionally silently repointed a profile pinned to a local
+	// or self-hosted deployment back at api.retab.com on every key rotation.
+	if baseURL != "" {
+		profile.BaseURL = stripLegacyV1Suffix(configuredLoginBaseURL(baseURL))
 	}
-	// First profile written becomes the default, so a plain `retab ...` uses it
-	// without needing --env on every invocation.
-	if cfg.DefaultEnvironment == "" {
-		cfg.DefaultEnvironment = slug
-	}
+	// Deliberately NOT touching cfg.DefaultEnvironment. Branch 5 of
+	// resolveCredential outranks both the stored access token and the OAuth
+	// session, so promoting a freshly written profile to the default would
+	// silently retire an existing OAuth login for every plain `retab ...` — and
+	// nothing in the CLI ever clears DefaultEnvironment, so a later
+	// `auth login --api-key ...` would appear to succeed while the stale
+	// profile kept winning. --env / --live stay explicit selectors.
 	if err := saveConfig(cfg); err != nil {
 		return err
 	}
 	path, _ := configPath()
 	fmt.Fprintf(os.Stderr, "Saved API key for environment %q to %s\n", slug, path)
+	fmt.Fprintf(os.Stderr, "Select it with `retab --env %s ...`", slug)
+	if slug == slugProduction {
+		fmt.Fprintf(os.Stderr, " (or `--live`)")
+	}
+	fmt.Fprintln(os.Stderr, "; your default credential is unchanged.")
 	return nil
 }
 

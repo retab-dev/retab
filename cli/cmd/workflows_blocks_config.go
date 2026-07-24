@@ -8,8 +8,10 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"net/url"
 	"os"
@@ -1379,8 +1381,48 @@ func writeMountsFilePreservingLocalPaths(path string, value any) error {
 	if !ok {
 		return writeJSONFile(path, value)
 	}
-	if existing, err := readJSONMap(path); err == nil {
-		preserveExistingTableLocalPaths(mounts, existing)
+	// Deep-copy before preserving. `value` is block.Config["mounts"] — the
+	// caller's own server config, not a clone — and preserveExistingTableLocalPaths
+	// writes local_path into the table maps in place. Mutating it here leaked a
+	// purely local field back into the in-memory server config, so push's
+	// reported config_hash (computed after this runs) matched neither the
+	// server's hash nor the manifest's RemoteHash (computed before it), leaving
+	// a hash no later drift check could reproduce.
+	cloned, ok := deepCopyJSONValue(mounts).(map[string]any)
+	if !ok {
+		return writeJSONFile(path, mounts)
 	}
-	return writeJSONFile(path, mounts)
+	if existing, err := readJSONMap(path); err == nil {
+		preserveExistingTableLocalPaths(cloned, existing)
+	} else if !errors.Is(err, fs.ErrNotExist) {
+		// An unreadable-but-present mounts.json means local_path bindings are
+		// about to be dropped silently. Say so: the generated runners skip a
+		// table with no local_path, so the next local run would just have no
+		// table data and no explanation.
+		fmt.Fprintf(os.Stderr,
+			"warning: could not read %s to preserve local_path bindings (%v); they will be dropped.\n",
+			path, err)
+	}
+	return writeJSONFile(path, cloned)
+}
+
+// deepCopyJSONValue clones a decoded-JSON value so callers can mutate the copy
+// without touching the original's nested maps and slices.
+func deepCopyJSONValue(value any) any {
+	switch typed := value.(type) {
+	case map[string]any:
+		out := make(map[string]any, len(typed))
+		for key, child := range typed {
+			out[key] = deepCopyJSONValue(child)
+		}
+		return out
+	case []any:
+		out := make([]any, len(typed))
+		for i, child := range typed {
+			out[i] = deepCopyJSONValue(child)
+		}
+		return out
+	default:
+		return value
+	}
 }

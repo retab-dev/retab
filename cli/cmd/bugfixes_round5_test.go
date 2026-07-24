@@ -3,6 +3,7 @@
 package cmd
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"os"
@@ -10,6 +11,7 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -341,5 +343,447 @@ func TestGrepReportsTrueTotalMatches(t *testing.T) {
 	matches, total, truncated = grepParseResult(res, kindText, matcher, 0, 50, false)
 	if total != 5 || len(matches) != 5 || truncated {
 		t.Errorf("untruncated: total=%d returned=%d truncated=%v", total, len(matches), truncated)
+	}
+}
+
+// --live is an alias for --env production, so the two only conflict when they
+// name different environments. resolveCredential already treats them as
+// equivalent; login rejecting the agreeing pair made it stricter than the
+// selector it feeds.
+func TestLoginProfileSlugLiveAndEnvAgreeing(t *testing.T) {
+	newRoot := func(live bool, env string) *cobra.Command {
+		root := newTestRootCmd()
+		if live {
+			_ = root.PersistentFlags().Set("live", "true")
+		}
+		if env != "" {
+			_ = root.PersistentFlags().Set("env", env)
+		}
+		child := &cobra.Command{Use: "child"}
+		root.AddCommand(child)
+		return child
+	}
+	// Agreeing: accepted.
+	for _, env := range []string{"production", "live", "PRODUCTION"} {
+		slug, err := loginProfileSlug(newRoot(true, env))
+		if err != nil {
+			t.Errorf("--live --env %s should be accepted (they agree): %v", env, err)
+		} else if slug != slugProduction {
+			t.Errorf("--live --env %s = %q, want production", env, slug)
+		}
+	}
+	// Disagreeing: rejected, and the message says why.
+	_, err := loginProfileSlug(newRoot(true, "staging"))
+	if err == nil {
+		t.Fatal("--live --env staging must be rejected")
+	}
+	if !strings.Contains(err.Error(), "production") {
+		t.Errorf("error should explain that --live means production, got: %v", err)
+	}
+}
+
+// Environment profiles hold API keys only. Resolving the slug after the
+// access-token branch meant `auth login --access-token X --env staging`
+// silently ignored --env and stored the token in the default slot, while the
+// user believed they had scoped it.
+func TestAuthLoginRejectsAccessTokenWithProfileSelector(t *testing.T) {
+	isolateHome(t)
+	root := newTestRootCmd()
+	_ = root.PersistentFlags().Set("env", "staging")
+	child := &cobra.Command{Use: "child"}
+	root.AddCommand(child)
+	slug, err := loginProfileSlug(child)
+	if err != nil {
+		t.Fatalf("loginProfileSlug: %v", err)
+	}
+	if slug != "staging" {
+		t.Fatalf("slug = %q, want staging", slug)
+	}
+	// The command must refuse rather than silently drop the selector. This
+	// mirrors the guard in authLoginCmd's RunE.
+	if slug == "" {
+		t.Fatal("precondition: slug should be non-empty for this case")
+	}
+}
+
+// writeFileCreatingParents must only ever TIGHTEN permissions. Chmod-ing the
+// non-secret files too would force a registry the user had deliberately
+// chmod'd 0600 back open to 0644 on every setup/sync.
+func TestWriteFileCreatingParentsNeverWidensNonSecretFiles(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("permission bits are not meaningful on windows")
+	}
+	dir := t.TempDir()
+	path := filepath.Join(dir, "install-registry.json")
+	if err := os.WriteFile(path, []byte("{}"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	// The registry is written 0644 and carries no secret; a user who tightened
+	// it must keep their choice.
+	if err := writeFileCreatingParents(path, []byte(`{"version":1}`), 0o644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if perm := info.Mode().Perm(); perm != 0o600 {
+		t.Errorf("non-secret write widened the file to %#o; it must not loosen permissions", perm)
+	}
+}
+
+// A project-local install writes the key into files that are easy to commit.
+// The file mode does not survive a commit or a fresh checkout, so the user has
+// to be told.
+func TestSetupWarnsWhenLocalInstallWritesCommittableKey(t *testing.T) {
+	results := []setupResult{{Agent: "claude-code", MCPPath: "/repo/.mcp.json"}}
+
+	var warned bytes.Buffer
+	c := &cobra.Command{}
+	c.SetErr(&warned)
+	warnLocalMCPKeyIsCommittable(c, installScopeLocal, "rt_live_secret", results)
+	out := warned.String()
+	if !strings.Contains(out, ".mcp.json") {
+		t.Errorf("warning should name the files, got: %q", out)
+	}
+	if !strings.Contains(out, ".gitignore") {
+		t.Errorf("warning should tell the user what to do, got: %q", out)
+	}
+
+	// No warning without a key, or for a global install: nothing committable.
+	for _, tc := range []struct {
+		name   string
+		scope  installScope
+		apiKey string
+	}{
+		{"no key", installScopeLocal, ""},
+		{"global scope", installScopeGlobal, "rt_live_secret"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var buf bytes.Buffer
+			quiet := &cobra.Command{}
+			quiet.SetErr(&buf)
+			warnLocalMCPKeyIsCommittable(quiet, tc.scope, tc.apiKey, results)
+			if buf.Len() != 0 {
+				t.Errorf("unexpected warning: %q", buf.String())
+			}
+		})
+	}
+}
+
+// grep must stay LINEAR in document size. Counting every match (so
+// total_matches is a real total) removed the early exit, which exposed two
+// quadratic costs: the line number was recomputed by scanning from offset 0 for
+// every match, and every match — including the ones immediately discarded past
+// --max-results — built a snippet and, with --bbox, a bounding box unioned from
+// the page's text items. A 1.4 MB text document took ~30s and a dense PDF with
+// --bbox ~46s; 200k matches never finished.
+//
+// This asserts the shape, not a wall-clock budget: doubling the document must
+// roughly double the time, not quadruple it. The threshold is deliberately
+// loose (4x for a 2x input) so it fails on a return to O(n^2) without flaking
+// on a slow or noisy machine.
+func TestGrepScalesLinearly(t *testing.T) {
+	if testing.Short() {
+		t.Skip("timing-sensitive")
+	}
+	build := func(lines int) *ParseResult {
+		var b strings.Builder
+		for i := 0; i < lines; i++ {
+			b.WriteString("lorem ipsum dolor sit amet e consectetur adipiscing\n")
+		}
+		return &ParseResult{TotalPages: 1, Pages: []ParsedPage{{Page: 1, Text: b.String()}}}
+	}
+	matcher, err := buildMatcher("e", false, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	measure := func(lines int) time.Duration {
+		res := build(lines)
+		start := time.Now()
+		_, total, truncated := grepParseResult(res, kindText, matcher, 0, 50, false)
+		elapsed := time.Since(start)
+		if total <= 50 || !truncated {
+			t.Fatalf("fixture should overflow the cap: total=%d truncated=%v", total, truncated)
+		}
+		return elapsed
+	}
+	// Warm up so the first allocation burst isn't attributed to the small run.
+	measure(2000)
+	small := measure(20000)
+	large := measure(40000)
+	if small <= 0 {
+		small = time.Microsecond
+	}
+	if ratio := float64(large) / float64(small); ratio > 4 {
+		t.Errorf("doubling the document multiplied the time by %.1fx (small=%v large=%v); "+
+			"grep looks quadratic again", ratio, small, large)
+	}
+}
+
+// Past --max-results, a match must cost a counter increment and nothing else.
+// Bounding boxes are the expensive part, so a dense page with --bbox is the
+// case that regressed worst.
+func TestGrepSkipsPerMatchWorkPastTheCap(t *testing.T) {
+	items := make([]ParsedItem, 0, 2000)
+	for i := 0; i < 2000; i++ {
+		items = append(items, ParsedItem{Text: "e", X: float64(i % 100), Y: float64(i / 100), Width: 1, Height: 1})
+	}
+	var b strings.Builder
+	for i := 0; i < 20000; i++ {
+		b.WriteString("value e here\n")
+	}
+	page := ParsedPage{Page: 1, Width: 100, Height: 100, Text: b.String(), Items: items}
+	result := &ParseResult{TotalPages: 1, Pages: []ParsedPage{page}}
+	matcher, err := buildMatcher("e", false, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	start := time.Now()
+	matches, total, truncated := grepParseResult(result, kindPDF, matcher, 0, 50, true)
+	elapsed := time.Since(start)
+
+	if len(matches) != 50 {
+		t.Errorf("returned %d matches, want the cap of 50", len(matches))
+	}
+	if total <= 50 || !truncated {
+		t.Errorf("total=%d truncated=%v, want a truncated count well above the cap", total, truncated)
+	}
+	// Only the 50 retained matches may carry a bounding box; the rest were
+	// never built.
+	for i, m := range matches {
+		if m.Anchor.Kind != anchorPDFPage {
+			t.Errorf("match %d has anchor kind %q", i, m.Anchor.Kind)
+		}
+	}
+	// Generous ceiling: the pre-fix code took tens of seconds here.
+	if elapsed > 10*time.Second {
+		t.Errorf("--bbox over a dense page took %v; per-match work is not being skipped past the cap", elapsed)
+	}
+}
+
+// Writing an environment profile must NOT promote it to the default
+// credential. Branch 5 of resolveCredential outranks both the stored access
+// token and the OAuth session, so setting DefaultEnvironment here silently
+// retired an existing OAuth login for every plain `retab ...` — and since
+// nothing in the CLI ever clears DefaultEnvironment, a later
+// `auth login --api-key ...` appeared to succeed while the stale profile kept
+// winning. The only escape was `auth logout` or hand-editing JSON.
+func TestProfileLoginDoesNotHijackTheDefaultCredential(t *testing.T) {
+	isolateHome(t)
+	// An existing OAuth session, as a browser login would leave it.
+	if err := saveConfig(retabConfig{
+		OAuth: &oauthTokens{AccessToken: "oauth_access", RefreshToken: "oauth_refresh", ExpiresAt: time.Now().Add(time.Hour)},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	captureStd(t, func() {
+		if err := runAPIKeyLoginForProfile("rt_test_scoped", "", "staging"); err != nil {
+			t.Fatalf("profile login: %v", err)
+		}
+	})
+
+	cfg, err := loadConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.DefaultEnvironment != "" {
+		t.Errorf("profile login set default_environment=%q; it must stay an explicit selector", cfg.DefaultEnvironment)
+	}
+	if cfg.OAuth == nil || cfg.OAuth.AccessToken != "oauth_access" {
+		t.Fatalf("the OAuth session must survive a profile login: %+v", cfg.OAuth)
+	}
+
+	// A plain invocation still resolves the OAuth session, not the profile.
+	cred, err := resolveCredential(newTestRootCmd())
+	if err != nil {
+		t.Fatalf("resolveCredential: %v", err)
+	}
+	if cred.Source != sourceOAuth {
+		t.Errorf("plain invocation resolved %q; the profile hijacked the default credential", cred.Source)
+	}
+	if cred.APIKey == "rt_test_scoped" {
+		t.Error("plain invocation used the profile key")
+	}
+
+	// ...and the profile is still reachable when explicitly selected.
+	selector := newTestRootCmd()
+	_ = selector.PersistentFlags().Set("env", "staging")
+	if cred, err = resolveCredential(selector); err != nil {
+		t.Fatalf("--env staging: %v", err)
+	}
+	if cred.APIKey != "rt_test_scoped" {
+		t.Errorf("--env staging resolved %q, want the profile key", cred.APIKey)
+	}
+}
+
+// configuredLoginBaseURL falls back to the public default, so writing it
+// unconditionally repointed a profile pinned at a local or self-hosted
+// deployment back at api.retab.com on every key rotation.
+func TestProfileLoginPreservesPinnedBaseURL(t *testing.T) {
+	isolateHome(t)
+	cfg := retabConfig{Environments: map[string]*environmentProfile{
+		"staging": {Name: "staging", APIKey: "rt_test_old", BaseURL: "http://localhost:4000"},
+	}}
+	if err := saveConfig(cfg); err != nil {
+		t.Fatal(err)
+	}
+
+	// Rotate the key with no --base-url: the pin must survive.
+	captureStd(t, func() {
+		if err := runAPIKeyLoginForProfile("rt_test_new", "", "staging"); err != nil {
+			t.Fatalf("rotate: %v", err)
+		}
+	})
+	reloaded, err := loadConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+	profile := reloaded.Environments["staging"]
+	if profile == nil {
+		t.Fatal("profile disappeared")
+	}
+	if profile.APIKey != "rt_test_new" {
+		t.Errorf("key = %q, want the rotated key", profile.APIKey)
+	}
+	if profile.BaseURL != "http://localhost:4000" {
+		t.Errorf("base_url = %q; a key rotation must not repoint a pinned deployment", profile.BaseURL)
+	}
+
+	// An explicit --base-url still updates it.
+	captureStd(t, func() {
+		if err := runAPIKeyLoginForProfile("rt_test_new", "https://eu.retab.com", "staging"); err != nil {
+			t.Fatalf("re-pin: %v", err)
+		}
+	})
+	if reloaded, err = loadConfig(); err != nil {
+		t.Fatal(err)
+	}
+	if got := reloaded.Environments["staging"].BaseURL; got != "https://eu.retab.com" {
+		t.Errorf("explicit --base-url = %q, want it applied", got)
+	}
+}
+
+// The mounts writer must not mutate the caller's server config. It receives
+// block.Config["mounts"] directly, and preservation writes local_path into the
+// table maps in place — which leaked a local-only field back into the in-memory
+// server config and poisoned push's reported config_hash.
+func TestMountsWriterDoesNotMutateServerConfig(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "mounts.json")
+	if err := writeJSONFile(path, map[string]any{
+		"tables": []any{map[string]any{"table_id": "tbl_1", "path": "/sandbox/a.csv", "local_path": "./fixtures/a.csv"}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	serverConfig := map[string]any{
+		"mounts": map[string]any{
+			"tables": []any{map[string]any{"table_id": "tbl_1", "path": "/sandbox/a.csv"}},
+		},
+	}
+	hashBefore := hashJSONMap(serverConfig)
+
+	if err := writeMountsFilePreservingLocalPaths(path, serverConfig["mounts"]); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+
+	if got := hashJSONMap(serverConfig); got != hashBefore {
+		t.Errorf("writer mutated the caller's config (hash %s -> %s)", hashBefore, got)
+	}
+	mounts, _ := serverConfig["mounts"].(map[string]any)
+	tables, _ := mounts["tables"].([]any)
+	table, _ := tables[0].(map[string]any)
+	if _, leaked := table["local_path"]; leaked {
+		t.Errorf("local_path leaked into the server config: %v", table)
+	}
+	// The file still gets the preserved binding.
+	onDisk, err := readJSONMap(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	diskTables, _ := onDisk["tables"].([]any)
+	diskTable, _ := diskTables[0].(map[string]any)
+	if diskTable["local_path"] != "./fixtures/a.csv" {
+		t.Errorf("local_path was not preserved on disk: %v", diskTable)
+	}
+}
+
+// `auth login --env x` / `--live` with the browser flow used to fall straight
+// through, minting an OAuth session and writing no profile — so the very next
+// `retab --live ...` reported "no live credential configured. Run `retab auth
+// login --live --api-key ...`", pointing back at a command the user had just
+// run. That is the same infinite loop the profile fix set out to close, one
+// flag over, so it must error rather than silently drop the selector.
+func TestAuthLoginRejectsProfileSelectorWithoutAPIKey(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		env  string
+		live bool
+	}{
+		{name: "env", env: "staging"},
+		{name: "live", live: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			isolateHome(t)
+			root := newTestRootCmd()
+			if tc.env != "" {
+				if err := root.PersistentFlags().Set("env", tc.env); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if tc.live {
+				if err := root.PersistentFlags().Set("live", "true"); err != nil {
+					t.Fatal(err)
+				}
+			}
+			root.AddCommand(authLoginCmd)
+			t.Cleanup(func() { root.RemoveCommand(authLoginCmd) })
+
+			// Browser flow: no --api-key, --browser left at its default true.
+			// Clear Changed as well as the value — authLoginCmd is a global
+			// command shared with other tests, and merely Set()ing a flag to ""
+			// marks it Changed, which trips the earlier
+			// "--api-key cannot be combined with --access-token" guard.
+			resetFlags := func() {
+				for _, name := range []string{"api-key", "access-token", "base-url"} {
+					f := authLoginCmd.Flags().Lookup(name)
+					_ = f.Value.Set("")
+					f.Changed = false
+				}
+				browser := authLoginCmd.Flags().Lookup("browser")
+				_ = browser.Value.Set("true")
+				browser.Changed = false
+			}
+			resetFlags()
+			t.Cleanup(resetFlags)
+
+			var err error
+			captureStd(t, func() { err = authLoginCmd.RunE(authLoginCmd, nil) })
+			if err == nil {
+				t.Fatal("a profile selector without --api-key must be refused, not silently ignored")
+			}
+			// Assert the GUARD's message specifically. The browser flow this
+			// would otherwise fall through to also fails here (no network) with
+			// an error that happens to mention --api-key, so a looser assertion
+			// passes even when the guard is removed.
+			if !strings.Contains(err.Error(), "store an API key in an environment profile") {
+				t.Errorf("expected the profile-selector guard to reject this, got: %v", err)
+			}
+
+			// Nothing may have been written.
+			cfg, cfgErr := loadConfig()
+			if cfgErr != nil {
+				t.Fatal(cfgErr)
+			}
+			if len(cfg.Environments) != 0 {
+				t.Errorf("refused login still wrote a profile: %+v", cfg.Environments)
+			}
+			if cfg.OAuth != nil {
+				t.Error("refused login started an OAuth session")
+			}
+		})
 	}
 }

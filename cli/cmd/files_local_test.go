@@ -214,12 +214,13 @@ func TestParseXLSXFileHonorsSparseRowNumbers(t *testing.T) {
 	if err != nil {
 		t.Fatalf("buildMatcher: %v", err)
 	}
+	collector := newGrepCollector(50)
+	grepSheets(res, kindSpreadsheet, matcher, 0, collector)
 	var got *Anchor
-	grepSheets(res, kindSpreadsheet, matcher, 0, func(m grepMatch) bool {
-		a := m.Anchor
+	if len(collector.matches) > 0 {
+		a := collector.matches[0].Anchor
 		got = &a
-		return false
-	})
+	}
 	if got == nil {
 		t.Fatal("expected a grep match for Rent")
 	}
@@ -307,17 +308,28 @@ func TestBuildMatcher(t *testing.T) {
 	}
 }
 
-func TestLineColAt(t *testing.T) {
+func TestLineScannerLineColAt(t *testing.T) {
 	text := "abc\ndé\nxyz"
-	// offset of 'x' (after second newline). bytes: a0 b1 c2 \n3 d4 é5,6 \n7 x8
-	line, col := lineColAt(text, 8)
+	// bytes: a0 b1 c2 \n3 d4 é5,6 \n7 x8. The scanner only moves forward — the
+	// order the walkers use — so ask for the earlier offset first.
+	scanner := newLineScanner(text)
+	// offset just after 'é' on line 2: col counts runes, not bytes.
+	line, col := scanner.lineColAt(7)
+	if line != 2 || col != 2 {
+		t.Fatalf("lineColAt after é = (%d,%d), want (2,2)", line, col)
+	}
+	// offset of 'x', after the second newline.
+	line, col = scanner.lineColAt(8)
 	if line != 3 || col != 0 {
 		t.Fatalf("lineColAt x = (%d,%d), want (3,0)", line, col)
 	}
-	// offset just after 'é' on line 2: col should count runes, not bytes.
-	line, col = lineColAt(text, 7)
-	if line != 2 || col != 2 {
-		t.Fatalf("lineColAt after é = (%d,%d), want (2,2)", line, col)
+	// A fresh scanner jumping straight to the same offset must agree, so the
+	// incremental path can't drift from a from-scratch computation.
+	if l, c := newLineScanner(text).lineColAt(8); l != 3 || c != 0 {
+		t.Fatalf("fresh scanner = (%d,%d), want (3,0)", l, c)
+	}
+	if l := newLineScanner(text).lineAt(0); l != 1 {
+		t.Fatalf("lineAt(0) = %d, want 1", l)
 	}
 }
 

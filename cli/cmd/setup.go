@@ -147,8 +147,43 @@ project-local config where supported.`,
 				return err
 			}
 		}
+		warnLocalMCPKeyIsCommittable(cmd, scope, apiKey, results)
 		return nil
 	}),
+}
+
+// warnLocalMCPKeyIsCommittable warns when a project-local install just wrote the
+// API key into files that live in the working tree.
+//
+// Restricting the file mode protects the key from other accounts on the machine
+// but does nothing about `git add .` — and these paths (.mcp.json,
+// .cursor/mcp.json, opencode.json, .codex/config.toml) are exactly the ones
+// people commit. The mode is also not durable in a working tree: a later
+// checkout of the file recreates it with default permissions. The user is the
+// only one who can decide to gitignore it, so say so rather than leave the
+// protection looking stronger than it is.
+func warnLocalMCPKeyIsCommittable(cmd *cobra.Command, scope installScope, apiKey string, results []setupResult) {
+	if scope != installScopeLocal || strings.TrimSpace(apiKey) == "" {
+		return
+	}
+	paths := make([]string, 0, len(results))
+	for _, result := range results {
+		if result.MCPPath != "" {
+			paths = append(paths, result.MCPPath)
+		}
+	}
+	if len(paths) == 0 {
+		return
+	}
+	fmt.Fprintf(cmd.ErrOrStderr(),
+		"warning: your API key was written into project files that are easy to commit:\n")
+	for _, path := range paths {
+		fmt.Fprintf(cmd.ErrOrStderr(), "  %s\n", path)
+	}
+	fmt.Fprintf(cmd.ErrOrStderr(),
+		"  They are owner-only on disk, but that does not survive a commit or a\n"+
+			"  fresh checkout. Add them to .gitignore, or re-run with --mcp-api-key ''\n"+
+			"  and supply RETAB_API_KEY from the environment instead.\n")
 }
 
 var syncCmd = &cobra.Command{
@@ -801,16 +836,31 @@ func writeFileCreatingParents(path string, raw []byte, perm os.FileMode) error {
 	if err := os.WriteFile(path, raw, perm); err != nil {
 		return err
 	}
-	// os.WriteFile only applies perm when it CREATES the file, and these
-	// writers upsert into files that usually already exist — so a .mcp.json
-	// created before this change would silently keep its old 0644. Enforce the
-	// mode explicitly, and for the secret-bearing files reuse the same
-	// owner-only helper saveConfig applies to ~/.retab/config.json (which also
-	// sets a restrictive DACL on Windows, where chmod alone is nearly a no-op).
-	if perm == mcpConfigFileMode {
-		return secureConfigFile(path)
+	// os.WriteFile only applies perm when it CREATES the file, and these writers
+	// upsert into files that usually already exist — so a .mcp.json created
+	// before this change would silently keep its old 0644. Tighten it
+	// explicitly, reusing the owner-only helper saveConfig applies to
+	// ~/.retab/config.json (which also sets a restrictive DACL on Windows, where
+	// chmod alone is nearly a no-op).
+	//
+	// Only the secret-bearing mode is enforced. Chmod-ing the non-secret files
+	// too would WIDEN them: the install registry is written 0644, so a registry
+	// the user had deliberately chmod'd 0600 would be forced back open on every
+	// setup/sync. Tightening is ours to do; loosening is not.
+	if perm != mcpConfigFileMode {
+		return nil
 	}
-	return os.Chmod(path, perm)
+	if err := secureConfigFile(path); err != nil {
+		// The key is already on disk at this point, so failing here would abort
+		// setup while leaving the file behind at its previous mode — strictly
+		// worse than continuing with a warning. saveConfig makes the same
+		// trade-off for the same reason; match it rather than diverge.
+		fmt.Fprintf(os.Stderr,
+			"warning: wrote %s but could not restrict its permissions: %v\n"+
+				"  it may contain your API key — check the file's permissions manually.\n",
+			path, err)
+	}
+	return nil
 }
 
 func xdgConfigHome() string {
