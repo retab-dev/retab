@@ -195,7 +195,30 @@ func validateWorkflowRunsExportFilters(cmd *cobra.Command) error {
 	if err := validateEnumFlag(cmd, "exclude-status", allowedWorkflowRunStatuses, workflowRunStatusValues); err != nil {
 		return err
 	}
+	if err := validateExportStatusScope(cmd); err != nil {
+		return err
+	}
 	return validateEnumFlag(cmd, "trigger-type", allowedWorkflowRunTriggerTypes, workflowRunTriggerTypeValues)
+}
+
+// validateExportStatusScope rejects the status filters that the export endpoint
+// can only ever answer with an empty CSV.
+//
+// The server pins `lifecycle.status: "completed"` into the export query and then
+// collapses the id set to `{"$in": []}` for any conflicting status filter. So
+// `--status error` did not export errored runs — it returned a header-only CSV
+// with exit 0, which reads exactly like "this block produced no data" rather
+// than "this flag cannot match anything". Refusing up front turns a silently
+// wrong answer into an explained one, and costs a round trip rather than a
+// misread export.
+func validateExportStatusScope(cmd *cobra.Command) error {
+	if status, _ := cmd.Flags().GetString("status"); status != "" && status != "completed" {
+		return fmt.Errorf("--status %q cannot match: export covers completed runs only, so this would always return an empty CSV (drop the flag, or pass --status completed)", status)
+	}
+	if excluded, _ := cmd.Flags().GetString("exclude-status"); excluded == "completed" {
+		return fmt.Errorf("--exclude-status completed cannot match: export covers completed runs only, so this would always return an empty CSV")
+	}
+	return nil
 }
 
 func validateMutuallyExclusiveChangedFlags(cmd *cobra.Command, left string, right string) error {
@@ -1574,14 +1597,64 @@ keys you do not name are kept.`,
 	}),
 }
 
+// exportSkippedRunIDCheckLimit bounds the status lookups warnExportSkippedRunIDs
+// performs. The check is a courtesy on top of a completed export, so a caller
+// passing hundreds of ids should not pay hundreds of extra round trips for it.
+const exportSkippedRunIDCheckLimit = 50
+
+// warnExportSkippedRunIDs reports the explicitly requested runs that the export
+// could not have included.
+//
+// Export is scoped to completed runs, so naming a failed or cancelled run with
+// --run-id silently contributes nothing: the CSV is short by that run and says
+// so nowhere. That is the worst shape for an export — the caller asked for a
+// specific set and got a clean-looking file back. The check is best-effort and
+// never fails the command: the export already succeeded, and a lookup problem
+// here is not a reason to turn a good CSV into an error.
+func warnExportSkippedRunIDs(ctx context.Context, cmd *cobra.Command, client *retab.Client, runIDs []string) {
+	if len(runIDs) == 0 || len(runIDs) > exportSkippedRunIDCheckLimit {
+		return
+	}
+	skipped := make([]string, 0, len(runIDs))
+	for _, runID := range runIDs {
+		run, err := client.Workflows.Runs.Get(ctx, runID)
+		if err != nil {
+			// A run id that cannot be read at all (deleted, wrong workflow, no
+			// access) is equally absent from the export, so it is worth naming.
+			skipped = append(skipped, runID+" (not readable)")
+			continue
+		}
+		if status := run.Lifecycle.Status(); status != "completed" {
+			skipped = append(skipped, runID+" ("+status+")")
+		}
+	}
+	if len(skipped) == 0 {
+		return
+	}
+	fmt.Fprintf(
+		cmd.ErrOrStderr(),
+		"note: %d of %d requested run(s) are not in the export — it covers completed runs only: %s\n",
+		len(skipped), len(runIDs), strings.Join(skipped, ", "),
+	)
+}
+
 var workflowsRunsExportCmd = &cobra.Command{
 	Use:   "export <workflow-id> [flags]",
 	Short: "Export workflow runs as CSV",
 	Long: `Bulk-export the outputs of many runs of a workflow as CSV,
 focused on one block's output. Pass the workflow id as the first
 positional argument (matching the rest of the ` + "`workflows runs`" + `
-group). Filter by status, date range, trigger type, or an explicit set
-of run ids. Use ` + "`--preferred-column`" + ` to pin column order.
+group). Filter by date range, trigger type, or an explicit set of run
+ids. Use ` + "`--preferred-column`" + ` to pin column order.
+
+Scope: export only covers runs whose status is ` + "`completed`" + `. A run
+that failed or was cancelled is excluded even when the exported block
+itself finished and produced output — so a workflow whose tail block
+fails will export nothing for its healthy upstream blocks. Reach for
+` + "`workflows steps list <run-id>`" + ` to read those outputs instead.
+Because of that scope, ` + "`--status`" + ` accepts only ` + "`completed`" + `, and
+naming a non-completed run with ` + "`--run-id`" + ` drops it (the CLI warns
+on stderr when that happens).
 
 CSV shape: the default delimiter is ` + "`;`" + ` (convenient for Excel
 in EU locales where ` + "`,`" + ` is the decimal separator) but hostile
@@ -1686,6 +1759,7 @@ also configurable.`,
 		if err != nil {
 			return err
 		}
+		warnExportSkippedRunIDs(ctx, cmd, client, selectedRunIDs)
 		// The export endpoint wraps the CSV bytes in a JSON envelope
 		// (``{"csv_data": "...", "rows": N, "columns": M}``). For
 		// interactive / non-JSON output, dump the raw CSV directly so

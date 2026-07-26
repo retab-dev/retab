@@ -4,6 +4,7 @@ package cmd
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -1519,6 +1520,13 @@ func TestWorkflowsRunsCommandsRejectInvalidEnumFiltersBeforeRequest(t *testing.T
 // client-side validator STRICTER than the API and rejecting a legitimate filter
 // before the request was ever sent. The allowlists must accept every value the
 // SDK enum (WorkflowExportPayloadRequestExcludeStatus / ...TriggerType) allows.
+//
+// `export` is checked through validateEnumFlag rather than the whole
+// validateWorkflowRunsExportFilters chain: export additionally refuses the
+// status filters that cannot match its completed-only scope (see
+// TestWorkflowsRunsExportRejectsUnmatchableStatusScope). That refusal is about
+// scope, not about a missing allowlist entry, and this test is guarding the
+// allowlist.
 func TestWorkflowsRunsCommandsAcceptAllSDKEnumFilters(t *testing.T) {
 	cases := []struct {
 		name  string
@@ -1545,10 +1553,139 @@ func TestWorkflowsRunsCommandsAcceptAllSDKEnumFilters(t *testing.T) {
 			if err := validateWorkflowRunsListFilters(workflowsRunsListCmd); err != nil {
 				t.Fatalf("list rejected valid --%s=%s: %v", tc.flag, tc.value, err)
 			}
-			if err := validateWorkflowRunsExportFilters(workflowsRunsExportCmd); err != nil {
-				t.Fatalf("export rejected valid --%s=%s: %v", tc.flag, tc.value, err)
+			allowed := allowedWorkflowRunStatuses
+			values := workflowRunStatusValues
+			if tc.flag == "trigger-type" {
+				allowed = allowedWorkflowRunTriggerTypes
+				values = workflowRunTriggerTypeValues
+			}
+			if err := validateEnumFlag(workflowsRunsExportCmd, tc.flag, allowed, values); err != nil {
+				t.Fatalf("export allowlist rejected valid --%s=%s: %v", tc.flag, tc.value, err)
 			}
 		})
+	}
+}
+
+// `runs export` is hard-scoped to completed runs: the server pins
+// lifecycle.status="completed" and collapses the id set to empty for any
+// conflicting status filter. So `--status error` used to return a header-only
+// CSV and exit 0 — indistinguishable from "this block produced no data". The
+// CLI refuses the unmatchable combinations instead of shipping that silence,
+// while leaving every filter that CAN match alone.
+func TestWorkflowsRunsExportRejectsUnmatchableStatusScope(t *testing.T) {
+	cases := []struct {
+		name     string
+		flag     string
+		value    string
+		rejected bool
+	}{
+		{name: "status error is unmatchable", flag: "status", value: "error", rejected: true},
+		{name: "status cancelled is unmatchable", flag: "status", value: "cancelled", rejected: true},
+		{name: "status completed matches the scope", flag: "status", value: "completed"},
+		{name: "exclude-status completed is unmatchable", flag: "exclude-status", value: "completed", rejected: true},
+		{name: "exclude-status error is a harmless no-op", flag: "exclude-status", value: "error"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if err := workflowsRunsExportCmd.Flags().Set(tc.flag, tc.value); err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(func() { resetWorkflowRunsFlag(t, workflowsRunsExportCmd, tc.flag) })
+
+			err := validateWorkflowRunsExportFilters(workflowsRunsExportCmd)
+			if tc.rejected {
+				if err == nil {
+					t.Fatalf("--%s=%s can never match the completed-only export scope and must be refused", tc.flag, tc.value)
+				}
+				if !strings.Contains(err.Error(), "completed runs only") {
+					t.Fatalf("refusal must explain the completed-only scope, got: %v", err)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("--%s=%s can match and must be accepted, got: %v", tc.flag, tc.value, err)
+			}
+		})
+	}
+}
+
+// The list command shares the status allowlist but not the export scope, so the
+// guard must not leak across: listing errored runs is a normal thing to do.
+func TestWorkflowsRunsListStillAcceptsNonCompletedStatus(t *testing.T) {
+	if err := workflowsRunsListCmd.Flags().Set("status", "error"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { resetWorkflowRunsFlag(t, workflowsRunsListCmd, "status") })
+	if err := validateWorkflowRunsListFilters(workflowsRunsListCmd); err != nil {
+		t.Fatalf("list must still accept --status error: %v", err)
+	}
+}
+
+// A caller who names runs explicitly with --run-id gets back a CSV that quietly
+// omits every non-completed one. The counts in the envelope do not reveal it
+// (one run can emit several rows), so the CLI names the missing runs on stderr
+// rather than letting a short export read as a complete one.
+func TestWorkflowsRunsExportWarnsAboutSkippedRunIDs(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	statuses := map[string]string{
+		"run_done":      "completed",
+		"run_failed":    "error",
+		"run_cancelled": "cancelled",
+	}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		runID := strings.TrimPrefix(r.URL.Path, "/v1/workflows/runs/")
+		status, ok := statuses[runID]
+		if !ok {
+			w.WriteHeader(http.StatusNotFound)
+			_ = json.NewEncoder(w).Encode(map[string]any{"detail": "Workflow run not found"})
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"id":                  runID,
+			"workflow_id":         "wf_123",
+			"workflow_version_id": "ver_1",
+			"trigger":             map[string]any{"type": "manual"},
+			"lifecycle":           map[string]any{"status": status},
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	cmd := &cobra.Command{}
+	var stderr bytes.Buffer
+	cmd.SetErr(&stderr)
+	client, err := newClient(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	warnExportSkippedRunIDs(context.Background(), cmd, client, []string{"run_done", "run_failed", "run_cancelled", "run_missing"})
+
+	note := stderr.String()
+	for _, want := range []string{"run_failed (error)", "run_cancelled (cancelled)", "run_missing (not readable)", "3 of 4"} {
+		if !strings.Contains(note, want) {
+			t.Fatalf("stderr note missing %q, got: %q", want, note)
+		}
+	}
+	if strings.Contains(note, "run_done") {
+		t.Fatalf("completed run must not be reported as skipped, got: %q", note)
+	}
+
+	// An all-completed selection stays silent: a note on every export would
+	// train the reader to ignore it.
+	stderr.Reset()
+	warnExportSkippedRunIDs(context.Background(), cmd, client, []string{"run_done"})
+	if stderr.Len() != 0 {
+		t.Fatalf("no note expected when nothing was skipped, got: %q", stderr.String())
+	}
+
+	// No --run-id means no explicit selection to reconcile against.
+	warnExportSkippedRunIDs(context.Background(), cmd, client, nil)
+	if stderr.Len() != 0 {
+		t.Fatalf("no note expected without --run-id, got: %q", stderr.String())
 	}
 }
 
