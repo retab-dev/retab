@@ -87,10 +87,15 @@ override and takes precedence over anything written to disk.`,
 			return runAccessTokenLogin(accessToken, baseURL)
 		}
 
+		loginSlug, err := loginEnvironmentSlug(cmd)
+		if err != nil {
+			return err
+		}
+
 		// Explicit API-key path. Direct, no browser. Backward compatible
 		// with the original login UX.
 		if apiKey != "" || (!useBrowser && os.Getenv("RETAB_API_KEY") != "") {
-			return runAPIKeyLogin(apiKey, baseURL)
+			return runAPIKeyLogin(apiKey, baseURL, loginSlug)
 		}
 
 		// If `--no-browser` was requested and no key was given, prompt.
@@ -100,7 +105,7 @@ override and takes precedence over anything written to disk.`,
 				return err
 			}
 			if strings.TrimSpace(prompted) != "" {
-				return runAPIKeyLogin(prompted, baseURL)
+				return runAPIKeyLogin(prompted, baseURL, loginSlug)
 			}
 			// fall through to browser flow
 		}
@@ -228,7 +233,15 @@ func chooseLoginEnvironment(currentEnvironmentID string, list *cliPaginatedList[
 
 // runAPIKeyLogin persists an organization API key. Access tokens must use
 // runAccessTokenLogin so they are stored separately and sent as Bearer.
-func runAPIKeyLogin(apiKey, baseURL string) error {
+// runAPIKeyLogin stores an API key. When slug is empty the key becomes the
+// single top-level credential (the original, pre-environments behavior). When
+// slug is set — `auth login --env <slug>` or its `--live` alias — the key is
+// stored as that named environment profile instead, which is the only thing
+// `--env <slug>`/`--live` ever read at request time. Without this branch the
+// profile map had six readers and no writer, so those two selector flags could
+// not be satisfied by any command: their own remediation text sent users here,
+// this function wrote `api_key`, and the next `--live` call failed identically.
+func runAPIKeyLogin(apiKey, baseURL, slug string) error {
 	if apiKey == "" {
 		apiKey = os.Getenv("RETAB_API_KEY")
 	}
@@ -246,17 +259,93 @@ func runAPIKeyLogin(apiKey, baseURL string) error {
 		return fmt.Errorf("access tokens must be passed with --access-token, not --api-key")
 	}
 	cfg, _ := loadConfig()
+	resolvedBaseURL := stripLegacyV1Suffix(configuredLoginBaseURL(baseURL))
+
+	if slug != "" {
+		normalized, err := validateSlug(slug)
+		if err != nil {
+			return err
+		}
+		if cfg.Environments == nil {
+			cfg.Environments = map[string]*environmentProfile{}
+		}
+		profile := cfg.Environments[normalized]
+		if profile == nil {
+			profile = &environmentProfile{CreatedAt: time.Now().UTC().Format(time.RFC3339)}
+			cfg.Environments[normalized] = profile
+		}
+		profile.APIKey = apiKey
+		profile.APIKeyPreview = previewAPIKey(apiKey)
+		profile.BaseURL = resolvedBaseURL
+		// A first named profile also becomes the default, so plain commands
+		// keep working after an environment-scoped login.
+		if cfg.DefaultEnvironment == "" {
+			cfg.DefaultEnvironment = normalized
+		}
+		if err := saveConfig(cfg); err != nil {
+			return err
+		}
+		path, _ := configPath()
+		fmt.Fprintf(os.Stderr, "Saved API key for environment %q to %s\n", normalized, path)
+		return nil
+	}
+
 	cfg.APIKey = apiKey
 	// Wipe stale bearer state — explicit API-key login is the user's intent.
 	cfg.OAuth = nil
 	cfg.AccessToken = ""
-	cfg.BaseURL = stripLegacyV1Suffix(configuredLoginBaseURL(baseURL))
+	cfg.BaseURL = resolvedBaseURL
 	if err := saveConfig(cfg); err != nil {
 		return err
 	}
 	path, _ := configPath()
 	fmt.Fprintf(os.Stderr, "Saved API key to %s\n", path)
 	return nil
+}
+
+// previewAPIKey renders the redacted form kept alongside a stored profile so
+// list views never have to read the raw key: prefix through the second
+// underscore, then the last four characters ("rt_test_...9f2c").
+func previewAPIKey(apiKey string) string {
+	if len(apiKey) < 4 {
+		return "..."
+	}
+	tail := apiKey[len(apiKey)-4:]
+	prefixEnd := 0
+	for seen := 0; prefixEnd < len(apiKey) && seen < 2; prefixEnd++ {
+		if apiKey[prefixEnd] == '_' {
+			seen++
+		}
+	}
+	if prefixEnd == 0 || prefixEnd >= len(apiKey)-4 {
+		return "..." + tail
+	}
+	return apiKey[:prefixEnd] + "..." + tail
+}
+
+// loginEnvironmentSlug resolves the environment profile an API-key login should
+// write to from the --env/--live selectors, mirroring how resolveCredential
+// reads them ("live" folds onto "production"). Empty means an unscoped login.
+func loginEnvironmentSlug(cmd *cobra.Command) (string, error) {
+	envFlag, _ := cmd.Flags().GetString("env")
+	live, _ := cmd.Flags().GetBool("live")
+	if envFlag != "" && live {
+		normalized, err := validateSlug(envFlag)
+		if err != nil {
+			return "", err
+		}
+		if normalized != slugProduction {
+			return "", fmt.Errorf("--live conflicts with --env %s; --live is an alias for --env production", envFlag)
+		}
+		return slugProduction, nil
+	}
+	if live {
+		return slugProduction, nil
+	}
+	if envFlag != "" {
+		return validateSlug(envFlag)
+	}
+	return "", nil
 }
 
 func runAccessTokenLogin(accessToken, baseURL string) error {

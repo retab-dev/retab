@@ -103,3 +103,61 @@ func TestWorkflowsSpecApplyNoWarnWithoutMetadataID(t *testing.T) {
 		t.Fatalf("unexpected footgun warning for a spec without metadata.id; stderr:\n%s", stderr)
 	}
 }
+
+// TestWorkflowsSpecPlanWarnsOnMetadataIDWithProjectID pins the same footgun
+// guard on the READ step. `spec plan <dump> --project-id …` renders every block
+// as "will be created" against a brand-new workflow id, which reads nothing like
+// the edit the author made to the dump — and plan is the output people review
+// before applying, so the warning has to be there too, not only on apply.
+func TestWorkflowsSpecPlanWarnsOnMetadataIDWithProjectID(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+	server := specApplyTestServer(t)
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	path := filepath.Join(t.TempDir(), "wf.yaml")
+	if err := os.WriteFile(path, []byte(specWithMetadataID), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	withSpecPlanProjectID(t)
+	_, stderr := captureStd(t, func() {
+		if err := workflowsSpecPlanCmd.RunE(workflowsSpecPlanCmd, []string{path}); err != nil {
+			t.Fatalf("spec plan: %v", err)
+		}
+	})
+	for _, want := range []string{"wrk_source_123", "NEW workflow", "--to wrk_source_123"} {
+		if !strings.Contains(stderr, want) {
+			t.Fatalf("warning missing %q; stderr:\n%s", want, stderr)
+		}
+	}
+}
+
+// TestWorkflowsSpecPlanNoWarnWithTo pins that the in-place path stays quiet:
+// `plan --to` is the correct round-trip command and must not nag.
+func TestWorkflowsSpecPlanNoWarnWithTo(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+	server := specApplyTestServer(t)
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	path := filepath.Join(t.TempDir(), "wf.yaml")
+	if err := os.WriteFile(path, []byte(specWithMetadataID), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := workflowsSpecPlanCmd.Flags().Set("to", "wrk_source_123"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = workflowsSpecPlanCmd.Flags().Set("to", "") })
+	_, stderr := captureStd(t, func() {
+		if err := workflowsSpecPlanCmd.RunE(workflowsSpecPlanCmd, []string{path}); err != nil {
+			t.Fatalf("spec plan --to: %v", err)
+		}
+	})
+	if strings.Contains(stderr, "NEW workflow") {
+		t.Fatalf("unexpected duplicate warning on the in-place path; stderr:\n%s", stderr)
+	}
+}

@@ -98,6 +98,21 @@ func ParseAPIError(resp *http.Response, body []byte) *APIError {
 		if details, ok := detail["details"].(map[string]any); ok {
 			apiErr.Details = details
 		}
+		// Some endpoints report a whole list of problems rather than one:
+		// the declarative workflow spec compiler returns
+		// {"detail":{"code":"DECLARATIVE_COMPILE_ERROR","message":"<first> (N issues)","errors":[...]}}
+		// where each entry carries yaml_path/block_path/code and a details
+		// map that often names the fix (e.g. available_handles). None of that
+		// lives under `detail.details`, so without this it was parsed away and
+		// callers only ever saw the summary message for issue #1.
+		if issues, ok := detail["errors"].([]any); ok && len(issues) > 0 {
+			if apiErr.Details == nil {
+				apiErr.Details = map[string]any{}
+			}
+			if _, taken := apiErr.Details["errors"]; !taken {
+				apiErr.Details["errors"] = issues
+			}
+		}
 	case []any:
 		// FastAPI's native validation shape is {"detail": [ {loc, msg, type}, ... ]}.
 		// Stringify it so the user sees the actual validation errors instead of

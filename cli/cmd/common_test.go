@@ -1206,3 +1206,111 @@ func TestMaterializeInlineMIMEData(t *testing.T) {
 		t.Fatalf("filename = %q; want invoice.pdf preserved", got.Filename)
 	}
 }
+
+// TestRenderAPIErrorForCLIExpandsIssueList pins the expansion of a
+// multi-issue error body. The declarative spec compiler returns every problem
+// with the spec under detail.errors[], but the summary message only names the
+// first one ("<issue 1> (3 issues)"). Rendering just that summary turned
+// `workflows spec validate` — whose whole job is reporting spec problems —
+// into a fix-one-retry loop, and dropped the details map that names the legal
+// values (available_handles).
+func TestRenderAPIErrorForCLIExpandsIssueList(t *testing.T) {
+	cmd := commandWithDebugFlagForTest(t, false)
+	apiErr := &retab.APIError{
+		StatusCode: 400,
+		Code:       "DECLARATIVE_COMPILE_ERROR",
+		Message:    "spec.edges[1].source.handle: source handle 'invoice' must be an exact runtime handle id. (3 issues)",
+		RequestID:  "req_123",
+		Details: map[string]any{
+			"errors": []any{
+				map[string]any{
+					"code":      "INVALID_EDGE_HANDLE",
+					"message":   "spec.edges[1].source.handle: source handle 'invoice' must be an exact runtime handle id.",
+					"yaml_path": "spec.edges[1].source.handle",
+					"severity":  "error",
+				},
+				map[string]any{
+					"code":      "INVALID_EDGE_HANDLE",
+					"message":   "spec.edges[2].source.handle: source handle 'receipt' must be an exact runtime handle id.",
+					"yaml_path": "spec.edges[2].source.handle",
+					"severity":  "error",
+				},
+				map[string]any{
+					"code":      "UNKNOWN_INPUT_HANDLE",
+					"message":   "spec.edges[4].target.handle: block 'merge' has no input handle 'input-json-1'.",
+					"yaml_path": "spec.edges[4].target.handle",
+					"severity":  "error",
+					"details":   map[string]any{"handle": "input-json-1", "available_handles": []any{"input-json-0"}},
+				},
+			},
+		},
+	}
+
+	got := renderAPIErrorForCLI(cmd, apiErr)
+
+	if !strings.Contains(got, "3 issues found:") {
+		t.Fatalf("missing issue count header:\n%s", got)
+	}
+	for _, want := range []string{
+		"source handle 'invoice'",
+		"source handle 'receipt'",
+		"has no input handle 'input-json-1'",
+		"[UNKNOWN_INPUT_HANDLE]",
+		"available handles: input-json-0",
+		"Request-ID: req_123",
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("output missing %q:\n%s", want, got)
+		}
+	}
+	// The header must not also repeat issue #1, which the summary message is
+	// a copy of; that printed the same problem twice.
+	if strings.Count(got, "source handle 'invoice'") != 1 {
+		t.Fatalf("issue #1 rendered more than once:\n%s", got)
+	}
+}
+
+// TestRenderAPIErrorForCLISingleIssueNotDuplicated covers the one-issue case,
+// where the summary message and the only bullet are the same text.
+func TestRenderAPIErrorForCLISingleIssueNotDuplicated(t *testing.T) {
+	cmd := commandWithDebugFlagForTest(t, false)
+	apiErr := &retab.APIError{
+		StatusCode: 400,
+		Message:    "spec.edges[1].source.handle: block 'parse' has no output handle 'output-file-0'.",
+		Details: map[string]any{
+			"errors": []any{
+				map[string]any{
+					"code":      "UNKNOWN_OUTPUT_HANDLE",
+					"message":   "spec.edges[1].source.handle: block 'parse' has no output handle 'output-file-0'.",
+					"yaml_path": "spec.edges[1].source.handle",
+					"details":   map[string]any{"available_handles": []any{"output-json-0"}},
+				},
+			},
+		},
+	}
+
+	got := renderAPIErrorForCLI(cmd, apiErr)
+
+	if strings.Count(got, "has no output handle") != 1 {
+		t.Fatalf("single issue rendered more than once:\n%s", got)
+	}
+	if !strings.Contains(got, "available handles: output-json-0") {
+		t.Fatalf("missing the actionable hint:\n%s", got)
+	}
+}
+
+// TestRenderAPIErrorForCLIWithoutIssueListUnchanged guards the ordinary
+// single-message path against regressions from the expansion branch.
+func TestRenderAPIErrorForCLIWithoutIssueListUnchanged(t *testing.T) {
+	cmd := commandWithDebugFlagForTest(t, false)
+	apiErr := &retab.APIError{StatusCode: 404, Message: "Workflow not found", RequestID: "req_9"}
+
+	got := renderAPIErrorForCLI(cmd, apiErr)
+
+	if !strings.Contains(got, "404 — Workflow not found") {
+		t.Fatalf("plain error rendering changed:\n%s", got)
+	}
+	if strings.Contains(got, "issues found") {
+		t.Fatalf("unexpected issue header:\n%s", got)
+	}
+}

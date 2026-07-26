@@ -2579,10 +2579,176 @@ func TestValidateWorkflowEvalTargetRejectsUnknownKeys(t *testing.T) {
 	}
 }
 
+// TestValidateWorkflowEvalAssertionRejectsUnknownKeys is the assertion-side
+// sibling of the target/source typo guards above. The assertion is decoded into
+// the typed retab.AssertionSpec before it is sent, and json.Unmarshal silently
+// discards unknown fields — so without this guard a typo'd key never reached the
+// wire at all. That made the CLI strictly worse than calling the API directly:
+// OutputTarget is declared `additionalProperties: false`, so the server answers
+// a stray `assertion.target` key with a 422, while the CLI laundered it into a
+// silent semantic change. A typo'd `path` (`paht`) dropped the field scope and
+// turned "assert doubled == 42" into "assert the whole output handle == 42",
+// which then reported a spurious regression against an unchanged block.
+func TestValidateWorkflowEvalAssertionRejectsUnknownKeys(t *testing.T) {
+	valid := func() map[string]any {
+		return map[string]any{
+			"target":    map[string]any{"output_handle_id": "output-json-0", "path": "doubled"},
+			"condition": map[string]any{"kind": "equals", "expected": 42},
+		}
+	}
+	cases := []struct {
+		name      string
+		mutate    func(map[string]any)
+		wantError string // substring; "" means the assertion must validate cleanly
+	}{
+		{
+			name:   "valid field-scoped assertion",
+			mutate: func(map[string]any) {},
+		},
+		{
+			name: "valid whole-handle assertion without path",
+			mutate: func(a map[string]any) {
+				delete(a["target"].(map[string]any), "path")
+			},
+		},
+		{
+			name: "valid with optional id and label",
+			mutate: func(a map[string]any) {
+				a["id"] = "equals_0"
+				a["label"] = "baseline"
+			},
+		},
+		{
+			name: "target typo paht instead of path",
+			mutate: func(a map[string]any) {
+				target := a["target"].(map[string]any)
+				delete(target, "path")
+				target["paht"] = "doubled"
+			},
+			wantError: "paht",
+		},
+		{
+			name: "target unknown key",
+			mutate: func(a map[string]any) {
+				a["target"].(map[string]any)["bogus_extra"] = 123
+			},
+			wantError: "bogus_extra",
+		},
+		{
+			name: "assertion top-level unknown key",
+			mutate: func(a map[string]any) {
+				a["junk"] = true
+			},
+			wantError: "junk",
+		},
+		{
+			name: "assertion top-level typo lable instead of label",
+			mutate: func(a map[string]any) {
+				a["lable"] = "baseline"
+			},
+			wantError: "lable",
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			assertion := valid()
+			tc.mutate(assertion)
+			err := validateWorkflowEvalAssertion(assertion)
+			if tc.wantError == "" {
+				if err != nil {
+					t.Fatalf("expected valid assertion, got error: %v", err)
+				}
+				return
+			}
+			if err == nil {
+				t.Fatalf("expected error mentioning %q, got nil", tc.wantError)
+			}
+			if !strings.Contains(err.Error(), tc.wantError) {
+				t.Fatalf("error %q does not mention %q", err.Error(), tc.wantError)
+			}
+		})
+	}
+}
+
 // TestWorkflowEvalRunTerminalErrorFailsOnNonPassingAssertions guards that
 // `workflows evals runs create --wait` exits non-zero when a completed run has
 // failed or blocked assertions, so CI can gate a build on a detected regression
 // (not only on lifecycle error/cancelled/timeout).
+// TestWorkflowEvalRunTerminalErrorSurfacesLifecycleMessage guards that a run
+// that ends in `error` reports WHY. `--wait` exists so CI does not poll, which
+// makes its one-line failure the only thing most humans read; it used to say
+// just "ended with status error" and drop the server's own explanation, sending
+// the reader back to `runs get`. A mistyped `--eval-id` is the common way to hit
+// this: the create returns 201 and the run then fails with "block eval not
+// found: <id>".
+func TestWorkflowEvalRunTerminalErrorSurfacesLifecycleMessage(t *testing.T) {
+	erroredRun := func(id, message string) *retab.WorkflowEvalRun {
+		return &retab.WorkflowEvalRun{
+			ID: id,
+			Lifecycle: retab.WorkflowEvalRunStatusFromErrorWorkflowEvalRun(retab.ErrorWorkflowEvalRun{
+				Message: message,
+			}),
+		}
+	}
+	cases := []struct {
+		name    string
+		run     *retab.WorkflowEvalRun
+		want    []string
+		notWant []string
+	}{
+		{
+			name: "error message is surfaced",
+			run:  erroredRun("wfevalrun_x", "block eval not found: wfnodeeval_typo"),
+			want: []string{"wfevalrun_x", "error", "block eval not found: wfnodeeval_typo"},
+		},
+		{
+			name:    "placeholder message is omitted",
+			run:     erroredRun("wfevalrun_y", "(no message)"),
+			want:    []string{"wfevalrun_y", "error"},
+			notWant: []string{"(no message)"},
+		},
+		{
+			name:    "empty message is omitted",
+			run:     erroredRun("wfevalrun_z", ""),
+			want:    []string{"wfevalrun_z", "error"},
+			notWant: []string{": "},
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := workflowEvalRunTerminalError(tc.run)
+			if err == nil {
+				t.Fatal("expected an error for an errored run")
+			}
+			for _, want := range tc.want {
+				if !strings.Contains(err.Error(), want) {
+					t.Fatalf("error %q does not contain %q", err.Error(), want)
+				}
+			}
+			for _, notWant := range tc.notWant {
+				if strings.Contains(err.Error(), notWant) {
+					t.Fatalf("error %q should not contain %q", err.Error(), notWant)
+				}
+			}
+		})
+	}
+}
+
+// A cancelled run has no error message variant; it must still report cleanly.
+func TestWorkflowEvalRunTerminalErrorCancelledHasNoMessage(t *testing.T) {
+	run := &retab.WorkflowEvalRun{
+		ID:        "wfevalrun_c",
+		Lifecycle: retab.WorkflowEvalRunStatusFromCancelledWorkflowEvalRun(retab.CancelledWorkflowEvalRun{}),
+	}
+	err := workflowEvalRunTerminalError(run)
+	if err == nil {
+		t.Fatal("expected an error for a cancelled run")
+	}
+	if got := err.Error(); got != "workflow-eval run wfevalrun_c ended with status cancelled" {
+		t.Fatalf("unexpected cancelled message: %q", got)
+	}
+}
+
 func TestWorkflowEvalRunTerminalErrorFailsOnNonPassingAssertions(t *testing.T) {
 	completed := func(passed, failed, blocked int) *retab.WorkflowEvalRun {
 		return &retab.WorkflowEvalRun{

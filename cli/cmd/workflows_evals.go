@@ -313,7 +313,20 @@ func validateWorkflowEvalAssertion(assertion map[string]any) error {
 	if _, ok := assertion["condition"].(map[string]any); !ok {
 		return fmt.Errorf("assertion.condition is required")
 	}
-	return nil
+	// The assertion is decoded into the typed retab.AssertionSpec before it is
+	// sent, and json.Unmarshal silently discards unknown fields — so a typo'd
+	// key never reaches the wire. That is strictly worse than calling the API
+	// directly: OutputTarget is declared `additionalProperties: false`, so the
+	// server answers a stray `assertion.target` key with a 422, while the CLI
+	// laundered it into a silent semantic change (a typo'd `path` turned a
+	// field-scoped assertion into a whole-handle one that then "regressed").
+	// Guard both objects locally, mirroring the target/source contract above.
+	// `condition` is a 21-variant discriminated union the server validates
+	// precisely, so it is deliberately left to the server.
+	if err := rejectUnknownEvalKeys("assertion.target", target, "output_handle_id", "path"); err != nil {
+		return err
+	}
+	return rejectUnknownEvalKeys("assertion", assertion, "id", "target", "condition", "label")
 }
 
 func validateWorkflowEvalTarget(target map[string]any) error {
@@ -1079,13 +1092,44 @@ func workflowEvalRunTerminalError(run *retab.WorkflowEvalRun) error {
 		}
 		return workflowEvalRunRegressionError(run, failed, blocked, childErrors, childCancelled)
 	case "error", "cancelled":
-		if run.ID == "" {
+		// Surface the lifecycle's own message. --wait exists so CI does not have
+		// to poll, so its failure line is often the ONLY thing a human reads --
+		// and "ended with status error" alone sends them back to `runs get` for
+		// the cause the server already handed us (e.g. "block eval not found:
+		// wfnodeeval_...", which is how a mistyped --eval-id surfaces).
+		detail := workflowEvalRunLifecycleMessage(run)
+		switch {
+		case run.ID == "" && detail == "":
 			return fmt.Errorf("workflow-eval run ended with status %s", status)
+		case run.ID == "":
+			return fmt.Errorf("workflow-eval run ended with status %s: %s", status, detail)
+		case detail == "":
+			return fmt.Errorf("workflow-eval run %s ended with status %s", run.ID, status)
+		default:
+			return fmt.Errorf("workflow-eval run %s ended with status %s: %s", run.ID, status, detail)
 		}
-		return fmt.Errorf("workflow-eval run %s ended with status %s", run.ID, status)
 	default:
 		return nil
 	}
+}
+
+// workflowEvalRunLifecycleMessage extracts the human-readable message the
+// server attaches to an errored workflow-eval run's lifecycle. Returns "" for
+// any other status, an unset lifecycle, or the SDK's "(no message)" default
+// placeholder, so callers can omit the detail rather than print a filler.
+func workflowEvalRunLifecycleMessage(run *retab.WorkflowEvalRun) string {
+	if run == nil || run.Lifecycle.Status() != "error" {
+		return ""
+	}
+	errored, err := run.Lifecycle.AsErrorWorkflowEvalRun()
+	if err != nil || errored == nil {
+		return ""
+	}
+	message := strings.TrimSpace(errored.Message)
+	if message == "(no message)" {
+		return ""
+	}
+	return message
 }
 
 // workflowEvalRunNonPassingCounts reads the failed and blocked outcome buckets
@@ -1499,7 +1543,10 @@ func init() {
 
 	workflowsEvalsRunsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items (1-100; default 20)")
 	workflowsEvalsRunsListCmd.Flags().String("workflow-id", "", "workflow id (alternative to the positional form)")
-	workflowsEvalsRunsListCmd.Flags().String("eval-id", "", "filter by eval id")
+	// Scope-based, not membership-based: a run stores the eval id only when it
+	// was created FOR that one eval, so this matches single-eval runs and not
+	// whole-suite runs that happened to cover it.
+	workflowsEvalsRunsListCmd.Flags().String("eval-id", "", "only runs scoped to this single eval (whole-suite runs are not matched)")
 	workflowsEvalsRunsListCmd.Flags().String("target-block-id", "", "filter by target block id")
 	workflowsEvalsRunsListCmd.Flags().String("status", "", "filter by lifecycle status")
 	workflowsEvalsRunsListCmd.Flags().String("exclude-status", "", "exclude lifecycle status")

@@ -1087,10 +1087,15 @@ var workflowsRunsGetCmd = &cobra.Command{
 	Use:   "get <run-id>",
 	Short: "Get a workflow run",
 	Long: `Fetch a run's metadata: status, trigger type, timestamps,
-duration, cost, error info. The run payload does not include per-block
+inputs, metadata, error info. The run payload does not include per-block
 steps by default; pass ` + "`--steps`" + ` to fetch and embed them under
 ` + "`steps`" + `, or use ` + "`workflows steps list`" + ` for the full
 per-block detail and outputs.
+
+There is no duration or cost field on a run: wall-clock duration is
+` + "`timing.completed_at - timing.started_at`" + `, subtracted client-side, and
+per-block spend is reported by ` + "`retab usage`" + `. (` + "`runs list`" + ` still
+filters server-side on duration via ` + "`--min-duration`" + `/` + "`--max-duration`" + `.)
 
 Run ids are globally unique, so read and poll commands take only the
 ` + "`<run-id>`" + ` — the workflow id is never in the path. Only ` + "`runs create`" + `,
@@ -1442,7 +1447,6 @@ make the cancel idempotent if you may retry the request.`,
 		return printResult(cmd, result)
 	}),
 }
-
 
 // workflowRunIsSettledForCancel reports whether a run's lifecycle status means
 // the cancel can no longer take effect, so `runs cancel` can say the run

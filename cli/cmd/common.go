@@ -21,6 +21,7 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -229,6 +230,14 @@ func renderAPIErrorForCLI(cmd *cobra.Command, apiErr *retab.APIError) string {
 		}
 		return strings.Join(lines, "\n")
 	}
+	if issueLines, issueCount := formatAPIErrorIssueLines(apiErr.Details); len(issueLines) > 0 {
+		lines := []string{fmt.Sprintf("%d — %s", apiErr.StatusCode, summarizeIssueCount(issueCount))}
+		lines = append(lines, issueLines...)
+		if apiErr.RequestID != "" {
+			lines = append(lines, "  Request-ID: "+apiErr.RequestID)
+		}
+		return strings.Join(lines, "\n")
+	}
 	message := apiErr.Message
 	if detail := usefulAPIErrorDetail(apiErr.Details); detail != "" && isGenericAPIErrorMessage(message) {
 		message = detail
@@ -311,6 +320,122 @@ func usefulAPIErrorDetail(details map[string]any) string {
 		}
 	}
 	return ""
+}
+
+// formatAPIErrorIssueLines renders the full problem list an endpoint returned
+// instead of just the first one. The declarative spec compiler is the
+// motivating case: `workflows spec validate/plan/apply` exists precisely to
+// report everything wrong with a spec, but the error body's summary message
+// only names issue #1 and appends "(N issues)". Rendering just that summary
+// forced a fix-one-retry loop through N round trips and threw away the
+// per-issue yaml_path plus the details map, which frequently spells out the
+// fix (available_handles being the clearest example).
+//
+// Returns nil when there is no issue list, so callers fall back to the plain
+// message rendering. The second return is the number of issues rendered, which
+// is not len(lines): a single issue can also emit indented hint lines.
+func formatAPIErrorIssueLines(details map[string]any) ([]string, int) {
+	raw, ok := details["errors"].([]any)
+	if !ok || len(raw) == 0 {
+		return nil, 0
+	}
+	lines := make([]string, 0, len(raw))
+	issues := 0
+	for _, entry := range raw {
+		issue, ok := entry.(map[string]any)
+		if !ok {
+			continue
+		}
+		message := strings.TrimSpace(issueTextFromAny(issue["message"]))
+		yamlPath := strings.TrimSpace(issueTextFromAny(issue["yaml_path"]))
+		// The server already prefixes most messages with the yaml path; only
+		// add it when it is genuinely missing so the line does not stutter.
+		if yamlPath != "" && !strings.HasPrefix(message, yamlPath) {
+			if message == "" {
+				message = yamlPath
+			} else {
+				message = yamlPath + ": " + message
+			}
+		}
+		if message == "" {
+			continue
+		}
+		if severity := strings.TrimSpace(issueTextFromAny(issue["severity"])); severity != "" && severity != "error" {
+			message = strings.ToUpper(severity) + ": " + message
+		}
+		if code := strings.TrimSpace(issueTextFromAny(issue["code"])); code != "" {
+			message += "  [" + code + "]"
+		}
+		lines = append(lines, "  - "+message)
+		lines = append(lines, formatIssueDetailHints(issue["details"])...)
+		issues++
+	}
+	return lines, issues
+}
+
+// formatIssueDetailHints surfaces the list-valued entries of an issue's details
+// map ("available_handles": [...] and friends). Those enumerate the legal
+// values, so they turn "handle X is not valid" into an actionable message.
+// Scalar detail keys are skipped: they are already quoted in the message.
+func formatIssueDetailHints(raw any) []string {
+	details, ok := raw.(map[string]any)
+	if !ok || len(details) == 0 {
+		return nil
+	}
+	keys := make([]string, 0, len(details))
+	for key := range details {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	hints := make([]string, 0, len(keys))
+	for _, key := range keys {
+		values, ok := details[key].([]any)
+		if !ok || len(values) == 0 {
+			continue
+		}
+		rendered := make([]string, 0, len(values))
+		for _, value := range values {
+			if text := strings.TrimSpace(issueTextFromAny(value)); text != "" {
+				rendered = append(rendered, text)
+			}
+		}
+		if len(rendered) == 0 {
+			continue
+		}
+		label := strings.ReplaceAll(key, "_", " ")
+		hints = append(hints, fmt.Sprintf("    %s: %s", label, strings.Join(rendered, ", ")))
+	}
+	return hints
+}
+
+// summarizeIssueCount builds the header line above an expanded issue list.
+// The server's summary message is always a copy of issue #1 (with "(N issues)"
+// glued on when there are several), and issue #1 is about to be printed as the
+// first bullet, so echoing the message here would print it twice. A bare count
+// is the one thing the bullets do not already say.
+func summarizeIssueCount(count int) string {
+	if count == 1 {
+		return "1 issue found:"
+	}
+	return fmt.Sprintf("%d issues found:", count)
+}
+
+// issueTextFromAny is the tolerant sibling of stringFromAny: issue detail
+// values arrive as free-form JSON, so numbers and bools must render too.
+func issueTextFromAny(value any) string {
+	switch typed := value.(type) {
+	case string:
+		return typed
+	case nil:
+		return ""
+	case float64:
+		return strconv.FormatFloat(typed, 'f', -1, 64)
+	case bool:
+		return strconv.FormatBool(typed)
+	default:
+		return fmt.Sprint(typed)
+	}
 }
 
 type validationErrorLine struct {

@@ -1516,3 +1516,96 @@ func TestWorkflowRunMetadataOmittedWhenAbsentThroughSDK(t *testing.T) {
 		t.Fatalf("bare run metadata should be nil, got %#v", created.Metadata)
 	}
 }
+
+// The declarative workflow spec compiler reports every problem with a spec at
+// once: {"detail":{"code":...,"message":"<issue 1> (N issues)","errors":[...]}}.
+// parseAPIError only lifted detail.code/message/details, so the errors array —
+// the only place issues 2..N and the per-issue details (available_handles and
+// friends) live — was parsed away, leaving callers unable to show more than
+// the first problem.
+func TestAPIErrorCapturesDetailErrorsList(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"detail": map[string]any{
+				"code":    "DECLARATIVE_COMPILE_ERROR",
+				"message": "spec.edges[1].source.handle: bad handle. (2 issues)",
+				"errors": []any{
+					map[string]any{"code": "INVALID_EDGE_HANDLE", "message": "spec.edges[1].source.handle: bad handle."},
+					map[string]any{
+						"code":    "UNKNOWN_INPUT_HANDLE",
+						"message": "spec.edges[4].target.handle: block 'merge' has no input handle 'input-json-1'.",
+						"details": map[string]any{"available_handles": []any{"input-json-0"}},
+					},
+				},
+			},
+		})
+	}))
+	defer server.Close()
+
+	client, err := NewClient("test-key", WithBaseURL(server.URL))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = client.Workflows.Runs.Get(context.Background(), "run_123")
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	apiErr, ok := err.(*APIError)
+	if !ok {
+		t.Fatalf("expected APIError, got %T", err)
+	}
+	if apiErr.Code != "DECLARATIVE_COMPILE_ERROR" {
+		t.Fatalf("code = %q", apiErr.Code)
+	}
+	issues, ok := apiErr.Details["errors"].([]any)
+	if !ok {
+		t.Fatalf("Details[errors] = %#v, want the issue list", apiErr.Details)
+	}
+	if len(issues) != 2 {
+		t.Fatalf("captured %d issues, want 2", len(issues))
+	}
+	second, ok := issues[1].(map[string]any)
+	if !ok {
+		t.Fatalf("issue[1] = %#v", issues[1])
+	}
+	details, ok := second["details"].(map[string]any)
+	if !ok || details["available_handles"] == nil {
+		t.Fatalf("issue[1].details = %#v, want available_handles preserved", second["details"])
+	}
+}
+
+// A body that carries detail.details must keep it: the errors capture is
+// additive and must not clobber the existing map.
+func TestAPIErrorDetailDetailsSurvivesErrorsCapture(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"detail": map[string]any{
+				"message": "boom",
+				"details": map[string]any{"error": "inner detail"},
+				"errors":  []any{map[string]any{"message": "issue one"}},
+			},
+		})
+	}))
+	defer server.Close()
+
+	client, err := NewClient("test-key", WithBaseURL(server.URL))
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = client.Workflows.Runs.Get(context.Background(), "run_123")
+	apiErr, ok := err.(*APIError)
+	if !ok {
+		t.Fatalf("expected APIError, got %T", err)
+	}
+	if apiErr.Details["error"] != "inner detail" {
+		t.Fatalf("Details = %#v, want detail.details preserved", apiErr.Details)
+	}
+	if _, ok := apiErr.Details["errors"].([]any); !ok {
+		t.Fatalf("Details = %#v, want the issue list added alongside", apiErr.Details)
+	}
+}

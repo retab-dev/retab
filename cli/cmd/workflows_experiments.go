@@ -611,9 +611,10 @@ The experiment id is the only required positional. A leading
 	Example: `  # Increase consensus to measure stability
   retab workflows experiments update exp_pqr678 --n-consensus 5
 
-  # Add more documents from production
+  # REPLACE the document set — the experiment ends up holding exactly these
+  # captures, and every document not listed here is dropped
   retab workflows experiments update exp_pqr678 \
-    --captures-file ./more-captures.json`,
+    --captures-file ./whole-document-set.json`,
 	Args: cobra.RangeArgs(1, 2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		experimentID, err := resolveExperimentIDArg(args)
@@ -1314,6 +1315,17 @@ func init() {
 	workflowsExperimentsUpdateCmd.Flags().String("name", "", "new name")
 	workflowsExperimentsUpdateCmd.Flags().Var(&consensusFlagValue{}, "n-consensus", "new consensus count (3, 5, or 7)")
 	addExperimentDocFlags(workflowsExperimentsUpdateCmd)
+	// On update these three flags REPLACE the experiment's document set; the PATCH
+	// $sets `documents` from the request alone and never reads what is already
+	// there. The shared create wording reads as "add", so a caller who passes one
+	// capture to an experiment holding five silently drops the other four along
+	// with the results they already paid to measure. Say so on the flags.
+	workflowsExperimentsUpdateCmd.Flags().Lookup("capture").Usage =
+		"REPLACES the document set with the captures given here: run-id[:step-id] (repeatable; inline alternative to --captures-file)"
+	workflowsExperimentsUpdateCmd.Flags().Lookup("captures-file").Usage =
+		"REPLACES the document set with this JSON array of {run_id, step_id} captures (or - for stdin)"
+	workflowsExperimentsUpdateCmd.Flags().Lookup("documents-file").Usage =
+		"REPLACES the document set with this JSON array of {handle_inputs, provenance} (or - for stdin)"
 
 	workflowsExperimentsRunsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items (1-100; default 20)")
 	workflowsExperimentsRunsListCmd.Flags().String("workflow-id", "", "filter by workflow id")

@@ -963,3 +963,85 @@ func TestWorkflowsBlocksGetHonorsTableOutputFallback(t *testing.T) {
 		t.Fatalf("expected JSON fallback payload, got:\n%s", stdout)
 	}
 }
+
+// `blocks get`'s handles block is the self-describing wiring surface: it is how
+// a caller learns what to pass to `edges create`. Deriving inputs from
+// config.inputs ALONE reported nothing for most block types — a parse block, a
+// container, and an extract block whose config declares no explicit inputs all
+// came back with no input handles at all, even though the compiler validates
+// edges to those handles and the runtime feeds them. These pin the engine's
+// tables (workflow_engine/handles/block_handles.go).
+func TestDeriveBlockHandlesCoversStaticAndDefaultHandles(t *testing.T) {
+	handlesOf := func(block map[string]any, key string) []string {
+		t.Helper()
+		derived := deriveBlockHandles(block)
+		if derived == nil {
+			return nil
+		}
+		values, _ := derived[key].([]string)
+		return values
+	}
+	equal := func(got []string, want ...string) bool {
+		if len(got) != len(want) {
+			return false
+		}
+		for i := range got {
+			if got[i] != want[i] {
+				return false
+			}
+		}
+		return true
+	}
+
+	// An extract block with no config.inputs still exposes the default document
+	// input — this is the exact shape a `--config-file` replace leaves behind.
+	if got := handlesOf(map[string]any{"type": "extract", "config": map[string]any{"json_schema": map[string]any{}}}, "input"); !equal(got, "input-file-document") {
+		t.Fatalf("extract default input handles = %#v, want [input-file-document]", got)
+	}
+	if got := handlesOf(map[string]any{"type": "classifier", "config": map[string]any{"categories": []any{}}}, "input"); !equal(got, "input-file-document") {
+		t.Fatalf("classifier default input handles = %#v, want [input-file-document]", got)
+	}
+	if got := handlesOf(map[string]any{"type": "parse", "config": map[string]any{"model": "retab-small"}}, "input"); !equal(got, "input-file-0") {
+		t.Fatalf("parse input handles = %#v, want [input-file-0]", got)
+	}
+	if got := handlesOf(map[string]any{"type": "parse", "config": map[string]any{}}, "output"); !equal(got, "output-json-0") {
+		t.Fatalf("parse output handles = %#v, want [output-json-0]", got)
+	}
+	if got := handlesOf(map[string]any{"type": "for_each", "config": map[string]any{"map_method": "iterate_pages"}}, "input"); !equal(got, "fe-left-in", "fe-right-in") {
+		t.Fatalf("for_each input handles = %#v, want the container boundary handles", got)
+	}
+	if got := handlesOf(map[string]any{"type": "for_each", "config": map[string]any{}}, "output"); !equal(got, "fe-right-out", "fe-left-out") {
+		t.Fatalf("for_each output handles = %#v", got)
+	}
+	if got := handlesOf(map[string]any{"type": "while_loop", "config": map[string]any{}}, "input"); !equal(got, "loop-left-in", "loop-right-in", "loop-termination") {
+		t.Fatalf("while_loop input handles = %#v", got)
+	}
+	if got := handlesOf(map[string]any{"type": "conditional", "config": map[string]any{"has_else": true}}, "input"); !equal(got, "input-json-0") {
+		t.Fatalf("conditional input handles = %#v, want [input-json-0]", got)
+	}
+	if got := handlesOf(map[string]any{"type": "edit", "config": map[string]any{"use_template": false}}, "input"); !equal(got, "input-file-0", "input-json-0", "input-json-1") {
+		t.Fatalf("edit input handles = %#v", got)
+	}
+	if got := handlesOf(map[string]any{"type": "edit", "config": map[string]any{"use_template": true}}, "input"); !equal(got, "input-json-0") {
+		t.Fatalf("templated edit input handles = %#v, want [input-json-0]", got)
+	}
+	if got := handlesOf(map[string]any{"type": "merge_dicts", "config": map[string]any{"inputs": []any{map[string]any{"name": "left"}, map[string]any{"name": "right"}}}}, "input"); !equal(got, "input-json-left", "input-json-right") {
+		t.Fatalf("merge_dicts input handles = %#v", got)
+	}
+	// Explicit inputs still win over the default.
+	explicit := map[string]any{"type": "extract", "config": map[string]any{"inputs": []any{
+		map[string]any{"name": "document", "type": "file"},
+		map[string]any{"name": "context", "type": "json"},
+	}}}
+	if got := handlesOf(explicit, "input"); !equal(got, "input-file-document", "input-json-context") {
+		t.Fatalf("explicit extract inputs = %#v", got)
+	}
+	// Start blocks genuinely accept nothing inbound.
+	if got := handlesOf(map[string]any{"type": "start_document", "config": map[string]any{}}, "input"); len(got) != 0 {
+		t.Fatalf("start_document must expose no input handles, got %#v", got)
+	}
+	// Routing outputs stay unguessed: their names come from configured routes.
+	if got := handlesOf(map[string]any{"type": "split", "config": map[string]any{"subdocuments": []any{map[string]any{"name": "invoice"}}}}, "output"); len(got) != 0 {
+		t.Fatalf("split output handles must not be guessed, got %#v", got)
+	}
+}
