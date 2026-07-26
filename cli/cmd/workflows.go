@@ -54,6 +54,39 @@ func isStartDocumentBlock(block retab.WorkflowBlock) bool {
 	return block.Type == "start_document"
 }
 
+// publishedVersionID reads the workflow's currently live version id, or "" when
+// the workflow is unpublished or the lookup fails. Advisory only — a failure
+// here must not block the publish itself.
+func publishedVersionID(ctx context.Context, client *retab.Client, workflowID string) string {
+	workflow, err := client.Workflows.Get(ctx, workflowID)
+	if err != nil || workflow == nil || workflow.Published == nil || workflow.Published.VersionID == nil {
+		return ""
+	}
+	return *workflow.Published.VersionID
+}
+
+// warnIfPublishWasNoop reports the case where publish returned the version that
+// was already live. The server dedupes an unchanged draft, so nothing is cut and
+// --description is dropped — including after a metadata-only edit, since a
+// workflow's name and description are not part of the versioned graph. Without
+// this the command exits 0 and prints a published block that looks like a fresh
+// release but carries the previous version's id and release note.
+func warnIfPublishWasNoop(cmd *cobra.Command, publishedVersionBefore string, result *retab.Workflow) {
+	if publishedVersionBefore == "" || result.Published == nil || result.Published.VersionID == nil {
+		return
+	}
+	if *result.Published.VersionID != publishedVersionBefore {
+		return
+	}
+	fmt.Fprintf(cmd.ErrOrStderr(),
+		"note: draft is identical to the live version %s — no new version was published.\n",
+		publishedVersionBefore)
+	if cmd.Flags().Changed("description") {
+		fmt.Fprintln(cmd.ErrOrStderr(),
+			"note: --description was not stored; the release note below is the one already on that version.")
+	}
+}
+
 var workflowsCmd = &cobra.Command{
 	Use:     "workflows",
 	Aliases: []string{"workflow"},
@@ -365,6 +398,12 @@ Subsequent ` + "`workflows runs create`" + ` calls without an explicit
 The draft remains editable after publishing; iterate freely, then publish
 again to cut a new version.
 
+Publishing a draft that already matches the live version is a no-op: no
+version is cut and ` + "`--description`" + ` is discarded. The command still
+exits 0 and prints the live version, so it notes the no-op on stderr. A
+metadata-only edit lands in this case too — a workflow's name and description
+are not part of the versioned graph.
+
 Before publishing, the CLI warns when the draft appears empty (a draft with only the auto-added
 ` + "`start_document`" + ` block produces a no-op published version);
 ` + "`--force`" + ` suppresses that warning.`,
@@ -398,6 +437,11 @@ Before publishing, the CLI warns when the draft appears empty (a draft with only
 		if cmd.Flags().Changed("description") {
 			publishBody.Description = ptr(description)
 		}
+		// Publishing a draft that already matches the live version is a
+		// server-side no-op: no version is cut and --description is discarded.
+		// Remember the live id so that outcome can be named instead of leaving
+		// `publish --description "release $SHA"` to exit 0 looking successful.
+		publishedVersionBefore := publishedVersionID(ctx, client, args[0])
 		result, err := client.Workflows.Publish(ctx, args[0], &retab.WorkflowsPublishParams{
 			Body: publishBody,
 		})
@@ -407,6 +451,7 @@ Before publishing, the CLI warns when the draft appears empty (a draft with only
 		if result == nil || strings.TrimSpace(result.ID) == "" {
 			return fmt.Errorf("publish response did not include workflow id")
 		}
+		warnIfPublishWasNoop(cmd, publishedVersionBefore, result)
 		return printResult(cmd, result)
 	}),
 }

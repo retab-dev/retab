@@ -202,7 +202,13 @@ push-config. It does not create workflow runs and does not publish.
 
 Pass --offline for local-only validation when you do not want a network call.
 Offline validation is useful but is not authoritative for backend block
-semantics.`,
+semantics.
+
+` + "`config_hash`" + ` is the bundle hash — the same value ` + "`pull`" + `,
+` + "`diff`" + `, ` + "`push`" + `, and ` + "`manifest.baseline.config_hash`" + `
+use, so it is comparable across all of them. Online runs also report
+` + "`executable_config_hash`" + `, the backend's own hash of the executable
+config; the two live in different hash spaces and are not comparable.`,
 	Example: `  retab workflows blocks config validate block_def456 --dir tmp/block_def456
 
   retab workflows blocks config validate wf_abc123 block_def456 --dir tmp/block_def456
@@ -247,16 +253,23 @@ semantics.`,
 			if err != nil {
 				return err
 			}
+			// `config_hash` stays in bundle space across every command in this
+			// group — pull/diff/push and manifest.baseline all hash the assembled
+			// config the same way, and offline validate did too. The backend's
+			// hash of the executable config lives in a different space, so
+			// reporting it under the same key made `validate | jq .config_hash`
+			// look like drift against the manifest on every online run.
 			return printJSON(map[string]any{
-				"ok":            result.Ok,
-				"mode":          "remote",
-				"authoritative": true,
-				"workflow_id":   result.WorkflowID,
-				"block_id":      result.BlockID,
-				"block_type":    result.BlockType,
-				"adapter":       manifest.Adapter,
-				"config_hash":   result.ConfigHash,
-				"local_checks":  localChecks,
+				"ok":                     result.Ok,
+				"mode":                   "remote",
+				"authoritative":          true,
+				"workflow_id":            result.WorkflowID,
+				"block_id":               result.BlockID,
+				"block_type":             result.BlockType,
+				"adapter":                manifest.Adapter,
+				"config_hash":            hashJSONMap(config),
+				"executable_config_hash": result.ConfigHash,
+				"local_checks":           localChecks,
 			})
 		}
 		return printJSON(map[string]any{

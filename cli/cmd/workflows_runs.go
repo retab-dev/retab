@@ -695,6 +695,32 @@ type workflowRunCreateParams struct {
 	ParentRunID string
 }
 
+// workflowRunRestartMetadata merges the source run's metadata with any
+// `--metadata k=v` pairs passed to `runs restart`. Inherited keys are the base
+// and explicit pairs override them key-by-key, so `--metadata attempt=2` retags
+// one key without erasing the rest of the source run's tags. Returns a fresh map
+// (never the source run's own) so the caller cannot mutate the decoded response.
+func workflowRunRestartMetadata(cmd *cobra.Command, inherited map[string]string) (map[string]string, error) {
+	merged := make(map[string]string, len(inherited))
+	for key, value := range inherited {
+		merged[key] = value
+	}
+	pairs, _ := cmd.Flags().GetStringArray("metadata")
+	if len(pairs) > 0 {
+		overrides, err := parseKVStringList(pairs)
+		if err != nil {
+			return nil, fmt.Errorf("--metadata: %w", err)
+		}
+		for key, value := range overrides {
+			merged[key] = value
+		}
+	}
+	if len(merged) == 0 {
+		return nil, nil
+	}
+	return merged, nil
+}
+
 func workflowRunCreateRequestBody(request workflowRunCreateParams) (map[string]any, error) {
 	if request.WorkflowID == "" {
 		return nil, fmt.Errorf("workflow_id is required")
@@ -1446,15 +1472,23 @@ Use ` + "`--config-source draft`" + ` after tweaking draft block config.
 Restart mints a new run, so it accepts the same ` + "`--wait`" + ` contract as
 ` + "`runs create`" + `: pass ` + "`--wait`" + ` to block until the restarted run
 settles (` + "`completed`/`error`/`cancelled`" + ` or ` + "`awaiting_review`" + `)
-instead of hand-rolling a poll loop around ` + "`runs get`" + `.`,
-	Example: `  # Restart a previous run with the same inputs
+instead of hand-rolling a poll loop around ` + "`runs get`" + `.
+
+The source run's metadata is carried onto the restarted run, so a retry stays
+visible to ` + "`runs list --metadata k=v`" + ` alongside the run it replaces.
+Pass ` + "`--metadata k=v`" + ` to add keys or override inherited ones; inherited
+keys you do not name are kept.`,
+	Example: `  # Restart a previous run with the same inputs (and its metadata)
   retab workflows runs restart run_xyz789
 
   # Restart against the current draft config
   retab workflows runs restart run_xyz789 --config-source draft
 
   # Restart and block until the new run settles
-  retab workflows runs restart run_xyz789 --wait`,
+  retab workflows runs restart run_xyz789 --wait
+
+  # Restart, tagging the retry while keeping the source run's other metadata
+  retab workflows runs restart run_xyz789 --metadata attempt=2`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		configSourceValue, _ := cmd.Flags().GetString("config-source")
@@ -1484,6 +1518,18 @@ instead of hand-rolling a poll loop around ` + "`runs get`" + `.`,
 			Version:     version,
 			TriggerType: "restart",
 			ParentRunID: args[0],
+		}
+		// Carry the source run's metadata onto the retry. Without this a restart
+		// drops the tags the run was created with, so the retry vanishes from
+		// `runs list --metadata k=v` — exactly the query you reach for when
+		// tracing a failure and its retries. `--metadata` on restart layers on
+		// top: named keys win, unnamed inherited keys survive.
+		metadata, err := workflowRunRestartMetadata(cmd, sourceRun.Metadata)
+		if err != nil {
+			return err
+		}
+		if len(metadata) > 0 {
+			params.Metadata = metadata
 		}
 		// Reuse the source run's stored inputs verbatim. Document inputs are
 		// stored as FileRefs ({id, filename, mime_type}); Runs.Create resolves
@@ -1742,6 +1788,9 @@ func init() {
 	workflowsRunsDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
 	workflowsRunsCancelCmd.Flags().String("command-id", "", "idempotency command id")
 	workflowsRunsRestartCmd.Flags().String("config-source", "published", "published | draft")
+	// Restart inherits the source run's metadata; these pairs layer on top of it
+	// (named keys override, unnamed inherited keys survive).
+	workflowsRunsRestartCmd.Flags().StringArray("metadata", nil, "user-defined metadata as key=value, layered over the source run's metadata (repeatable)")
 	// restart creates a new run, so it mirrors `runs create`'s --wait contract:
 	// block until the restarted run settles, tuned by the shared poll flags.
 	workflowsRunsRestartCmd.Flags().Bool("wait", false, "block until the restarted run reaches a terminal status (completed/error/cancelled/awaiting_review), then print the final run")

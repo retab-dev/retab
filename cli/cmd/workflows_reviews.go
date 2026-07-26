@@ -496,6 +496,21 @@ func printReviewDecisionResult(cmd *cobra.Command, result *retab.SubmitDecisionR
 	if format != OutputTable && !conflict && result != nil && result.ResumeStatus != nil && *result.ResumeStatus != retab.ResumeStatusResumed {
 		switch *result.ResumeStatus {
 		case retab.ResumeStatusPending:
+			// "pending" normally means the signal will land shortly, so the advice
+			// is to poll. But when the resume failed because the workflow
+			// execution is already over, that poll can never finish — the run's
+			// status is settled and will not move off awaiting_review. Telling the
+			// user to poll there sends them into a loop that cannot terminate, so
+			// say what actually happened instead.
+			if resumeFailedOnFinishedWorkflow(result.ResumeError) {
+				fmt.Fprintf(
+					os.Stderr,
+					"note: resume_status=%q — the decision was recorded but the run's workflow execution has already finished, so it will not resume. Do not poll; inspect `retab workflows runs get %s` once to see the run's settled status.\n",
+					*result.ResumeStatus,
+					result.Review.RunID,
+				)
+				break
+			}
 			fmt.Fprintf(
 				os.Stderr,
 				"note: resume_status=%q — decision was accepted but the workflow has not resumed yet. Poll `retab workflows runs get %s` until lifecycle.status changes from awaiting_review.\n",
@@ -580,6 +595,21 @@ func printReviewSchemaResult(cmd *cobra.Command, result reviewSnapshotSchema) er
 		}{Data: rows}, reviewSchemaColumns)
 	}
 	return printJSON(result)
+}
+
+// resumeFailedOnFinishedWorkflow reports whether a resume_error says the resume
+// failed because the run's workflow execution is already over, rather than for a
+// retryable reason. Temporal words this as "workflow execution already
+// completed" for every terminal outcome (completed, cancelled, terminated,
+// failed), so the substring match covers all of them. Matching on the message is
+// unavoidable: resume_error is a free-text string on the wire with no code.
+func resumeFailedOnFinishedWorkflow(resumeError *string) bool {
+	if resumeError == nil {
+		return false
+	}
+	lowered := strings.ToLower(*resumeError)
+	return strings.Contains(lowered, "workflow execution already completed") ||
+		strings.Contains(lowered, "workflow execution already finished")
 }
 
 func resolveReviewOutputFormat(cmd *cobra.Command, w io.Writer) (OutputFormat, error) {

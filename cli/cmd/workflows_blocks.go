@@ -5,6 +5,7 @@ package cmd
 import (
 	"fmt"
 	"maps"
+	"sort"
 	"strings"
 
 	retab "github.com/retab-dev/retab/clients/go"
@@ -43,8 +44,88 @@ inside supported block configs.`,
     --config-file ./new-config.json`,
 }
 
+// blockCreateFieldKinds is the accepted top-level shape of a --block-file
+// object. Every field below is read by type assertion, so without an explicit
+// check a misspelled key (`labell`) or a wrong-typed one (`"position_x": "700"`)
+// is dropped on the floor and the block is created with the field missing — no
+// error, no warning. The server already rejects unknown keys inside `config`;
+// this gives the block's own fields the same treatment.
+var blockCreateFieldKinds = map[string]string{
+	"id":          "string",
+	"type":        "string",
+	"label":       "string",
+	"position_x":  "number",
+	"position_y":  "number",
+	"width":       "number",
+	"height":      "number",
+	"parent_id":   "string",
+	"config":      "object",
+	"workflow_id": "string",
+}
+
+// blockCreateEchoFields are server-computed fields that `workflows blocks get`
+// returns and create does not accept. They are ignored rather than rejected so a
+// get → edit → create round-trip keeps working.
+var blockCreateEchoFields = map[string]struct{}{
+	"created_at":                  {},
+	"updated_at":                  {},
+	"handles":                     {},
+	"declarative_path":            {},
+	"declarative_source_block_id": {},
+	"resolved_schemas":            {},
+}
+
+func blockCreateFieldValueMatches(kind string, value any) bool {
+	switch kind {
+	case "string":
+		_, ok := value.(string)
+		return ok
+	case "number":
+		_, ok := value.(float64)
+		return ok
+	case "object":
+		_, ok := value.(map[string]any)
+		return ok
+	}
+	return false
+}
+
+func validateBlockCreateFields(obj map[string]any) error {
+	known := make([]string, 0, len(blockCreateFieldKinds))
+	for field := range blockCreateFieldKinds {
+		known = append(known, field)
+	}
+	sort.Strings(known)
+	unknown := []string{}
+	for field, value := range obj {
+		kind, isKnown := blockCreateFieldKinds[field]
+		if !isKnown {
+			if _, echo := blockCreateEchoFields[field]; !echo {
+				unknown = append(unknown, field)
+			}
+			continue
+		}
+		// An explicit null is the caller leaving the field unset.
+		if value == nil {
+			continue
+		}
+		if !blockCreateFieldValueMatches(kind, value) {
+			return fmt.Errorf("block-file field %q must be a %s, got %T", field, kind, value)
+		}
+	}
+	if len(unknown) > 0 {
+		sort.Strings(unknown)
+		return fmt.Errorf("unknown block-file field(s): %s. Valid fields: %s",
+			strings.Join(unknown, ", "), strings.Join(known, ", "))
+	}
+	return nil
+}
+
 func parseBlockCreate(obj map[string]any) (retab.WorkflowBlocksCreateParams, error) {
 	req := retab.WorkflowBlocksCreateParams{}
+	if err := validateBlockCreateFields(obj); err != nil {
+		return req, err
+	}
 	if v, ok := obj["id"].(string); ok && v != "" {
 		req.ID = ptr(v)
 	}

@@ -8,11 +8,7 @@ import (
 	"testing"
 )
 
-var approvedCLINonWorkflowNonReferenceRoutes = map[string]bool{
-	// SDK conveniences used by CLI commands but not part of the generated
-	// public API reference.
-	"POST /v1/splits/reconstruct": true,
-}
+var approvedCLINonWorkflowNonReferenceRoutes = map[string]bool{}
 
 func TestNonWorkflowCLIClientCallsHaveRouteContracts(t *testing.T) {
 	source := readCLISource(t)
