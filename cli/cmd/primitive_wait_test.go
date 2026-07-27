@@ -15,7 +15,7 @@ import (
 )
 
 func TestPrimitiveWaitCommandPollsUntilCompleted(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32
@@ -57,7 +57,7 @@ func TestPrimitiveWaitCommandPollsUntilCompleted(t *testing.T) {
 }
 
 func TestPrimitiveWaitCommandPrintsFinalRecordAndErrorsOnTerminalFailure(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -94,7 +94,7 @@ func TestPrimitiveWaitCommandPrintsFinalRecordAndErrorsOnTerminalFailure(t *test
 // and then exited 0 on a failed job. The CLI must instead terminate on the
 // first poll and exit non-zero.
 func TestPrimitiveWaitErrorsOnFailedStatus(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32
@@ -134,7 +134,7 @@ func TestPrimitiveWaitErrorsOnFailedStatus(t *testing.T) {
 }
 
 func TestParsesCreateWaitPollsFreshResource(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var getHits atomic.Int32

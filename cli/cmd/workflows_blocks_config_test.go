@@ -19,7 +19,7 @@ import (
 
 func TestWorkflowsBlocksPullConfigWritesEditableBundle(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 
 	var gotPath, gotQuery, gotMethod string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -132,7 +132,7 @@ func TestWorkflowsBlocksPullConfigWritesEditableBundle(t *testing.T) {
 
 func TestWorkflowsBlocksPullConfigAutoHydratesFunctionRuntime(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -229,7 +229,7 @@ func TestWorkflowsBlocksPullConfigAutoHydratesFunctionRuntime(t *testing.T) {
 
 func TestWorkflowsBlocksPullConfigAutoHydratesTypescriptFunctionRuntime(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -865,7 +865,7 @@ func TestWorkflowsBlocksValidateConfigReportsOfflineMode(t *testing.T) {
 
 func TestWorkflowsBlocksValidateConfigDefaultsToRemoteDryRun(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 
 	dir := t.TempDir()
 	writeTestBlockConfigBundle(t, dir, map[string]any{"prompt": "local"})
@@ -1001,7 +1001,7 @@ func TestWorkflowsBlocksValidateConfigReportsFailingTypescriptToolWithoutBlockin
 		t.Skip("fake shell tool is unix-specific")
 	}
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	dir := writeTestTypescriptFunctionBundle(t)
 	fakeTsc := writeFakeLocalCheckTool(t, "tsc", 2, "", "type error\n")
 	t.Setenv("RETAB_TSC", fakeTsc)
@@ -1090,7 +1090,7 @@ func TestWorkflowsBlocksValidateConfigHelpDescribesRemoteAndOfflineModes(t *test
 
 func TestWorkflowsBlocksPushConfigUsesReplaceAndPreservesDriftCheck(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 
 	dir := t.TempDir()
 	writeTestBlockConfigBundle(t, dir, map[string]any{"prompt": "original"})
@@ -1180,7 +1180,7 @@ func TestWorkflowsBlocksPushConfigUsesReplaceAndPreservesDriftCheck(t *testing.T
 
 func TestWorkflowsBlocksPushConfigSendsEmptyConfigForReplace(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 
 	dir := t.TempDir()
 	writeTestBlockConfigBundle(t, dir, map[string]any{})
@@ -1244,7 +1244,7 @@ func TestWorkflowsBlocksPushConfigSendsEmptyConfigForReplace(t *testing.T) {
 
 func TestWorkflowsBlocksPushConfigRejectsRemoteDriftBeforePatch(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 
 	dir := t.TempDir()
 	writeTestBlockConfigBundle(t, dir, map[string]any{"prompt": "original"})
@@ -1293,7 +1293,7 @@ func TestWorkflowsBlocksPushConfigRejectsRemoteDriftBeforePatch(t *testing.T) {
 
 func TestWorkflowsBlocksPushConfigForceBypassesOnlyRemoteDrift(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 
 	dir := t.TempDir()
 	writeTestBlockConfigBundle(t, dir, map[string]any{"prompt": "original"})
@@ -1361,7 +1361,7 @@ func TestWorkflowsBlocksPushConfigForceBypassesOnlyRemoteDrift(t *testing.T) {
 
 func TestWorkflowsBlocksPushConfigPreservesBackendSemanticError(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 
 	dir := t.TempDir()
 	writeTestBlockConfigBundle(t, dir, map[string]any{"prompt": "original"})
@@ -1414,7 +1414,7 @@ func TestWorkflowsBlocksPushConfigPreservesBackendSemanticError(t *testing.T) {
 
 func TestWorkflowsBlocksPushConfigRequiresRemoteHashUnlessForced(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 
 	dir := t.TempDir()
 	writeTestBlockConfigBundle(t, dir, map[string]any{"prompt": "original"})
@@ -1458,7 +1458,7 @@ func TestWorkflowsBlocksPushConfigRequiresRemoteHashUnlessForced(t *testing.T) {
 
 func TestWorkflowsBlocksPushConfigRejectsRemoteTypeMismatchBeforePatch(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 
 	dir := t.TempDir()
 	writeTestBlockConfigBundle(t, dir, map[string]any{"prompt": "original"})
@@ -1513,7 +1513,7 @@ func TestWorkflowsBlocksPushConfigRejectsRemoteTypeMismatchBeforePatch(t *testin
 
 func TestWorkflowsBlocksDiffConfigReportsChangedPaths(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 
 	dir := t.TempDir()
 	writeTestBlockConfigBundle(t, dir, map[string]any{

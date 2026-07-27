@@ -73,7 +73,7 @@ func TestAddColumnSchemaOverridesFieldEmptyIsAbsent(t *testing.T) {
 // (mirroring --filters validation), before any upload, instead of surfacing as a
 // confusing server-side error. The local JSON check must fire before the network.
 func TestTablesCreateRejectsInvalidColumnSchemaOverrides(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	csvPath := filepath.Join(t.TempDir(), "data.csv")
@@ -114,7 +114,7 @@ func TestTablesCreateRejectsInvalidColumnSchemaOverrides(t *testing.T) {
 // is authorized as project:view on the named project). The CLI must require
 // --project-id locally instead of letting the user hit a confusing server 400.
 func TestTablesListRequiresProjectID(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	// rootCmd is shared across tests and cobra retains parsed flag state, so a

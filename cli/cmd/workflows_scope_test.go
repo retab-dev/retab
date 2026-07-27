@@ -93,7 +93,7 @@ func withFlag(t *testing.T, cmd *cobra.Command, name, value string) {
 // optional-scope side: `reviews list` (workspace-wide by default) now accepts
 // the workflow id positionally, matching `runs list`.
 func TestWorkflowsReviewsListAcceptsPositional(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 	var gotWorkflowID string
 	server := scopeListServer(t, &gotWorkflowID)
@@ -132,7 +132,7 @@ func TestWorkflowsScopedListsAcceptFlag(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			t.Setenv("RETAB_API_KEY", "test-key")
+			t.Setenv("RETAB_API_KEY", "rt_test_key")
 			t.Setenv("HOME", t.TempDir())
 			var gotWorkflowID string
 			server := scopeListServer(t, &gotWorkflowID)
@@ -155,7 +155,7 @@ func TestWorkflowsScopedListsAcceptFlag(t *testing.T) {
 // TestWorkflowsBlocksListScopeDisagreementErrors pins that a required-scope
 // list refuses to guess when the positional and flag forms disagree.
 func TestWorkflowsBlocksListScopeDisagreementErrors(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 	var hits int
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -183,7 +183,7 @@ func TestWorkflowsBlocksListScopeDisagreementErrors(t *testing.T) {
 // still errors (rather than panicking or listing org-wide) when neither form
 // supplies the workflow id.
 func TestWorkflowsBlocksListRequiresWorkflow(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -205,7 +205,7 @@ func TestWorkflowsBlocksListRequiresWorkflow(t *testing.T) {
 // `Use: "list [flags]"` with `cobra.NoArgs`, so a positional was rejected
 // outright.
 func TestWorkflowsEvalsRunsListAcceptsPositional(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 	var gotWorkflowID string
 	server := scopeListServer(t, &gotWorkflowID)

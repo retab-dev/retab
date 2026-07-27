@@ -55,7 +55,7 @@ spec:
 // that carries metadata.id with --project-id (create-new) warns about the
 // silent-duplicate footgun and points at --to.
 func TestWorkflowsSpecApplyWarnsOnMetadataIDWithProjectID(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 	server := specApplyTestServer(t)
 	defer server.Close()
@@ -82,7 +82,7 @@ func TestWorkflowsSpecApplyWarnsOnMetadataIDWithProjectID(t *testing.T) {
 // TestWorkflowsSpecApplyNoWarnWithoutMetadataID pins that a spec with no
 // metadata.id applies cleanly with no footgun warning.
 func TestWorkflowsSpecApplyNoWarnWithoutMetadataID(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 	server := specApplyTestServer(t)
 	defer server.Close()
@@ -110,7 +110,7 @@ func TestWorkflowsSpecApplyNoWarnWithoutMetadataID(t *testing.T) {
 // the edit the author made to the dump — and plan is the output people review
 // before applying, so the warning has to be there too, not only on apply.
 func TestWorkflowsSpecPlanWarnsOnMetadataIDWithProjectID(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 	server := specApplyTestServer(t)
 	defer server.Close()
@@ -137,7 +137,7 @@ func TestWorkflowsSpecPlanWarnsOnMetadataIDWithProjectID(t *testing.T) {
 // TestWorkflowsSpecPlanNoWarnWithTo pins that the in-place path stays quiet:
 // `plan --to` is the correct round-trip command and must not nag.
 func TestWorkflowsSpecPlanNoWarnWithTo(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 	server := specApplyTestServer(t)
 	defer server.Close()

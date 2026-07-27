@@ -214,12 +214,13 @@ func TestParseXLSXFileHonorsSparseRowNumbers(t *testing.T) {
 	if err != nil {
 		t.Fatalf("buildMatcher: %v", err)
 	}
+	collector := newGrepCollector(50)
+	grepSheets(res, kindSpreadsheet, matcher, 0, collector)
 	var got *Anchor
-	grepSheets(res, kindSpreadsheet, matcher, 0, func(m grepMatch) bool {
-		a := m.Anchor
+	if len(collector.matches) > 0 {
+		a := collector.matches[0].Anchor
 		got = &a
-		return false
-	})
+	}
 	if got == nil {
 		t.Fatal("expected a grep match for Rent")
 	}
@@ -307,17 +308,28 @@ func TestBuildMatcher(t *testing.T) {
 	}
 }
 
-func TestLineColAt(t *testing.T) {
+func TestLineScannerLineColAt(t *testing.T) {
 	text := "abc\ndé\nxyz"
-	// offset of 'x' (after second newline). bytes: a0 b1 c2 \n3 d4 é5,6 \n7 x8
-	line, col := lineColAt(text, 8)
+	// bytes: a0 b1 c2 \n3 d4 é5,6 \n7 x8. The scanner only moves forward — the
+	// order the walkers use — so ask for the earlier offset first.
+	scanner := newLineScanner(text)
+	// offset just after 'é' on line 2: col counts runes, not bytes.
+	line, col := scanner.lineColAt(7)
+	if line != 2 || col != 2 {
+		t.Fatalf("lineColAt after é = (%d,%d), want (2,2)", line, col)
+	}
+	// offset of 'x', after the second newline.
+	line, col = scanner.lineColAt(8)
 	if line != 3 || col != 0 {
 		t.Fatalf("lineColAt x = (%d,%d), want (3,0)", line, col)
 	}
-	// offset just after 'é' on line 2: col should count runes, not bytes.
-	line, col = lineColAt(text, 7)
-	if line != 2 || col != 2 {
-		t.Fatalf("lineColAt after é = (%d,%d), want (2,2)", line, col)
+	// A fresh scanner jumping straight to the same offset must agree, so the
+	// incremental path can't drift from a from-scratch computation.
+	if l, c := newLineScanner(text).lineColAt(8); l != 3 || c != 0 {
+		t.Fatalf("fresh scanner = (%d,%d), want (3,0)", l, c)
+	}
+	if l := newLineScanner(text).lineAt(0); l != 1 {
+		t.Fatalf("lineAt(0) = %d, want 1", l)
 	}
 }
 
@@ -380,7 +392,7 @@ func TestGrepTextSpans(t *testing.T) {
 		Pages: []ParsedPage{{Page: 1, Text: "alpha beta\ngamma beta delta\n"}},
 	}
 	m, _ := buildMatcher("beta", false, false)
-	matches, trunc := grepParseResult(res, kindText, m, 0, 50, false)
+	matches, _, trunc := grepParseResult(res, kindText, m, 0, 50, false)
 	if trunc {
 		t.Fatal("unexpected truncation")
 	}
@@ -402,7 +414,7 @@ func TestGrepSheetsCSV(t *testing.T) {
 		Sheets: []SheetData{{Index: 0, Rows: [][]string{{"name", "amount"}, {"ACME", "42000"}}}},
 	}
 	m, _ := buildMatcher("42000", false, false)
-	matches, _ := grepParseResult(res, kindCSV, m, 0, 50, false)
+	matches, _, _ := grepParseResult(res, kindCSV, m, 0, 50, false)
 	if len(matches) != 1 {
 		t.Fatalf("want 1 match, got %d", len(matches))
 	}
@@ -421,7 +433,7 @@ func TestGrepSheetsSpreadsheet(t *testing.T) {
 		Sheets: []SheetData{{Index: 0, Name: "Budget", Rows: [][]string{{"Item", "Cost"}, {"Rent", "1200"}}}},
 	}
 	m, _ := buildMatcher("1200", false, false)
-	matches, _ := grepParseResult(res, kindSpreadsheet, m, 0, 50, false)
+	matches, _, _ := grepParseResult(res, kindSpreadsheet, m, 0, 50, false)
 	if len(matches) != 1 {
 		t.Fatalf("want 1 match, got %d", len(matches))
 	}
@@ -447,7 +459,7 @@ func TestGrepPagesPDFAndBbox(t *testing.T) {
 		}},
 	}
 	m, _ := buildMatcher("Total Due", false, false)
-	matches, _ := grepParseResult(res, kindPDF, m, 0, 50, true)
+	matches, _, _ := grepParseResult(res, kindPDF, m, 0, 50, true)
 	if len(matches) != 1 {
 		t.Fatalf("want 1 match, got %d", len(matches))
 	}
@@ -469,7 +481,7 @@ func TestGrepTruncation(t *testing.T) {
 		Pages: []ParsedPage{{Page: 1, Text: "x x x x x"}},
 	}
 	m, _ := buildMatcher("x", false, false)
-	matches, trunc := grepParseResult(res, kindPDF, m, 0, 3, false)
+	matches, _, trunc := grepParseResult(res, kindPDF, m, 0, 3, false)
 	if !trunc || len(matches) != 3 {
 		t.Fatalf("want truncated to 3, got %d trunc=%v", len(matches), trunc)
 	}

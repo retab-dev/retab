@@ -14,7 +14,7 @@ import (
 func TestMembersListHitsInternalEndpoint(t *testing.T) {
 	resetEnvironmentCommandPersistentFlags(t)
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 
 	var seenPath, seenMethod string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -43,7 +43,7 @@ func TestMembersListHitsInternalEndpoint(t *testing.T) {
 func TestMembersSetRolePatchesRole(t *testing.T) {
 	resetEnvironmentCommandPersistentFlags(t)
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 
 	var seenPath, seenMethod string
 	var seenBody map[string]any
@@ -80,7 +80,7 @@ func TestMembersSetRolePatchesRole(t *testing.T) {
 func TestMembersUpdateResolvesEmail(t *testing.T) {
 	resetEnvironmentCommandPersistentFlags(t)
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 
 	var patchedPath string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -117,7 +117,7 @@ func TestMembersUpdateResolvesEmail(t *testing.T) {
 func TestMembersSetRoleRejectsUnknownRole(t *testing.T) {
 	resetEnvironmentCommandPersistentFlags(t)
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("RETAB_API_BASE_URL", "http://127.0.0.1:0")
 
 	if err := membersUpdateCmd.Flags().Set("role", "owner"); err != nil {
@@ -137,7 +137,7 @@ func TestMembersSetRoleRejectsUnknownRole(t *testing.T) {
 func TestMembersRemoveDeletes(t *testing.T) {
 	resetEnvironmentCommandPersistentFlags(t)
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 
 	var seenPath, seenMethod string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -167,7 +167,7 @@ func TestMembersRemoveDeletes(t *testing.T) {
 func TestMembersPermissionsHitsEndpoint(t *testing.T) {
 	resetEnvironmentCommandPersistentFlags(t)
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 
 	var seenPath, seenMethod string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -200,7 +200,7 @@ func TestMembersPermissionsHitsEndpoint(t *testing.T) {
 func TestMembersPermissionsResolvesEmail(t *testing.T) {
 	resetEnvironmentCommandPersistentFlags(t)
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 
 	var permissionsPath string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

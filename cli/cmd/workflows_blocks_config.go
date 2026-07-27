@@ -8,8 +8,10 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"net/url"
 	"os"
@@ -618,7 +620,7 @@ func writeBlockConfigBundle(dir string, block retab.WorkflowBlock, force bool) e
 				return err
 			}
 		case "mounts":
-			if err := writeJSONFile(path, block.Config["mounts"]); err != nil {
+			if err := writeMountsFilePreservingLocalPaths(path, block.Config["mounts"]); err != nil {
 				return err
 			}
 		case "subdocuments":
@@ -1371,4 +1373,69 @@ func init() {
 		workflowsBlocksDoctorConfigCmd,
 	)
 	workflowsBlocksCmd.AddCommand(workflowsBlocksConfigCmd)
+}
+
+// writeMountsFilePreservingLocalPaths writes mounts.json from the server's
+// config while keeping any `local_path` bindings already on disk.
+//
+// `local_path` is a purely local fixture binding — it points at a CSV on the
+// developer's machine and the server never stores or returns it. Writing the
+// server config verbatim therefore erased it. `pull` papered over this by
+// re-hydrating afterwards (writeHydratedMountsFile), but `push` refreshes the
+// bundle through this same writer and never re-hydrated, so a push silently
+// unbound every table fixture. The generated runners skip a table whose
+// local_path is empty, so the next local run simply had no table data and no
+// error to explain why. `pull --force` clobbered it the same way.
+//
+// Preserving here, at the single point where mounts.json is written, fixes both
+// paths at once and keeps the invariant with the file rather than the caller.
+func writeMountsFilePreservingLocalPaths(path string, value any) error {
+	mounts, ok := value.(map[string]any)
+	if !ok {
+		return writeJSONFile(path, value)
+	}
+	// Deep-copy before preserving. `value` is block.Config["mounts"] — the
+	// caller's own server config, not a clone — and preserveExistingTableLocalPaths
+	// writes local_path into the table maps in place. Mutating it here leaked a
+	// purely local field back into the in-memory server config, so push's
+	// reported config_hash (computed after this runs) matched neither the
+	// server's hash nor the manifest's RemoteHash (computed before it), leaving
+	// a hash no later drift check could reproduce.
+	cloned, ok := deepCopyJSONValue(mounts).(map[string]any)
+	if !ok {
+		return writeJSONFile(path, mounts)
+	}
+	if existing, err := readJSONMap(path); err == nil {
+		preserveExistingTableLocalPaths(cloned, existing)
+	} else if !errors.Is(err, fs.ErrNotExist) {
+		// An unreadable-but-present mounts.json means local_path bindings are
+		// about to be dropped silently. Say so: the generated runners skip a
+		// table with no local_path, so the next local run would just have no
+		// table data and no explanation.
+		fmt.Fprintf(os.Stderr,
+			"warning: could not read %s to preserve local_path bindings (%v); they will be dropped.\n",
+			path, err)
+	}
+	return writeJSONFile(path, cloned)
+}
+
+// deepCopyJSONValue clones a decoded-JSON value so callers can mutate the copy
+// without touching the original's nested maps and slices.
+func deepCopyJSONValue(value any) any {
+	switch typed := value.(type) {
+	case map[string]any:
+		out := make(map[string]any, len(typed))
+		for key, child := range typed {
+			out[key] = deepCopyJSONValue(child)
+		}
+		return out
+	case []any:
+		out := make([]any, len(typed))
+		for i, child := range typed {
+			out[i] = deepCopyJSONValue(child)
+		}
+		return out
+	default:
+		return value
+	}
 }

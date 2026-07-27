@@ -37,7 +37,7 @@ func TestTablesCommandsAreRegistered(t *testing.T) {
 }
 
 func TestTablesCommandsHonorOutputTable(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	csvPath := filepath.Join(t.TempDir(), "bank-holidays.csv")
@@ -174,7 +174,7 @@ func TestTablesCommandsHonorOutputTable(t *testing.T) {
 }
 
 func TestTablesListEmptyPreservesTablesArray(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	resetProjectID := func() {
@@ -321,7 +321,7 @@ func TestTablesDoNotExposeCellLevelMutationCommands(t *testing.T) {
 }
 
 func TestTablesCreateUploadsCSVAsMultipart(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	csvPath := filepath.Join(t.TempDir(), "bank-holidays.csv")
@@ -393,7 +393,7 @@ func TestTablesCreateUploadsCSVAsMultipart(t *testing.T) {
 }
 
 func TestTablesCreateJSONPrintsCreatedTableObject(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	csvPath := filepath.Join(t.TempDir(), "bank-holidays.csv")
@@ -447,7 +447,7 @@ func TestTablesCreateJSONPrintsCreatedTableObject(t *testing.T) {
 }
 
 func TestTablesQueryTableOutputRendersRowsAsDataGrid(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var sawQuery bool
@@ -529,7 +529,7 @@ func TestTablesQueryTableOutputRendersRowsAsDataGrid(t *testing.T) {
 }
 
 func TestTablesQueryTableOutputShowsPaginationHint(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -582,7 +582,7 @@ func TestTablesQueryTableOutputShowsPaginationHint(t *testing.T) {
 }
 
 func TestTablesQueryTableOutputCleansComplexCells(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	longNote := strings.Repeat("0123456789", 12)
@@ -653,7 +653,7 @@ func TestTablesQueryTableOutputCleansComplexCells(t *testing.T) {
 }
 
 func TestTablesQueryNativeFlagsBuildRequestBody(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var requestBody map[string]any
@@ -743,7 +743,7 @@ func TestTablesQueryNativeFlagsBuildRequestBody(t *testing.T) {
 }
 
 func TestTablesQueryCSVOutputAndRowMetadata(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -790,7 +790,7 @@ func TestTablesQueryCSVOutputAndRowMetadata(t *testing.T) {
 // to CSV too — silently rewriting any long cell to "<prefix>..." and breaking
 // round-trips. CSV must emit the full value regardless of --max-width.
 func TestTablesQueryCSVDoesNotTruncateLongCells(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	longNote := strings.Repeat("abcd ", 40) // 200 chars, well past the 96 default
@@ -830,7 +830,7 @@ func TestTablesQueryCSVDoesNotTruncateLongCells(t *testing.T) {
 }
 
 func TestTablesQueryCSVRendersNullAsEmptyCell(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -875,7 +875,7 @@ func TestTablesQueryCSVRendersNullAsEmptyCell(t *testing.T) {
 // lowercase true/false (not Go/Python-style True/False), integral numbers
 // without a trailing .0, and fractional numbers at full precision.
 func TestTablesQueryCSVRendersScalarsFaithfully(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -918,7 +918,7 @@ func TestTablesQueryCSVRendersScalarsFaithfully(t *testing.T) {
 }
 
 func TestTablesQueryAllFetchesEveryPage(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	offsets := []int{}
@@ -977,7 +977,7 @@ func TestTablesQueryAllFetchesEveryPage(t *testing.T) {
 }
 
 func TestTablesSchemaProfileValidateCommandsUsePublicRoutes(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	requests := []string{}

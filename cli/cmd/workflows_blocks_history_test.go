@@ -13,7 +13,7 @@ import (
 )
 
 func TestWorkflowsBlocksHistoryUsesDirectEndpoint(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var sawRequest bool
@@ -25,8 +25,8 @@ func TestWorkflowsBlocksHistoryUsesDirectEndpoint(t *testing.T) {
 		if query.Get("workflow_id") != "wf_123" || query.Get("limit") != "20" {
 			t.Fatalf("query = %s, want workflow_id=wf_123&limit=20", r.URL.RawQuery)
 		}
-		if got := r.Header.Get("Authorization"); got != "Bearer test-key" {
-			t.Fatalf("Authorization = %q, want Bearer test-key", got)
+		if got := r.Header.Get("Authorization"); got != "Bearer rt_test_key" {
+			t.Fatalf("Authorization = %q, want Bearer rt_test_key", got)
 		}
 		sawRequest = true
 		writeBlockConfigHistoryTestResponse(t, w)
@@ -53,7 +53,7 @@ func TestWorkflowsBlocksHistoryUsesDirectEndpoint(t *testing.T) {
 }
 
 func TestWorkflowsBlocksHistoryListAcceptsWorkflowIDFlagAndCursor(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var gotQuery string
@@ -89,7 +89,7 @@ func TestWorkflowsBlocksHistoryListAcceptsWorkflowIDFlagAndCursor(t *testing.T) 
 }
 
 func TestWorkflowsBlocksHistoryRequiresWorkflowID(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -108,7 +108,7 @@ func TestWorkflowsBlocksHistoryRequiresWorkflowID(t *testing.T) {
 }
 
 func TestWorkflowsBlocksHistoryRejectsConflictingWorkflowID(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

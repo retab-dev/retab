@@ -13,7 +13,7 @@ import (
 )
 
 func TestWorkflowVersionsListUsesPublishedVersionsRoute(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var seenPath string
@@ -60,7 +60,7 @@ func TestWorkflowVersionsListUsesPublishedVersionsRoute(t *testing.T) {
 	if seenQuery != "limit=7" {
 		t.Fatalf("query = %s, want limit=7", seenQuery)
 	}
-	if seenAuth != "Bearer test-key" {
+	if seenAuth != "Bearer rt_test_key" {
 		t.Fatalf("authorization = %q, want bearer api key", seenAuth)
 	}
 	for _, want := range []string{`"workflow_version_id": "ver_1"`, `"description": "release note"`} {

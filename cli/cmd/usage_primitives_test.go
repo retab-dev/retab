@@ -38,7 +38,7 @@ func usagePrimitivesFixture() usagePrimitiveListResponse {
 }
 
 func TestUsagePrimitivesUsesHiddenEndpoint(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var sawRequest bool
@@ -46,8 +46,8 @@ func TestUsagePrimitivesUsesHiddenEndpoint(t *testing.T) {
 		if r.Method != http.MethodGet || r.URL.Path != "/v1/usage/primitives" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
-		if got := r.Header.Get("Authorization"); got != "Bearer test-key" {
-			t.Fatalf("Authorization = %q, want Bearer test-key", got)
+		if got := r.Header.Get("Authorization"); got != "Bearer rt_test_key" {
+			t.Fatalf("Authorization = %q, want Bearer rt_test_key", got)
 		}
 		sawRequest = true
 		w.Header().Set("Content-Type", "application/json")
@@ -72,7 +72,7 @@ func TestUsagePrimitivesUsesHiddenEndpoint(t *testing.T) {
 }
 
 func TestUsagePrimitivesForwardsFilterFlags(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var gotQuery string
@@ -139,7 +139,7 @@ func TestUsagePrimitivesForwardsFilterFlags(t *testing.T) {
 }
 
 func TestUsagePrimitivesForwardsMetadataFilter(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var gotQuery url.Values
@@ -188,7 +188,7 @@ func TestUsagePrimitivesForwardsMetadataFilter(t *testing.T) {
 }
 
 func TestUsagePrimitivesRejectsMalformedMetadataPair(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -218,7 +218,7 @@ func TestUsagePrimitivesRejectsMalformedMetadataPair(t *testing.T) {
 }
 
 func TestUsagePrimitivesTableExposesUsageColumnsOnly(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -257,7 +257,7 @@ func TestUsagePrimitivesTableExposesUsageColumnsOnly(t *testing.T) {
 }
 
 func TestUsagePrimitivesRejectsBeforeAndAfterTogether(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

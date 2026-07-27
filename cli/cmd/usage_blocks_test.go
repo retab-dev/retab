@@ -63,7 +63,7 @@ func clearUsageBlocksFlags(t *testing.T) {
 
 func TestUsageBlocksUsesHiddenEndpoint(t *testing.T) {
 	isolateUsageBlocksFlags(t)
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var sawRequest bool
@@ -71,8 +71,8 @@ func TestUsageBlocksUsesHiddenEndpoint(t *testing.T) {
 		if r.Method != http.MethodGet || r.URL.Path != "/v1/usage/blocks" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
-		if got := r.Header.Get("Authorization"); got != "Bearer test-key" {
-			t.Fatalf("Authorization = %q, want Bearer test-key", got)
+		if got := r.Header.Get("Authorization"); got != "Bearer rt_test_key" {
+			t.Fatalf("Authorization = %q, want Bearer rt_test_key", got)
 		}
 		sawRequest = true
 		w.Header().Set("Content-Type", "application/json")
@@ -98,7 +98,7 @@ func TestUsageBlocksUsesHiddenEndpoint(t *testing.T) {
 
 func TestUsageBlocksForwardsFilterFlags(t *testing.T) {
 	isolateUsageBlocksFlags(t)
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var gotQuery string
@@ -145,7 +145,7 @@ func TestUsageBlocksForwardsFilterFlags(t *testing.T) {
 
 func TestUsageBlocksRootCommandDispatchesAndPreservesOpaqueCursor(t *testing.T) {
 	isolateUsageBlocksFlags(t)
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	cursor := "opaque+/= cursor"
@@ -200,7 +200,7 @@ func TestUsageBlocksRootCommandDispatchesAndPreservesOpaqueCursor(t *testing.T) 
 
 func TestUsageBlocksCSVOutputUsesSafeColumnsAndEscapesFormulaCells(t *testing.T) {
 	isolateUsageBlocksFlags(t)
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	last := "2026-07-01T18:00:00Z"
@@ -258,7 +258,7 @@ func TestUsageBlocksCSVOutputUsesSafeColumnsAndEscapesFormulaCells(t *testing.T)
 
 func TestUsageBlocksRejectsInvalidDateRangeBeforeHTTP(t *testing.T) {
 	isolateUsageBlocksFlags(t)
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
@@ -331,7 +331,7 @@ func TestUsageBlocksHelpDescribesOpaqueCursors(t *testing.T) {
 
 func TestUsageBlocksRejectsBeforeAndAfterTogether(t *testing.T) {
 	isolateUsageBlocksFlags(t)
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("RETAB_API_BASE_URL", "http://127.0.0.1:0")
 

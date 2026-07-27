@@ -90,7 +90,7 @@ regular expression and --case-sensitive to match case.`,
 			return err
 		}
 
-		matches, truncated := grepParseResult(result, kind, matcher, contextChars, maxResults, withBbox)
+		matches, totalMatches, truncated := grepParseResult(result, kind, matcher, contextChars, maxResults, withBbox)
 		out := grepResult{
 			Filename:      result.Filename,
 			MIMEType:      result.MIMEType,
@@ -99,7 +99,7 @@ regular expression and --case-sensitive to match case.`,
 			Regex:         isRegex,
 			CaseSensitive: caseSensitive,
 			TotalPages:    result.TotalPages,
-			TotalMatches:  len(matches),
+			TotalMatches:  totalMatches,
 			Truncated:     truncated,
 			Matches:       matches,
 		}
@@ -129,91 +129,182 @@ func buildMatcher(pattern string, isRegex, caseSensitive bool) (*regexp.Regexp, 
 	return re, nil
 }
 
-// grepParseResult dispatches matching by document kind and returns the
-// collected matches plus whether the result was truncated at maxResults.
-func grepParseResult(result *ParseResult, kind docKind, matcher *regexp.Regexp, contextChars, maxResults int, withBbox bool) ([]grepMatch, bool) {
-	var matches []grepMatch
-	// Collect one past maxResults so we can distinguish "exactly filled" from
-	// "there were more": the caller trims to maxResults and reports truncation.
-	add := func(m grepMatch) bool {
-		matches = append(matches, m)
-		return len(matches) <= maxResults
-	}
+// grepParseResult dispatches matching by document kind and returns the matches
+// retained (at most maxResults), the TOTAL number of matches in the document,
+// and whether the retained set was truncated.
+//
+// The walk deliberately runs to completion instead of stopping one past
+// maxResults. It used to stop early, and the caller then reported
+// `total_matches: len(matches)` — a count that was by construction identical to
+// the number of matches returned, so with `truncated: true` it said "showing 2
+// of 2" while the document held more. A field named total_matches has to be the
+// document total or it carries no information a caller can't already compute
+// from the array length.
+//
+// Cost: the document is already parsed in memory, so this is a regex walk over
+// extracted text; matches beyond maxResults are counted and discarded rather
+// than retained, so memory stays bounded by maxResults.
+func grepParseResult(result *ParseResult, kind docKind, matcher *regexp.Regexp, contextChars, maxResults int, withBbox bool) ([]grepMatch, int, bool) {
+	collector := newGrepCollector(maxResults)
 	switch kind {
 	case kindCSV, kindSpreadsheet:
-		grepSheets(result, kind, matcher, contextChars, add)
+		grepSheets(result, kind, matcher, contextChars, collector)
 	case kindText, kindDocx:
-		grepTextSpans(result, matcher, contextChars, add)
+		grepTextSpans(result, matcher, contextChars, collector)
 	default: // pdf, image
-		grepPages(result, kind, matcher, contextChars, withBbox, add)
+		grepPages(result, kind, matcher, contextChars, withBbox, collector)
 	}
-	if len(matches) > maxResults {
-		return matches[:maxResults], true
+	return collector.matches, collector.total, collector.total > len(collector.matches)
+}
+
+// grepCollector counts every match while materializing only the first
+// maxResults of them.
+//
+// Counting a match must stay O(1). Building one is not: it computes an anchor,
+// a context snippet, and — with --bbox — a bounding box unioned from the page's
+// text items. Handing the walkers a plain `add(grepMatch)` forced them to build
+// every match just to have it thrown away, which made a full walk pathologically
+// slow (a 1.4 MB text document with 40k hits took ~30s, and --bbox on a PDF with
+// 20k hits ~46s). `collect` takes a constructor instead, so a match past the cap
+// costs one increment.
+type grepCollector struct {
+	matches    []grepMatch
+	total      int
+	maxResults int
+}
+
+func newGrepCollector(maxResults int) *grepCollector {
+	if maxResults < 0 {
+		// Defensive: make() panics on a negative capacity. The CLI flag is
+		// bounded 1..500, but this keeps an internal caller from crashing.
+		maxResults = 0
 	}
-	return matches, false
+	return &grepCollector{matches: make([]grepMatch, 0, maxResults), maxResults: maxResults}
+}
+
+// collecting reports whether the next match will be kept, so a walker can skip
+// per-match work (bounding boxes especially) once the cap is reached.
+func (c *grepCollector) collecting() bool { return len(c.matches) < c.maxResults }
+
+// collect counts a match and, only while under the cap, builds and keeps it.
+func (c *grepCollector) collect(build func() grepMatch) {
+	c.total++
+	if len(c.matches) < c.maxResults {
+		c.matches = append(c.matches, build())
+	}
+}
+
+// count records a match the caller has already decided not to materialize.
+func (c *grepCollector) count() { c.total++ }
+
+// lineScanner converts byte offsets to 1-based line numbers in a single forward
+// pass. regexp returns non-overlapping matches in increasing order, so the
+// scanner only ever moves forward and the whole walk costs O(len(text)) —
+// instead of the O(offset) rescan-from-zero that lineColAt and strings.Count
+// were doing once (or twice) per match, which is what made the walk quadratic.
+type lineScanner struct {
+	text      string
+	pos       int
+	line      int
+	lineStart int
+}
+
+func newLineScanner(text string) *lineScanner {
+	return &lineScanner{text: text, line: 1}
+}
+
+// lineAt returns the 1-based line containing off. off must be >= the previous
+// call's off.
+func (s *lineScanner) lineAt(off int) int {
+	for s.pos < off && s.pos < len(s.text) {
+		if s.text[s.pos] == '\n' {
+			s.line++
+			s.lineStart = s.pos + 1
+		}
+		s.pos++
+	}
+	return s.line
+}
+
+// lineColAt returns the 1-based line and 0-based rune column of off.
+func (s *lineScanner) lineColAt(off int) (int, int) {
+	line := s.lineAt(off)
+	return line, len([]rune(s.text[s.lineStart:off]))
 }
 
 // grepPages matches against per-page projected text and emits pdf_page/image
 // anchors (page + 1-based line). With withBbox it also unions the covering
 // text_items into a normalized bounding box.
-func grepPages(result *ParseResult, kind docKind, matcher *regexp.Regexp, contextChars int, withBbox bool, add func(grepMatch) bool) {
+func grepPages(result *ParseResult, kind docKind, matcher *regexp.Regexp, contextChars int, withBbox bool, collector *grepCollector) {
 	anchorKind := anchorPDFPage
 	if kind == kindImage {
 		anchorKind = anchorImage
 	}
 	for _, page := range result.Pages {
 		text := page.Text
+		scanner := newLineScanner(text)
 		for _, loc := range matcher.FindAllStringIndex(text, -1) {
-			line := strings.Count(text[:loc[0]], "\n") + 1
+			if !collector.collecting() {
+				// Past the cap. Skipping this is what keeps --bbox usable: a
+				// bounding box is unioned from the page's text items, so
+				// building one per match on a dense page dominated everything
+				// else even though the result was immediately discarded.
+				collector.count()
+				continue
+			}
+			line := scanner.lineAt(loc[0])
 			anchor := Anchor{Kind: anchorKind, Page: page.Page, Line: line}
 			if withBbox {
 				if box := boundingBoxForMatch(page, text[loc[0]:loc[1]]); box != nil {
 					anchor.Bbox = box
 				}
 			}
-			cont := add(grepMatch{
-				Match:   text[loc[0]:loc[1]],
-				Content: snippet(text, loc[0], loc[1], contextChars),
-				Anchor:  anchor,
+			collector.collect(func() grepMatch {
+				return grepMatch{
+					Match:   text[loc[0]:loc[1]],
+					Content: snippet(text, loc[0], loc[1], contextChars),
+					Anchor:  anchor,
+				}
 			})
-			if !cont {
-				return
-			}
 		}
 	}
 }
 
 // grepTextSpans matches against the single text page of a text/docx document
 // and emits text_span anchors with 1-based line and 0-based char offsets.
-func grepTextSpans(result *ParseResult, matcher *regexp.Regexp, contextChars int, add func(grepMatch) bool) {
+func grepTextSpans(result *ParseResult, matcher *regexp.Regexp, contextChars int, collector *grepCollector) {
 	if len(result.Pages) == 0 {
 		return
 	}
 	text := result.Pages[0].Text
+	scanner := newLineScanner(text)
 	for _, loc := range matcher.FindAllStringIndex(text, -1) {
-		startLine, startCol := lineColAt(text, loc[0])
-		endLine, endCol := lineColAt(text, loc[1])
-		anchor := Anchor{
-			Kind:      anchorTextSpan,
-			LineStart: startLine,
-			LineEnd:   endLine,
-			CharStart: ptr(startCol),
-			CharEnd:   ptr(endCol),
+		if !collector.collecting() {
+			// Past the cap: count it and skip the anchor/snippet work entirely.
+			collector.count()
+			continue
 		}
-		cont := add(grepMatch{
-			Match:   text[loc[0]:loc[1]],
-			Content: snippet(text, loc[0], loc[1], contextChars),
-			Anchor:  anchor,
+		startLine, startCol := scanner.lineColAt(loc[0])
+		endLine, endCol := scanner.lineColAt(loc[1])
+		collector.collect(func() grepMatch {
+			return grepMatch{
+				Match:   text[loc[0]:loc[1]],
+				Content: snippet(text, loc[0], loc[1], contextChars),
+				Anchor: Anchor{
+					Kind:      anchorTextSpan,
+					LineStart: startLine,
+					LineEnd:   endLine,
+					CharStart: ptr(startCol),
+					CharEnd:   ptr(endCol),
+				},
+			}
 		})
-		if !cont {
-			return
-		}
 	}
 }
 
 // grepSheets matches each cell value and emits csv_cell or spreadsheet_cell
 // anchors. Row is 1-based (matching spreadsheet UIs); Column is the letter.
-func grepSheets(result *ParseResult, kind docKind, matcher *regexp.Regexp, contextChars int, add func(grepMatch) bool) {
+func grepSheets(result *ParseResult, kind docKind, matcher *regexp.Regexp, contextChars int, collector *grepCollector) {
 	for _, sheet := range result.Sheets {
 		for r, row := range sheet.Rows {
 			for c, cell := range row {
@@ -221,6 +312,10 @@ func grepSheets(result *ParseResult, kind docKind, matcher *regexp.Regexp, conte
 					continue
 				}
 				for _, loc := range matcher.FindAllStringIndex(cell, -1) {
+					if !collector.collecting() {
+						collector.count()
+						continue
+					}
 					col := colLetter(c + 1)
 					coord := fmt.Sprintf("%s%d", col, r+1)
 					anchor := Anchor{
@@ -235,33 +330,17 @@ func grepSheets(result *ParseResult, kind docKind, matcher *regexp.Regexp, conte
 						anchor.SheetIndex = ptr(sheet.Index)
 						anchor.SheetName = sheet.Name
 					}
-					cont := add(grepMatch{
-						Match:   cell[loc[0]:loc[1]],
-						Content: snippet(cell, loc[0], loc[1], contextChars),
-						Anchor:  anchor,
+					collector.collect(func() grepMatch {
+						return grepMatch{
+							Match:   cell[loc[0]:loc[1]],
+							Content: snippet(cell, loc[0], loc[1], contextChars),
+							Anchor:  anchor,
+						}
 					})
-					if !cont {
-						return
-					}
 				}
 			}
 		}
 	}
-}
-
-// lineColAt returns the 1-based line and 0-based column (rune offset within
-// the line) of byte offset off in text.
-func lineColAt(text string, off int) (line, col int) {
-	line = 1
-	lineStart := 0
-	for i := 0; i < off && i < len(text); i++ {
-		if text[i] == '\n' {
-			line++
-			lineStart = i + 1
-		}
-	}
-	col = len([]rune(text[lineStart:off]))
-	return line, col
 }
 
 // snippet returns contextChars of context on each side of [start,end), clamped
@@ -290,7 +369,16 @@ func snippet(text string, start, end, contextChars int) string {
 // is a best-effort port of LiteParse's search_items merge: items are scanned in
 // order, and the first contiguous run whose joined text contains the match
 // wins. Returns nil when no covering run is found or the page has no items.
+// grepBoundingBoxCalls counts boundingBoxForMatch invocations. It is a test
+// observability hook: computing a bounding box is the dominant per-match cost
+// (an O(items) union over the page's text items), so a test asserts this counter
+// stays at the retained-match count rather than the document total, proving the
+// walk skips that work past --max-results. Deterministic where a wall-clock
+// threshold would be flaky.
+var grepBoundingBoxCalls int
+
 func boundingBoxForMatch(page ParsedPage, match string) *Bbox {
+	grepBoundingBoxCalls++
 	if len(page.Items) == 0 || page.Width <= 0 || page.Height <= 0 {
 		return nil
 	}

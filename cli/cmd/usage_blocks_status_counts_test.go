@@ -38,7 +38,7 @@ func TestUsageBlockFailedCell(t *testing.T) {
 // FAILED column, but json/csv carry the full map).
 func TestUsageBlocksJSONOutputIncludesStatusCounts(t *testing.T) {
 	isolateUsageBlocksFlags(t)
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	response := usageBlockListResponse{

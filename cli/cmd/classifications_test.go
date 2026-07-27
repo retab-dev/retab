@@ -18,7 +18,7 @@ import (
 // exercises the inline-RunE construction path and confirms the SDK's omitempty
 // actually drops the nil *int pointers on the wire.
 func TestClassificationsCreateOmitsUnsetBoundedIntParams(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var body map[string]any

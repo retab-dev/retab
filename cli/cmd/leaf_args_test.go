@@ -46,7 +46,7 @@ func TestListCommandsRejectExtraPositionalArgs(t *testing.T) {
 // is NOT an arg-count rejection — these ids don't exist, so a server
 // round-trip error is fine; "accepts 0 arg(s)" is not.
 func TestArgTakingCommandsStillAcceptTheirArg(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")

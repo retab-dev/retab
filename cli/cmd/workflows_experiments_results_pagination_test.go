@@ -26,7 +26,7 @@ func resetExperimentResultsListFlags(t *testing.T) {
 // past the first page was unreachable from the CLI. Pin that the cursor and
 // order flags reach the query string.
 func TestWorkflowsExperimentsResultsListForwardsCursorFlags(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var gotQuery string
@@ -69,7 +69,7 @@ func TestWorkflowsExperimentsResultsListForwardsCursorFlags(t *testing.T) {
 
 // --before walks back, and must not be sent alongside --after.
 func TestWorkflowsExperimentsResultsListBeforeAfterMutuallyExclusive(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		t.Fatalf("the CLI must reject the flag pair before issuing %s %s", r.Method, r.URL.Path)
@@ -96,7 +96,7 @@ func TestWorkflowsExperimentsResultsListBeforeAfterMutuallyExclusive(t *testing.
 
 // A plain first-page call stays unchanged: no cursor keys in the query.
 func TestWorkflowsExperimentsResultsListOmitsUnsetCursors(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var gotQuery string

@@ -16,7 +16,7 @@ import (
 func TestProjectsAccessListHitsMembershipsEndpoint(t *testing.T) {
 	resetEnvironmentCommandPersistentFlags(t)
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 
 	var seenPath, seenMethod, seenQuery string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -62,7 +62,7 @@ func TestProjectsAccessListHitsMembershipsEndpoint(t *testing.T) {
 func TestProjectsAccessListAcceptsPositionalID(t *testing.T) {
 	resetEnvironmentCommandPersistentFlags(t)
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 
 	var seenQuery string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -88,7 +88,7 @@ func TestProjectsAccessListAcceptsPositionalID(t *testing.T) {
 func TestProjectsAccessListPositionalFlagConflict(t *testing.T) {
 	resetEnvironmentCommandPersistentFlags(t)
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("RETAB_API_BASE_URL", "http://127.0.0.1:0")
 
 	if err := projectsAccessListCmd.Flags().Set("project-id", "proj_flag"); err != nil {
@@ -124,7 +124,7 @@ func TestAccessGrantEmailFlagHelpUsesStringMetavar(t *testing.T) {
 func TestProjectsAccessGrantPostsBody(t *testing.T) {
 	resetEnvironmentCommandPersistentFlags(t)
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 
 	var seenPath, seenMethod string
 	var seenBody map[string]any
@@ -169,7 +169,7 @@ func TestProjectsAccessGrantPostsBody(t *testing.T) {
 func TestProjectsAccessGrantResolvesEmail(t *testing.T) {
 	resetEnvironmentCommandPersistentFlags(t)
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 
 	var membersListed bool
 	var seenPostBody map[string]any
@@ -218,7 +218,7 @@ func TestProjectsAccessGrantResolvesEmail(t *testing.T) {
 func TestProjectsAccessGrantEmailSubjectIDMutuallyExclusive(t *testing.T) {
 	resetEnvironmentCommandPersistentFlags(t)
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("RETAB_API_BASE_URL", "http://127.0.0.1:0")
 
 	for flag, val := range map[string]string{"project-id": "proj_1", "email": "alice@acme.com", "subject-id": "user_1", "role": "project-editor"} {
@@ -245,7 +245,7 @@ func TestProjectsAccessGrantEmailSubjectIDMutuallyExclusive(t *testing.T) {
 func TestProjectsAccessGrantRejectsBadRole(t *testing.T) {
 	resetEnvironmentCommandPersistentFlags(t)
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("RETAB_API_BASE_URL", "http://127.0.0.1:0")
 
 	for flag, val := range map[string]string{"project-id": "proj_1", "subject-id": "user_1", "role": "admin"} {
@@ -271,7 +271,7 @@ func TestProjectsAccessGrantRejectsBadRole(t *testing.T) {
 func TestProjectsAccessUpdatePatchesRole(t *testing.T) {
 	resetEnvironmentCommandPersistentFlags(t)
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 
 	var seenPath, seenMethod string
 	var seenBody map[string]any
@@ -307,7 +307,7 @@ func TestProjectsAccessUpdatePatchesRole(t *testing.T) {
 func TestProjectsAccessRevokeDeletes(t *testing.T) {
 	resetEnvironmentCommandPersistentFlags(t)
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 
 	var seenPath, seenMethod string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

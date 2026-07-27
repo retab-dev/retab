@@ -64,7 +64,7 @@ func TestWorkflowsEvalsGetAcceptsOptionalWorkflowIDPrefix(t *testing.T) {
 		{"wrk_456", "wfnodeeval_123"},
 	} {
 		t.Run(strings.Join(args, "_"), func(t *testing.T) {
-			t.Setenv("RETAB_API_KEY", "test-key")
+			t.Setenv("RETAB_API_KEY", "rt_test_key")
 			t.Setenv("HOME", t.TempDir())
 
 			var requests []string
@@ -103,7 +103,7 @@ func TestWorkflowsExperimentsCreateExposesWaitFlags(t *testing.T) {
 }
 
 func TestWorkflowsEvalsResultsGetUsesFlatResultIDRoute(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var requests []string
@@ -139,7 +139,7 @@ func TestWorkflowsEvalsResultsGetUsesFlatResultIDRoute(t *testing.T) {
 }
 
 func TestWorkflowsEvalsRunsCreateSendsScopedBody(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	dir := t.TempDir()
@@ -423,7 +423,7 @@ func TestWorkflowsEvalsRunsListRejectsInvalidFiltersBeforeRequest(t *testing.T) 
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			t.Setenv("RETAB_API_KEY", "test-key")
+			t.Setenv("RETAB_API_KEY", "rt_test_key")
 			t.Setenv("HOME", t.TempDir())
 
 			var hits atomic.Int32
@@ -526,7 +526,7 @@ func TestWorkflowsEvalsListTableRendersFreshnessColumn(t *testing.T) {
 }
 
 func TestWorkflowsEvalsListCSVUsesDedicatedColumns(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -570,7 +570,7 @@ func TestWorkflowsEvalsListCSVUsesDedicatedColumns(t *testing.T) {
 }
 
 func TestWorkflowsEvalsListSupportsCursorPagination(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var gotQuery string
@@ -630,7 +630,7 @@ func TestWorkflowsEvalsListSupportsCursorPagination(t *testing.T) {
 }
 
 func TestWorkflowsEvalsListRejectsBeforeAfterTogether(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	for flag, value := range map[string]string{
@@ -657,7 +657,7 @@ func TestWorkflowsEvalsListRejectsBeforeAfterTogether(t *testing.T) {
 }
 
 func TestWorkflowsEvalsRunsListFormatsDateFiltersAsRFC3339(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var gotFrom, gotTo string
@@ -727,7 +727,7 @@ func TestWorkflowsEvalsListCommandsRejectOverLimitLocally(t *testing.T) {
 }
 
 func TestWorkflowRunListCommandsHonorExplicitLimit(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	for _, tc := range []struct {
@@ -798,7 +798,7 @@ func TestWorkflowRunListCommandsHonorExplicitLimit(t *testing.T) {
 }
 
 func TestWorkflowsEvalsResultsListSupportsCursorPagination(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var gotQuery string
@@ -854,7 +854,7 @@ func TestWorkflowsEvalsResultsListSupportsCursorPagination(t *testing.T) {
 }
 
 func TestWorkflowsEvalsResultsListRejectsBeforeAfterTogether(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	for flag, value := range map[string]string{
@@ -881,7 +881,7 @@ func TestWorkflowsEvalsResultsListRejectsBeforeAfterTogether(t *testing.T) {
 }
 
 func TestWorkflowRunListCommandsUseDocumentedDefaultLimit(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	for _, tc := range []struct {
@@ -953,7 +953,7 @@ func TestWorkflowRunListCommandsUseDocumentedDefaultLimit(t *testing.T) {
 }
 
 func TestWorkflowsEvalsRejectMalformedTargetAndSourceBeforeRequest(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32
@@ -1109,7 +1109,7 @@ func resetConsensusFlag(t *testing.T, cmd *cobra.Command) {
 }
 
 func TestWorkflowsExperimentsCreateRejectsInvalidDocumentInputsBeforeRequest(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32
@@ -1196,7 +1196,7 @@ func TestWorkflowsExperimentsCreateRejectsInvalidDocumentInputsBeforeRequest(t *
 // both arrays in one create request, and the CLI must not reject the richer
 // document set client-side.
 func TestWorkflowsExperimentsCreateForwardsCaptureAndDocumentFiles(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32
@@ -1351,7 +1351,7 @@ func TestWorkflowsExperimentsUpdateReadsDocumentFilesBeforeCredentials(t *testin
 }
 
 func TestWorkflowsExperimentsRejectBlankNameBeforeRequest(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32
@@ -1432,7 +1432,7 @@ func TestWorkflowsExperimentsRejectBlankNameBeforeRequest(t *testing.T) {
 // sibling workflow / experiment commands use, and must NOT reach the
 // server.
 func TestWorkflowsEvalsRejectBlankNameBeforeRequest(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32
@@ -1527,7 +1527,7 @@ func TestWorkflowsEvalsRejectBlankNameBeforeRequest(t *testing.T) {
 // must only run when --name is explicitly passed). Without this nuance,
 // `update --assertion-file ...` would erroneously error.
 func TestWorkflowsEvalsUpdateAllowsAbsentNameFlag(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32
@@ -1570,7 +1570,7 @@ func TestWorkflowsEvalsUpdateAllowsAbsentNameFlag(t *testing.T) {
 // equals-assertion body without a JSON file — closing the create/update ergonomics
 // gap where update previously required hand-authored --assertion-file JSON.
 func TestWorkflowsEvalsUpdateInlineAssertion(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var gotBody map[string]any
@@ -1670,7 +1670,7 @@ func TestWorkflowsExperimentsUnsupportedRunOverrideFlagsAreNotRegistered(t *test
 }
 
 func TestWorkflowsExperimentsMetricsRejectsInvalidViewBeforeRequest(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32
@@ -1721,7 +1721,7 @@ func TestWorkflowsExperimentsMetricsViewsMatchBackendContract(t *testing.T) {
 }
 
 func TestWorkflowsEvalsCreateRejectsAssertionMissingTargetBeforeRequest(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32
@@ -1866,7 +1866,7 @@ func TestWorkflowsEvalsCreateHelpDocumentsSourceFileShape(t *testing.T) {
 }
 
 func TestWorkflowsEvalsCreateRejectsUntypedManualHandleInputsBeforeRequest(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32
@@ -1928,7 +1928,7 @@ func TestWorkflowsEvalsCreateRejectsUntypedManualHandleInputsBeforeRequest(t *te
 // raw source/assertion into the request body, so the wire payload must
 // carry both fields.
 func TestWorkflowsEvalsCreatePreservesRunStepAndExpectedFields(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	dir := t.TempDir()
@@ -2019,7 +2019,7 @@ func TestWorkflowsEvalsCreatePreservesRunStepAndExpectedFields(t *testing.T) {
 // create regression for the update path, which shared the same lossy
 // decode into manual-only / kind-only SDK structs.
 func TestWorkflowsEvalsUpdatePreservesRunStepAndExpectedFields(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	dir := t.TempDir()
@@ -2110,7 +2110,7 @@ func resetEvalsCreateInlineFlags(t *testing.T) {
 // any file on disk. `--equals 300000` must serialize as the number 300000 and
 // --output-handle-id must default to output-json-0.
 func TestWorkflowsEvalsCreateInlineBuildsThreeComponents(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var gotBody map[string]any
@@ -2180,7 +2180,7 @@ func TestWorkflowsEvalsCreateInlineBuildsThreeComponents(t *testing.T) {
 // file form and the inline form for the SAME component fails locally, before
 // any network call.
 func TestWorkflowsEvalsCreateInlineAndFileAreMutuallyExclusive(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32
@@ -2226,7 +2226,7 @@ func TestWorkflowsEvalsCreateInlineAndFileAreMutuallyExclusive(t *testing.T) {
 // assertion triggered by --path (or --output-handle-id) but missing --equals
 // fails locally with a message pointing at --equals.
 func TestWorkflowsEvalsCreateInlineAssertionRequiresEquals(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32
@@ -2279,7 +2279,7 @@ func resetTestsRunsCreateWaitFlags(t *testing.T) {
 // prints the FINAL run record, not the freshly-queued one. Mirrors the
 // equivalent contract on `experiments runs create --wait`.
 func TestWorkflowsEvalsRunsCreateWaitPollsUntilTerminal(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var posts, gets atomic.Int32
@@ -2346,7 +2346,7 @@ func TestWorkflowsEvalsRunsCreateWaitPollsUntilTerminal(t *testing.T) {
 // final run. Mirrors `experiments runs wait`, closing the gap where eval runs
 // had `create --wait` but no standalone poller.
 func TestWorkflowsEvalsRunsWaitStandalone(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var gets atomic.Int32
@@ -2395,7 +2395,7 @@ func TestWorkflowsEvalsRunsWaitStandalone(t *testing.T) {
 // settles in error/cancelled surfaces a non-nil error (non-zero shell exit)
 // while still printing the run record for context.
 func TestWorkflowsEvalsRunsWaitErrorStatusExitsNonZero(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -2454,7 +2454,7 @@ func nonEmptyLines(s string) []string {
 // a fresh assertion from inline flags alone and silently replaced the stored
 // one, turning "vendor_name equals X" into "whole handle equals X".
 func TestWorkflowsEvalsUpdateEqualsPreservesExistingPath(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var patchAssertion map[string]any

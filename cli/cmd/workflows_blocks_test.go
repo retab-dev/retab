@@ -612,7 +612,7 @@ func TestWorkflowsBlocksUpdateRejectsEmptyMergeConfigBeforeHTTP(t *testing.T) {
 	// The CLI must catch this client-side and explain it before any HTTP
 	// call is made.
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 
 	httpCalled := false
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -664,7 +664,7 @@ func TestWorkflowsBlocksUpdateAcceptsTwoPositionalArgs(t *testing.T) {
 	// positional workflow id through to the `--workflow-id` query string,
 	// matching what `--workflow-id wf_x` produces.
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 
 	var gotPath, gotQuery, gotMethod string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -710,7 +710,7 @@ func TestWorkflowsBlocksUpdateAcceptsSinglePositionalArg(t *testing.T) {
 	// Backward-compat: `blocks update <block-id>` keeps its original shape
 	// with no workflow_id query parameter (server resolves by org-unique id).
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 
 	var gotPath, gotQuery string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -753,7 +753,7 @@ func TestWorkflowsBlocksUpdateRejectsConflictingWorkflowID(t *testing.T) {
 	// must refuse with a clear conflict message rather than silently picking
 	// one and issuing a request that lands on the wrong workflow.
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 
 	httpCalled := false
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -792,7 +792,7 @@ func TestWorkflowsBlocksUpdateRejectsConflictingWorkflowID(t *testing.T) {
 
 func TestWorkflowsBlocksGetAcceptsTwoPositionalArgs(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 
 	var gotPath, gotQuery string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -824,7 +824,7 @@ func TestWorkflowsBlocksGetAcceptsTwoPositionalArgs(t *testing.T) {
 
 func TestWorkflowsBlocksGetRejectsConflictingWorkflowID(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 
 	httpCalled := false
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -852,7 +852,7 @@ func TestWorkflowsBlocksGetRejectsConflictingWorkflowID(t *testing.T) {
 
 func TestWorkflowsBlocksDeleteAcceptsTwoPositionalArgs(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 
 	var gotPath, gotQuery, gotMethod string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -891,7 +891,7 @@ func TestWorkflowsBlocksDeleteAcceptsTwoPositionalArgs(t *testing.T) {
 
 func TestWorkflowsBlocksDeleteRejectsConflictingWorkflowID(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 
 	httpCalled := false
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -925,7 +925,7 @@ func TestWorkflowsBlocksDeleteRejectsConflictingWorkflowID(t *testing.T) {
 }
 
 func TestWorkflowsBlocksGetHonorsTableOutputFallback(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

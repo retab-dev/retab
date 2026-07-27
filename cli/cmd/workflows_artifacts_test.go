@@ -14,7 +14,7 @@ import (
 // command. The HTTP route is `GET /v1/workflows/artifacts/{artifact_id}` — the
 // server infers the operation from the id prefix, so the CLI only needs the id.
 func TestWorkflowsArtifactsGet(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var requests []string
@@ -54,7 +54,7 @@ func TestWorkflowsArtifactsGet(t *testing.T) {
 }
 
 func TestWorkflowsArtifactsListPreservesDereferencedFields(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 	if err := rootCmd.PersistentFlags().Set("output", "json"); err != nil {
 		t.Fatal(err)

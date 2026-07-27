@@ -26,7 +26,7 @@ import (
 // Every other primitive passes the resolved `doc` (an `any`) straight
 // through; edits must too.
 func TestEditsCreateSendsCoercibleDocument(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32
@@ -77,7 +77,7 @@ func TestEditsCreateSendsCoercibleDocument(t *testing.T) {
 // `instructions` is required, and document is mutually exclusive with
 // template_id). The request body must carry template_id and omit document.
 func TestEditsCreateTemplateOnlyOmitsDocument(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32
@@ -125,7 +125,7 @@ func TestEditsCreateTemplateOnlyOmitsDocument(t *testing.T) {
 }
 
 func TestEditTemplatesCreateValidatesFormFieldsBeforeRequest(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	serverHits := 0
@@ -175,7 +175,7 @@ func TestEditTemplatesCreateValidatesFormFieldsBeforeRequest(t *testing.T) {
 }
 
 func TestEditTemplatesCreateFileIDUsesSignedDownloadURLForInlineDocument(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var server *httptest.Server
@@ -278,7 +278,7 @@ func TestEditTemplatesCreateFileIDUsesSignedDownloadURLForInlineDocument(t *test
 }
 
 func TestEditTemplatesUpdateRejectsNoFieldsBeforeRequest(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32
@@ -313,7 +313,7 @@ func TestEditTemplatesUpdateRejectsNoFieldsBeforeRequest(t *testing.T) {
 }
 
 func TestEditTemplatesUpdateRejectsBlankNameBeforeRequest(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32
@@ -383,7 +383,7 @@ func TestEditTemplatesListDoesNotExposeUnsupportedFileDateFilters(t *testing.T) 
 // server's document-XOR-template rule, and model/color:"" could blank out
 // server defaults.
 func TestEditsCreateOmitsEmptyOptionalFields(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var body map[string]any

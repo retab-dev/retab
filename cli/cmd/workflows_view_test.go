@@ -447,7 +447,7 @@ func TestRenderWorkflowASCIIViewHidesEdgeLabelsForDenseGraphs(t *testing.T) {
 }
 
 func TestWorkflowsViewCommandFetchesGraphPartsAndPrintsASCII(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -515,7 +515,7 @@ func TestWorkflowsViewCommandFetchesGraphPartsAndPrintsASCII(t *testing.T) {
 // extract->load, would falsely flag both as Disconnected. Walking all pages
 // must render the full graph with no disconnected warning.
 func TestWorkflowsViewCommandWalksAllBlockAndEdgePages(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -573,7 +573,7 @@ func TestWorkflowsViewCommandWalksAllBlockAndEdgePages(t *testing.T) {
 }
 
 func TestWorkflowsViewCommandHonorsExplicitOutputJSON(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

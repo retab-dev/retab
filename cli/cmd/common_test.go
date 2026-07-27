@@ -244,7 +244,7 @@ func TestCLIJSONRequestSurfacesAPIErrorOnNon2xx(t *testing.T) {
 	}))
 	defer server.Close()
 
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
@@ -632,7 +632,7 @@ func TestResolveDocumentFileID_RequiresCredentials(t *testing.T) {
 }
 
 func TestResolveDocumentFileIDUsesDurableMIMEData(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var seenPath string

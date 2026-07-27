@@ -220,7 +220,7 @@ func TestWorkflowsSpecGetHelpIsHonestAboutJSONShape(t *testing.T) {
 }
 
 func TestWorkflowsSpecValidateReturnsErrorWhenResultIsInvalid(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -272,7 +272,7 @@ func TestWorkflowsSpecValidateReturnsErrorWhenResultIsInvalid(t *testing.T) {
 }
 
 func TestWorkflowsSpecValidateHonorsTableOutputFallback(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -317,7 +317,7 @@ func TestWorkflowsSpecValidateHonorsTableOutputFallback(t *testing.T) {
 }
 
 func TestWorkflowsSpecApplyReturnsErrorWhenResultIsInvalid(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -381,7 +381,7 @@ func TestWorkflowsSpecApplyReturnsErrorWhenResultIsInvalid(t *testing.T) {
 }
 
 func TestWorkflowsSpecApplyToTargetsExistingWorkflowRoute(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var planHits, applyHits atomic.Int32
@@ -443,7 +443,7 @@ func TestWorkflowsSpecApplyToTargetsExistingWorkflowRoute(t *testing.T) {
 }
 
 func TestWorkflowsSpecPlanToTargetsExistingWorkflowRoute(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var planHits atomic.Int32
@@ -491,7 +491,7 @@ func TestWorkflowsSpecPlanToTargetsExistingWorkflowRoute(t *testing.T) {
 }
 
 func TestWorkflowsSpecApplyToWithoutYesAndNonTTYStdinRefusesOnDestroy(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var planHits, applyHits atomic.Int32
@@ -553,7 +553,7 @@ func TestWorkflowsSpecApplyToWithoutYesAndNonTTYStdinRefusesOnDestroy(t *testing
 }
 
 func TestWorkflowsSpecApplyPrintsForEachMinimumCanvasSize(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var planHits, applyHits atomic.Int32
@@ -664,7 +664,7 @@ spec:
 }
 
 func TestWorkflowsSpecPlanReturnsErrorWhenDiagnosticsAreInvalid(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -715,7 +715,7 @@ func TestWorkflowsSpecPlanReturnsErrorWhenDiagnosticsAreInvalid(t *testing.T) {
 }
 
 func TestWorkflowsSpecPlanRequiresProjectIDForCreatePlan(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("RETAB_API_BASE_URL", "https://example.invalid")
 
@@ -827,7 +827,7 @@ func TestWriteSpecExport_JSONFormat(t *testing.T) {
 }
 
 func TestWorkflowsSpecExportHonorsGlobalOutputJSON(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -929,7 +929,7 @@ func TestWriteSpecExport_UnknownFormat(t *testing.T) {
 }
 
 func TestWorkflowsSpecExportRejectsUnknownFormatBeforeRequest(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32
@@ -972,7 +972,7 @@ func TestWorkflowsSpecExportRejectsUnknownFormatBeforeRequest(t *testing.T) {
 // `workflows blocks delete` / `workflows delete` — scripts must be able
 // to opt in without a TTY.
 func TestWorkflowsSpecApplyWithYesFlagSkipsPromptWhenDestroyPositive(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var planHits, applyHits atomic.Int32
@@ -1046,7 +1046,7 @@ func TestWorkflowsSpecApplyWithYesFlagSkipsPromptWhenDestroyPositive(t *testing.
 // "destroy", "--yes", and "terminal" so users can see all three pieces
 // of the diagnosis in one line.
 func TestWorkflowsSpecApplyWithoutYesAndNonTTYStdinRefusesOnDestroy(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var planHits, applyHits atomic.Int32
@@ -1114,7 +1114,7 @@ func TestWorkflowsSpecApplyWithoutYesAndNonTTYStdinRefusesOnDestroy(t *testing.T
 // This is the byte-identical-to-pre-guard contract: a benign apply must
 // not gain a prompt nor a refusal just because we added the gate.
 func TestWorkflowsSpecApplyDestroyZeroAppliesUnconditionally(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var planHits, applyHits atomic.Int32

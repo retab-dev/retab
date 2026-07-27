@@ -26,7 +26,7 @@ func validateConfigHashes(t *testing.T, stdout string) map[string]any {
 func runValidateConfig(t *testing.T, dir string, offline bool, serverURL string) map[string]any {
 	t.Helper()
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	if serverURL != "" {
 		t.Setenv("RETAB_API_BASE_URL", serverURL)
 	}

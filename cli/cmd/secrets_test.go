@@ -37,7 +37,7 @@ func TestSecretsCommandsAreRegistered(t *testing.T) {
 }
 
 func TestSecretsValuePrintsRawValueByDefaultAndJSONWhenRequested(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 	resetOutputFlag(t)
 
@@ -92,7 +92,7 @@ func TestSecretsValuePrintsRawValueByDefaultAndJSONWhenRequested(t *testing.T) {
 }
 
 func TestSecretsSetReadsValueFromFileAndDoesNotPrintIt(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 	resetSecretsSetFlags(t)
 
@@ -153,7 +153,7 @@ func TestSecretsSetReadsValueFromFileAndDoesNotPrintIt(t *testing.T) {
 }
 
 func TestSecretsSetReadsValueFromStdin(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 	resetSecretsSetFlags(t)
 
@@ -216,7 +216,7 @@ func TestSecretsSetRejectsMultipleInputSources(t *testing.T) {
 }
 
 func TestSecretsListTableOutputDoesNotExposeValues(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 	resetOutputFlag(t)
 
@@ -257,7 +257,7 @@ func TestSecretsListTableOutputDoesNotExposeValues(t *testing.T) {
 }
 
 func TestSecretsDeleteWithYesFlagProceedsWithoutPrompt(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 	resetOutputFlag(t)
 

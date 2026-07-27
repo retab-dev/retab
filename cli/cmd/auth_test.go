@@ -1138,7 +1138,7 @@ func TestPromptSecretEOFHandling(t *testing.T) {
 // and their own remediation text ("retab env add <slug> --api-key <key>", a
 // command that does not exist) could not fix it.
 func TestAPIKeyLoginWritesEnvironmentProfile(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	isolateHome(t)
 	t.Setenv("RETAB_API_KEY", "")
 
 	if err := runAPIKeyLogin("rt_test_abc1234", "", "staging"); err != nil {
@@ -1168,7 +1168,7 @@ func TestAPIKeyLoginWritesEnvironmentProfile(t *testing.T) {
 // TestAPIKeyLoginLiveFoldsOntoProduction covers the --live alias writing the
 // same profile --live later reads.
 func TestAPIKeyLoginLiveFoldsOntoProduction(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	isolateHome(t)
 	t.Setenv("RETAB_API_KEY", "")
 
 	if err := runAPIKeyLogin("rt_live_xyz9876", "", "live"); err != nil {
@@ -1189,7 +1189,7 @@ func TestAPIKeyLoginLiveFoldsOntoProduction(t *testing.T) {
 // TestAPIKeyLoginUnscopedKeepsLegacyShape guards the pre-environments path:
 // no --env/--live means the key still lands in the top-level slot.
 func TestAPIKeyLoginUnscopedKeepsLegacyShape(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	isolateHome(t)
 	t.Setenv("RETAB_API_KEY", "")
 
 	if err := runAPIKeyLogin("rt_live_plain999", "", ""); err != nil {

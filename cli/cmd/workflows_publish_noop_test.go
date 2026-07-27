@@ -43,7 +43,7 @@ func newPublishNoopServer(t *testing.T, publishedVersion string, liveDescription
 
 func runPublishCommand(t *testing.T, serverURL string, description string) (string, string) {
 	t.Helper()
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("RETAB_API_BASE_URL", serverURL)
 
@@ -103,7 +103,7 @@ func TestWorkflowsPublishNoopWithoutDescriptionOmitsReleaseNoteLine(t *testing.T
 }
 
 func TestWorkflowsPublishStaysQuietOnRealRelease(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -130,7 +130,7 @@ func TestWorkflowsPublishStaysQuietOnRealRelease(t *testing.T) {
 // An unpublished workflow has no live version to compare against; the first
 // publish must not be mistaken for a no-op.
 func TestWorkflowsPublishFirstReleaseIsNotANoop(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -13,7 +13,7 @@ import (
 )
 
 func TestWorkflowsBlocksExecutionsCreateUsesCanonicalEndpoint(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var body map[string]any
@@ -73,7 +73,7 @@ func TestWorkflowsBlocksExecutionsCreateUsesCanonicalEndpoint(t *testing.T) {
 }
 
 func TestWorkflowsBlocksExecutionsListUsesCanonicalEndpoint(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var sawRequest bool
@@ -130,7 +130,7 @@ func TestWorkflowsBlocksExecutionsListUsesCanonicalEndpoint(t *testing.T) {
 // registered, so the command was stuck on the first page and `--after <cursor>`
 // failed with "unknown flag". Verify the cursor flag is registered and forwarded.
 func TestWorkflowsBlocksExecutionsListForwardsCursorFlags(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var sawAfter string
@@ -172,7 +172,7 @@ func TestWorkflowsBlocksExecutionsListForwardsCursorFlags(t *testing.T) {
 }
 
 func TestWorkflowsBlocksExecutionsCreateRejectsEmptyRunIDBeforeRequest(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -195,7 +195,7 @@ func TestWorkflowsBlocksExecutionsCreateRejectsEmptyRunIDBeforeRequest(t *testin
 }
 
 func TestWorkflowsBlocksExecutionsCreateRejectsEmptyBlockIDBeforeRequest(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -218,7 +218,7 @@ func TestWorkflowsBlocksExecutionsCreateRejectsEmptyBlockIDBeforeRequest(t *test
 }
 
 func TestWorkflowsBlocksExecutionsListRejectsEmptyRunIDBeforeRequest(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -241,7 +241,7 @@ func TestWorkflowsBlocksExecutionsListRejectsEmptyRunIDBeforeRequest(t *testing.
 }
 
 func TestWorkflowsBlocksExecutionsListRejectsEmptyBlockIDBeforeRequest(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -264,7 +264,7 @@ func TestWorkflowsBlocksExecutionsListRejectsEmptyBlockIDBeforeRequest(t *testin
 }
 
 func TestWorkflowsBlocksExecutionsListTableRendersStatusAndBlock(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -315,7 +315,7 @@ func TestWorkflowsBlocksExecutionsListTableRendersStatusAndBlock(t *testing.T) {
 }
 
 func TestWorkflowsBlocksExecutionsRejectsInvalidNConsensusBeforeRequest(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

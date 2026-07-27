@@ -47,7 +47,7 @@ func TestWorkflowRunCreateRequestBodyOmitsEmptyMetadata(t *testing.T) {
 // at all — which silently hid it from `runs list --metadata k=v`, the exact
 // query used to trace a failing run together with its retries.
 func TestWorkflowsRunsRestartCarriesSourceRunMetadata(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var body map[string]any
@@ -107,7 +107,7 @@ func TestWorkflowsRunsRestartCarriesSourceRunMetadata(t *testing.T) {
 // rest — a retry can be retagged (attempt=2) while staying findable by the tags
 // the original run carried.
 func TestWorkflowsRunsRestartMetadataFlagLayersOverInherited(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var body map[string]any

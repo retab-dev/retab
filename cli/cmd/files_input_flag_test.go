@@ -113,7 +113,7 @@ func TestFilesGrepFileFlag(t *testing.T) {
 // the single table object flat (unwrapping the `{table: {...}}` envelope), the
 // same shape `tables create` already returns.
 func TestTablesGetJSONPrintsTableObject(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

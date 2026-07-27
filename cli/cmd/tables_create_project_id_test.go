@@ -19,7 +19,7 @@ import (
 // CLI must expose a --project-id flag and forward it in the upload, otherwise
 // `retab tables create` is impossible to use.
 func TestTablesCreateSendsProjectID(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	csvPath := filepath.Join(t.TempDir(), "data.csv")
@@ -67,7 +67,7 @@ func TestTablesCreateSendsProjectID(t *testing.T) {
 // project_id is required by the backend, so the CLI should reject a create that
 // omits it with a clear local error instead of a server 422.
 func TestTablesCreateRequiresProjectID(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	csvPath := filepath.Join(t.TempDir(), "data.csv")

@@ -358,7 +358,7 @@ func TestFileIDFromURL(t *testing.T) {
 }
 
 func TestFilesCreateUploadShapesDocumentedOutput(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -424,7 +424,7 @@ func TestFilesCreateUploadShapesDocumentedOutput(t *testing.T) {
 }
 
 func TestFilesListUpdatedAtSortTableShowsUpdatedAt(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -491,7 +491,7 @@ func TestFilesListUpdatedAtSortTableShowsUpdatedAt(t *testing.T) {
 // list RunE previously only mapped --mime-type and --sort-by, silently dropping
 // these three so the server returned an unfiltered list.
 func TestFilesListForwardsFilterFlags(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var gotFilename, gotFrom, gotTo string

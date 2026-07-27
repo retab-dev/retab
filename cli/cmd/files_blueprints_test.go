@@ -12,7 +12,7 @@ import (
 )
 
 func TestFilesBlueprintsCreatePostsPublicBlueprintEndpoint(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 	t.Cleanup(func() {
 		_ = filesBlueprintsCreateCmd.Flags().Set("intent", "")
@@ -67,7 +67,7 @@ func TestFilesBlueprintsCreatePostsPublicBlueprintEndpoint(t *testing.T) {
 }
 
 func TestFilesBlueprintsCreateCanOptOutOfBackground(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 	t.Cleanup(func() {
 		_ = filesBlueprintsCreateCmd.Flags().Set("background", "true")
@@ -101,7 +101,7 @@ func TestFilesBlueprintsCreateCanOptOutOfBackground(t *testing.T) {
 }
 
 func TestFilesBlueprintsGetAndCancelUseBlueprintIDEndpoint(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	seen := []string{}

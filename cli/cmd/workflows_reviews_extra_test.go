@@ -39,7 +39,7 @@ func newReviewsListTestCmd() *cobra.Command {
 }
 
 func TestReviewsListPassesDecisionFlag(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var seenQuery string
@@ -70,7 +70,7 @@ func TestReviewsListPassesDecisionFlag(t *testing.T) {
 }
 
 func TestReviewsListDefaultsDecisionStatusToPending(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var seenQuery string
@@ -97,7 +97,7 @@ func TestReviewsListDefaultsDecisionStatusToPending(t *testing.T) {
 }
 
 func TestReviewsApproveTableShowsResumeStatusAndError(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	resumeErr := "Workflow run not found for run_id=run_x" +
@@ -153,7 +153,7 @@ func TestReviewsApproveStaysSilentWhenResumeStatusIsResumed(t *testing.T) {
 	// Symmetric pin: the stderr nudge must NOT fire when the engine
 	// successfully resumed — otherwise users would learn to ignore
 	// every approve output and miss the real signal.
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -186,7 +186,7 @@ func TestReviewsApproveSurfacesSkippedResumeStatusToStderr(t *testing.T) {
 	// engine sent no resume signal (run was already terminal). Different
 	// from "pending" — pin the distinct wording so users can disambiguate
 	// from logs.
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -221,7 +221,7 @@ func TestReviewsApproveSurfacesSkippedResumeStatusToStderr(t *testing.T) {
 }
 
 func TestReviewsApproveConflictDoesNotClaimDecisionWasRecorded(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -261,7 +261,7 @@ func TestReviewsApproveConflictDoesNotClaimDecisionWasRecorded(t *testing.T) {
 }
 
 func TestReviewsGetTableShowsDecisionColumnsForDecidedOverlay(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -295,7 +295,7 @@ func TestReviewsGetTableShowsDecisionColumnsForDecidedOverlay(t *testing.T) {
 }
 
 func TestReviewsGetTableShowsEmptyDecisionForOpenOverlay(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -383,7 +383,7 @@ func TestReviewsListPassesBeforeAndAfterCursors(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			t.Setenv("RETAB_API_KEY", "test-key")
+			t.Setenv("RETAB_API_KEY", "rt_test_key")
 			t.Setenv("HOME", t.TempDir())
 
 			var seenQuery string
@@ -417,7 +417,7 @@ func TestReviewsListPassesBeforeAndAfterCursors(t *testing.T) {
 // TestReviewsListRejectsBeforeAndAfterTogether verifies the CLI rejects the
 // mutex violation at the command layer — no HTTP call is made.
 func TestReviewsListRejectsBeforeAndAfterTogether(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	called := false
@@ -451,7 +451,7 @@ func TestReviewsListRejectsBeforeAndAfterTogether(t *testing.T) {
 // stdout stays pipeable) when list_metadata.after is set, and that the
 // stdout payload contains the row itself.
 func TestReviewsListTableShowsMoreResultsFooterWhenAfterCursorPresent(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -492,7 +492,7 @@ func TestReviewsListTableShowsMoreResultsFooterWhenAfterCursorPresent(t *testing
 // when the backend returns list_metadata.after=null the CLI must not
 // emit a stray footer.
 func TestReviewsListTableOmitsFooterWhenNoMorePages(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -525,7 +525,7 @@ func TestReviewsListTableOmitsFooterWhenNoMorePages(t *testing.T) {
 // fmt.Sprintf %v, producing `map[k:v]` debug noise that's illegible in a table
 // cell. Pin the new compact-JSON rendering so this can't regress.
 func TestReviewsSchemaTableRendersStructuredCellsAsJSON(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

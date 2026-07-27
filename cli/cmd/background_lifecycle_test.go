@@ -179,7 +179,7 @@ func TestPrimitiveWaitDurations(t *testing.T) {
 func bgTestCmd() *cobra.Command { return &cobra.Command{Use: "bg-test"} }
 
 func TestWaitForPrimitivePollsUntilCompleted(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var calls atomic.Int32
@@ -208,7 +208,7 @@ func TestWaitForPrimitivePollsUntilCompleted(t *testing.T) {
 }
 
 func TestWaitForPrimitiveReturnsTerminalFailedRecord(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -230,7 +230,7 @@ func TestWaitForPrimitiveReturnsTerminalFailedRecord(t *testing.T) {
 }
 
 func TestWaitForPrimitiveTimesOut(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -257,7 +257,7 @@ func TestWaitForPrimitiveTimesOut(t *testing.T) {
 }
 
 func TestWaitForPrimitiveToleratesTransientPollErrors(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var calls atomic.Int32
@@ -284,7 +284,7 @@ func TestWaitForPrimitiveToleratesTransientPollErrors(t *testing.T) {
 }
 
 func TestWaitForPrimitivePersistentErrorSurfacesAfterTimeout(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -307,7 +307,7 @@ func TestWaitForPrimitivePersistentErrorSurfacesAfterTimeout(t *testing.T) {
 }
 
 func TestWaitForPrimitiveRecognizesLifecycleStatus(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -344,7 +344,7 @@ func bgTempDoc(t *testing.T) string {
 // It returns the decoded create request body and the number of GET polls.
 func runCreateCapturingBody(t *testing.T, createPath string, buildCmd func() *cobra.Command, set func(*cobra.Command), getStatus string) (map[string]any, int) {
 	t.Helper()
-	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
 
 	var body map[string]any
