@@ -25,7 +25,68 @@ func newExtractionRequestTestCmd(t *testing.T) *cobra.Command {
 	cmd.Flags().Bool("bust-cache", false, "")
 	cmd.Flags().StringArray("metadata", nil, "")
 	cmd.Flags().String("messages-file", "", "")
+	cmd.Flags().String("excel-windowing", "", "")
+	cmd.Flags().Var(&boundedIntFlagValue{min: 10, max: 1000}, "auto-chunk-rows", "")
 	return cmd
+}
+
+// TestNewExtractionRequestGatesExcelWindowingParams pins that the windowing
+// knobs are OMITTED when unset, mapped verbatim when set, and that an unknown
+// --excel-windowing literal is rejected client-side.
+func TestNewExtractionRequestGatesExcelWindowingParams(t *testing.T) {
+	baseFlags := map[string]string{
+		"url":         "https://example.com/x.xlsx",
+		"model":       "gpt-4o",
+		"json-schema": `{"type":"object"}`,
+	}
+	setFlags := func(t *testing.T, cmd *cobra.Command, extra map[string]string) {
+		t.Helper()
+		for n, v := range baseFlags {
+			if err := cmd.Flags().Set(n, v); err != nil {
+				t.Fatalf("set --%s: %v", n, err)
+			}
+		}
+		for n, v := range extra {
+			if err := cmd.Flags().Set(n, v); err != nil {
+				t.Fatalf("set --%s: %v", n, err)
+			}
+		}
+	}
+
+	t.Run("omitted when unset", func(t *testing.T) {
+		cmd := newExtractionRequestTestCmd(t)
+		setFlags(t, cmd, nil)
+		params, err := newExtractionRequest(cmd)
+		if err != nil {
+			t.Fatalf("newExtractionRequest: %v", err)
+		}
+		if params.ExcelWindowing != nil || params.AutoChunkRows != nil {
+			t.Fatalf("windowing params must be nil when flags unset, got %v / %v", params.ExcelWindowing, params.AutoChunkRows)
+		}
+	})
+
+	t.Run("sent when set", func(t *testing.T) {
+		cmd := newExtractionRequestTestCmd(t)
+		setFlags(t, cmd, map[string]string{"excel-windowing": "auto", "auto-chunk-rows": "200"})
+		params, err := newExtractionRequest(cmd)
+		if err != nil {
+			t.Fatalf("newExtractionRequest: %v", err)
+		}
+		if params.ExcelWindowing == nil || string(*params.ExcelWindowing) != "auto" {
+			t.Fatalf("ExcelWindowing = %v, want auto", params.ExcelWindowing)
+		}
+		if params.AutoChunkRows == nil || *params.AutoChunkRows != 200 {
+			t.Fatalf("AutoChunkRows = %v, want 200", params.AutoChunkRows)
+		}
+	})
+
+	t.Run("unknown mode rejected", func(t *testing.T) {
+		cmd := newExtractionRequestTestCmd(t)
+		setFlags(t, cmd, map[string]string{"excel-windowing": "windowed"})
+		if _, err := newExtractionRequest(cmd); err == nil || !strings.Contains(err.Error(), "--excel-windowing") {
+			t.Fatalf("error = %v, want --excel-windowing rejection", err)
+		}
+	})
 }
 
 // TestNewExtractionRequestGatesConsensusParam pins that unset --n-consensus is
@@ -77,7 +138,7 @@ func TestNewExtractionRequestGatesConsensusParam(t *testing.T) {
 }
 
 func TestNewExtractionRequestValidatesMetadataBeforeResolvingFileID(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "rt_test_key")
+	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
 
 	var hits atomic.Int32

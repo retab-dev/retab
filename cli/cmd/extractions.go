@@ -81,6 +81,19 @@ func newExtractionRequest(cmd *cobra.Command) (retab.ExtractionsCreateParams, er
 	if cmd.Flags().Changed("n-consensus") {
 		params.NConsensus = ptr(nConsensus)
 	}
+	if cmd.Flags().Changed("excel-windowing") {
+		excelWindowing, _ := cmd.Flags().GetString("excel-windowing")
+		switch excelWindowing {
+		case string(retab.ExtractionRequestExcelWindowingManual), string(retab.ExtractionRequestExcelWindowingAuto):
+			params.ExcelWindowing = ptr(retab.ExtractionRequestExcelWindowing(excelWindowing))
+		default:
+			return retab.ExtractionsCreateParams{}, fmt.Errorf(`--excel-windowing must be "manual" or "auto"`)
+		}
+	}
+	if cmd.Flags().Changed("auto-chunk-rows") {
+		autoChunkRows, _ := cmd.Flags().GetInt("auto-chunk-rows")
+		params.AutoChunkRows = ptr(autoChunkRows)
+	}
 	return params, nil
 }
 
@@ -219,9 +232,6 @@ to walk backwards. Filter by arbitrary tags set at create time with
   # Page from a known extraction id
   retab extractions list --after extr_xyz789 --limit 50`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		if err := validateBeforeAfterMutex(cmd); err != nil {
-			return err
-		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
@@ -388,6 +398,8 @@ func addExtractionBodyFlags(cmd *cobra.Command) {
 	cmd.Flags().Bool("bust-cache", false, "bypass server-side cache")
 	cmd.Flags().StringArray("metadata", nil, "metadata key=value (repeatable)")
 	cmd.Flags().String("messages-file", "", "JSON array of additional_messages (or - for stdin)")
+	cmd.Flags().String("excel-windowing", "", `spreadsheet auto-windowing mode: "auto" splits an xlsx/CSV into per-table row chunks, extracts each chunk, and concatenates the results into {"data": [...]}; "manual" or omitted runs one extraction over the whole document`)
+	cmd.Flags().Var(&boundedIntFlagValue{min: 10, max: 1000}, "auto-chunk-rows", "rows per extraction window when --excel-windowing=auto (10-1000, default 50)")
 	_ = cmd.MarkFlagRequired("model")
 }
 
