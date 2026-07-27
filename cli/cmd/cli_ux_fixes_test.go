@@ -1,3 +1,10 @@
+// This file exercises symbols that live in tag-constrained source files, so it
+// must be excluded under the same tags — otherwise the prototype (oagen) test
+// build fails to compile with "undefined: <symbol>". replaceCSVHeaderColumns is
+// in tables.go, filesGetFlagErrorHint in files.go, and printDraftPublishHint in
+// workflows_spec.go, each guarded by the matching !retab_oagen_cli_* tag.
+//go:build !retab_oagen_cli_files && !retab_oagen_cli_tables && !retab_oagen_cli_workflows_spec
+
 package cmd
 
 import (
