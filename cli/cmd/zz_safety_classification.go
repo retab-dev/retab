@@ -54,6 +54,20 @@ func highRiskCommands() []*cobra.Command {
 		workflowsDeleteCmd,
 		workflowsRunsCreateCmd,
 		workflowsRunsRestartCmd,
+		// The policy above names "restart/cancel run" and "destructive
+		// (delete, delete-all)" as high-risk, but only create/restart were
+		// ever listed: cancelling or deleting a production run reached the
+		// server with no confirmation, and `runs cancel` did not even offer
+		// a --confirm flag while its sibling `runs create` did. Cancelling
+		// kills in-flight work and deleting is unrecoverable, so both are
+		// squarely in-policy. Their experiment-side twins are listed for the
+		// same reason (`experiments delete` also drops the run history).
+		// See TestHighRiskListCoversCancelAndDelete, which pins this so the
+		// list cannot drift from the policy again.
+		workflowsRunsCancelCmd,
+		workflowsRunsDeleteCmd,
+		workflowsExperimentsRunsCancelCmd,
+		workflowsExperimentsDeleteCmd,
 	}
 }
 

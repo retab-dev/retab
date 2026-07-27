@@ -32,12 +32,18 @@ var workflowsSpecCmd = &cobra.Command{
 A spec is a single YAML file describing a workflow's blocks, edges, and
 metadata. The verbs form a declarative workflow loop:
 
-  validate   parse + type-check the spec, no server changes
-  plan       preview spec changes without applying
-  plan-to    preview changes against an existing workflow
-  apply      create a new workflow from the spec
-  apply-to   modify an existing workflow from the spec
-  get        dump a live workflow's spec back to YAML
+  validate       parse + type-check the spec, no server changes
+  plan           preview a create-new workflow (--project-id)
+  plan --to      preview changes against an existing workflow
+  apply          create a new workflow from the spec (--project-id)
+  apply --to     modify an existing workflow from the spec
+  get            dump a live workflow's spec back to YAML
+
+` + "`--project-id`" + ` and ` + "`--to`" + ` are mutually exclusive, and one of
+them is required on ` + "`plan`" + ` and ` + "`apply`" + `:
+` + "`--project-id`" + ` always targets a NEW workflow, even when the spec
+carries a ` + "`metadata.id`" + `. Editing a ` + "`spec get`" + ` dump is a
+` + "`--to`" + ` operation.
 
 The POST verbs read YAML from a file path, or from stdin when the
 path is "-". Output is JSON on stdout, suitable for piping into ` + "`jq`" + `.
@@ -99,15 +105,14 @@ between them. ` + "`spec get`" + ` emits children nested the same way.
 
 ` + "`apiVersion`" + ` is required and currently pinned at
 ` + "`workflows.retab.com/v1alpha2`" + ` — the server rejects specs without it.
-` + "`metadata.id`" + ` is treated as source context. Use
-` + "`apply-to <workflow-id>`" + ` when the target workflow must be explicit.`,
+` + "`metadata.id`" + ` is treated as source context, never as the apply target:
+name the target with ` + "`--to <workflow-id>`" + `.`,
 	Example: `  # Round-trip a workflow through git
   retab workflows spec get wf_abc123 > workflow.yaml
   $EDITOR workflow.yaml
   retab workflows spec validate workflow.yaml
-  retab workflows spec plan     workflow.yaml --project-id proj_abc123
-  retab workflows spec plan-to  wf_abc123 workflow.yaml
-  retab workflows spec apply-to wf_abc123 workflow.yaml
+  retab workflows spec plan  workflow.yaml --to wf_abc123
+  retab workflows spec apply workflow.yaml --to wf_abc123
 
   # Create a new workflow from a spec
   retab workflows spec apply workflow.yaml --project-id proj_abc123
@@ -130,6 +135,30 @@ func specSourceWorkflowID(yaml string) string {
 		return m[1]
 	}
 	return ""
+}
+
+// warnSpecCreatesDuplicate is the footgun guard shared by `spec plan` and
+// `spec apply`: `spec get` always emits metadata.id, so the natural round-trip
+// `spec get > f.yaml; $EDITOR f.yaml; spec <verb> f.yaml --project-id …` targets
+// a NEW workflow — metadata.id is ignored on the create path — and the source
+// workflow is left untouched. Non-fatal, since cloning a source spec into a new
+// workflow is a legitimate use; it points at the in-place path instead.
+func warnSpecCreatesDuplicate(cmd *cobra.Command, yaml string, projectID string, path string, verb string) {
+	if projectID == "" {
+		return
+	}
+	srcID := specSourceWorkflowID(yaml)
+	if srcID == "" {
+		return
+	}
+	subject := "a duplicate is created"
+	if verb == "plan" {
+		subject = "the plan below is for a duplicate"
+	}
+	fmt.Fprintf(cmd.ErrOrStderr(),
+		"warning: this spec carries metadata.id %s, but --project-id targets a NEW workflow — %s is left unchanged and %s.\n"+
+			"  To %s against %s in place instead, run: retab workflows spec %s %s --to %s\n",
+		srcID, srcID, subject, verb, srcID, verb, path, srcID)
 }
 
 // readSpecYAML reads the YAML body for validate/plan/apply. The server
@@ -229,6 +258,11 @@ Plan is read-only — safe to run on production specs. Pair it with
 		if to == "" && projectID == "" {
 			return fmt.Errorf("--project-id is required for create-new plans; pass --to <workflow-id> to diff an existing workflow draft")
 		}
+		// Same footgun as `apply --project-id`, and this is the step people read:
+		// a create-new plan of a `spec get` dump renders every block as "will be
+		// created" for a DUPLICATE workflow, which looks nothing like the edit the
+		// author made. Say so before they read the plan, not after they apply it.
+		warnSpecCreatesDuplicate(cmd, yaml, projectID, args[0], "plan")
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
@@ -337,19 +371,7 @@ Plans with no deletions apply immediately, no extra prompt.`,
 		if to == "" && projectID == "" {
 			return fmt.Errorf("--project-id is required to create a new workflow from a spec (or pass --to <workflow-id> to update an existing one)")
 		}
-		// Footgun guard: `spec get` always emits metadata.id, so the natural
-		// round-trip `spec get > f.yaml; spec apply f.yaml --project-id …` would
-		// silently create a DUPLICATE workflow (metadata.id is ignored on the
-		// create path). Warn — non-fatal, since cloning a source spec into a new
-		// workflow is a legitimate use — and point at the in-place update path.
-		if projectID != "" {
-			if srcID := specSourceWorkflowID(yaml); srcID != "" {
-				fmt.Fprintf(cmd.ErrOrStderr(),
-					"warning: this spec carries metadata.id %s, but --project-id creates a NEW workflow — %s is left unchanged and a duplicate is created.\n"+
-						"  To update %s in place instead, run: retab workflows spec apply %s --to %s\n",
-					srcID, srcID, srcID, args[0], srcID)
-			}
-		}
+		warnSpecCreatesDuplicate(cmd, yaml, projectID, args[0], "apply")
 		// Plan first so we can gate destructive applies. The server's
 		// `spec apply` returns the same `summary` / `resource_changes`
 		// shape, but only AFTER applying — by then the destroy already
@@ -592,7 +614,14 @@ the server response envelope instead: a JSON object of the shape
 Note the spec is NOT a parsed JSON tree — the whole spec body is the
 YAML string under ` + "`yaml_definition`" + `, so ` + "`jq '.spec.blocks'`" + ` will
 not work; use the default YAML output (or a YAML parser) to query the
-spec itself.`,
+spec itself.
+
+Secrets: the dump is the workflow's stored config verbatim, so an
+` + "`api_call`" + ` block that carries an inline credential (say an
+` + "`Authorization`" + ` header) writes that credential into the file in
+clear text — unlike ` + "`spec plan`" + `, which redacts sensitive keys.
+Review the dump before committing it, and prefer ` + "`config.mounts`" + `
+over inline header secrets for workflows you keep in git.`,
 	Example: `  retab workflows spec get wf_abc123 > workflow.yaml
   # --format json returns the envelope; the spec is the YAML string under .yaml_definition
   retab workflows spec get wf_abc123 --format json | jq -r .yaml_definition`,

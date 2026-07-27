@@ -281,7 +281,7 @@ func resolveCredential(cmd *cobra.Command) (resolvedCredential, error) {
 		}
 		profile := cfg.Environments[slug]
 		if profile == nil || profile.APIKey == "" {
-			return resolvedCredential{}, fmt.Errorf("no credential configured for environment %q. Run `retab auth login --env %s --api-key <key>`", slug, slug)
+			return resolvedCredential{}, fmt.Errorf("no credential configured for environment %q. Run `retab auth login --env %s --api-key <key>`, or pass `--api-key <key>` for this command", slug, slug)
 		}
 		return profileCredential(cmd, cfg, slug, profile, sourceEnvFlag, true), nil
 	}

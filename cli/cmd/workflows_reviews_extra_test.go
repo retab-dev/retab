@@ -556,3 +556,39 @@ func TestReviewsSchemaTableRendersStructuredCellsAsJSON(t *testing.T) {
 		}
 	}
 }
+
+// TestResumeFailedOnFinishedWorkflowClassifiesTerminalResumeErrors pins which
+// resume_error strings switch the "pending" note away from "poll until the status
+// changes". A resume that failed because the workflow execution is already over
+// can never land, so advising a poll on awaiting_review sends the operator into a
+// loop that cannot terminate.
+func TestResumeFailedOnFinishedWorkflowClassifiesTerminalResumeErrors(t *testing.T) {
+	terminal := []string{
+		"temporal apply_hil_approval update failed: workflow execution already completed",
+		"Workflow Execution Already Completed",
+		"update failed: workflow execution already finished",
+	}
+	for _, message := range terminal {
+		msg := message
+		if !resumeFailedOnFinishedWorkflow(&msg) {
+			t.Fatalf("resume_error %q should be classified as a finished workflow", msg)
+		}
+	}
+
+	retryable := []string{
+		"context deadline exceeded",
+		"temporal: connection refused",
+		"No version rvr_x.",
+		"",
+	}
+	for _, message := range retryable {
+		msg := message
+		if resumeFailedOnFinishedWorkflow(&msg) {
+			t.Fatalf("resume_error %q must stay in the poll-again branch", msg)
+		}
+	}
+
+	if resumeFailedOnFinishedWorkflow(nil) {
+		t.Fatal("a nil resume_error must not be classified as a finished workflow")
+	}
+}

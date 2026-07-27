@@ -174,16 +174,16 @@ func TestAuthLoginWritesEnvironmentProfile(t *testing.T) {
 			child := &cobra.Command{Use: "child"}
 			root.AddCommand(child)
 
-			slug, err := loginProfileSlug(child)
+			slug, err := loginEnvironmentSlug(child)
 			if err != nil {
-				t.Fatalf("loginProfileSlug: %v", err)
+				t.Fatalf("loginEnvironmentSlug: %v", err)
 			}
 			if slug != tc.wantSlug {
 				t.Fatalf("slug = %q, want %q", slug, tc.wantSlug)
 			}
 
 			captureStd(t, func() {
-				if err := runAPIKeyLoginForProfile("rt_live_written", "", slug); err != nil {
+				if err := runAPIKeyLogin("rt_live_written", "", slug); err != nil {
 					t.Fatalf("login: %v", err)
 				}
 			})
@@ -232,7 +232,7 @@ func TestLoginProfileSlugRejectsLivePlusEnv(t *testing.T) {
 	_ = root.PersistentFlags().Set("env", "staging")
 	child := &cobra.Command{Use: "child"}
 	root.AddCommand(child)
-	if _, err := loginProfileSlug(child); err == nil {
+	if _, err := loginEnvironmentSlug(child); err == nil {
 		t.Fatal("--live combined with --env must be rejected")
 	}
 }
@@ -365,7 +365,7 @@ func TestLoginProfileSlugLiveAndEnvAgreeing(t *testing.T) {
 	}
 	// Agreeing: accepted.
 	for _, env := range []string{"production", "live", "PRODUCTION"} {
-		slug, err := loginProfileSlug(newRoot(true, env))
+		slug, err := loginEnvironmentSlug(newRoot(true, env))
 		if err != nil {
 			t.Errorf("--live --env %s should be accepted (they agree): %v", env, err)
 		} else if slug != slugProduction {
@@ -373,7 +373,7 @@ func TestLoginProfileSlugLiveAndEnvAgreeing(t *testing.T) {
 		}
 	}
 	// Disagreeing: rejected, and the message says why.
-	_, err := loginProfileSlug(newRoot(true, "staging"))
+	_, err := loginEnvironmentSlug(newRoot(true, "staging"))
 	if err == nil {
 		t.Fatal("--live --env staging must be rejected")
 	}
@@ -382,27 +382,78 @@ func TestLoginProfileSlugLiveAndEnvAgreeing(t *testing.T) {
 	}
 }
 
+// withRootSelector sets the root's persistent --env/--live for the duration of a
+// test and restores them, so a RunE that reads them via cmd.Root() can be driven
+// without reparenting the global authLoginCmd (which corrupts the shared command
+// tree for later tests).
+func withRootSelector(t *testing.T, env string, live bool) {
+	t.Helper()
+	envF := rootCmd.PersistentFlags().Lookup("env")
+	liveF := rootCmd.PersistentFlags().Lookup("live")
+	if env != "" {
+		_ = envF.Value.Set(env)
+		envF.Changed = true
+	}
+	if live {
+		_ = liveF.Value.Set("true")
+		liveF.Changed = true
+	}
+	t.Cleanup(func() {
+		_ = envF.Value.Set("")
+		envF.Changed = false
+		_ = liveF.Value.Set("false")
+		liveF.Changed = false
+	})
+}
+
+// resetAuthLoginFlags clears authLoginCmd's local flags before and after a test.
+// authLoginCmd is a process-global command; merely Set()ing a flag marks it
+// Changed, which trips earlier guards in the RunE.
+func resetAuthLoginFlags(t *testing.T) {
+	t.Helper()
+	reset := func() {
+		for _, name := range []string{"api-key", "access-token", "base-url"} {
+			f := authLoginCmd.Flags().Lookup(name)
+			_ = f.Value.Set("")
+			f.Changed = false
+		}
+		b := authLoginCmd.Flags().Lookup("browser")
+		_ = b.Value.Set("true")
+		b.Changed = false
+	}
+	reset()
+	t.Cleanup(reset)
+}
+
 // Environment profiles hold API keys only. Resolving the slug after the
 // access-token branch meant `auth login --access-token X --env staging`
 // silently ignored --env and stored the token in the default slot, while the
-// user believed they had scoped it.
+// user believed they had scoped it. This drives the real RunE guard, not just
+// the slug helper — asserting the helper alone passed even with the guard
+// removed.
 func TestAuthLoginRejectsAccessTokenWithProfileSelector(t *testing.T) {
 	isolateHome(t)
-	root := newTestRootCmd()
-	_ = root.PersistentFlags().Set("env", "staging")
-	child := &cobra.Command{Use: "child"}
-	root.AddCommand(child)
-	slug, err := loginProfileSlug(child)
-	if err != nil {
-		t.Fatalf("loginProfileSlug: %v", err)
+	withRootSelector(t, "staging", false)
+	resetAuthLoginFlags(t)
+	if err := authLoginCmd.Flags().Set("access-token", "acctk_secret"); err != nil {
+		t.Fatal(err)
 	}
-	if slug != "staging" {
-		t.Fatalf("slug = %q, want staging", slug)
+
+	var err error
+	captureStd(t, func() { err = authLoginCmd.RunE(authLoginCmd, nil) })
+	if err == nil {
+		t.Fatal("--access-token with --env must be rejected, not silently ignored")
 	}
-	// The command must refuse rather than silently drop the selector. This
-	// mirrors the guard in authLoginCmd's RunE.
-	if slug == "" {
-		t.Fatal("precondition: slug should be non-empty for this case")
+	if !strings.Contains(err.Error(), "cannot be combined with --access-token") {
+		t.Errorf("expected the access-token/selector guard, got: %v", err)
+	}
+	// A refused login must not persist anything.
+	cfg, cfgErr := loadConfig()
+	if cfgErr != nil {
+		t.Fatal(cfgErr)
+	}
+	if cfg.AccessToken != "" || len(cfg.Environments) != 0 {
+		t.Errorf("refused login wrote state: accessToken=%q environments=%v", cfg.AccessToken, cfg.Environments)
 	}
 }
 
@@ -580,7 +631,7 @@ func TestProfileLoginDoesNotHijackTheDefaultCredential(t *testing.T) {
 	}
 
 	captureStd(t, func() {
-		if err := runAPIKeyLoginForProfile("rt_test_scoped", "", "staging"); err != nil {
+		if err := runAPIKeyLogin("rt_test_scoped", "", "staging"); err != nil {
 			t.Fatalf("profile login: %v", err)
 		}
 	})
@@ -633,7 +684,7 @@ func TestProfileLoginPreservesPinnedBaseURL(t *testing.T) {
 
 	// Rotate the key with no --base-url: the pin must survive.
 	captureStd(t, func() {
-		if err := runAPIKeyLoginForProfile("rt_test_new", "", "staging"); err != nil {
+		if err := runAPIKeyLogin("rt_test_new", "", "staging"); err != nil {
 			t.Fatalf("rotate: %v", err)
 		}
 	})
@@ -654,7 +705,7 @@ func TestProfileLoginPreservesPinnedBaseURL(t *testing.T) {
 
 	// An explicit --base-url still updates it.
 	captureStd(t, func() {
-		if err := runAPIKeyLoginForProfile("rt_test_new", "https://eu.retab.com", "staging"); err != nil {
+		if err := runAPIKeyLogin("rt_test_new", "https://eu.retab.com", "staging"); err != nil {
 			t.Fatalf("re-pin: %v", err)
 		}
 	})
@@ -728,37 +779,11 @@ func TestAuthLoginRejectsProfileSelectorWithoutAPIKey(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			isolateHome(t)
-			root := newTestRootCmd()
-			if tc.env != "" {
-				if err := root.PersistentFlags().Set("env", tc.env); err != nil {
-					t.Fatal(err)
-				}
-			}
-			if tc.live {
-				if err := root.PersistentFlags().Set("live", "true"); err != nil {
-					t.Fatal(err)
-				}
-			}
-			root.AddCommand(authLoginCmd)
-			t.Cleanup(func() { root.RemoveCommand(authLoginCmd) })
-
-			// Browser flow: no --api-key, --browser left at its default true.
-			// Clear Changed as well as the value — authLoginCmd is a global
-			// command shared with other tests, and merely Set()ing a flag to ""
-			// marks it Changed, which trips the earlier
-			// "--api-key cannot be combined with --access-token" guard.
-			resetFlags := func() {
-				for _, name := range []string{"api-key", "access-token", "base-url"} {
-					f := authLoginCmd.Flags().Lookup(name)
-					_ = f.Value.Set("")
-					f.Changed = false
-				}
-				browser := authLoginCmd.Flags().Lookup("browser")
-				_ = browser.Value.Set("true")
-				browser.Changed = false
-			}
-			resetFlags()
-			t.Cleanup(resetFlags)
+			// Drive the real RunE without reparenting authLoginCmd: set the
+			// selector on the root's persistent flags (which authLoginCmd.Root()
+			// reads) and its own local flags, restoring both afterward.
+			withRootSelector(t, tc.env, tc.live)
+			resetAuthLoginFlags(t)
 
 			var err error
 			captureStd(t, func() { err = authLoginCmd.RunE(authLoginCmd, nil) })

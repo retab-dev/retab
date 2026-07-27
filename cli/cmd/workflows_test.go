@@ -466,6 +466,13 @@ func TestWorkflowsPublishRejectsMalformedSuccessResponse(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// publish reads the live version id first so it can tell a real release
+		// from a no-op re-publish of an unchanged draft.
+		if r.Method == http.MethodGet && r.URL.Path == "/v1/workflows/wf_123" {
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(map[string]any{"id": "wf_123", "name": "Wrapped Workflow"})
+			return
+		}
 		if r.Method != http.MethodPost || r.URL.Path != "/v1/workflows/wf_123/publish" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}

@@ -923,8 +923,13 @@ func TestWorkflowsBlocksValidateConfigDefaultsToRemoteDryRun(t *testing.T) {
 	if !strings.Contains(stdout, `"authoritative": true`) {
 		t.Fatalf("validate output should report authoritative=true, got:\n%s", stdout)
 	}
-	if !strings.Contains(stdout, `"config_hash": "server-hash"`) {
-		t.Fatalf("validate output should use server hash, got:\n%s", stdout)
+	// config_hash stays in bundle space so it is comparable to pull/diff/push
+	// and manifest.baseline; the backend hash is reported separately.
+	if !strings.Contains(stdout, `"executable_config_hash": "server-hash"`) {
+		t.Fatalf("validate output should report the backend hash separately, got:\n%s", stdout)
+	}
+	if strings.Contains(stdout, `"config_hash": "server-hash"`) {
+		t.Fatalf("config_hash must not carry the backend hash, got:\n%s", stdout)
 	}
 }
 
@@ -1032,7 +1037,7 @@ func TestWorkflowsBlocksValidateConfigReportsFailingTypescriptToolWithoutBlockin
 		}
 	})
 
-	if !strings.Contains(stdout, `"mode": "remote"`) || !strings.Contains(stdout, `"config_hash": "server-hash"`) {
+	if !strings.Contains(stdout, `"mode": "remote"`) || !strings.Contains(stdout, `"executable_config_hash": "server-hash"`) {
 		t.Fatalf("remote validation should still run and pass, got:\n%s", stdout)
 	}
 	if !strings.Contains(stdout, `"name": "tsc"`) || !strings.Contains(stdout, `"status": "failed"`) || !strings.Contains(stdout, `"exit_code": 2`) {

@@ -529,7 +529,7 @@ func TestAPIKeyLoginDefaultsToProductionInsteadOfStoredLocalhost(t *testing.T) {
 		t.Fatalf("saveConfig: %v", err)
 	}
 
-	if err := runAPIKeyLogin("sk_live_test", ""); err != nil {
+	if err := runAPIKeyLogin("sk_live_test", "", ""); err != nil {
 		t.Fatalf("runAPIKeyLogin: %v", err)
 	}
 	cfg, err := loadConfig()
@@ -574,7 +574,7 @@ func TestAPIKeyLoginRejectsAccessTokenPrefix(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("RETAB_API_KEY", "")
 
-	err := runAPIKeyLogin("acctk_production_secret", "")
+	err := runAPIKeyLogin("acctk_production_secret", "", "")
 	if err == nil || !strings.Contains(err.Error(), "--access-token") {
 		t.Fatalf("expected --access-token guidance, got %v", err)
 	}
@@ -1128,5 +1128,81 @@ func TestPromptSecretEOFHandling(t *testing.T) {
 	}
 	if got, err := run(""); err == nil {
 		t.Errorf("empty stdin: got (%q, nil), want error", got)
+	}
+}
+
+// TestAPIKeyLoginWritesEnvironmentProfile pins the writer for the named
+// credential profiles. `--env <slug>` and `--live` read
+// cfg.Environments[slug].APIKey at request time; before this, six call sites
+// read that map and nothing ever wrote it, so both selectors were unreachable
+// and their own remediation text ("retab env add <slug> --api-key <key>", a
+// command that does not exist) could not fix it.
+func TestAPIKeyLoginWritesEnvironmentProfile(t *testing.T) {
+	isolateHome(t)
+	t.Setenv("RETAB_API_KEY", "")
+
+	if err := runAPIKeyLogin("rt_test_abc1234", "", "staging"); err != nil {
+		t.Fatalf("runAPIKeyLogin: %v", err)
+	}
+	cfg, err := loadConfig()
+	if err != nil {
+		t.Fatalf("loadConfig: %v", err)
+	}
+	profile := cfg.Environments["staging"]
+	if profile == nil || profile.APIKey != "rt_test_abc1234" {
+		t.Fatalf("staging profile = %#v, want the stored key", profile)
+	}
+	if profile.APIKeyPreview != "rt_test_...1234" {
+		t.Fatalf("preview = %q, want a redacted preview", profile.APIKeyPreview)
+	}
+	if cfg.DefaultEnvironment != "staging" {
+		t.Fatalf("DefaultEnvironment = %q, want staging", cfg.DefaultEnvironment)
+	}
+	// An environment-scoped login must not also claim the unscoped slot;
+	// that is what made the old behavior look like it had worked.
+	if cfg.APIKey != "" {
+		t.Fatalf("APIKey = %q, want empty for a scoped login", cfg.APIKey)
+	}
+}
+
+// TestAPIKeyLoginLiveFoldsOntoProduction covers the --live alias writing the
+// same profile --live later reads.
+func TestAPIKeyLoginLiveFoldsOntoProduction(t *testing.T) {
+	isolateHome(t)
+	t.Setenv("RETAB_API_KEY", "")
+
+	if err := runAPIKeyLogin("rt_live_xyz9876", "", "live"); err != nil {
+		t.Fatalf("runAPIKeyLogin: %v", err)
+	}
+	cfg, err := loadConfig()
+	if err != nil {
+		t.Fatalf("loadConfig: %v", err)
+	}
+	if cfg.Environments["production"] == nil {
+		t.Fatalf("environments = %#v, want the live alias folded onto production", cfg.Environments)
+	}
+	if cfg.Environments["live"] != nil {
+		t.Fatalf("environments has a literal \"live\" profile, want it normalized")
+	}
+}
+
+// TestAPIKeyLoginUnscopedKeepsLegacyShape guards the pre-environments path:
+// no --env/--live means the key still lands in the top-level slot.
+func TestAPIKeyLoginUnscopedKeepsLegacyShape(t *testing.T) {
+	isolateHome(t)
+	t.Setenv("RETAB_API_KEY", "")
+
+	if err := runAPIKeyLogin("rt_live_plain999", "", ""); err != nil {
+		t.Fatalf("runAPIKeyLogin: %v", err)
+	}
+	cfg, err := loadConfig()
+	if err != nil {
+		t.Fatalf("loadConfig: %v", err)
+	}
+	if cfg.APIKey != "rt_live_plain999" {
+		t.Fatalf("APIKey = %q, want the unscoped key", cfg.APIKey)
+	}
+	if len(cfg.Environments) != 0 {
+		t.Fatalf("environments = %#v, want none for an unscoped login", cfg.Environments)
 	}
 }

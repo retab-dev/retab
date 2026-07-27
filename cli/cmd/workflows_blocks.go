@@ -5,6 +5,7 @@ package cmd
 import (
 	"fmt"
 	"maps"
+	"sort"
 	"strings"
 
 	retab "github.com/retab-dev/retab/clients/go"
@@ -43,8 +44,88 @@ inside supported block configs.`,
     --config-file ./new-config.json`,
 }
 
+// blockCreateFieldKinds is the accepted top-level shape of a --block-file
+// object. Every field below is read by type assertion, so without an explicit
+// check a misspelled key (`labell`) or a wrong-typed one (`"position_x": "700"`)
+// is dropped on the floor and the block is created with the field missing — no
+// error, no warning. The server already rejects unknown keys inside `config`;
+// this gives the block's own fields the same treatment.
+var blockCreateFieldKinds = map[string]string{
+	"id":          "string",
+	"type":        "string",
+	"label":       "string",
+	"position_x":  "number",
+	"position_y":  "number",
+	"width":       "number",
+	"height":      "number",
+	"parent_id":   "string",
+	"config":      "object",
+	"workflow_id": "string",
+}
+
+// blockCreateEchoFields are server-computed fields that `workflows blocks get`
+// returns and create does not accept. They are ignored rather than rejected so a
+// get → edit → create round-trip keeps working.
+var blockCreateEchoFields = map[string]struct{}{
+	"created_at":                  {},
+	"updated_at":                  {},
+	"handles":                     {},
+	"declarative_path":            {},
+	"declarative_source_block_id": {},
+	"resolved_schemas":            {},
+}
+
+func blockCreateFieldValueMatches(kind string, value any) bool {
+	switch kind {
+	case "string":
+		_, ok := value.(string)
+		return ok
+	case "number":
+		_, ok := value.(float64)
+		return ok
+	case "object":
+		_, ok := value.(map[string]any)
+		return ok
+	}
+	return false
+}
+
+func validateBlockCreateFields(obj map[string]any) error {
+	known := make([]string, 0, len(blockCreateFieldKinds))
+	for field := range blockCreateFieldKinds {
+		known = append(known, field)
+	}
+	sort.Strings(known)
+	unknown := []string{}
+	for field, value := range obj {
+		kind, isKnown := blockCreateFieldKinds[field]
+		if !isKnown {
+			if _, echo := blockCreateEchoFields[field]; !echo {
+				unknown = append(unknown, field)
+			}
+			continue
+		}
+		// An explicit null is the caller leaving the field unset.
+		if value == nil {
+			continue
+		}
+		if !blockCreateFieldValueMatches(kind, value) {
+			return fmt.Errorf("block-file field %q must be a %s, got %T", field, kind, value)
+		}
+	}
+	if len(unknown) > 0 {
+		sort.Strings(unknown)
+		return fmt.Errorf("unknown block-file field(s): %s. Valid fields: %s",
+			strings.Join(unknown, ", "), strings.Join(known, ", "))
+	}
+	return nil
+}
+
 func parseBlockCreate(obj map[string]any) (retab.WorkflowBlocksCreateParams, error) {
 	req := retab.WorkflowBlocksCreateParams{}
+	if err := validateBlockCreateFields(obj); err != nil {
+		return req, err
+	}
 	if v, ok := obj["id"].(string); ok && v != "" {
 		req.ID = ptr(v)
 	}
@@ -279,16 +360,23 @@ what to pass.`,
 }
 
 // deriveBlockHandles computes the connectable handle ids for a block from
-// its type and config. Input handles are fully determined by config.inputs
-// (`input-<type>-<name>`). Output handles are emitted only for block types
-// whose single output handle is deterministic; routing blocks (classifier,
-// split, conditional, for_each) name their outputs per-route as
-// `output-file-<handle_key>` / `output-json-<branch>` — see
-// `workflows edges create --help` — and are intentionally not guessed here.
+// its type and config, mirroring the engine's handle tables
+// (workflow_engine/handles/block_handles.go). Only the ROUTING outputs
+// (classifier, split, conditional) are left out: they name one output per
+// configured route as `output-file-<handle_key>` / `output-json-<branch>` after
+// slugifying the route name — see `workflows edges create --help` — and a
+// near-miss slug here would be worse than saying nothing.
+//
+// Everything else is deterministic and must be reported, including the handles
+// a caller cannot guess: a container's `fe-left-in`/`loop-left-in`, `parse`'s
+// `input-file-0`, and the DEFAULT `input-file-document` that an extract or
+// classifier block exposes when its config declares no explicit inputs. Those
+// used to come back empty, which reads as "this block cannot be wired" about a
+// block the compiler and the runtime both wire happily.
 func deriveBlockHandles(block map[string]any) map[string]any {
 	blockType, _ := block["type"].(string)
 	config, _ := block["config"].(map[string]any)
-	inputs := blockInputHandles(config)
+	inputs := blockInputHandles(blockType, config)
 	outputs := blockOutputHandles(blockType)
 	if len(inputs) == 0 && len(outputs) == 0 {
 		return nil
@@ -303,45 +391,100 @@ func deriveBlockHandles(block map[string]any) map[string]any {
 	return handles
 }
 
-func blockInputHandles(config map[string]any) []string {
-	if config == nil {
-		return nil
+// blockStaticInputHandles mirrors blockHandlesStaticInputHandles in
+// workflow_engine/handles/block_handles.go: the block types whose input handles
+// are fixed rather than derived from config.
+var blockStaticInputHandles = map[string][]string{
+	"start_document": {},
+	"start_json":     {},
+	"note":           {},
+	"parse":          {"input-file-0"},
+	"split":          {"input-file-0"},
+	"conditional":    {"input-json-0"},
+	"for_each":       {"fe-left-in", "fe-right-in"},
+	"while_loop":     {"loop-left-in", "loop-right-in", "loop-termination"},
+	"api_call":       {"input-json-0"},
+	"function":       {"input-json-0"},
+}
+
+func blockInputHandles(blockType string, config map[string]any) []string {
+	if handles, ok := blockStaticInputHandles[blockType]; ok {
+		return append([]string{}, handles...)
 	}
 	// Function blocks consume a single JSON payload at the runtime-level
 	// handle input-json-0. Server-bound function configs do not accept
 	// config.inputs; local bundles derive input typing from resolved schemas.
-	if _, ok := config["code"].(string); ok {
-		if _, hasOutputSchema := config["output_schema"].(map[string]any); hasOutputSchema {
-			return []string{"input-json-0"}
+	if config != nil {
+		if _, ok := config["code"].(string); ok {
+			if _, hasOutputSchema := config["output_schema"].(map[string]any); hasOutputSchema {
+				return []string{"input-json-0"}
+			}
 		}
 	}
 	var out []string
-	appendInput := func(m map[string]any) {
+	appendInput := func(m map[string]any, defaultName string, defaultType string) {
 		name, _ := m["name"].(string)
 		t, _ := m["type"].(string)
+		if name == "" {
+			name = defaultName
+		}
+		if t == "" {
+			t = defaultType
+		}
 		if name != "" && t != "" {
 			out = append(out, "input-"+t+"-"+name)
 		}
 	}
-	if rawInputs, ok := config["inputs"].([]any); ok {
-		for _, ri := range rawInputs {
-			if m, ok := ri.(map[string]any); ok {
-				appendInput(m)
+	if config != nil {
+		if rawInputs, ok := config["inputs"].([]any); ok {
+			for index, ri := range rawInputs {
+				if m, ok := ri.(map[string]any); ok {
+					if blockType == "merge_dicts" {
+						appendInput(m, fmt.Sprint(index), "json")
+						continue
+					}
+					appendInput(m, "document", "file")
+				}
 			}
 		}
+		if m, ok := config["input"].(map[string]any); ok {
+			appendInput(m, "document", "file")
+		}
 	}
-	if m, ok := config["input"].(map[string]any); ok {
-		appendInput(m)
+	if len(out) > 0 {
+		return out
 	}
-	return out
+	// No explicit inputs: fall back to the engine's per-type defaults, which is
+	// what the compiler validates edges against and what the runtime feeds.
+	switch blockType {
+	case "extract", "classifier":
+		return []string{"input-file-document"}
+	case "merge_dicts":
+		return []string{"input-json-0"}
+	case "edit":
+		if config != nil {
+			if useTemplate, ok := config["use_template"].(bool); ok && useTemplate {
+				return []string{"input-json-0"}
+			}
+		}
+		return []string{"input-file-0", "input-json-0", "input-json-1"}
+	}
+	return nil
 }
 
+// blockOutputHandles mirrors blockHandlesStaticOutputHandles. The routing types
+// (classifier, split, conditional) derive one output per configured route and
+// are deliberately absent — see deriveBlockHandles.
 func blockOutputHandles(blockType string) []string {
 	switch blockType {
 	case "start_document", "edit":
 		return []string{"output-file-0"}
-	case "start_json", "extract", "merge_dicts", "function", "api_call":
+	case "start_json", "extract", "parse", "merge_dicts", "function", "api_call":
 		return []string{"output-json-0"}
+	case "for_each":
+		return []string{"fe-right-out", "fe-left-out"}
+	case "while_loop":
+		return []string{"loop-right-out", "loop-left-out"}
 	default:
 		return nil
 	}

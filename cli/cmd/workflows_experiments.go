@@ -611,9 +611,10 @@ The experiment id is the only required positional. A leading
 	Example: `  # Increase consensus to measure stability
   retab workflows experiments update exp_pqr678 --n-consensus 5
 
-  # Add more documents from production
+  # REPLACE the document set — the experiment ends up holding exactly these
+  # captures, and every document not listed here is dropped
   retab workflows experiments update exp_pqr678 \
-    --captures-file ./more-captures.json`,
+    --captures-file ./whole-document-set.json`,
 	Args: cobra.RangeArgs(1, 2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		experimentID, err := resolveExperimentIDArg(args)
@@ -1128,8 +1129,22 @@ var workflowsExperimentsResultsCmd = &cobra.Command{
 var workflowsExperimentsResultsListCmd = &cobra.Command{
 	Use:   "list <run-id>",
 	Short: "List per-document results for an experiment run",
-	Args:  cobra.ExactArgs(1),
+	Long: `List per-document results for an experiment run.
+
+One page holds at most 100 items, so an experiment with a large document
+set needs paging: the response's ` + "`list_metadata.after`" + ` cursor feeds
+` + "`--after`" + ` to fetch the next page (and ` + "`before`" + ` / ` + "`--before`" + ` to walk
+back), matching ` + "`experiments runs list`" + `.`,
+	Example: `  # First page
+  retab workflows experiments results list exprun_aaa --limit 50
+
+  # Next page, from the previous response's list_metadata.after
+  retab workflows experiments results list exprun_aaa --limit 50 --after expjob_zzz`,
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		if err := validateBeforeAfterMutex(cmd); err != nil {
+			return err
+		}
 		limit := getIntFlagOrDefault(cmd, "limit", 20)
 		client, err := newClient(cmd)
 		if err != nil {
@@ -1137,12 +1152,22 @@ var workflowsExperimentsResultsListCmd = &cobra.Command{
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Experiments.Results.List(ctx, &retab.ExperimentRunResultsListParams{
+		params := &retab.ExperimentRunResultsListParams{
 			RunID: args[0],
 			PaginationParams: retab.PaginationParams{
 				Limit: &limit,
 			},
-		})
+		}
+		if before, _ := cmd.Flags().GetString("before"); before != "" {
+			params.Before = ptr(before)
+		}
+		if after, _ := cmd.Flags().GetString("after"); after != "" {
+			params.After = ptr(after)
+		}
+		if order, _ := cmd.Flags().GetString("order"); order != "" {
+			params.Order = ptr(order)
+		}
+		result, err := client.Workflows.Experiments.Results.List(ctx, params)
 		if err != nil {
 			return err
 		}
@@ -1290,6 +1315,17 @@ func init() {
 	workflowsExperimentsUpdateCmd.Flags().String("name", "", "new name")
 	workflowsExperimentsUpdateCmd.Flags().Var(&consensusFlagValue{}, "n-consensus", "new consensus count (3, 5, or 7)")
 	addExperimentDocFlags(workflowsExperimentsUpdateCmd)
+	// On update these three flags REPLACE the experiment's document set; the PATCH
+	// $sets `documents` from the request alone and never reads what is already
+	// there. The shared create wording reads as "add", so a caller who passes one
+	// capture to an experiment holding five silently drops the other four along
+	// with the results they already paid to measure. Say so on the flags.
+	workflowsExperimentsUpdateCmd.Flags().Lookup("capture").Usage =
+		"REPLACES the document set with the captures given here: run-id[:step-id] (repeatable; inline alternative to --captures-file)"
+	workflowsExperimentsUpdateCmd.Flags().Lookup("captures-file").Usage =
+		"REPLACES the document set with this JSON array of {run_id, step_id} captures (or - for stdin)"
+	workflowsExperimentsUpdateCmd.Flags().Lookup("documents-file").Usage =
+		"REPLACES the document set with this JSON array of {handle_inputs, provenance} (or - for stdin)"
 
 	workflowsExperimentsRunsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items (1-100; default 20)")
 	workflowsExperimentsRunsListCmd.Flags().String("workflow-id", "", "filter by workflow id")
@@ -1305,6 +1341,12 @@ func init() {
 	workflowsExperimentsRunsListCmd.Flags().String("after", "", "page after cursor (mutually exclusive with --before)")
 	workflowsExperimentsRunsListCmd.Flags().Var(&orderFlagValue{}, "order", "asc | desc")
 	workflowsExperimentsResultsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items (1-100; default 20)")
+	// The route pages on a keyset cursor and the response already carries
+	// list_metadata.before/after; without these flags that cursor was a dead end
+	// and every result past the first page was unreachable from the CLI.
+	workflowsExperimentsResultsListCmd.Flags().String("before", "", "page before cursor (mutually exclusive with --after)")
+	workflowsExperimentsResultsListCmd.Flags().String("after", "", "page after cursor (mutually exclusive with --before)")
+	workflowsExperimentsResultsListCmd.Flags().Var(&orderFlagValue{}, "order", "asc | desc")
 	workflowsExperimentsMetricsGetCmd.Flags().String("view", "summary", "view: summary | by_document (needs --document-id) | by_target (needs --target-path) | votes (needs both)")
 	workflowsExperimentsMetricsGetCmd.Flags().String("document-id", "", "document id (required for by_document and votes views)")
 	workflowsExperimentsMetricsGetCmd.Flags().String("target-path", "", "target path (required for by_target and votes views)")
