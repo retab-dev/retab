@@ -342,6 +342,34 @@ func TestProductionConfirmPrompt_RedactsCredentialAndNamesCommand(t *testing.T) 
 
 // --- classification wiring ----------------------------------------------
 
+// The high-risk list drifted from the policy it documents: that policy names
+// "restart/cancel run" and "destructive (delete, delete-all)", yet only the
+// create/restart half was ever listed. Against production, `workflows runs
+// cancel` killed in-flight work and `workflows runs delete` destroyed a run
+// with no confirmation at all — and `runs cancel` did not even expose a
+// --confirm flag, while its sibling `runs create` did. Pin every cancel/delete
+// command so a future edit to the list cannot silently reopen the hole.
+func TestHighRiskListCoversCancelAndDelete(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		cmd  *cobra.Command
+	}{
+		{"workflows runs cancel", workflowsRunsCancelCmd},
+		{"workflows runs delete", workflowsRunsDeleteCmd},
+		{"workflows experiments runs cancel", workflowsExperimentsRunsCancelCmd},
+		{"workflows experiments delete", workflowsExperimentsDeleteCmd},
+	} {
+		if got := safetyClassOf(tc.cmd); got != classHighRisk {
+			t.Errorf("%s should be high-risk, got %q", tc.name, got)
+		}
+		// The gate is only reachable if the command actually accepts the
+		// flag; a high-risk command with no --confirm is unusable in CI.
+		if tc.cmd.Flags().Lookup(confirmFlagName) == nil {
+			t.Errorf("%s is high-risk but has no --%s flag", tc.name, confirmFlagName)
+		}
+	}
+}
+
 func TestClassification_KnownCommands(t *testing.T) {
 	if got := safetyClassOf(workflowsPublishCmd); got != classHighRisk {
 		t.Errorf("workflows publish should be high-risk, got %q", got)
