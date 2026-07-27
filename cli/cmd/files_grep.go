@@ -369,7 +369,16 @@ func snippet(text string, start, end, contextChars int) string {
 // is a best-effort port of LiteParse's search_items merge: items are scanned in
 // order, and the first contiguous run whose joined text contains the match
 // wins. Returns nil when no covering run is found or the page has no items.
+// grepBoundingBoxCalls counts boundingBoxForMatch invocations. It is a test
+// observability hook: computing a bounding box is the dominant per-match cost
+// (an O(items) union over the page's text items), so a test asserts this counter
+// stays at the retained-match count rather than the document total, proving the
+// walk skips that work past --max-results. Deterministic where a wall-clock
+// threshold would be flaky.
+var grepBoundingBoxCalls int
+
 func boundingBoxForMatch(page ParsedPage, match string) *Bbox {
+	grepBoundingBoxCalls++
 	if len(page.Items) == 0 || page.Width <= 0 || page.Height <= 0 {
 		return nil
 	}

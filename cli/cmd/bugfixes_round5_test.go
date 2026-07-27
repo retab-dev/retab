@@ -573,8 +573,13 @@ func TestGrepScalesLinearly(t *testing.T) {
 }
 
 // Past --max-results, a match must cost a counter increment and nothing else.
-// Bounding boxes are the expensive part, so a dense page with --bbox is the
-// case that regressed worst.
+// Bounding boxes are the dominant per-match cost, so a dense page with --bbox is
+// the case that regressed worst.
+//
+// Asserts on the number of bounding boxes actually BUILT (grepBoundingBoxCalls),
+// not on wall-clock time: a timing ceiling is inherently flaky and, with a
+// fast-matching fixture, ~300x too loose to catch the regression it names. The
+// count is exact — with the skip removed it equals the document total.
 func TestGrepSkipsPerMatchWorkPastTheCap(t *testing.T) {
 	items := make([]ParsedItem, 0, 2000)
 	for i := 0; i < 2000; i++ {
@@ -591,9 +596,8 @@ func TestGrepSkipsPerMatchWorkPastTheCap(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	start := time.Now()
+	grepBoundingBoxCalls = 0
 	matches, total, truncated := grepParseResult(result, kindPDF, matcher, 0, 50, true)
-	elapsed := time.Since(start)
 
 	if len(matches) != 50 {
 		t.Errorf("returned %d matches, want the cap of 50", len(matches))
@@ -601,16 +605,17 @@ func TestGrepSkipsPerMatchWorkPastTheCap(t *testing.T) {
 	if total <= 50 || !truncated {
 		t.Errorf("total=%d truncated=%v, want a truncated count well above the cap", total, truncated)
 	}
-	// Only the 50 retained matches may carry a bounding box; the rest were
-	// never built.
+	// The load-bearing assertion: a bounding box is built only for the retained
+	// matches. With the skip-past-cap removed this equals `total` (20000).
+	if grepBoundingBoxCalls != len(matches) {
+		t.Errorf("built %d bounding boxes for %d retained matches (of %d total); "+
+			"per-match work is not being skipped past the cap", grepBoundingBoxCalls, len(matches), total)
+	}
+	// Only the retained matches carry a bounding box; the rest were never built.
 	for i, m := range matches {
 		if m.Anchor.Kind != anchorPDFPage {
 			t.Errorf("match %d has anchor kind %q", i, m.Anchor.Kind)
 		}
-	}
-	// Generous ceiling: the pre-fix code took tens of seconds here.
-	if elapsed > 10*time.Second {
-		t.Errorf("--bbox over a dense page took %v; per-match work is not being skipped past the cap", elapsed)
 	}
 }
 
@@ -810,5 +815,68 @@ func TestAuthLoginRejectsProfileSelectorWithoutAPIKey(t *testing.T) {
 				t.Error("refused login started an OAuth session")
 			}
 		})
+	}
+}
+
+// The real behaviour change — the MCP-config writers passing mcpConfigFileMode
+// (0600) instead of 0644 — is what actually secures the API key on disk, and it
+// went unguarded: reverting both call sites to 0644 left the suite green. These
+// drive the writers themselves (through a pre-existing world-readable file, the
+// case os.WriteFile would not re-perm) and assert owner-only.
+func TestUpsertMCPConfigWritesOwnerOnlyFiles(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		// Go reports a synthetic mode on Windows; secureConfigFile applies a
+		// restrictive DACL there, covered by secure_file_windows_test.go.
+		t.Skip("permission bits are not meaningful on windows")
+	}
+	dir := t.TempDir()
+
+	jsonPath := filepath.Join(dir, ".mcp.json")
+	if err := os.WriteFile(jsonPath, []byte("{}"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	serverConfig := mcpServerConfig{
+		Type:    "http",
+		URL:     "https://api.retab.com/mcp",
+		Headers: map[string]string{"Authorization": "Bearer rt_live_secret"},
+	}
+	if err := upsertJSONMCPConfig(jsonPath, "mcpServers", "retab", serverConfig); err != nil {
+		t.Fatalf("upsertJSONMCPConfig: %v", err)
+	}
+	assertOwnerOnly(t, jsonPath)
+
+	tomlPath := filepath.Join(dir, ".codex", "config.toml")
+	if err := os.MkdirAll(filepath.Dir(tomlPath), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(tomlPath, []byte("existing = true\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := upsertTomlMCPConfig(tomlPath, "retab", serverConfig); err != nil {
+		t.Fatalf("upsertTomlMCPConfig: %v", err)
+	}
+	assertOwnerOnly(t, tomlPath)
+
+	// The key really is in the files — so the mode assertion isn't guarding
+	// empty content.
+	for _, p := range []string{jsonPath, tomlPath} {
+		raw, err := os.ReadFile(p)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !strings.Contains(string(raw), "rt_live_secret") {
+			t.Errorf("%s does not contain the key; the mode assertion would be vacuous", p)
+		}
+	}
+}
+
+func assertOwnerOnly(t *testing.T, path string) {
+	t.Helper()
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if perm := info.Mode().Perm(); perm != mcpConfigFileMode {
+		t.Errorf("%s has mode %#o, want %#o (owner-only)", path, perm, mcpConfigFileMode)
 	}
 }
