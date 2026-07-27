@@ -75,6 +75,18 @@ module Retab
     sig { params(value: T.nilable(T::Hash[String, String])).returns(T.nilable(T::Hash[String, String])) }
     def chunking_keys=(value); end
 
+    sig { returns(T.nilable(Integer)) }
+    def auto_chunk_rows; end
+
+    sig { params(value: T.nilable(Integer)).returns(T.nilable(Integer)) }
+    def auto_chunk_rows=(value); end
+
+    sig { returns(T.nilable(String)) }
+    def excel_windowing; end
+
+    sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
+    def excel_windowing=(value); end
+
     sig { returns(T::Hash[Symbol, T.untyped]) }
     def to_h; end
 

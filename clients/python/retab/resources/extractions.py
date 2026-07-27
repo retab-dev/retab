@@ -13,7 +13,7 @@ from retab.types.standards import PreparedRequest
 from retab.types.pagination import AsyncPaginatedList, PaginatedList, PaginationOrder
 from retab.utils.mime import prepare_mime_document
 from retab.types.classifications import ExtractionsStatus
-from retab.types.extractions import Extraction, ExtractionRequest, SourcesResponse
+from retab.types.extractions import Extraction, ExtractionRequest, ExtractionRequestExcelWindowing, SourcesResponse
 from retab.types.mime import FileRef, MIMEData
 
 
@@ -116,6 +116,8 @@ class ExtractionsMixin:
         stream: bool = False,
         background: bool = False,
         chunking_keys: dict[str, str] | None = None,
+        auto_chunk_rows: int | None = None,
+        excel_windowing: ExtractionRequestExcelWindowing | None = None,
         **extra_params: Any,
     ) -> PreparedRequest:
         """Create Extraction Run a structured extraction on a document. Extracts structured data from the `document` according to the supplied `json_schema`, using the requested `model`. Returns the extraction with its `output`, consensus details, and usage on `201`. When `stream` is `true`, partial results are streamed back as they are produced."""
@@ -138,6 +140,8 @@ class ExtractionsMixin:
             stream=cast(Any, stream),
             background=cast(Any, background),
             chunking_keys=cast(Any, chunking_keys),
+            auto_chunk_rows=cast(Any, auto_chunk_rows),
+            excel_windowing=cast(Any, excel_windowing),
         )
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/extractions", params=params or None, data=data)
@@ -155,6 +159,8 @@ class ExtractionsMixin:
         stream: bool = False,
         background: bool = False,
         chunking_keys: dict[str, str] | None = None,
+        auto_chunk_rows: int | None = None,
+        excel_windowing: ExtractionRequestExcelWindowing | None = None,
         **extra_params: Any,
     ) -> PreparedRequest:
         """Create Extraction Stream Run a structured extraction on a document and stream partial results as they are produced."""
@@ -177,6 +183,8 @@ class ExtractionsMixin:
             stream=cast(Any, stream),
             background=cast(Any, background),
             chunking_keys=cast(Any, chunking_keys),
+            auto_chunk_rows=cast(Any, auto_chunk_rows),
+            excel_windowing=cast(Any, excel_windowing),
         )
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/extractions/stream", params=params or None, data=data)
@@ -270,6 +278,8 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
         stream: bool = False,
         background: bool = False,
         chunking_keys: dict[str, str] | None = None,
+        auto_chunk_rows: int | None = None,
+        excel_windowing: ExtractionRequestExcelWindowing | None = None,
         **extra_params: Any,
     ) -> Extraction:
         """Create Extraction Run a structured extraction on a document. Extracts structured data from the `document` according to the supplied `json_schema`, using the requested `model`. Returns the extraction with its `output`, consensus details, and usage on `201`. When `stream` is `true`, partial results are streamed back as they are produced."""
@@ -288,6 +298,8 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
             stream=stream,
             background=background,
             chunking_keys=chunking_keys,
+            auto_chunk_rows=auto_chunk_rows,
+            excel_windowing=excel_windowing,
             **extra_params,
         )
         response = self._client._prepared_request(prepared_request)
@@ -306,6 +318,8 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
         stream: bool = False,
         background: bool = False,
         chunking_keys: dict[str, str] | None = None,
+        auto_chunk_rows: int | None = None,
+        excel_windowing: ExtractionRequestExcelWindowing | None = None,
         **extra_params: Any,
     ) -> Any:
         """Create Extraction Stream Run a structured extraction on a document and stream partial results as they are produced."""
@@ -324,6 +338,8 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
             stream=stream,
             background=background,
             chunking_keys=chunking_keys,
+            auto_chunk_rows=auto_chunk_rows,
+            excel_windowing=excel_windowing,
             **extra_params,
         )
         response = self._client._prepared_request(prepared_request)
@@ -404,6 +420,8 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
         stream: bool = False,
         background: bool = False,
         chunking_keys: dict[str, str] | None = None,
+        auto_chunk_rows: int | None = None,
+        excel_windowing: ExtractionRequestExcelWindowing | None = None,
         **extra_params: Any,
     ) -> Extraction:
         """Create Extraction Run a structured extraction on a document. Extracts structured data from the `document` according to the supplied `json_schema`, using the requested `model`. Returns the extraction with its `output`, consensus details, and usage on `201`. When `stream` is `true`, partial results are streamed back as they are produced."""
@@ -422,6 +440,8 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
             stream=stream,
             background=background,
             chunking_keys=chunking_keys,
+            auto_chunk_rows=auto_chunk_rows,
+            excel_windowing=excel_windowing,
             **extra_params,
         )
         response = await self._client._prepared_request(prepared_request)
@@ -440,6 +460,8 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
         stream: bool = False,
         background: bool = False,
         chunking_keys: dict[str, str] | None = None,
+        auto_chunk_rows: int | None = None,
+        excel_windowing: ExtractionRequestExcelWindowing | None = None,
         **extra_params: Any,
     ) -> Any:
         """Create Extraction Stream Run a structured extraction on a document and stream partial results as they are produced."""
@@ -458,6 +480,8 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
             stream=stream,
             background=background,
             chunking_keys=chunking_keys,
+            auto_chunk_rows=auto_chunk_rows,
+            excel_windowing=excel_windowing,
             **extra_params,
         )
         response = await self._client._prepared_request(prepared_request)

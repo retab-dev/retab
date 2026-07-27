@@ -10,6 +10,11 @@ from retab.types.documents.usage import RetabUsage
 from retab.types.mime import FileRef, MIMEData
 
 
+class ExtractionRequestExcelWindowing(str, Enum):
+    MANUAL = "manual"
+    AUTO = "auto"
+
+
 class ExtractionStatus(str, Enum):
     PENDING = "pending"
     QUEUED = "queued"
@@ -51,6 +56,11 @@ class ExtractionRequest(BaseModel):
         description="If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.",
     )
     chunking_keys: dict[str, str] | None = None
+    auto_chunk_rows: int | None = Field(default=None, description='Rows per extraction window when excel_windowing is "auto" (10-1000, default 50).')
+    excel_windowing: ExtractionRequestExcelWindowing | None = Field(
+        default=None,
+        description='Spreadsheet auto-windowing mode. "auto" splits an xlsx/CSV input into per-table row chunks, extracts each chunk, and concatenates the results into {"data": [...]}. "auto" does not support stream; over a spreadsheet it also rejects background=true (the windowed compute has no durable background representation yet) and is capped at 40 extraction windows per request — larger workbooks belong in a workflow extract block. Absent or "manual" runs one extraction over the whole document.',
+    )
 
 
 class Extraction(BaseModel):

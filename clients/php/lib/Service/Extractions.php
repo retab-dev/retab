@@ -96,6 +96,8 @@ class Extractions
      * @param bool|null $stream
      * @param bool|null $background If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
      * @param array<string, string>|null $chunkingKeys
+     * @param int|null $autoChunkRows Rows per extraction window when excel_windowing is "auto" (10-1000, default 50).
+     * @param \Retab\Resource\ExtractionRequestExcelWindowing|null $excelWindowing Spreadsheet auto-windowing mode. "auto" splits an xlsx/CSV input into per-table row chunks, extracts each chunk, and concatenates the results into {"data": [...]}. "auto" does not support stream; over a spreadsheet it also rejects background=true (the windowed compute has no durable background representation yet) and is capped at 40 extraction windows per request — larger workbooks belong in a workflow extract block. Absent or "manual" runs one extraction over the whole document.
      * @return \Retab\Resource\Extraction
      * @throws \Retab\Exception\RetabException
      */
@@ -111,6 +113,8 @@ class Extractions
         ?bool $stream = null,
         ?bool $background = null,
         ?array $chunkingKeys = null,
+        ?int $autoChunkRows = null,
+        ?\Retab\Resource\ExtractionRequestExcelWindowing $excelWindowing = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\Extraction {
         $document = \Retab\Resource\MimeDataCoerce::coerce($document, $this->client);
@@ -126,6 +130,8 @@ class Extractions
             'stream' => $stream,
             'background' => $background,
             'chunking_keys' => $chunkingKeys,
+            'auto_chunk_rows' => $autoChunkRows,
+            'excel_windowing' => $excelWindowing?->value,
         ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',
@@ -151,6 +157,8 @@ class Extractions
      * @param bool|null $stream
      * @param bool|null $background If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
      * @param array<string, string>|null $chunkingKeys
+     * @param int|null $autoChunkRows Rows per extraction window when excel_windowing is "auto" (10-1000, default 50).
+     * @param \Retab\Resource\ExtractionRequestExcelWindowing|null $excelWindowing Spreadsheet auto-windowing mode. "auto" splits an xlsx/CSV input into per-table row chunks, extracts each chunk, and concatenates the results into {"data": [...]}. "auto" does not support stream; over a spreadsheet it also rejects background=true (the windowed compute has no durable background representation yet) and is capped at 40 extraction windows per request — larger workbooks belong in a workflow extract block. Absent or "manual" runs one extraction over the whole document.
      * @return mixed
      * @throws \Retab\Exception\RetabException
      */
@@ -166,6 +174,8 @@ class Extractions
         ?bool $stream = null,
         ?bool $background = null,
         ?array $chunkingKeys = null,
+        ?int $autoChunkRows = null,
+        ?\Retab\Resource\ExtractionRequestExcelWindowing $excelWindowing = null,
         ?\Retab\RequestOptions $options = null,
     ): mixed {
         $document = \Retab\Resource\MimeDataCoerce::coerce($document, $this->client);
@@ -181,6 +191,8 @@ class Extractions
             'stream' => $stream,
             'background' => $background,
             'chunking_keys' => $chunkingKeys,
+            'auto_chunk_rows' => $autoChunkRows,
+            'excel_windowing' => $excelWindowing?->value,
         ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',

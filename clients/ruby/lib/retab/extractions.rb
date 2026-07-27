@@ -110,6 +110,8 @@ module Retab
     # @param stream [Boolean, nil]
     # @param background [Boolean, nil] If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
     # @param chunking_keys [Hash{String => String}, nil]
+    # @param auto_chunk_rows [Integer, nil] Rows per extraction window when excel_windowing is "auto" (10-1000, default 50).
+    # @param excel_windowing [Retab::Types::ExtractionRequestExcelWindowing, nil] Spreadsheet auto-windowing mode. "auto" splits an xlsx/CSV input into per-table row chunks, extracts each chunk, and concatenates the results into {"data": [...]}. "auto" does not support stream; over a spreadsheet it also rejects background=true (the windowed compute has no durable background representation yet) and is capped at 40 extraction windows per request — larger workbooks belong in a workflow extract block. Absent or "manual" runs one extraction over the whole document.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::Extraction]
     def create(
@@ -124,6 +126,8 @@ module Retab
       stream: nil,
       background: nil,
       chunking_keys: nil,
+      auto_chunk_rows: nil,
+      excel_windowing: nil,
       request_options: {}
     )
       document = Retab::MimeData.coerce(document, client: @client) unless document.nil?
@@ -138,7 +142,9 @@ module Retab
         "bust_cache" => bust_cache,
         "stream" => stream,
         "background" => background,
-        "chunking_keys" => chunking_keys
+        "chunking_keys" => chunking_keys,
+        "auto_chunk_rows" => auto_chunk_rows,
+        "excel_windowing" => excel_windowing
       }.compact
       response = @client.request(
         method: :post,
@@ -168,6 +174,8 @@ module Retab
     # @param stream [Boolean, nil]
     # @param background [Boolean, nil] If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
     # @param chunking_keys [Hash{String => String}, nil]
+    # @param auto_chunk_rows [Integer, nil] Rows per extraction window when excel_windowing is "auto" (10-1000, default 50).
+    # @param excel_windowing [Retab::Types::ExtractionRequestExcelWindowing, nil] Spreadsheet auto-windowing mode. "auto" splits an xlsx/CSV input into per-table row chunks, extracts each chunk, and concatenates the results into {"data": [...]}. "auto" does not support stream; over a spreadsheet it also rejects background=true (the windowed compute has no durable background representation yet) and is capped at 40 extraction windows per request — larger workbooks belong in a workflow extract block. Absent or "manual" runs one extraction over the whole document.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [void]
     def create_stream(
@@ -182,6 +190,8 @@ module Retab
       stream: nil,
       background: nil,
       chunking_keys: nil,
+      auto_chunk_rows: nil,
+      excel_windowing: nil,
       request_options: {}
     )
       document = Retab::MimeData.coerce(document, client: @client) unless document.nil?
@@ -196,7 +206,9 @@ module Retab
         "bust_cache" => bust_cache,
         "stream" => stream,
         "background" => background,
-        "chunking_keys" => chunking_keys
+        "chunking_keys" => chunking_keys,
+        "auto_chunk_rows" => auto_chunk_rows,
+        "excel_windowing" => excel_windowing
       }.compact
       @client.request(
         method: :post,

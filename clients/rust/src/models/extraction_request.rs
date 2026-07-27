@@ -48,6 +48,12 @@ pub struct ExtractionRequest {
     pub background: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub chunking_keys: Option<std::collections::HashMap<String, String>>,
+    /// Rows per extraction window when excel_windowing is "auto" (10-1000, default 50).
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub auto_chunk_rows: Option<i64>,
+    /// Spreadsheet auto-windowing mode. "auto" splits an xlsx/CSV input into per-table row chunks, extracts each chunk, and concatenates the results into {"data": [...]}. "auto" does not support stream; over a spreadsheet it also rejects background=true (the windowed compute has no durable background representation yet) and is capped at 40 extraction windows per request — larger workbooks belong in a workflow extract block. Absent or "manual" runs one extraction over the whole document.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub excel_windowing: Option<ExtractionRequestExcelWindowing>,
 }
 impl ExtractionRequest {
     /// Construct a new `ExtractionRequest` with the required fields set.
@@ -68,6 +74,8 @@ impl ExtractionRequest {
             stream: Default::default(),
             background: Default::default(),
             chunking_keys: Default::default(),
+            auto_chunk_rows: Default::default(),
+            excel_windowing: Default::default(),
         }
     }
 }

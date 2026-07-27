@@ -62,6 +62,12 @@ namespace Retab
 
         public Dictionary<string, string>? ChunkingKeys { get; set; }
 
+        /// <summary>Rows per extraction window when excel_windowing is "auto" (10-1000, default 50).</summary>
+        public long? AutoChunkRows { get; set; }
+
+        /// <summary>Spreadsheet auto-windowing mode. "auto" splits an xlsx/CSV input into per-table row chunks, extracts each chunk, and concatenates the results into {"data": [...]}. "auto" does not support stream; over a spreadsheet it also rejects background=true (the windowed compute has no durable background representation yet) and is capped at 40 extraction windows per request — larger workbooks belong in a workflow extract block. Absent or "manual" runs one extraction over the whole document.</summary>
+        public ExtractionRequestExcelWindowing? ExcelWindowing { get; set; }
+
     }
 
     /// <summary>Request options for <see cref="ExtractionsService.CreateStreamAsync"/>: Create Extraction Stream</summary>
@@ -96,6 +102,12 @@ namespace Retab
         public bool? Background { get; set; }
 
         public Dictionary<string, string>? ChunkingKeys { get; set; }
+
+        /// <summary>Rows per extraction window when excel_windowing is "auto" (10-1000, default 50).</summary>
+        public long? AutoChunkRows { get; set; }
+
+        /// <summary>Spreadsheet auto-windowing mode. "auto" splits an xlsx/CSV input into per-table row chunks, extracts each chunk, and concatenates the results into {"data": [...]}. "auto" does not support stream; over a spreadsheet it also rejects background=true (the windowed compute has no durable background representation yet) and is capped at 40 extraction windows per request — larger workbooks belong in a workflow extract block. Absent or "manual" runs one extraction over the whole document.</summary>
+        public ExtractionRequestExcelWindowing? ExcelWindowing { get; set; }
 
     }
 

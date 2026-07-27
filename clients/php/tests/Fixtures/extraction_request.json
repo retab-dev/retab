@@ -22,5 +22,7 @@
   "background": true,
   "chunking_keys": {
     "key": "test_value"
-  }
+  },
+  "auto_chunk_rows": 1,
+  "excel_windowing": "manual"
 }

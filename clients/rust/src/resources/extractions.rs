@@ -99,6 +99,8 @@ impl CreateParams {
                 stream: Default::default(),
                 background: Default::default(),
                 chunking_keys: Default::default(),
+                auto_chunk_rows: Default::default(),
+                excel_windowing: Default::default(),
             },
         }
     }
@@ -137,6 +139,8 @@ impl CreateStreamParams {
                 stream: Default::default(),
                 background: Default::default(),
                 chunking_keys: Default::default(),
+                auto_chunk_rows: Default::default(),
+                excel_windowing: Default::default(),
             },
         }
     }

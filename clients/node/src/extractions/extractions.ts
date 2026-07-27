@@ -6,6 +6,7 @@ import { coerceMimeData, type DocumentInput } from '../runtime/mime.js';
 import type { ExtractionsStatus } from '../common/interfaces/index.js';
 import type {
   Extraction,
+  ExtractionRequestExcelWindowing,
   ExtractionResponse,
   SourcesResponse,
   SourcesResponseResponse,
@@ -66,7 +67,9 @@ export class Extractions {
     bustCache?: boolean,
     stream?: boolean,
     background?: boolean,
-    chunkingKeys?: Record<string, string> | null
+    chunkingKeys?: Record<string, string> | null,
+    autoChunkRows?: number,
+    excelWindowing?: ExtractionRequestExcelWindowing
   ): Promise<Extraction> {
     const documentCoerced = await coerceMimeData(document, (__id) =>
       this.client.files.get_download_link(__id)
@@ -83,6 +86,8 @@ export class Extractions {
       stream: stream,
       background: background,
       chunking_keys: chunkingKeys,
+      auto_chunk_rows: autoChunkRows,
+      excel_windowing: excelWindowing,
     };
     const __wire = await this.client.request<ExtractionResponse>({
       method: 'POST',
@@ -105,7 +110,9 @@ export class Extractions {
     bustCache?: boolean,
     stream?: boolean,
     background?: boolean,
-    chunkingKeys?: Record<string, string> | null
+    chunkingKeys?: Record<string, string> | null,
+    autoChunkRows?: number,
+    excelWindowing?: ExtractionRequestExcelWindowing
   ): Promise<unknown> {
     const documentCoerced = await coerceMimeData(document, (__id) =>
       this.client.files.get_download_link(__id)
@@ -122,6 +129,8 @@ export class Extractions {
       stream: stream,
       background: background,
       chunking_keys: chunkingKeys,
+      auto_chunk_rows: autoChunkRows,
+      excel_windowing: excelWindowing,
     };
     const __wire = await this.client.request<unknown>({
       method: 'POST',

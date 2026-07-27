@@ -837,7 +837,9 @@ class ModelRoundTripTest < Minitest::Test
       "bust_cache" => true,
       "stream" => true,
       "background" => true,
-      "chunking_keys" => nil
+      "chunking_keys" => nil,
+      "auto_chunk_rows" => 1,
+      "excel_windowing" => "stub"
     }
     model = Retab::ExtractionRequest.new(fixture.to_json)
     json = model.to_h

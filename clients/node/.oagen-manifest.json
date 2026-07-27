@@ -69,6 +69,7 @@
     "src/edits/templates/interfaces/update-edit-template-request.interface.ts",
     "src/extractions/extractions.ts",
     "src/extractions/interfaces/extraction-consensus.interface.ts",
+    "src/extractions/interfaces/extraction-request-excel-windowing.interface.ts",
     "src/extractions/interfaces/extraction-request.interface.ts",
     "src/extractions/interfaces/extraction-status.interface.ts",
     "src/extractions/interfaces/extraction.interface.ts",

@@ -10,6 +10,8 @@ import {
   deserializeMIMEData,
   serializeMIMEData,
 } from '../../classifications/interfaces/mime-data.interface.js';
+import type { ExtractionRequestExcelWindowing } from './extraction-request-excel-windowing.interface.js';
+import { ZExtractionRequestExcelWindowing } from './extraction-request-excel-windowing.interface.js';
 
 /** Request to run a structured extraction on a single document. */
 export interface ExtractionRequest {
@@ -45,6 +47,10 @@ export interface ExtractionRequest {
    */
   background?: boolean;
   chunkingKeys?: Record<string, string> | null;
+  /** Rows per extraction window when excel_windowing is "auto" (10-1000, default 50). */
+  autoChunkRows?: number;
+  /** Spreadsheet auto-windowing mode. "auto" splits an xlsx/CSV input into per-table row chunks, extracts each chunk, and concatenates the results into {"data": [...]}. "auto" does not support stream; over a spreadsheet it also rejects background=true (the windowed compute has no durable background representation yet) and is capped at 40 extraction windows per request — larger workbooks belong in a workflow extract block. Absent or "manual" runs one extraction over the whole document. */
+  excelWindowing?: ExtractionRequestExcelWindowing;
 }
 
 export interface ExtractionRequestResponse {
@@ -59,6 +65,8 @@ export interface ExtractionRequestResponse {
   stream?: boolean;
   background?: boolean;
   chunking_keys?: Record<string, string> | null;
+  auto_chunk_rows?: number;
+  excel_windowing?: ExtractionRequestExcelWindowing;
 }
 
 export const ZExtractionRequest = z.object({
@@ -73,6 +81,8 @@ export const ZExtractionRequest = z.object({
   stream: z.boolean().optional(),
   background: z.boolean().optional(),
   chunkingKeys: z.record(z.string(), z.string()).nullable().optional(),
+  autoChunkRows: z.number().int().optional(),
+  excelWindowing: ZExtractionRequestExcelWindowing.optional(),
 }) as z.ZodType<ExtractionRequest>;
 
 export function deserializeExtractionRequest(wire: ExtractionRequestResponse): ExtractionRequest {
@@ -88,6 +98,8 @@ export function deserializeExtractionRequest(wire: ExtractionRequestResponse): E
     stream: wire['stream'],
     background: wire['background'],
     chunkingKeys: wire['chunking_keys'],
+    autoChunkRows: wire['auto_chunk_rows'],
+    excelWindowing: wire['excel_windowing'],
   };
 }
 
@@ -104,5 +116,7 @@ export function serializeExtractionRequest(domain: ExtractionRequest): Extractio
     stream: domain['stream'],
     background: domain['background'],
     chunking_keys: domain['chunkingKeys'],
+    auto_chunk_rows: domain['autoChunkRows'],
+    excel_windowing: domain['excelWindowing'],
   };
 }

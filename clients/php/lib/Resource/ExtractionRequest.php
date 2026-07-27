@@ -47,6 +47,10 @@ readonly class ExtractionRequest implements \JsonSerializable
         public ?bool $background = null,
         /** @var array<string, string>|null */
         public ?array $chunkingKeys = null,
+        /** Rows per extraction window when excel_windowing is "auto" (10-1000, default 50). */
+        public ?int $autoChunkRows = null,
+        /** Spreadsheet auto-windowing mode. "auto" splits an xlsx/CSV input into per-table row chunks, extracts each chunk, and concatenates the results into {"data": [...]}. "auto" does not support stream; over a spreadsheet it also rejects background=true (the windowed compute has no durable background representation yet) and is capped at 40 extraction windows per request — larger workbooks belong in a workflow extract block. Absent or "manual" runs one extraction over the whole document. */
+        public ?ExtractionRequestExcelWindowing $excelWindowing = null,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -72,6 +76,8 @@ readonly class ExtractionRequest implements \JsonSerializable
             stream: $data['stream'] ?? null,
             background: $data['background'] ?? null,
             chunkingKeys: $data['chunking_keys'] ?? null,
+            autoChunkRows: $data['auto_chunk_rows'] ?? null,
+            excelWindowing: isset($data['excel_windowing']) ? ExtractionRequestExcelWindowing::from($data['excel_windowing']) : null,
         );
     }
 
@@ -90,6 +96,8 @@ readonly class ExtractionRequest implements \JsonSerializable
             'stream' => $this->stream,
             'background' => $this->background,
             'chunking_keys' => $this->chunkingKeys,
+            'auto_chunk_rows' => $this->autoChunkRows,
+            'excel_windowing' => $this->excelWindowing?->value,
         ];
     }
 }
