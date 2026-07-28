@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "rust",
-  "generatedAt": "1970-01-01T00:00:00.000Z",
+  "generatedAt": "2026-07-28T12:54:37.523Z",
   "files": [
     "Cargo.toml",
     "LICENSE-MIT",
@@ -187,6 +187,7 @@
     "src/models/contain_condition.rs",
     "src/models/container_context_data.rs",
     "src/models/create_block_execution_request.rs",
+    "src/models/create_consensus_request.rs",
     "src/models/create_edit_template_request.rs",
     "src/models/create_experiment_request.rs",
     "src/models/create_experiment_run_request.rs",
@@ -317,6 +318,10 @@
     "src/models/queued_workflow_eval_run.rs",
     "src/models/queued_workflow_experiment_result.rs",
     "src/models/queued_workflow_experiment_run.rs",
+    "src/models/reconciliation_alignment.rs",
+    "src/models/reconciliation_field.rs",
+    "src/models/reconciliation_path_alignment.rs",
+    "src/models/reconciliation_result.rs",
     "src/models/reconstruct_document_ref.rs",
     "src/models/reconstruct_enriched_row.rs",
     "src/models/reconstruct_enriched_table.rs",
@@ -471,6 +476,7 @@
     "src/pagination.rs",
     "src/query.rs",
     "src/resources/classifications.rs",
+    "src/resources/consensus.rs",
     "src/resources/edit_templates.rs",
     "src/resources/edits.rs",
     "src/resources/experiment_run_metrics.rs",
@@ -525,6 +531,10 @@
     "POST /v1/classifications/{classification_id}/cancel": {
       "sdkMethod": "create_classification_cancel",
       "service": "classifications"
+    },
+    "POST /v1/consensus": {
+      "sdkMethod": "create",
+      "service": "consensus"
     },
     "GET /v1/edits": {
       "sdkMethod": "list",

@@ -15,7 +15,7 @@ var apiDesignKebabNamePattern = regexp.MustCompile(`^[a-z][a-z0-9]*(?:-[a-z0-9]+
 func TestAPICommandSurfaceUsesCanonicalResourceActionNames(t *testing.T) {
 	canonicalNames := map[string]bool{
 		"access": true, "add": true, "api-calls": true, "apply": true, "apply-to": true, "approve": true, "artifacts": true, "auth": true,
-		"blocks": true, "blueprints": true, "cancel": true, "claim": true, "classifications": true, "complete-upload": true, "config": true, "env": true,
+		"blocks": true, "blueprints": true, "cancel": true, "claim": true, "classifications": true, "complete-upload": true, "config": true, "consensus": true, "env": true,
 		"create": true, "create-upload": true, "delete": true, "discard-draft": true,
 		"diff": true, "doctor": true, "download": true, "download-link": true, "edges": true, "edits": true,
 		"experiments": true, "export": true, "extractions": true, "files": true,

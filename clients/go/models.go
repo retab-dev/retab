@@ -1663,6 +1663,36 @@ type QueuedWorkflowExperimentResult = QueuedBlockExecutionLifecycle
 // QueuedWorkflowExperimentRun is an alias for QueuedBlockExecutionLifecycle.
 type QueuedWorkflowExperimentRun = QueuedBlockExecutionLifecycle
 
+// ReconciliationAlignment represents a reconciliation alignment.
+type ReconciliationAlignment struct {
+	AlignedInputs  []map[string]interface{}       `json:"aligned_inputs"`
+	PathAlignments []*ReconciliationPathAlignment `json:"path_alignments"`
+	ReferenceIndex int                            `json:"reference_index"`
+}
+
+// ReconciliationField represents a reconciliation field.
+type ReconciliationField struct {
+	Likelihood           float64     `json:"likelihood"`
+	Path                 string      `json:"path"`
+	SupportingInputCount int         `json:"supporting_input_count"`
+	TotalInputCount      int         `json:"total_input_count"`
+	Value                interface{} `json:"value"`
+}
+
+// ReconciliationPathAlignment represents a reconciliation path alignment.
+type ReconciliationPathAlignment struct {
+	CanonicalPath string    `json:"canonical_path"`
+	SourcePaths   []*string `json:"source_paths"`
+}
+
+// ReconciliationResult represents a reconciliation result.
+type ReconciliationResult struct {
+	Alignment   ReconciliationAlignment `json:"alignment"`
+	Consensus   map[string]interface{}  `json:"consensus"`
+	Fields      []*ReconciliationField  `json:"fields"`
+	Likelihoods map[string]float64      `json:"likelihoods"`
+}
+
 // ReconstructDocumentRef represents a reconstruct document ref.
 type ReconstructDocumentRef struct {
 	Filename string  `json:"filename"`

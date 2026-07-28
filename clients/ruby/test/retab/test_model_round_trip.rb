@@ -765,6 +765,18 @@ class ModelRoundTripTest < Minitest::Test
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
+  def test_create_consensus_request_round_trip
+    fixture = {
+      "include_alignment" => true,
+      "inputs" => nil,
+      "json_schema" => {}
+    }
+    model = Retab::CreateConsensusRequest.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
   def test_edit_request_round_trip
     fixture = {
       "instructions" => "stub",
@@ -2585,6 +2597,63 @@ class ModelRoundTripTest < Minitest::Test
       "status" => "queued"
     }
     model = Retab::QueuedWorkflowExperimentRun.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_reconciliation_alignment_round_trip
+    fixture = {
+      "aligned_inputs" => nil,
+      "path_alignments" => nil,
+      "reference_index" => 1
+    }
+    model = Retab::ReconciliationAlignment.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["reference_index"], json[:reference_index])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_reconciliation_field_round_trip
+    fixture = {
+      "likelihood" => 1.0,
+      "path" => "stub",
+      "supporting_input_count" => 1,
+      "total_input_count" => 1,
+      "value" => nil
+    }
+    model = Retab::ReconciliationField.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["likelihood"], json[:likelihood])
+    assert_equal(fixture["path"], json[:path])
+    assert_equal(fixture["supporting_input_count"], json[:supporting_input_count])
+    assert_equal(fixture["total_input_count"], json[:total_input_count])
+    assert_nil(json[:value])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_reconciliation_path_alignment_round_trip
+    fixture = {
+      "canonical_path" => "stub",
+      "source_paths" => nil
+    }
+    model = Retab::ReconciliationPathAlignment.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["canonical_path"], json[:canonical_path])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_reconciliation_result_round_trip
+    fixture = {
+      "alignment" => {},
+      "consensus" => {},
+      "fields" => nil,
+      "likelihoods" => {}
+    }
+    model = Retab::ReconciliationResult.new(fixture.to_json)
     json = model.to_h
     assert_kind_of(Hash, json)
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }

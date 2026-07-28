@@ -11,6 +11,7 @@ loader = Zeitwerk::Loader.for_gem
 require_relative "retab/inflections"
 loader.inflector.inflect(RETAB_INFLECTIONS)
 loader.collapse("#{__dir__}/retab/classifications")
+loader.collapse("#{__dir__}/retab/consensus")
 loader.collapse("#{__dir__}/retab/edit_templates")
 loader.collapse("#{__dir__}/retab/edits")
 loader.collapse("#{__dir__}/retab/experiment_run_metrics")

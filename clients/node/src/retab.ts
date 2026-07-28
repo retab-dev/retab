@@ -2,6 +2,7 @@
 
 import { RetabBase, type RetabOptions } from './common/retab-base.js';
 import { Classifications } from './classifications/classifications.js';
+import { Consensus } from './consensus/consensus.js';
 import { Edits } from './edits/edits.js';
 import { Extractions } from './extractions/extractions.js';
 import { Files } from './files/files.js';
@@ -22,6 +23,7 @@ import { Workflows } from './workflows/workflows.js';
  */
 export class Retab extends RetabBase {
   readonly classifications: Classifications;
+  readonly consensus: Consensus;
   readonly edits: Edits;
   readonly extractions: Extractions;
   readonly files: Files;
@@ -37,6 +39,7 @@ export class Retab extends RetabBase {
   constructor(options: RetabOptions) {
     super(options);
     this.classifications = new Classifications(this);
+    this.consensus = new Consensus(this);
     this.edits = new Edits(this);
     this.extractions = new Extractions(this);
     this.files = new Files(this);

@@ -1,0 +1,33 @@
+{
+  "alignment": {
+    "aligned_inputs": [
+      {
+        "key": {}
+      }
+    ],
+    "path_alignments": [
+      {
+        "canonical_path": "test_canonical_path",
+        "source_paths": [
+          "test_source_paths"
+        ]
+      }
+    ],
+    "reference_index": 1
+  },
+  "consensus": {
+    "key": {}
+  },
+  "fields": [
+    {
+      "likelihood": 1,
+      "path": "test_path",
+      "supporting_input_count": 1,
+      "total_input_count": 1,
+      "value": {}
+    }
+  ],
+  "likelihoods": {
+    "key": 1
+  }
+}

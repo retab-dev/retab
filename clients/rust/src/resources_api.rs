@@ -2,6 +2,7 @@
 
 use crate::client::Retab;
 use crate::resources::ClassificationsApi;
+use crate::resources::ConsensusApi;
 use crate::resources::EditsApi;
 use crate::resources::ExtractionsApi;
 use crate::resources::FilesApi;
@@ -18,6 +19,11 @@ impl Retab {
     /// Access the `classifications` resource.
     pub fn classifications(&self) -> ClassificationsApi<'_> {
         ClassificationsApi { client: self }
+    }
+
+    /// Access the `consensus` resource.
+    pub fn consensus(&self) -> ConsensusApi<'_> {
+        ConsensusApi { client: self }
     }
 
     /// Access the `edits` resource.

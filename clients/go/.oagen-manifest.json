@@ -1,10 +1,11 @@
 {
   "version": 2,
   "language": "go",
-  "generatedAt": "2026-07-14T13:14:15.038Z",
+  "generatedAt": "2026-07-28T12:38:56.434Z",
   "files": [
     "classifications.go",
     "compat.go",
+    "consensus.go",
     "edit_templates.go",
     "edits.go",
     "enums.go",
@@ -64,6 +65,10 @@
     "POST /v1/classifications/{classification_id}/cancel": {
       "sdkMethod": "CreateCancel",
       "service": "classifications"
+    },
+    "POST /v1/consensus": {
+      "sdkMethod": "Create",
+      "service": "consensus"
     },
     "GET /v1/edits": {
       "sdkMethod": "List",

@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "php",
-  "generatedAt": "1970-01-01T00:00:00.000Z",
+  "generatedAt": "2026-07-28T12:55:04.059Z",
   "files": [
     "composer.json",
     "lib/Client.php",
@@ -70,6 +70,7 @@
     "lib/Resource/ContainCondition.php",
     "lib/Resource/ContainerContextData.php",
     "lib/Resource/CreateBlockExecutionRequest.php",
+    "lib/Resource/CreateConsensusRequest.php",
     "lib/Resource/CreateEditTemplateRequest.php",
     "lib/Resource/CreateExperimentRequest.php",
     "lib/Resource/CreateExperimentRunRequest.php",
@@ -212,6 +213,10 @@
     "lib/Resource/QueuedWorkflowEvalRun.php",
     "lib/Resource/QueuedWorkflowExperimentResult.php",
     "lib/Resource/QueuedWorkflowExperimentRun.php",
+    "lib/Resource/ReconciliationAlignment.php",
+    "lib/Resource/ReconciliationField.php",
+    "lib/Resource/ReconciliationPathAlignment.php",
+    "lib/Resource/ReconciliationResult.php",
     "lib/Resource/ReconstructDocumentRef.php",
     "lib/Resource/ReconstructEnrichedRow.php",
     "lib/Resource/ReconstructEnrichedTable.php",
@@ -367,6 +372,7 @@
     "lib/Resource/WorkflowTableValidationSeverity.php",
     "lib/Resource/WorkflowVersionFieldDiff.php",
     "lib/Service/Classifications.php",
+    "lib/Service/Consensus.php",
     "lib/Service/EditTemplates.php",
     "lib/Service/Edits.php",
     "lib/Service/ExperimentRunMetrics.php",
@@ -449,6 +455,7 @@
     "tests/Fixtures/contain_condition.json",
     "tests/Fixtures/container_context_data.json",
     "tests/Fixtures/create_block_execution_request.json",
+    "tests/Fixtures/create_consensus_request.json",
     "tests/Fixtures/create_edit_template_request.json",
     "tests/Fixtures/create_experiment_request.json",
     "tests/Fixtures/create_experiment_run_request.json",
@@ -600,6 +607,10 @@
     "tests/Fixtures/queued_workflow_eval_run.json",
     "tests/Fixtures/queued_workflow_experiment_result.json",
     "tests/Fixtures/queued_workflow_experiment_run.json",
+    "tests/Fixtures/reconciliation_alignment.json",
+    "tests/Fixtures/reconciliation_field.json",
+    "tests/Fixtures/reconciliation_path_alignment.json",
+    "tests/Fixtures/reconciliation_result.json",
     "tests/Fixtures/reconstruct_document_ref.json",
     "tests/Fixtures/reconstruct_enriched_row.json",
     "tests/Fixtures/reconstruct_enriched_table.json",
@@ -731,6 +742,7 @@
     "tests/Fixtures/workflow_table_validation_response.json",
     "tests/Fixtures/workflow_version_field_diff.json",
     "tests/Service/ClassificationsTest.php",
+    "tests/Service/ConsensusTest.php",
     "tests/Service/EditTemplatesTest.php",
     "tests/Service/EditsTest.php",
     "tests/Service/ExperimentRunMetricsTest.php",
@@ -780,6 +792,10 @@
     "POST /v1/classifications/{classification_id}/cancel": {
       "sdkMethod": "createClassificationCancel",
       "service": "classifications"
+    },
+    "POST /v1/consensus": {
+      "sdkMethod": "create",
+      "service": "consensus"
     },
     "GET /v1/edits": {
       "sdkMethod": "list",

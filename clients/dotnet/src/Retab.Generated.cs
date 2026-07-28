@@ -12,6 +12,11 @@ namespace Retab
         /// <summary>Gets the <see cref="ClassificationsService"/> for classifications API operations.</summary>
         public virtual ClassificationsService Classifications => this.classifications ??= new ClassificationsService(this);
 
+        private ConsensusService? consensus;
+
+        /// <summary>Gets the <see cref="ConsensusService"/> for consensus API operations.</summary>
+        public virtual ConsensusService Consensus => this.consensus ??= new ConsensusService(this);
+
         private EditsService? edits;
 
         /// <summary>Gets the <see cref="EditsService"/> for edits API operations.</summary>

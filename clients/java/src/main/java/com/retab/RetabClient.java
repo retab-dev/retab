@@ -5,6 +5,7 @@ package com.retab;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.retab.classifications.ClassificationsApi;
+import com.retab.consensus.ConsensusApi;
 import com.retab.edits.EditsApi;
 import com.retab.extractions.ExtractionsApi;
 import com.retab.files.FilesApi;
@@ -26,6 +27,7 @@ public final class RetabClient {
   private final HttpClient httpClient;
   private final ObjectMapper objectMapper;
   private final ClassificationsApi classifications;
+  private final ConsensusApi consensus;
   private final EditsApi edits;
   private final ExtractionsApi extractions;
   private final FilesApi files;
@@ -53,6 +55,7 @@ public final class RetabClient {
     this.httpClient = httpClient;
     this.objectMapper = objectMapper;
     this.classifications = new ClassificationsApi(this);
+    this.consensus = new ConsensusApi(this);
     this.edits = new EditsApi(this);
     this.extractions = new ExtractionsApi(this);
     this.files = new FilesApi(this);
@@ -84,6 +87,10 @@ public final class RetabClient {
 
   public ClassificationsApi classifications() {
     return classifications;
+  }
+
+  public ConsensusApi consensus() {
+    return consensus;
   }
 
   public EditsApi edits() {

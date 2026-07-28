@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "dotnet",
-  "generatedAt": "1970-01-01T00:00:00.000Z",
+  "generatedAt": "2026-07-28T12:54:49.548Z",
   "files": [
     "README.md",
     "Retab.csproj",
@@ -159,6 +159,10 @@
     "src/Entities/PublishWorkflowRequest.cs",
     "src/Entities/QueryWorkflowTableRequest.cs",
     "src/Entities/QueuedBlockExecutionLifecycle.cs",
+    "src/Entities/ReconciliationAlignment.cs",
+    "src/Entities/ReconciliationField.cs",
+    "src/Entities/ReconciliationPathAlignment.cs",
+    "src/Entities/ReconciliationResult.cs",
     "src/Entities/ReconstructDocumentRef.cs",
     "src/Entities/ReconstructEnrichedRow.cs",
     "src/Entities/ReconstructEnrichedTable.cs",
@@ -316,6 +320,8 @@
     "src/RetabOptions.cs",
     "src/Services/Classifications/ClassificationsService.cs",
     "src/Services/Classifications/_interfaces/ClassificationsOptions.cs",
+    "src/Services/Consensus/ConsensusService.cs",
+    "src/Services/Consensus/_interfaces/ConsensusOptions.cs",
     "src/Services/EditTemplates/EditTemplatesService.cs",
     "src/Services/EditTemplates/_interfaces/EditTemplatesOptions.cs",
     "src/Services/Edits/EditsService.cs",
@@ -396,6 +402,10 @@
     "POST /v1/classifications/{classification_id}/cancel": {
       "sdkMethod": "CreateCancelAsync",
       "service": "classifications"
+    },
+    "POST /v1/consensus": {
+      "sdkMethod": "CreateAsync",
+      "service": "consensus"
     },
     "GET /v1/edits": {
       "sdkMethod": "ListAsync",

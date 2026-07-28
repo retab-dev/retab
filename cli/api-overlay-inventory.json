@@ -20,6 +20,7 @@
     "create_block",
     "create_block_execution",
     "create_classification",
+    "create_consensus",
     "create_edge",
     "create_edit",
     "create_experiment",
@@ -171,6 +172,12 @@
       "command": "retab classifications create",
       "source_files": [
         "public/sdk/cli/cmd/zz_oagen_classifications.go"
+      ]
+    },
+    "create_consensus": {
+      "command": "retab consensus create",
+      "source_files": [
+        "public/sdk/cli/cmd/consensus.go"
       ]
     },
     "create_edit": {

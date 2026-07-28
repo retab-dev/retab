@@ -9,6 +9,10 @@ module Retab
       @classifications ||= Retab::Classifications.new(self)
     end
 
+    def consensus
+      @consensus ||= Retab::Consensus.new(self)
+    end
+
     def edits
       @edits ||= Retab::Edits.new(self)
     end

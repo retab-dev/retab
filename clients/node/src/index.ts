@@ -17,6 +17,7 @@ export {
 } from './common/exceptions.js';
 
 export * from './classifications/interfaces/index.js';
+export * from './consensus/interfaces/index.js';
 export * from './edits/interfaces/index.js';
 export * from './edits/templates/interfaces/index.js';
 export * from './extractions/interfaces/index.js';

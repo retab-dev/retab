@@ -5,6 +5,7 @@
   "files": [
     "retab/resources/__init__.py",
     "retab/resources/classifications.py",
+    "retab/resources/consensus.py",
     "retab/resources/edits/__init__.py",
     "retab/resources/edits/templates.py",
     "retab/resources/extractions.py",
@@ -36,6 +37,7 @@
     "retab/types/__init__.py",
     "retab/types/base.py",
     "retab/types/classifications.py",
+    "retab/types/consensus.py",
     "retab/types/documents/__init__.py",
     "retab/types/documents/usage.py",
     "retab/types/edits/__init__.py",

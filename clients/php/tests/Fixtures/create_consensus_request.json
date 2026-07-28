@@ -1,0 +1,11 @@
+{
+  "include_alignment": true,
+  "inputs": [
+    {
+      "key": {}
+    }
+  ],
+  "json_schema": {
+    "key": {}
+  }
+}

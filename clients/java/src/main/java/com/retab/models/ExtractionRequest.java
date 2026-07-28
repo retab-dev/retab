@@ -5,6 +5,7 @@ package com.retab.models;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.retab.types.ExtractionRequestExcelWindowing;
 import java.util.List;
 import java.util.Map;
 
@@ -21,6 +22,8 @@ public final class ExtractionRequest {
   private final Boolean stream;
   private final Boolean background;
   private final Map<String, String> chunkingKeys;
+  private final Long autoChunkRows;
+  private final ExtractionRequestExcelWindowing excelWindowing;
 
   @JsonCreator
   public ExtractionRequest(
@@ -35,7 +38,10 @@ public final class ExtractionRequest {
       @JsonProperty(value = "bust_cache", required = false) Boolean bustCache,
       @JsonProperty(value = "stream", required = false) Boolean stream,
       @JsonProperty(value = "background", required = false) Boolean background,
-      @JsonProperty(value = "chunking_keys", required = false) Map<String, String> chunkingKeys) {
+      @JsonProperty(value = "chunking_keys", required = false) Map<String, String> chunkingKeys,
+      @JsonProperty(value = "auto_chunk_rows", required = false) Long autoChunkRows,
+      @JsonProperty(value = "excel_windowing", required = false)
+          ExtractionRequestExcelWindowing excelWindowing) {
     this.document = document;
     this.jsonSchema = jsonSchema;
     this.model = model != null ? model : "retab-small";
@@ -47,6 +53,8 @@ public final class ExtractionRequest {
     this.stream = stream != null ? stream : false;
     this.background = background != null ? background : false;
     this.chunkingKeys = chunkingKeys;
+    this.autoChunkRows = autoChunkRows;
+    this.excelWindowing = excelWindowing;
   }
 
   @JsonProperty("document")
@@ -102,5 +110,15 @@ public final class ExtractionRequest {
   @JsonProperty("chunking_keys")
   public Map<String, String> getChunkingKeys() {
     return chunkingKeys;
+  }
+
+  @JsonProperty("auto_chunk_rows")
+  public Long getAutoChunkRows() {
+    return autoChunkRows;
+  }
+
+  @JsonProperty("excel_windowing")
+  public ExtractionRequestExcelWindowing getExcelWindowing() {
+    return excelWindowing;
   }
 }

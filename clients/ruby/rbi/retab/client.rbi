@@ -9,6 +9,9 @@ module Retab
     sig { returns(Retab::Classifications) }
     def classifications; end
 
+    sig { returns(Retab::Consensus) }
+    def consensus; end
+
     sig { returns(Retab::Edits) }
     def edits; end
 

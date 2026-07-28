@@ -29,6 +29,7 @@ type Client struct {
 	tokenProvider func(context.Context) (string, error)
 
 	Classifications *ClassificationService
+	Consensus       *ConsensusService
 	Edits           *EditService
 	Extractions     *ExtractionService
 	Files           *FileService
@@ -128,6 +129,7 @@ func NewClient(apiKey string, opts ...Option) (*Client, error) {
 		return nil, fmt.Errorf("retab: no credentials; pass an API key, set RETAB_API_KEY, or use WithBearerToken/WithBearerTokenProvider")
 	}
 	c.Classifications = &ClassificationService{client: c}
+	c.Consensus = &ConsensusService{client: c}
 	c.Edits = &EditService{client: c}
 	editTemplates := &EditTemplateService{client: c}
 	c.Extractions = &ExtractionService{client: c}

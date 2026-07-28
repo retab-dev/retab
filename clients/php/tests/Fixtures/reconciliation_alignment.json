@@ -1,0 +1,16 @@
+{
+  "aligned_inputs": [
+    {
+      "key": {}
+    }
+  ],
+  "path_alignments": [
+    {
+      "canonical_path": "test_canonical_path",
+      "source_paths": [
+        "test_source_paths"
+      ]
+    }
+  ],
+  "reference_index": 1
+}

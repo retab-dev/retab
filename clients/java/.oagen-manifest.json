@@ -9,6 +9,7 @@
     "settings.gradle.kts",
     "src/main/java/com/retab/RetabClient.java",
     "src/main/java/com/retab/classifications/ClassificationsApi.java",
+    "src/main/java/com/retab/consensus/ConsensusApi.java",
     "src/main/java/com/retab/edits/EditsApi.java",
     "src/main/java/com/retab/edittemplates/EditTemplatesApi.java",
     "src/main/java/com/retab/experimentrunmetrics/ExperimentRunMetricsApi.java",
@@ -71,6 +72,7 @@
     "src/main/java/com/retab/models/ContainCondition.java",
     "src/main/java/com/retab/models/ContainerContextData.java",
     "src/main/java/com/retab/models/CreateBlockExecutionRequest.java",
+    "src/main/java/com/retab/models/CreateConsensusRequest.java",
     "src/main/java/com/retab/models/CreateEditTemplateRequest.java",
     "src/main/java/com/retab/models/CreateExperimentRequest.java",
     "src/main/java/com/retab/models/CreateExperimentRunRequest.java",
@@ -196,6 +198,10 @@
     "src/main/java/com/retab/models/QueuedWorkflowEvalRun.java",
     "src/main/java/com/retab/models/QueuedWorkflowExperimentResult.java",
     "src/main/java/com/retab/models/QueuedWorkflowExperimentRun.java",
+    "src/main/java/com/retab/models/ReconciliationAlignment.java",
+    "src/main/java/com/retab/models/ReconciliationField.java",
+    "src/main/java/com/retab/models/ReconciliationPathAlignment.java",
+    "src/main/java/com/retab/models/ReconciliationResult.java",
     "src/main/java/com/retab/models/ReconstructDocumentRef.java",
     "src/main/java/com/retab/models/ReconstructEnrichedRow.java",
     "src/main/java/com/retab/models/ReconstructEnrichedTable.java",
@@ -379,6 +385,7 @@
     "src/main/java/com/retab/types/ExperimentRunNConsensus.java",
     "src/main/java/com/retab/types/ExperimentSchemaDriftStatus.java",
     "src/main/java/com/retab/types/ExperimentSummaryMetricsResponseBlockType.java",
+    "src/main/java/com/retab/types/ExtractionRequestExcelWindowing.java",
     "src/main/java/com/retab/types/ExtractionStatus.java",
     "src/main/java/com/retab/types/ExtractionWorkflowArtifactStatus.java",
     "src/main/java/com/retab/types/ExtractionsStatus.java",
@@ -480,6 +487,10 @@
     "POST /v1/classifications/{classification_id}/cancel": {
       "sdkMethod": "createCancel",
       "service": "classifications"
+    },
+    "POST /v1/consensus": {
+      "sdkMethod": "create",
+      "service": "consensus"
     },
     "GET /v1/edits": {
       "sdkMethod": "list",
