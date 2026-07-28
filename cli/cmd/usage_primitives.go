@@ -45,6 +45,7 @@ type usagePrimitiveRecord struct {
 type usagePrimitiveTriggeredBy struct {
 	AuthMethod    string `json:"auth_method,omitempty"`
 	UserID        string `json:"user_id,omitempty"`
+	UserEmail     string `json:"user_email,omitempty"`
 	APIKeyID      string `json:"api_key_id,omitempty"`
 	AccessTokenID string `json:"access_token_id,omitempty"`
 	KeyPrefix     string `json:"key_prefix,omitempty"`
@@ -194,18 +195,24 @@ var usagePrimitiveColumns = []TableColumn{
 }
 
 // usagePrimitiveTriggeredByCell renders the triggering credential as one short
-// cell: the key's display name (or prefix) for api-key/token callers, the user
-// id for session callers, falling back to the bare auth method. The full
-// provenance object stays available in --output json.
+// cell: the key's display name (or prefix) for api-key/token callers, the acting
+// person's email (else their user id) for session callers, falling back to the
+// bare auth method. The full provenance object stays available in --output json.
 func usagePrimitiveTriggeredByCell(row any) string {
 	rec, ok := row.(usagePrimitiveRecord)
 	if !ok || rec.TriggeredBy == nil {
 		return ""
 	}
 	t := rec.TriggeredBy
+	// Prefer the most human-readable handle available: a key's display name for
+	// application callers, the acting person's email when the API resolved one,
+	// then the raw ids.
 	label := t.KeyName
 	if label == "" {
 		label = t.KeyPrefix
+	}
+	if label == "" {
+		label = t.UserEmail
 	}
 	if label == "" {
 		label = t.UserID

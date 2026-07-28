@@ -40,6 +40,12 @@ module Retab
     def key_prefix=(value); end
 
     sig { returns(T.nilable(String)) }
+    def user_email; end
+
+    sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
+    def user_email=(value); end
+
+    sig { returns(T.nilable(String)) }
     def user_id; end
 
     sig { params(value: T.nilable(String)).returns(T.nilable(String)) }

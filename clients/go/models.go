@@ -2185,6 +2185,7 @@ type UsagePrimitiveTriggeredBy struct {
 	AuthMethod    *string `json:"auth_method"`
 	KeyName       *string `json:"key_name"`
 	KeyPrefix     *string `json:"key_prefix"`
+	UserEmail     *string `json:"user_email"`
 	UserID        *string `json:"user_id"`
 }
 

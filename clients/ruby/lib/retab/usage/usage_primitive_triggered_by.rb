@@ -11,6 +11,7 @@ module Retab
       auth_method: :auth_method,
       key_name: :key_name,
       key_prefix: :key_prefix,
+      user_email: :user_email,
       user_id: :user_id
     }.freeze
 
@@ -20,6 +21,7 @@ module Retab
       :auth_method,
       :key_name,
       :key_prefix,
+      :user_email,
       :user_id
     )
 
@@ -31,6 +33,7 @@ module Retab
       @auth_method = hash[:auth_method]
       @key_name = hash[:key_name]
       @key_prefix = hash[:key_prefix]
+      @user_email = hash[:user_email]
       @user_id = hash[:user_id]
     end
   end

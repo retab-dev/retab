@@ -13,6 +13,7 @@ public final class UsagePrimitiveTriggeredBy {
   private final String authMethod;
   private final String keyName;
   private final String keyPrefix;
+  private final String userEmail;
   private final String userId;
 
   @JsonCreator
@@ -22,12 +23,14 @@ public final class UsagePrimitiveTriggeredBy {
       @JsonProperty(value = "auth_method", required = true) String authMethod,
       @JsonProperty(value = "key_name", required = true) String keyName,
       @JsonProperty(value = "key_prefix", required = true) String keyPrefix,
+      @JsonProperty(value = "user_email", required = true) String userEmail,
       @JsonProperty(value = "user_id", required = true) String userId) {
     this.accessTokenId = accessTokenId;
     this.apiKeyId = apiKeyId;
     this.authMethod = authMethod;
     this.keyName = keyName;
     this.keyPrefix = keyPrefix;
+    this.userEmail = userEmail;
     this.userId = userId;
   }
 
@@ -54,6 +57,11 @@ public final class UsagePrimitiveTriggeredBy {
   @JsonProperty("key_prefix")
   public String getKeyPrefix() {
     return keyPrefix;
+  }
+
+  @JsonProperty("user_email")
+  public String getUserEmail() {
+    return userEmail;
   }
 
   @JsonProperty("user_id")

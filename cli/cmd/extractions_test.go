@@ -3,6 +3,8 @@
 package cmd
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -235,5 +237,57 @@ func TestNewExtractionRequestValidatesMetadataBeforeResolvingFileID(t *testing.T
 	}
 	if got := hits.Load(); got != 0 {
 		t.Fatalf("server was hit %d time(s), want metadata validation before file-id resolution", got)
+	}
+}
+
+// TestExtractionsCreateCommandSendsDeepExtractionOnTheWire is the CLI's
+// end-to-end guard. TestNewExtractionRequestGatesDeepExtractionParam covers the
+// flag→params mapping; this runs the actual command against a stub server and
+// asserts the field reaches the HTTP body. The two halves catch different
+// breaks: params mapping catches a mis-wired flag, this catches a params field
+// the SDK never serializes.
+func TestExtractionsCreateCommandSendsDeepExtractionOnTheWire(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var body map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = fmt.Fprint(w, `{"id":"extr_1","file":{"id":"file_1","filename":"ledger.pdf","mime_type":"application/pdf"},"model":"retab-large","json_schema":{"type":"object"},"output":{}}`)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	cmd := newExtractionRequestTestCmd(t)
+	for name, value := range map[string]string{
+		"url":             "https://example.com/ledger.pdf",
+		"model":           "retab-large",
+		"json-schema":     `{"type":"object"}`,
+		"deep-extraction": "true",
+	} {
+		if err := cmd.Flags().Set(name, value); err != nil {
+			t.Fatalf("set --%s: %v", name, err)
+		}
+	}
+
+	params, err := newExtractionRequest(cmd)
+	if err != nil {
+		t.Fatalf("newExtractionRequest: %v", err)
+	}
+	client, err := newClient(cmd)
+	if err != nil {
+		t.Fatalf("client: %v", err)
+	}
+	if _, err := client.Extractions.Create(context.Background(), &params); err != nil {
+		t.Fatalf("Extractions.Create: %v", err)
+	}
+
+	if body == nil {
+		t.Fatal("no request body captured")
+	}
+	if body["deep_extraction"] != true {
+		t.Fatalf("wire body deep_extraction = %#v, want true", body["deep_extraction"])
 	}
 }

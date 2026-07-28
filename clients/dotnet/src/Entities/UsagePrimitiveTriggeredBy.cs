@@ -9,6 +9,7 @@ namespace Retab
         public string? AuthMethod { get; set; }
         public string? KeyName { get; set; }
         public string? KeyPrefix { get; set; }
+        public string? UserEmail { get; set; }
         public string? UserId { get; set; }
 
         /// <summary>

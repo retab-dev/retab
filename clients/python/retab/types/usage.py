@@ -58,6 +58,7 @@ class UsagePrimitiveTriggeredBy(BaseModel):
     auth_method: str | None
     key_name: str | None
     key_prefix: str | None
+    user_email: str | None
     user_id: str | None
 
 

@@ -18,5 +18,7 @@ pub struct UsagePrimitiveTriggeredBy {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub key_prefix: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub user_email: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub user_id: Option<String>,
 }

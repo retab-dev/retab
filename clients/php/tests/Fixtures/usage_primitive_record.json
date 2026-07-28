@@ -28,6 +28,7 @@
     "auth_method": "test_auth_method",
     "key_name": "Test",
     "key_prefix": "test_key_prefix",
+    "user_email": "test@example.com",
     "user_id": "user_id_01234"
   },
   "workflow_id": "workflow_id_01234"

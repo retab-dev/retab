@@ -16,6 +16,7 @@ readonly class UsagePrimitiveTriggeredBy implements \JsonSerializable
         public ?string $authMethod,
         public ?string $keyName,
         public ?string $keyPrefix,
+        public ?string $userEmail,
         public ?string $userId,
     ) {}
 
@@ -28,6 +29,7 @@ readonly class UsagePrimitiveTriggeredBy implements \JsonSerializable
             'auth_method',
             'key_name',
             'key_prefix',
+            'user_email',
             'user_id',
         ] as $__required) {
             if (!array_key_exists($__required, $data)) {
@@ -40,6 +42,7 @@ readonly class UsagePrimitiveTriggeredBy implements \JsonSerializable
             authMethod: $data['auth_method'] ?? null,
             keyName: $data['key_name'] ?? null,
             keyPrefix: $data['key_prefix'] ?? null,
+            userEmail: $data['user_email'] ?? null,
             userId: $data['user_id'] ?? null,
         );
     }
@@ -53,6 +56,7 @@ readonly class UsagePrimitiveTriggeredBy implements \JsonSerializable
             'auth_method' => $this->authMethod,
             'key_name' => $this->keyName,
             'key_prefix' => $this->keyPrefix,
+            'user_email' => $this->userEmail,
             'user_id' => $this->userId,
         ];
     }

@@ -7,6 +7,7 @@ export interface UsagePrimitiveTriggeredBy {
   authMethod: string | null;
   keyName: string | null;
   keyPrefix: string | null;
+  userEmail: string | null;
   userId: string | null;
 }
 
@@ -16,6 +17,7 @@ export interface UsagePrimitiveTriggeredByResponse {
   auth_method: string | null;
   key_name: string | null;
   key_prefix: string | null;
+  user_email: string | null;
   user_id: string | null;
 }
 
@@ -25,6 +27,7 @@ export const ZUsagePrimitiveTriggeredBy = z.object({
   authMethod: z.string().nullable(),
   keyName: z.string().nullable(),
   keyPrefix: z.string().nullable(),
+  userEmail: z.string().nullable(),
   userId: z.string().nullable(),
 }) as z.ZodType<UsagePrimitiveTriggeredBy>;
 
@@ -37,6 +40,7 @@ export function deserializeUsagePrimitiveTriggeredBy(
     authMethod: wire['auth_method'],
     keyName: wire['key_name'],
     keyPrefix: wire['key_prefix'],
+    userEmail: wire['user_email'],
     userId: wire['user_id'],
   };
 }
@@ -50,6 +54,7 @@ export function serializeUsagePrimitiveTriggeredBy(
     auth_method: domain['authMethod'],
     key_name: domain['keyName'],
     key_prefix: domain['keyPrefix'],
+    user_email: domain['userEmail'],
     user_id: domain['userId'],
   };
 }

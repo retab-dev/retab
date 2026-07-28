@@ -3536,6 +3536,7 @@ class ModelRoundTripTest < Minitest::Test
       "auth_method" => nil,
       "key_name" => nil,
       "key_prefix" => nil,
+      "user_email" => nil,
       "user_id" => nil
     }
     model = Retab::UsagePrimitiveTriggeredBy.new(fixture.to_json)
@@ -3546,6 +3547,7 @@ class ModelRoundTripTest < Minitest::Test
     assert_nil(json[:auth_method])
     assert_nil(json[:key_name])
     assert_nil(json[:key_prefix])
+    assert_nil(json[:user_email])
     assert_nil(json[:user_id])
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
