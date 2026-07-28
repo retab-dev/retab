@@ -11,6 +11,8 @@ import (
 	"testing"
 
 	"github.com/spf13/cobra"
+
+	retab "github.com/retab-dev/retab/clients/go"
 )
 
 func newExtractionRequestTestCmd(t *testing.T) *cobra.Command {
@@ -27,7 +29,67 @@ func newExtractionRequestTestCmd(t *testing.T) *cobra.Command {
 	cmd.Flags().String("messages-file", "", "")
 	cmd.Flags().String("excel-windowing", "", "")
 	cmd.Flags().Var(&boundedIntFlagValue{min: 10, max: 1000}, "auto-chunk-rows", "")
+	cmd.Flags().Bool("deep-extraction", false, "")
 	return cmd
+}
+
+// TestNewExtractionRequestGatesDeepExtractionParam pins that --deep-extraction
+// is OMITTED when unset rather than sent as false. An unconditional false would
+// put deep_extraction on every request body the CLI writes, which is both a
+// wire-shape change for every caller and a needless divergence from the
+// server's "absent == default" contract. An EXPLICIT --deep-extraction=false
+// must still be sent, so a user can override a wrapper that sets it.
+func TestNewExtractionRequestGatesDeepExtractionParam(t *testing.T) {
+	baseFlags := map[string]string{
+		"url":         "https://example.com/long.pdf",
+		"model":       "retab-large",
+		"json-schema": `{"type":"object"}`,
+	}
+	build := func(t *testing.T, extra map[string]string) (retab.ExtractionsCreateParams, error) {
+		t.Helper()
+		cmd := newExtractionRequestTestCmd(t)
+		for n, v := range baseFlags {
+			if err := cmd.Flags().Set(n, v); err != nil {
+				t.Fatalf("set --%s: %v", n, err)
+			}
+		}
+		for n, v := range extra {
+			if err := cmd.Flags().Set(n, v); err != nil {
+				t.Fatalf("set --%s: %v", n, err)
+			}
+		}
+		return newExtractionRequest(cmd)
+	}
+
+	t.Run("omitted when unset", func(t *testing.T) {
+		params, err := build(t, nil)
+		if err != nil {
+			t.Fatalf("newExtractionRequest: %v", err)
+		}
+		if params.DeepExtraction != nil {
+			t.Fatalf("DeepExtraction must be nil when the flag is unset, got %v", *params.DeepExtraction)
+		}
+	})
+
+	t.Run("sent when set", func(t *testing.T) {
+		params, err := build(t, map[string]string{"deep-extraction": "true"})
+		if err != nil {
+			t.Fatalf("newExtractionRequest: %v", err)
+		}
+		if params.DeepExtraction == nil || !*params.DeepExtraction {
+			t.Fatalf("DeepExtraction = %v, want true", params.DeepExtraction)
+		}
+	})
+
+	t.Run("explicit false is sent", func(t *testing.T) {
+		params, err := build(t, map[string]string{"deep-extraction": "false"})
+		if err != nil {
+			t.Fatalf("newExtractionRequest: %v", err)
+		}
+		if params.DeepExtraction == nil || *params.DeepExtraction {
+			t.Fatalf("DeepExtraction = %v, want an explicit false", params.DeepExtraction)
+		}
+	})
 }
 
 // TestNewExtractionRequestGatesExcelWindowingParams pins that the windowing

@@ -16,8 +16,8 @@ module Retab
       bust_cache: :bust_cache,
       stream: :stream,
       background: :background,
-      chunking_keys: :chunking_keys,
       auto_chunk_rows: :auto_chunk_rows,
+      deep_extraction: :deep_extraction,
       excel_windowing: :excel_windowing
     }.freeze
 
@@ -32,8 +32,8 @@ module Retab
       :bust_cache,
       :stream,
       :background,
-      :chunking_keys,
       :auto_chunk_rows,
+      :deep_extraction,
       :excel_windowing
     )
 
@@ -50,8 +50,8 @@ module Retab
       @bust_cache = hash[:bust_cache].nil? ? false : hash[:bust_cache]
       @stream = hash[:stream].nil? ? false : hash[:stream]
       @background = hash[:background].nil? ? false : hash[:background]
-      @chunking_keys = hash[:chunking_keys] || {}
       @auto_chunk_rows = hash[:auto_chunk_rows]
+      @deep_extraction = hash[:deep_extraction]
       @excel_windowing = hash[:excel_windowing]
     end
   end

@@ -69,17 +69,17 @@ module Retab
     sig { params(value: T.nilable(T::Boolean)).returns(T.nilable(T::Boolean)) }
     def background=(value); end
 
-    sig { returns(T.nilable(T::Hash[String, String])) }
-    def chunking_keys; end
-
-    sig { params(value: T.nilable(T::Hash[String, String])).returns(T.nilable(T::Hash[String, String])) }
-    def chunking_keys=(value); end
-
     sig { returns(T.nilable(Integer)) }
     def auto_chunk_rows; end
 
     sig { params(value: T.nilable(Integer)).returns(T.nilable(Integer)) }
     def auto_chunk_rows=(value); end
+
+    sig { returns(T.nilable(T::Boolean)) }
+    def deep_extraction; end
+
+    sig { params(value: T.nilable(T::Boolean)).returns(T.nilable(T::Boolean)) }
+    def deep_extraction=(value); end
 
     sig { returns(T.nilable(String)) }
     def excel_windowing; end

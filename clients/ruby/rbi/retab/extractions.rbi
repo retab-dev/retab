@@ -40,13 +40,13 @@ module Retab
         bust_cache: T.nilable(T::Boolean),
         stream: T.nilable(T::Boolean),
         background: T.nilable(T::Boolean),
-        chunking_keys: T.nilable(T::Hash[String, String]),
         auto_chunk_rows: T.nilable(Integer),
+        deep_extraction: T.nilable(T::Boolean),
         excel_windowing: T.nilable(String),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::Extraction)
     end
-    def create(document:, json_schema:, model:, instructions:, n_consensus:, metadata:, additional_messages:, bust_cache:, stream:, background:, chunking_keys:, auto_chunk_rows:, excel_windowing:, request_options:); end
+    def create(document:, json_schema:, model:, instructions:, n_consensus:, metadata:, additional_messages:, bust_cache:, stream:, background:, auto_chunk_rows:, deep_extraction:, excel_windowing:, request_options:); end
 
     sig do
       params(
@@ -60,13 +60,13 @@ module Retab
         bust_cache: T.nilable(T::Boolean),
         stream: T.nilable(T::Boolean),
         background: T.nilable(T::Boolean),
-        chunking_keys: T.nilable(T::Hash[String, String]),
         auto_chunk_rows: T.nilable(Integer),
+        deep_extraction: T.nilable(T::Boolean),
         excel_windowing: T.nilable(String),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(NilClass)
     end
-    def create_stream(document:, json_schema:, model:, instructions:, n_consensus:, metadata:, additional_messages:, bust_cache:, stream:, background:, chunking_keys:, auto_chunk_rows:, excel_windowing:, request_options:); end
+    def create_stream(document:, json_schema:, model:, instructions:, n_consensus:, metadata:, additional_messages:, bust_cache:, stream:, background:, auto_chunk_rows:, deep_extraction:, excel_windowing:, request_options:); end
 
     sig do
       params(

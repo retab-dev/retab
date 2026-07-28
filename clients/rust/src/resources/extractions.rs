@@ -98,8 +98,8 @@ impl CreateParams {
                 bust_cache: Default::default(),
                 stream: Default::default(),
                 background: Default::default(),
-                chunking_keys: Default::default(),
                 auto_chunk_rows: Default::default(),
+                deep_extraction: Default::default(),
                 excel_windowing: Default::default(),
             },
         }
@@ -138,8 +138,8 @@ impl CreateStreamParams {
                 bust_cache: Default::default(),
                 stream: Default::default(),
                 background: Default::default(),
-                chunking_keys: Default::default(),
                 auto_chunk_rows: Default::default(),
+                deep_extraction: Default::default(),
                 excel_windowing: Default::default(),
             },
         }

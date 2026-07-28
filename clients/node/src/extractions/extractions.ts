@@ -67,8 +67,8 @@ export class Extractions {
     bustCache?: boolean,
     stream?: boolean,
     background?: boolean,
-    chunkingKeys?: Record<string, string> | null,
     autoChunkRows?: number,
+    deepExtraction?: boolean,
     excelWindowing?: ExtractionRequestExcelWindowing
   ): Promise<Extraction> {
     const documentCoerced = await coerceMimeData(document, (__id) =>
@@ -85,8 +85,8 @@ export class Extractions {
       bust_cache: bustCache,
       stream: stream,
       background: background,
-      chunking_keys: chunkingKeys,
       auto_chunk_rows: autoChunkRows,
+      deep_extraction: deepExtraction,
       excel_windowing: excelWindowing,
     };
     const __wire = await this.client.request<ExtractionResponse>({
@@ -110,8 +110,8 @@ export class Extractions {
     bustCache?: boolean,
     stream?: boolean,
     background?: boolean,
-    chunkingKeys?: Record<string, string> | null,
     autoChunkRows?: number,
+    deepExtraction?: boolean,
     excelWindowing?: ExtractionRequestExcelWindowing
   ): Promise<unknown> {
     const documentCoerced = await coerceMimeData(document, (__id) =>
@@ -128,8 +128,8 @@ export class Extractions {
       bust_cache: bustCache,
       stream: stream,
       background: background,
-      chunking_keys: chunkingKeys,
       auto_chunk_rows: autoChunkRows,
+      deep_extraction: deepExtraction,
       excel_windowing: excelWindowing,
     };
     const __wire = await this.client.request<unknown>({

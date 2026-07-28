@@ -115,8 +115,8 @@ class ExtractionsMixin:
         bust_cache: bool = False,
         stream: bool = False,
         background: bool = False,
-        chunking_keys: dict[str, str] | None = None,
         auto_chunk_rows: int | None = None,
+        deep_extraction: bool | None = None,
         excel_windowing: ExtractionRequestExcelWindowing | None = None,
         **extra_params: Any,
     ) -> PreparedRequest:
@@ -139,8 +139,8 @@ class ExtractionsMixin:
             bust_cache=cast(Any, bust_cache),
             stream=cast(Any, stream),
             background=cast(Any, background),
-            chunking_keys=cast(Any, chunking_keys),
             auto_chunk_rows=cast(Any, auto_chunk_rows),
+            deep_extraction=cast(Any, deep_extraction),
             excel_windowing=cast(Any, excel_windowing),
         )
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
@@ -158,8 +158,8 @@ class ExtractionsMixin:
         bust_cache: bool = False,
         stream: bool = False,
         background: bool = False,
-        chunking_keys: dict[str, str] | None = None,
         auto_chunk_rows: int | None = None,
+        deep_extraction: bool | None = None,
         excel_windowing: ExtractionRequestExcelWindowing | None = None,
         **extra_params: Any,
     ) -> PreparedRequest:
@@ -182,8 +182,8 @@ class ExtractionsMixin:
             bust_cache=cast(Any, bust_cache),
             stream=cast(Any, stream),
             background=cast(Any, background),
-            chunking_keys=cast(Any, chunking_keys),
             auto_chunk_rows=cast(Any, auto_chunk_rows),
+            deep_extraction=cast(Any, deep_extraction),
             excel_windowing=cast(Any, excel_windowing),
         )
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
@@ -277,8 +277,8 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
         bust_cache: bool = False,
         stream: bool = False,
         background: bool = False,
-        chunking_keys: dict[str, str] | None = None,
         auto_chunk_rows: int | None = None,
+        deep_extraction: bool | None = None,
         excel_windowing: ExtractionRequestExcelWindowing | None = None,
         **extra_params: Any,
     ) -> Extraction:
@@ -297,8 +297,8 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
             bust_cache=bust_cache,
             stream=stream,
             background=background,
-            chunking_keys=chunking_keys,
             auto_chunk_rows=auto_chunk_rows,
+            deep_extraction=deep_extraction,
             excel_windowing=excel_windowing,
             **extra_params,
         )
@@ -317,8 +317,8 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
         bust_cache: bool = False,
         stream: bool = False,
         background: bool = False,
-        chunking_keys: dict[str, str] | None = None,
         auto_chunk_rows: int | None = None,
+        deep_extraction: bool | None = None,
         excel_windowing: ExtractionRequestExcelWindowing | None = None,
         **extra_params: Any,
     ) -> Any:
@@ -337,8 +337,8 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
             bust_cache=bust_cache,
             stream=stream,
             background=background,
-            chunking_keys=chunking_keys,
             auto_chunk_rows=auto_chunk_rows,
+            deep_extraction=deep_extraction,
             excel_windowing=excel_windowing,
             **extra_params,
         )
@@ -419,8 +419,8 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
         bust_cache: bool = False,
         stream: bool = False,
         background: bool = False,
-        chunking_keys: dict[str, str] | None = None,
         auto_chunk_rows: int | None = None,
+        deep_extraction: bool | None = None,
         excel_windowing: ExtractionRequestExcelWindowing | None = None,
         **extra_params: Any,
     ) -> Extraction:
@@ -439,8 +439,8 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
             bust_cache=bust_cache,
             stream=stream,
             background=background,
-            chunking_keys=chunking_keys,
             auto_chunk_rows=auto_chunk_rows,
+            deep_extraction=deep_extraction,
             excel_windowing=excel_windowing,
             **extra_params,
         )
@@ -459,8 +459,8 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
         bust_cache: bool = False,
         stream: bool = False,
         background: bool = False,
-        chunking_keys: dict[str, str] | None = None,
         auto_chunk_rows: int | None = None,
+        deep_extraction: bool | None = None,
         excel_windowing: ExtractionRequestExcelWindowing | None = None,
         **extra_params: Any,
     ) -> Any:
@@ -479,8 +479,8 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
             bust_cache=bust_cache,
             stream=stream,
             background=background,
-            chunking_keys=chunking_keys,
             auto_chunk_rows=auto_chunk_rows,
+            deep_extraction=deep_extraction,
             excel_windowing=excel_windowing,
             **extra_params,
         )

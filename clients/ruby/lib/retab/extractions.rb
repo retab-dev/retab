@@ -109,8 +109,8 @@ module Retab
     # @param bust_cache [Boolean, nil] If true, skip the LLM cache and force a fresh completion
     # @param stream [Boolean, nil]
     # @param background [Boolean, nil] If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
-    # @param chunking_keys [Hash{String => String}, nil]
     # @param auto_chunk_rows [Integer, nil] Rows per extraction window when excel_windowing is "auto" (10-1000, default 50).
+    # @param deep_extraction [Boolean, nil] Run the conversational long-array extraction: the document is fed one page-window at a time as a growing conversation and long list items are stitched across turns, which recovers rows that a single-shot extraction truncates on long documents. Slower and more expensive than the default single call. Cannot be combined with excel_windowing="auto" (both are windowing strategies). Absent or false runs the default extraction.
     # @param excel_windowing [Retab::Types::ExtractionRequestExcelWindowing, nil] Spreadsheet auto-windowing mode. "auto" splits an xlsx/CSV input into per-table row chunks, extracts each chunk, and concatenates the results into {"data": [...]}. "auto" does not support stream; over a spreadsheet it also rejects background=true (the windowed compute has no durable background representation yet) and is capped at 40 extraction windows per request — larger workbooks belong in a workflow extract block. Absent or "manual" runs one extraction over the whole document.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::Extraction]
@@ -125,8 +125,8 @@ module Retab
       bust_cache: nil,
       stream: nil,
       background: nil,
-      chunking_keys: nil,
       auto_chunk_rows: nil,
+      deep_extraction: nil,
       excel_windowing: nil,
       request_options: {}
     )
@@ -142,8 +142,8 @@ module Retab
         "bust_cache" => bust_cache,
         "stream" => stream,
         "background" => background,
-        "chunking_keys" => chunking_keys,
         "auto_chunk_rows" => auto_chunk_rows,
+        "deep_extraction" => deep_extraction,
         "excel_windowing" => excel_windowing
       }.compact
       response = @client.request(
@@ -173,8 +173,8 @@ module Retab
     # @param bust_cache [Boolean, nil] If true, skip the LLM cache and force a fresh completion
     # @param stream [Boolean, nil]
     # @param background [Boolean, nil] If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
-    # @param chunking_keys [Hash{String => String}, nil]
     # @param auto_chunk_rows [Integer, nil] Rows per extraction window when excel_windowing is "auto" (10-1000, default 50).
+    # @param deep_extraction [Boolean, nil] Run the conversational long-array extraction: the document is fed one page-window at a time as a growing conversation and long list items are stitched across turns, which recovers rows that a single-shot extraction truncates on long documents. Slower and more expensive than the default single call. Cannot be combined with excel_windowing="auto" (both are windowing strategies). Absent or false runs the default extraction.
     # @param excel_windowing [Retab::Types::ExtractionRequestExcelWindowing, nil] Spreadsheet auto-windowing mode. "auto" splits an xlsx/CSV input into per-table row chunks, extracts each chunk, and concatenates the results into {"data": [...]}. "auto" does not support stream; over a spreadsheet it also rejects background=true (the windowed compute has no durable background representation yet) and is capped at 40 extraction windows per request — larger workbooks belong in a workflow extract block. Absent or "manual" runs one extraction over the whole document.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [void]
@@ -189,8 +189,8 @@ module Retab
       bust_cache: nil,
       stream: nil,
       background: nil,
-      chunking_keys: nil,
       auto_chunk_rows: nil,
+      deep_extraction: nil,
       excel_windowing: nil,
       request_options: {}
     )
@@ -206,8 +206,8 @@ module Retab
         "bust_cache" => bust_cache,
         "stream" => stream,
         "background" => background,
-        "chunking_keys" => chunking_keys,
         "auto_chunk_rows" => auto_chunk_rows,
+        "deep_extraction" => deep_extraction,
         "excel_windowing" => excel_windowing
       }.compact
       @client.request(

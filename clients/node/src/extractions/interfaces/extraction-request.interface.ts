@@ -46,9 +46,10 @@ export interface ExtractionRequest {
    * @default false
    */
   background?: boolean;
-  chunkingKeys?: Record<string, string> | null;
   /** Rows per extraction window when excel_windowing is "auto" (10-1000, default 50). */
   autoChunkRows?: number;
+  /** Run the conversational long-array extraction: the document is fed one page-window at a time as a growing conversation and long list items are stitched across turns, which recovers rows that a single-shot extraction truncates on long documents. Slower and more expensive than the default single call. Cannot be combined with excel_windowing="auto" (both are windowing strategies). Absent or false runs the default extraction. */
+  deepExtraction?: boolean;
   /** Spreadsheet auto-windowing mode. "auto" splits an xlsx/CSV input into per-table row chunks, extracts each chunk, and concatenates the results into {"data": [...]}. "auto" does not support stream; over a spreadsheet it also rejects background=true (the windowed compute has no durable background representation yet) and is capped at 40 extraction windows per request — larger workbooks belong in a workflow extract block. Absent or "manual" runs one extraction over the whole document. */
   excelWindowing?: ExtractionRequestExcelWindowing;
 }
@@ -64,8 +65,8 @@ export interface ExtractionRequestResponse {
   bust_cache?: boolean;
   stream?: boolean;
   background?: boolean;
-  chunking_keys?: Record<string, string> | null;
   auto_chunk_rows?: number;
+  deep_extraction?: boolean;
   excel_windowing?: ExtractionRequestExcelWindowing;
 }
 
@@ -80,8 +81,8 @@ export const ZExtractionRequest = z.object({
   bustCache: z.boolean().optional(),
   stream: z.boolean().optional(),
   background: z.boolean().optional(),
-  chunkingKeys: z.record(z.string(), z.string()).nullable().optional(),
   autoChunkRows: z.number().int().optional(),
+  deepExtraction: z.boolean().optional(),
   excelWindowing: ZExtractionRequestExcelWindowing.optional(),
 }) as z.ZodType<ExtractionRequest>;
 
@@ -97,8 +98,8 @@ export function deserializeExtractionRequest(wire: ExtractionRequestResponse): E
     bustCache: wire['bust_cache'],
     stream: wire['stream'],
     background: wire['background'],
-    chunkingKeys: wire['chunking_keys'],
     autoChunkRows: wire['auto_chunk_rows'],
+    deepExtraction: wire['deep_extraction'],
     excelWindowing: wire['excel_windowing'],
   };
 }
@@ -115,8 +116,8 @@ export function serializeExtractionRequest(domain: ExtractionRequest): Extractio
     bust_cache: domain['bustCache'],
     stream: domain['stream'],
     background: domain['background'],
-    chunking_keys: domain['chunkingKeys'],
     auto_chunk_rows: domain['autoChunkRows'],
+    deep_extraction: domain['deepExtraction'],
     excel_windowing: domain['excelWindowing'],
   };
 }

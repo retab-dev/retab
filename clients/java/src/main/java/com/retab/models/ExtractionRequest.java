@@ -21,8 +21,8 @@ public final class ExtractionRequest {
   private final Boolean bustCache;
   private final Boolean stream;
   private final Boolean background;
-  private final Map<String, String> chunkingKeys;
   private final Long autoChunkRows;
+  private final Boolean deepExtraction;
   private final ExtractionRequestExcelWindowing excelWindowing;
 
   @JsonCreator
@@ -38,8 +38,8 @@ public final class ExtractionRequest {
       @JsonProperty(value = "bust_cache", required = false) Boolean bustCache,
       @JsonProperty(value = "stream", required = false) Boolean stream,
       @JsonProperty(value = "background", required = false) Boolean background,
-      @JsonProperty(value = "chunking_keys", required = false) Map<String, String> chunkingKeys,
       @JsonProperty(value = "auto_chunk_rows", required = false) Long autoChunkRows,
+      @JsonProperty(value = "deep_extraction", required = false) Boolean deepExtraction,
       @JsonProperty(value = "excel_windowing", required = false)
           ExtractionRequestExcelWindowing excelWindowing) {
     this.document = document;
@@ -52,8 +52,8 @@ public final class ExtractionRequest {
     this.bustCache = bustCache != null ? bustCache : false;
     this.stream = stream != null ? stream : false;
     this.background = background != null ? background : false;
-    this.chunkingKeys = chunkingKeys;
     this.autoChunkRows = autoChunkRows;
+    this.deepExtraction = deepExtraction;
     this.excelWindowing = excelWindowing;
   }
 
@@ -107,14 +107,14 @@ public final class ExtractionRequest {
     return background;
   }
 
-  @JsonProperty("chunking_keys")
-  public Map<String, String> getChunkingKeys() {
-    return chunkingKeys;
-  }
-
   @JsonProperty("auto_chunk_rows")
   public Long getAutoChunkRows() {
     return autoChunkRows;
+  }
+
+  @JsonProperty("deep_extraction")
+  public Boolean isDeepExtraction() {
+    return deepExtraction;
   }
 
   @JsonProperty("excel_windowing")

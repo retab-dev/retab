@@ -103,8 +103,8 @@ public final class ExtractionsApi {
         request == null ? null : request.isBustCache(),
         request == null ? null : request.isStream(),
         request == null ? null : request.isBackground(),
-        request == null ? null : request.getChunkingKeys(),
         request == null ? null : request.getAutoChunkRows(),
+        request == null ? null : request.isDeepExtraction(),
         request == null ? null : request.getExcelWindowing());
   }
 
@@ -119,8 +119,8 @@ public final class ExtractionsApi {
       Boolean bustCache,
       Boolean stream,
       Boolean background,
-      Map<String, String> chunkingKeys,
       Long autoChunkRows,
+      Boolean deepExtraction,
       ExtractionRequestExcelWindowing excelWindowing)
       throws IOException, InterruptedException {
     String path = "/v1/extractions";
@@ -153,11 +153,11 @@ public final class ExtractionsApi {
     if (background != null) {
       body.put("background", background);
     }
-    if (chunkingKeys != null) {
-      body.put("chunking_keys", chunkingKeys);
-    }
     if (autoChunkRows != null) {
       body.put("auto_chunk_rows", autoChunkRows);
+    }
+    if (deepExtraction != null) {
+      body.put("deep_extraction", deepExtraction);
     }
     if (excelWindowing != null) {
       body.put("excel_windowing", excelWindowing);
@@ -193,8 +193,8 @@ public final class ExtractionsApi {
         request == null ? null : request.isBustCache(),
         request == null ? null : request.isStream(),
         request == null ? null : request.isBackground(),
-        request == null ? null : request.getChunkingKeys(),
         request == null ? null : request.getAutoChunkRows(),
+        request == null ? null : request.isDeepExtraction(),
         request == null ? null : request.getExcelWindowing());
   }
 
@@ -209,8 +209,8 @@ public final class ExtractionsApi {
       Boolean bustCache,
       Boolean stream,
       Boolean background,
-      Map<String, String> chunkingKeys,
       Long autoChunkRows,
+      Boolean deepExtraction,
       ExtractionRequestExcelWindowing excelWindowing)
       throws IOException, InterruptedException {
     String path = "/v1/extractions/stream";
@@ -243,11 +243,11 @@ public final class ExtractionsApi {
     if (background != null) {
       body.put("background", background);
     }
-    if (chunkingKeys != null) {
-      body.put("chunking_keys", chunkingKeys);
-    }
     if (autoChunkRows != null) {
       body.put("auto_chunk_rows", autoChunkRows);
+    }
+    if (deepExtraction != null) {
+      body.put("deep_extraction", deepExtraction);
     }
     if (excelWindowing != null) {
       body.put("excel_windowing", excelWindowing);

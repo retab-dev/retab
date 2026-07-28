@@ -20,9 +20,7 @@
   "bust_cache": true,
   "stream": true,
   "background": true,
-  "chunking_keys": {
-    "key": "test_value"
-  },
   "auto_chunk_rows": 1,
+  "deep_extraction": true,
   "excel_windowing": "manual"
 }
