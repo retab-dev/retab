@@ -38,6 +38,18 @@ type usageRunRecord struct {
 	DurationMs  *int64  `json:"duration_ms,omitempty"`
 	PageCount   int64   `json:"page_count"`
 	Credits     float64 `json:"credits"`
+	// TriggeredBy is WHO started the run, where TriggerType is WHAT kind of
+	// trigger it was. Null for the trigger types with no acting principal
+	// (schedule, webhook, email, restart).
+	TriggeredBy *usageRunTriggeredBy `json:"triggered_by,omitempty"`
+}
+
+// usageRunTriggeredBy is the acting principal that started a run: the WorkOS
+// user id plus the email resolved for it, or the api key id for an api trigger.
+type usageRunTriggeredBy struct {
+	UserID    *string `json:"user_id,omitempty"`
+	UserEmail *string `json:"user_email,omitempty"`
+	APIKeyID  *string `json:"api_key_id,omitempty"`
 }
 
 type usageRunListMetadata struct {
@@ -138,6 +150,7 @@ var usageRunColumns = []TableColumn{
 	{Header: "WORKFLOW", Extract: func(row any) string { return usageRunCell(row, "workflow_id") }},
 	{Header: "STATUS", Extract: func(row any) string { return usageRunCell(row, "status") }},
 	{Header: "TRIGGER", Extract: func(row any) string { return usageRunCell(row, "trigger_type") }},
+	{Header: "TRIGGERED_BY", Extract: usageRunTriggeredByCell},
 	{Header: "CREATED_AT", Extract: func(row any) string { return usageRunCell(row, "created_at") }},
 	{Header: "DURATION_MS", Extract: func(row any) string { return usageRunCell(row, "duration_ms") }},
 	{Header: "PAGES", Extract: func(row any) string { return usageRunCell(row, "page_count") }},
@@ -150,6 +163,26 @@ func printUsageRunListResult(cmd *cobra.Command, result usageRunListResponse) er
 		return err
 	}
 	return RenderList(os.Stdout, format, result, usageRunColumns)
+}
+
+// usageRunTriggeredByCell renders the run's acting principal as one short cell:
+// the person's email (else their raw user id) for a manual run, the api key id
+// for an api run, and empty for the system trigger types that have nobody
+// behind them. The full object stays available in --output json.
+//
+// Mirrors usagePrimitiveTriggeredByCell's "most human-readable handle
+// available" rule, so the two usage tables read the same way.
+func usageRunTriggeredByCell(row any) string {
+	rec, ok := row.(usageRunRecord)
+	if !ok || rec.TriggeredBy == nil {
+		return ""
+	}
+	for _, candidate := range []*string{rec.TriggeredBy.UserEmail, rec.TriggeredBy.UserID, rec.TriggeredBy.APIKeyID} {
+		if candidate != nil && *candidate != "" {
+			return *candidate
+		}
+	}
+	return ""
 }
 
 func usageRunCell(row any, key string) string {
