@@ -81,21 +81,8 @@ func newExtractionRequest(cmd *cobra.Command) (retab.ExtractionsCreateParams, er
 	if cmd.Flags().Changed("n-consensus") {
 		params.NConsensus = ptr(nConsensus)
 	}
-	if cmd.Flags().Changed("excel-windowing") {
-		excelWindowing, _ := cmd.Flags().GetString("excel-windowing")
-		switch excelWindowing {
-		case string(retab.ExtractionRequestExcelWindowingManual), string(retab.ExtractionRequestExcelWindowingAuto):
-			params.ExcelWindowing = ptr(retab.ExtractionRequestExcelWindowing(excelWindowing))
-		default:
-			return retab.ExtractionsCreateParams{}, fmt.Errorf(`--excel-windowing must be "manual" or "auto"`)
-		}
-	}
-	if cmd.Flags().Changed("auto-chunk-rows") {
-		autoChunkRows, _ := cmd.Flags().GetInt("auto-chunk-rows")
-		params.AutoChunkRows = ptr(autoChunkRows)
-	}
-	// Sent only when set, like the windowing knobs above: an unconditional
-	// false would put deep_extraction on every request body this CLI writes.
+	// Sent only when set: an unconditional false would put deep_extraction on
+	// every request body this CLI writes.
 	if cmd.Flags().Changed("deep-extraction") {
 		deepExtraction, _ := cmd.Flags().GetBool("deep-extraction")
 		params.DeepExtraction = ptr(deepExtraction)
@@ -215,6 +202,12 @@ Flags and document/schema resolution are identical to
 		}
 		if req.BustCache != nil {
 			body["bust_cache"] = *req.BustCache
+		}
+		// Forward --deep-extraction like the create path does: the flag is
+		// registered on this stream command too, so dropping it here would let
+		// `extractions stream --deep-extraction` silently no-op.
+		if req.DeepExtraction != nil {
+			body["deep_extraction"] = *req.DeepExtraction
 		}
 		return cliStreamLinesRequest(cmd, http.MethodPost, "/v1/extractions/stream", nil, body, cmd.OutOrStdout())
 	}),
@@ -411,8 +404,6 @@ func addExtractionBodyFlags(cmd *cobra.Command) {
 	cmd.Flags().Bool("bust-cache", false, "bypass server-side cache")
 	cmd.Flags().StringArray("metadata", nil, "metadata key=value (repeatable)")
 	cmd.Flags().String("messages-file", "", "JSON array of additional_messages (or - for stdin)")
-	cmd.Flags().String("excel-windowing", "", `spreadsheet auto-windowing mode: "auto" splits an xlsx/CSV into per-table row chunks, extracts each chunk, and concatenates the results into {"data": [...]}; "manual" or omitted runs one extraction over the whole document`)
-	cmd.Flags().Var(&boundedIntFlagValue{min: 10, max: 1000}, "auto-chunk-rows", "rows per extraction window when --excel-windowing=auto (10-1000, default 50)")
 	cmd.Flags().Bool("deep-extraction", false, "optimizes for accuracy over latency in documents with very large arrays")
 	_ = cmd.MarkFlagRequired("model")
 }

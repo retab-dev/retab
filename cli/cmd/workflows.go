@@ -318,7 +318,6 @@ and ` + "`workflows edges`" + `.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		body := map[string]any{}
 		var req retab.WorkflowsUpdateParams
 		if cmd.Flags().Changed("name") {
 			v, _ := cmd.Flags().GetString("name")
@@ -327,12 +326,10 @@ and ` + "`workflows edges`" + `.`,
 				return err
 			}
 			req.Name = &trimmed
-			body["name"] = trimmed
 		}
 		if cmd.Flags().Changed("description") {
 			v, _ := cmd.Flags().GetString("description")
 			req.Description = &v
-			body["description"] = v
 		}
 		result, err := client.Workflows.Update(ctx, args[0], &req)
 		if err != nil {
