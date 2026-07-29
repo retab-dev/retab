@@ -249,3 +249,68 @@ func TestExtractionsCreateCommandSendsDeepExtractionOnTheWire(t *testing.T) {
 		t.Fatalf("wire body deep_extraction = %#v, want true", body["deep_extraction"])
 	}
 }
+
+// TestExtractionsStreamCommandSendsDeepExtractionOnTheWire is the stream twin
+// of TestExtractionsCreateCommandSendsDeepExtractionOnTheWire, and the guard
+// the stream path did not have. `stream` hand-assembles its request body
+// (the generated SDK's CreateStream discards the response), so it does not
+// inherit `create`'s serialization — and it was omitting deep_extraction while
+// addExtractionBodyFlags still registered --deep-extraction on it. The flag was
+// accepted and silently discarded: the stream ran an ordinary single-shot
+// extraction. The server honors deep_extraction on /v1/extractions/stream (it
+// has a deep-spreadsheet-specific 400 there), so nothing but this body was
+// missing. Verified against staging: before the fix the flag never left the
+// client; after it, streaming a CSV with --deep-extraction returns the server's
+// "deep_extraction ... does not support stream" 400.
+func TestExtractionsStreamCommandSendsDeepExtractionOnTheWire(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var body map[string]any
+	var path string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
+		path = r.URL.Path
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		w.Header().Set("Content-Type", "application/stream+json")
+		_, _ = fmt.Fprint(w, "{\"id\":\"chatcmpl_1\",\"extraction_id\":\"extr_1\"}\n")
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	cmd := extractionsStreamCmd
+	cmd.SetOut(&strings.Builder{})
+	cmd.SetErr(&strings.Builder{})
+	for name, value := range map[string]string{
+		"url":             "https://example.com/ledger.pdf",
+		"model":           "retab-large",
+		"json-schema":     `{"type":"object"}`,
+		"deep-extraction": "true",
+	} {
+		if err := cmd.Flags().Set(name, value); err != nil {
+			t.Fatalf("set --%s: %v", name, err)
+		}
+	}
+	t.Cleanup(func() {
+		for _, name := range []string{"url", "model", "json-schema", "deep-extraction"} {
+			_ = cmd.Flags().Set(name, cmd.Flags().Lookup(name).DefValue)
+			cmd.Flags().Lookup(name).Changed = false
+		}
+	})
+
+	if err := cmd.RunE(cmd, nil); err != nil {
+		t.Fatalf("stream RunE: %v", err)
+	}
+	if path != "/v1/extractions/stream" {
+		t.Fatalf("request path = %q, want /v1/extractions/stream", path)
+	}
+	if body == nil {
+		t.Fatal("no request body captured")
+	}
+	if body["deep_extraction"] != true {
+		t.Fatalf("stream body deep_extraction = %#v, want true", body["deep_extraction"])
+	}
+	if body["stream"] != true {
+		t.Fatalf("stream body stream = %#v, want true", body["stream"])
+	}
+}

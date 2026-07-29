@@ -5,3 +5,4 @@ export * from './usage-primitive-document.interface.js';
 export * from './usage-primitive-record.interface.js';
 export * from './usage-primitive-triggered-by.interface.js';
 export * from './usage-run-record.interface.js';
+export * from './v-1-usage-usage-run-triggered-by.interface.js';

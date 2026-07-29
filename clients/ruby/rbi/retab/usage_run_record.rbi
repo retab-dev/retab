@@ -75,6 +75,12 @@ module Retab
     sig { params(value: String).returns(String) }
     def trigger_type=(value); end
 
+    sig { returns(T.nilable(Retab::V1UsageUsageRunTriggeredBy)) }
+    def triggered_by; end
+
+    sig { params(value: T.nilable(Retab::V1UsageUsageRunTriggeredBy)).returns(T.nilable(Retab::V1UsageUsageRunTriggeredBy)) }
+    def triggered_by=(value); end
+
     sig { returns(String) }
     def workflow_id; end
 

@@ -11,7 +11,7 @@ namespace Retab
         /// <summary>Filter to a single workflow id.</summary>
         public string? WorkflowId { get; set; }
 
-        /// <summary>Filter by block type (e.g. extract, classify, split, parse, edit, partition).</summary>
+        /// <summary>Filter by block type: extract, classify, split, parse, edit, or partition. These are the primitive-kind names recorded on the execution, which differ from the workflow block type enum (a classifier block records classify). An unknown value is rejected with 422.</summary>
         public string? BlockType { get; set; }
 
         /// <summary>Inclusive activity lower bound (YYYY-MM-DD, UTC).</summary>
@@ -52,7 +52,7 @@ namespace Retab
         /// <summary>Filter by operation: extraction, classify, split, parse, edit, partition, or schema_generation. The stored-kind aliases extract and classification are also accepted. An unknown value is rejected with 422.</summary>
         public string? Operation { get; set; }
 
-        /// <summary>Filter by execution lifecycle status: created, running, completed, or failed. An unknown value is rejected with 422.</summary>
+        /// <summary>Filter by execution lifecycle status: created, running, completed, failed, or canceled. Note the single-l spelling: a primitive execution is canceled, whereas a workflow run's status is cancelled. An unknown value is rejected with 422.</summary>
         public string? Status { get; set; }
 
         /// <summary>Filter by metadata equality: a JSON object of string key/value pairs (e.g. {"tenant":"acme"}). Pairs AND together.</summary>

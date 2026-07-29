@@ -20,6 +20,7 @@ public final class UsageRunRecord {
   private final OffsetDateTime startedAt;
   private final String status;
   private final String triggerType;
+  private final V1UsageUsageRunTriggeredBy triggeredBy;
   private final String workflowId;
 
   @JsonCreator
@@ -35,6 +36,8 @@ public final class UsageRunRecord {
       @JsonProperty(value = "started_at", required = true) OffsetDateTime startedAt,
       @JsonProperty(value = "status", required = true) String status,
       @JsonProperty(value = "trigger_type", required = true) String triggerType,
+      @JsonProperty(value = "triggered_by", required = false)
+          V1UsageUsageRunTriggeredBy triggeredBy,
       @JsonProperty(value = "workflow_id", required = true) String workflowId) {
     this.completedAt = completedAt;
     this.createdAt = createdAt;
@@ -47,6 +50,7 @@ public final class UsageRunRecord {
     this.startedAt = startedAt;
     this.status = status;
     this.triggerType = triggerType;
+    this.triggeredBy = triggeredBy;
     this.workflowId = workflowId;
   }
 
@@ -103,6 +107,11 @@ public final class UsageRunRecord {
   @JsonProperty("trigger_type")
   public String getTriggerType() {
     return triggerType;
+  }
+
+  @JsonProperty("triggered_by")
+  public V1UsageUsageRunTriggeredBy getTriggeredBy() {
+    return triggeredBy;
   }
 
   @JsonProperty("workflow_id")

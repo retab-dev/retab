@@ -16,7 +16,7 @@ type UsageListBlocksParams struct {
 	PaginationParams
 	// WorkflowID is filter to a single workflow id.
 	WorkflowID *string `url:"workflow_id,omitempty" json:"-"`
-	// BlockType is filter by block type (e.g. extract, classify, split, parse, edit, partition).
+	// BlockType is filter by block type: extract, classify, split, parse, edit, or partition. These are the primitive-kind names recorded on the execution, which differ from the workflow block type enum (a classifier block records classify). An unknown value is rejected with 422.
 	BlockType *string `url:"block_type,omitempty" json:"-"`
 	// FromDate is inclusive activity lower bound (YYYY-MM-DD, UTC).
 	FromDate *string `url:"from_date,omitempty" json:"-"`

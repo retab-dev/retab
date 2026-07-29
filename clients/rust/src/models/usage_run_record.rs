@@ -22,6 +22,8 @@ pub struct UsageRunRecord {
     pub started_at: Option<String>,
     pub status: String,
     pub trigger_type: String,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub triggered_by: Option<V1UsageUsageRunTriggeredBy>,
     pub workflow_id: String,
 }
 impl UsageRunRecord {
@@ -49,6 +51,7 @@ impl UsageRunRecord {
             started_at: Default::default(),
             status: status.into(),
             trigger_type: trigger_type.into(),
+            triggered_by: Default::default(),
             workflow_id: workflow_id.into(),
         }
     }

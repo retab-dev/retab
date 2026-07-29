@@ -182,6 +182,7 @@
     "src/usage/interfaces/usage-primitive-record.interface.ts",
     "src/usage/interfaces/usage-primitive-triggered-by.interface.ts",
     "src/usage/interfaces/usage-run-record.interface.ts",
+    "src/usage/interfaces/v-1-usage-usage-run-triggered-by.interface.ts",
     "src/usage/usage.ts",
     "src/workflows/artifacts/interfaces/api-call-attempt.interface.ts",
     "src/workflows/artifacts/interfaces/api-call-invocation.interface.ts",

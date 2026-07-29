@@ -23,6 +23,7 @@ readonly class UsageRunRecord implements \JsonSerializable
         public string $status,
         public string $triggerType,
         public string $workflowId,
+        public ?V1UsageUsageRunTriggeredBy $triggeredBy = null,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -59,6 +60,7 @@ readonly class UsageRunRecord implements \JsonSerializable
             status: $data['status'],
             triggerType: $data['trigger_type'],
             workflowId: $data['workflow_id'],
+            triggeredBy: isset($data['triggered_by']) ? V1UsageUsageRunTriggeredBy::fromArray($data['triggered_by']) : null,
         );
     }
 
@@ -78,6 +80,7 @@ readonly class UsageRunRecord implements \JsonSerializable
             'status' => $this->status,
             'trigger_type' => $this->triggerType,
             'workflow_id' => $this->workflowId,
+            'triggered_by' => $this->triggeredBy?->toArray(),
         ];
     }
 }

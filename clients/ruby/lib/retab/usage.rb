@@ -16,7 +16,7 @@ module Retab
     # @param before [String, nil] Return blocks before this cursor (opaque token from a prior page's list_metadata).
     # @param after [String, nil] Return blocks after this cursor (opaque token from a prior page's list_metadata).
     # @param workflow_id [String, nil] Filter to a single workflow id.
-    # @param block_type [String, nil] Filter by block type (e.g. extract, classify, split, parse, edit, partition).
+    # @param block_type [String, nil] Filter by block type: extract, classify, split, parse, edit, or partition. These are the primitive-kind names recorded on the execution, which differ from the workflow block type enum (a classifier block records classify). An unknown value is rejected with 422.
     # @param from_date [String, nil] Inclusive activity lower bound (YYYY-MM-DD, UTC).
     # @param to_date [String, nil] Inclusive activity upper bound (YYYY-MM-DD, UTC).
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
@@ -92,7 +92,7 @@ module Retab
     # @param run_id [String, nil] Filter to a single workflow run id (origin run).
     # @param block_id [String, nil] Filter to a single workflow block id (origin block).
     # @param operation [String, nil] Filter by operation: extraction, classify, split, parse, edit, partition, or schema_generation. The stored-kind aliases extract and classification are also accepted. An unknown value is rejected with 422.
-    # @param status [String, nil] Filter by execution lifecycle status: created, running, completed, or failed. An unknown value is rejected with 422.
+    # @param status [String, nil] Filter by execution lifecycle status: created, running, completed, failed, or canceled. Note the single-l spelling: a primitive execution is canceled, whereas a workflow run's status is cancelled. An unknown value is rejected with 422.
     # @param metadata [String, nil] Filter by metadata equality: a JSON object of string key/value pairs (e.g. {"tenant":"acme"}). Pairs AND together.
     # @param from_date [String, nil] Inclusive created_at lower bound (YYYY-MM-DD, UTC).
     # @param to_date [String, nil] Inclusive created_at upper bound (YYYY-MM-DD, UTC).

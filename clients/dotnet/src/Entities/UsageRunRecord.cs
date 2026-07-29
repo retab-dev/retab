@@ -16,6 +16,7 @@ namespace Retab
         public DateTimeOffset? StartedAt { get; set; }
         public string Status { get; set; } = default!;
         public string TriggerType { get; set; } = default!;
+        public V1UsageUsageRunTriggeredBy? TriggeredBy { get; set; }
         public string WorkflowId { get; set; } = default!;
 
         /// <summary>

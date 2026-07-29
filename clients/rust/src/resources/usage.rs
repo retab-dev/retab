@@ -34,7 +34,7 @@ pub struct ListBlocksParams {
     /// Filter to a single workflow id.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub workflow_id: Option<String>,
-    /// Filter by block type (e.g. extract, classify, split, parse, edit, partition).
+    /// Filter by block type: extract, classify, split, parse, edit, or partition. These are the primitive-kind names recorded on the execution, which differ from the workflow block type enum (a classifier block records classify). An unknown value is rejected with 422.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub block_type: Option<String>,
     /// Inclusive activity lower bound (YYYY-MM-DD, UTC).
@@ -106,7 +106,7 @@ pub struct ListPrimitivesParams {
     /// Filter by operation: extraction, classify, split, parse, edit, partition, or schema_generation. The stored-kind aliases extract and classification are also accepted. An unknown value is rejected with 422.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
-    /// Filter by execution lifecycle status: created, running, completed, or failed. An unknown value is rejected with 422.
+    /// Filter by execution lifecycle status: created, running, completed, failed, or canceled. Note the single-l spelling: a primitive execution is canceled, whereas a workflow run's status is cancelled. An unknown value is rejected with 422.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     /// Filter by metadata equality: a JSON object of string key/value pairs (e.g. {"tenant":"acme"}). Pairs AND together.

@@ -17,6 +17,7 @@ module Retab
       started_at: :started_at,
       status: :status,
       trigger_type: :trigger_type,
+      triggered_by: :triggered_by,
       workflow_id: :workflow_id
     }.freeze
 
@@ -32,6 +33,7 @@ module Retab
       :started_at,
       :status,
       :trigger_type,
+      :triggered_by,
       :workflow_id
     )
 
@@ -49,6 +51,7 @@ module Retab
       @started_at = hash[:started_at]
       @status = hash[:status]
       @trigger_type = hash[:trigger_type]
+      @triggered_by = hash[:triggered_by] ? Retab::V1UsageUsageRunTriggeredBy.new(hash[:triggered_by]) : nil
       @workflow_id = hash[:workflow_id]
     end
   end

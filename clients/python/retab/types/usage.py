@@ -76,7 +76,16 @@ class UsageRunRecord(BaseModel):
     started_at: datetime.datetime | None
     status: str
     trigger_type: str
+    triggered_by: V1UsageUsageRunTriggeredBy | None = None
     workflow_id: str
+
+
+class V1UsageUsageRunTriggeredBy(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    api_key_id: str | None
+    user_email: str | None
+    user_id: str | None
 
 
 # Resolve forward references (Pydantic v2). Safe no-op when
@@ -89,3 +98,4 @@ UsagePrimitiveDocument.model_rebuild()
 UsagePrimitiveRecord.model_rebuild()
 UsagePrimitiveTriggeredBy.model_rebuild()
 UsageRunRecord.model_rebuild()
+V1UsageUsageRunTriggeredBy.model_rebuild()

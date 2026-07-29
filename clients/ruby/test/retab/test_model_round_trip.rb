@@ -3563,6 +3563,7 @@ class ModelRoundTripTest < Minitest::Test
       "started_at" => nil,
       "status" => "stub",
       "trigger_type" => "stub",
+      "triggered_by" => nil,
       "workflow_id" => "stub"
     }
     model = Retab::UsageRunRecord.new(fixture.to_json)
@@ -3580,6 +3581,21 @@ class ModelRoundTripTest < Minitest::Test
     assert_equal(fixture["status"], json[:status])
     assert_equal(fixture["trigger_type"], json[:trigger_type])
     assert_equal(fixture["workflow_id"], json[:workflow_id])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_v_1_usage_usage_run_triggered_by_round_trip
+    fixture = {
+      "api_key_id" => nil,
+      "user_email" => nil,
+      "user_id" => nil
+    }
+    model = Retab::V1UsageUsageRunTriggeredBy.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_nil(json[:api_key_id])
+    assert_nil(json[:user_email])
+    assert_nil(json[:user_id])
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 

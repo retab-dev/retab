@@ -203,6 +203,15 @@ Flags and document/schema resolution are identical to
 		if req.BustCache != nil {
 			body["bust_cache"] = *req.BustCache
 		}
+		// deep_extraction is registered on this command by
+		// addExtractionBodyFlags and the stream route honors it (it even has a
+		// deep-spreadsheet-specific 400), so leaving it out of this
+		// hand-assembled body made `--deep-extraction` a flag that was accepted
+		// and silently discarded: the stream ran the ordinary single-shot
+		// extraction and nothing said so.
+		if req.DeepExtraction != nil {
+			body["deep_extraction"] = *req.DeepExtraction
+		}
 		return cliStreamLinesRequest(cmd, http.MethodPost, "/v1/extractions/stream", nil, body, cmd.OutOrStdout())
 	}),
 }
@@ -407,7 +416,15 @@ func addExtractionBodyFlags(cmd *cobra.Command) {
 	// --excel-windowing=auto changes the response shape to {"data": [...]}, so
 	// silently accepting it would hand callers a differently-shaped body than
 	// they asked for. An unknown-flag error is the honest failure.
-	cmd.Flags().Bool("deep-extraction", false, "optimizes for accuracy over latency in documents with very large arrays")
+	// The spreadsheet caveat is stated here because it is a RESPONSE-SHAPE
+	// change, and this file already refuses to accept a flag that makes one
+	// silently (see the --excel-windowing note above). On an xlsx/CSV input
+	// deep_extraction runs the row-window pipeline, whose reduce concatenates
+	// the per-chunk outputs, so the body is {"data": [<chunk output>, ...]}
+	// and NOT the shape the caller's json_schema describes. Verified against
+	// staging: a 240-row CSV under a schema whose root array is "lines" came
+	// back as {"data": [{"lines": [...]}, ...]}.
+	cmd.Flags().Bool("deep-extraction", false, `optimizes for accuracy over latency in documents with very large arrays. On a spreadsheet (xlsx/CSV) input this also CHANGES THE RESPONSE SHAPE: the file is extracted in fixed 50-row windows and the output is {"data": [<per-window object>, ...]} rather than the shape your json_schema describes`)
 	_ = cmd.MarkFlagRequired("model")
 }
 
