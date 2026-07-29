@@ -6,7 +6,6 @@ import { coerceMimeData, type DocumentInput } from '../runtime/mime.js';
 import type { ExtractionsStatus } from '../common/interfaces/index.js';
 import type {
   Extraction,
-  ExtractionRequestExcelWindowing,
   ExtractionResponse,
   SourcesResponse,
   SourcesResponseResponse,
@@ -67,9 +66,7 @@ export class Extractions {
     bustCache?: boolean,
     stream?: boolean,
     background?: boolean,
-    autoChunkRows?: number,
-    deepExtraction?: boolean,
-    excelWindowing?: ExtractionRequestExcelWindowing
+    deepExtraction?: boolean
   ): Promise<Extraction> {
     const documentCoerced = await coerceMimeData(document, (__id) =>
       this.client.files.get_download_link(__id)
@@ -85,9 +82,7 @@ export class Extractions {
       bust_cache: bustCache,
       stream: stream,
       background: background,
-      auto_chunk_rows: autoChunkRows,
       deep_extraction: deepExtraction,
-      excel_windowing: excelWindowing,
     };
     const __wire = await this.client.request<ExtractionResponse>({
       method: 'POST',
@@ -110,9 +105,7 @@ export class Extractions {
     bustCache?: boolean,
     stream?: boolean,
     background?: boolean,
-    autoChunkRows?: number,
-    deepExtraction?: boolean,
-    excelWindowing?: ExtractionRequestExcelWindowing
+    deepExtraction?: boolean
   ): Promise<unknown> {
     const documentCoerced = await coerceMimeData(document, (__id) =>
       this.client.files.get_download_link(__id)
@@ -128,9 +121,7 @@ export class Extractions {
       bust_cache: bustCache,
       stream: stream,
       background: background,
-      auto_chunk_rows: autoChunkRows,
       deep_extraction: deepExtraction,
-      excel_windowing: excelWindowing,
     };
     const __wire = await this.client.request<unknown>({
       method: 'POST',

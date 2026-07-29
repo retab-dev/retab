@@ -95,9 +95,7 @@ class Extractions
      * @param bool|null $bustCache If true, skip the LLM cache and force a fresh completion
      * @param bool|null $stream
      * @param bool|null $background If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
-     * @param int|null $autoChunkRows Rows per extraction window when excel_windowing is "auto" (10-1000, default 50).
-     * @param bool|null $deepExtraction Run the conversational long-array extraction: the document is fed one page-window at a time as a growing conversation and long list items are stitched across turns, which recovers rows that a single-shot extraction truncates on long documents. Slower and more expensive than the default single call. Cannot be combined with excel_windowing="auto" (both are windowing strategies). Absent or false runs the default extraction.
-     * @param \Retab\Resource\ExtractionRequestExcelWindowing|null $excelWindowing Spreadsheet auto-windowing mode. "auto" splits an xlsx/CSV input into per-table row chunks, extracts each chunk, and concatenates the results into {"data": [...]}. "auto" does not support stream; over a spreadsheet it also rejects background=true (the windowed compute has no durable background representation yet) and is capped at 40 extraction windows per request — larger workbooks belong in a workflow extract block. Absent or "manual" runs one extraction over the whole document.
+     * @param bool|null $deepExtraction Optimizes for accuracy over latency in documents with very large arrays.
      * @return \Retab\Resource\Extraction
      * @throws \Retab\Exception\RetabException
      */
@@ -112,9 +110,7 @@ class Extractions
         ?bool $bustCache = null,
         ?bool $stream = null,
         ?bool $background = null,
-        ?int $autoChunkRows = null,
         ?bool $deepExtraction = null,
-        ?\Retab\Resource\ExtractionRequestExcelWindowing $excelWindowing = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\Extraction {
         $document = \Retab\Resource\MimeDataCoerce::coerce($document, $this->client);
@@ -129,9 +125,7 @@ class Extractions
             'bust_cache' => $bustCache,
             'stream' => $stream,
             'background' => $background,
-            'auto_chunk_rows' => $autoChunkRows,
             'deep_extraction' => $deepExtraction,
-            'excel_windowing' => $excelWindowing?->value,
         ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',
@@ -156,9 +150,7 @@ class Extractions
      * @param bool|null $bustCache If true, skip the LLM cache and force a fresh completion
      * @param bool|null $stream
      * @param bool|null $background If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
-     * @param int|null $autoChunkRows Rows per extraction window when excel_windowing is "auto" (10-1000, default 50).
-     * @param bool|null $deepExtraction Run the conversational long-array extraction: the document is fed one page-window at a time as a growing conversation and long list items are stitched across turns, which recovers rows that a single-shot extraction truncates on long documents. Slower and more expensive than the default single call. Cannot be combined with excel_windowing="auto" (both are windowing strategies). Absent or false runs the default extraction.
-     * @param \Retab\Resource\ExtractionRequestExcelWindowing|null $excelWindowing Spreadsheet auto-windowing mode. "auto" splits an xlsx/CSV input into per-table row chunks, extracts each chunk, and concatenates the results into {"data": [...]}. "auto" does not support stream; over a spreadsheet it also rejects background=true (the windowed compute has no durable background representation yet) and is capped at 40 extraction windows per request — larger workbooks belong in a workflow extract block. Absent or "manual" runs one extraction over the whole document.
+     * @param bool|null $deepExtraction Optimizes for accuracy over latency in documents with very large arrays.
      * @return mixed
      * @throws \Retab\Exception\RetabException
      */
@@ -173,9 +165,7 @@ class Extractions
         ?bool $bustCache = null,
         ?bool $stream = null,
         ?bool $background = null,
-        ?int $autoChunkRows = null,
         ?bool $deepExtraction = null,
-        ?\Retab\Resource\ExtractionRequestExcelWindowing $excelWindowing = null,
         ?\Retab\RequestOptions $options = null,
     ): mixed {
         $document = \Retab\Resource\MimeDataCoerce::coerce($document, $this->client);
@@ -190,9 +180,7 @@ class Extractions
             'bust_cache' => $bustCache,
             'stream' => $stream,
             'background' => $background,
-            'auto_chunk_rows' => $autoChunkRows,
             'deep_extraction' => $deepExtraction,
-            'excel_windowing' => $excelWindowing?->value,
         ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',

@@ -9,7 +9,6 @@ import com.retab.models.Extraction;
 import com.retab.models.ExtractionRequest;
 import com.retab.models.MimeData;
 import com.retab.models.SourcesResponse;
-import com.retab.types.ExtractionRequestExcelWindowing;
 import com.retab.types.ExtractionsStatus;
 import com.retab.types.SortOrder;
 import java.io.IOException;
@@ -103,9 +102,7 @@ public final class ExtractionsApi {
         request == null ? null : request.isBustCache(),
         request == null ? null : request.isStream(),
         request == null ? null : request.isBackground(),
-        request == null ? null : request.getAutoChunkRows(),
-        request == null ? null : request.isDeepExtraction(),
-        request == null ? null : request.getExcelWindowing());
+        request == null ? null : request.isDeepExtraction());
   }
 
   public Extraction create(
@@ -119,9 +116,7 @@ public final class ExtractionsApi {
       Boolean bustCache,
       Boolean stream,
       Boolean background,
-      Long autoChunkRows,
-      Boolean deepExtraction,
-      ExtractionRequestExcelWindowing excelWindowing)
+      Boolean deepExtraction)
       throws IOException, InterruptedException {
     String path = "/v1/extractions";
     StringBuilder query = new StringBuilder();
@@ -153,14 +148,8 @@ public final class ExtractionsApi {
     if (background != null) {
       body.put("background", background);
     }
-    if (autoChunkRows != null) {
-      body.put("auto_chunk_rows", autoChunkRows);
-    }
     if (deepExtraction != null) {
       body.put("deep_extraction", deepExtraction);
-    }
-    if (excelWindowing != null) {
-      body.put("excel_windowing", excelWindowing);
     }
     String requestBody = client.getObjectMapper().writeValueAsString(body);
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);
@@ -193,9 +182,7 @@ public final class ExtractionsApi {
         request == null ? null : request.isBustCache(),
         request == null ? null : request.isStream(),
         request == null ? null : request.isBackground(),
-        request == null ? null : request.getAutoChunkRows(),
-        request == null ? null : request.isDeepExtraction(),
-        request == null ? null : request.getExcelWindowing());
+        request == null ? null : request.isDeepExtraction());
   }
 
   public Object createStream(
@@ -209,9 +196,7 @@ public final class ExtractionsApi {
       Boolean bustCache,
       Boolean stream,
       Boolean background,
-      Long autoChunkRows,
-      Boolean deepExtraction,
-      ExtractionRequestExcelWindowing excelWindowing)
+      Boolean deepExtraction)
       throws IOException, InterruptedException {
     String path = "/v1/extractions/stream";
     StringBuilder query = new StringBuilder();
@@ -243,14 +228,8 @@ public final class ExtractionsApi {
     if (background != null) {
       body.put("background", background);
     }
-    if (autoChunkRows != null) {
-      body.put("auto_chunk_rows", autoChunkRows);
-    }
     if (deepExtraction != null) {
       body.put("deep_extraction", deepExtraction);
-    }
-    if (excelWindowing != null) {
-      body.put("excel_windowing", excelWindowing);
     }
     String requestBody = client.getObjectMapper().writeValueAsString(body);
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);

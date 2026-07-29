@@ -31,6 +31,36 @@ func usageRunsFixture() usageRunListResponse {
 	}
 }
 
+func TestUsageRunsReturnsCursorAPIError(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.URL.Query().Get("after"); got != "run_stale" {
+			t.Fatalf("after = %q, want run_stale", got)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		_, _ = w.Write([]byte(`{"detail":"Cursor does not match a resource in this organization and environment. It may be stale, malformed, or belong to a different scope."}`))
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := usageRunsCmd.Flags().Set("after", "run_stale"); err != nil {
+		t.Fatalf("set --after: %v", err)
+	}
+	t.Cleanup(func() { _ = usageRunsCmd.Flags().Set("after", "") })
+
+	var runErr error
+	stdout, stderr := captureStd(t, func() { runErr = usageRunsCmd.RunE(usageRunsCmd, nil) })
+	if runErr == nil {
+		t.Fatalf("usage runs accepted stale cursor; stdout=%s", stdout)
+	}
+	if !strings.Contains(strings.ToLower(stderr), "cursor") {
+		t.Fatalf("stderr did not show cursor error: %q", stderr)
+	}
+}
+
 func TestUsageRunsUsesHiddenEndpoint(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())

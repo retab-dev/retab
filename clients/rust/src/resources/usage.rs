@@ -103,10 +103,10 @@ pub struct ListPrimitivesParams {
     /// Filter to a single workflow block id (origin block).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub block_id: Option<String>,
-    /// Filter by operation (extraction, classify, split, parse, edit, schema_generation).
+    /// Filter by operation: extraction, classify, split, parse, edit, partition, or schema_generation. The stored-kind aliases extract and classification are also accepted. An unknown value is rejected with 422.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
-    /// Filter by execution lifecycle status.
+    /// Filter by execution lifecycle status: created, running, completed, or failed. An unknown value is rejected with 422.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     /// Filter by metadata equality: a JSON object of string key/value pairs (e.g. {"tenant":"acme"}). Pairs AND together.

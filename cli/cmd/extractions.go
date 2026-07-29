@@ -413,7 +413,7 @@ func addExtractionBodyFlags(cmd *cobra.Command) {
 	cmd.Flags().String("messages-file", "", "JSON array of additional_messages (or - for stdin)")
 	cmd.Flags().String("excel-windowing", "", `spreadsheet auto-windowing mode: "auto" splits an xlsx/CSV into per-table row chunks, extracts each chunk, and concatenates the results into {"data": [...]}; "manual" or omitted runs one extraction over the whole document`)
 	cmd.Flags().Var(&boundedIntFlagValue{min: 10, max: 1000}, "auto-chunk-rows", "rows per extraction window when --excel-windowing=auto (10-1000, default 50)")
-	cmd.Flags().Bool("deep-extraction", false, "run the conversational long-array extraction: the document is fed one page-window at a time as a growing conversation and long list items are stitched across turns, recovering rows a single-shot extraction truncates on long documents (slower and more expensive; cannot be combined with --excel-windowing=auto)")
+	cmd.Flags().Bool("deep-extraction", false, "optimizes for accuracy over latency in documents with very large arrays")
 	_ = cmd.MarkFlagRequired("model")
 }
 

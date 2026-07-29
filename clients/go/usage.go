@@ -48,9 +48,9 @@ type UsageListPrimitivesParams struct {
 	RunID *string `url:"run_id,omitempty" json:"-"`
 	// BlockID is filter to a single workflow block id (origin block).
 	BlockID *string `url:"block_id,omitempty" json:"-"`
-	// Operation is filter by operation (extraction, classify, split, parse, edit, schema_generation).
+	// Operation is filter by operation: extraction, classify, split, parse, edit, partition, or schema_generation. The stored-kind aliases extract and classification are also accepted. An unknown value is rejected with 422.
 	Operation *string `url:"operation,omitempty" json:"-"`
-	// Status is filter by execution lifecycle status.
+	// Status is filter by execution lifecycle status: created, running, completed, or failed. An unknown value is rejected with 422.
 	Status *string `url:"status,omitempty" json:"-"`
 	// Metadata is filter by metadata equality: a JSON object of string key/value pairs (e.g. {"tenant":"acme"}). Pairs AND together.
 	Metadata *string `url:"metadata,omitempty" json:"-"`

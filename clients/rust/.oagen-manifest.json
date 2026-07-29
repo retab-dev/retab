@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "rust",
-  "generatedAt": "2026-07-28T12:54:37.523Z",
+  "generatedAt": "2026-07-29T07:41:49.357Z",
   "files": [
     "Cargo.toml",
     "LICENSE-MIT",
@@ -50,7 +50,6 @@
     "src/enums/experiment_runs_order.rs",
     "src/enums/experiment_schema_drift_status.rs",
     "src/enums/experiment_summary_metrics_response_block_type.rs",
-    "src/enums/extraction_request_excel_windowing.rs",
     "src/enums/extraction_status.rs",
     "src/enums/extraction_workflow_artifact_status.rs",
     "src/enums/extractions_order.rs",

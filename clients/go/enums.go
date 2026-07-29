@@ -148,14 +148,6 @@ const (
 	CreateExperimentRequestNConsensus7 CreateExperimentRequestNConsensus = 7
 )
 
-// ExtractionRequestExcelWindowing represents extraction request excel windowing values.
-type ExtractionRequestExcelWindowing string
-
-const (
-	ExtractionRequestExcelWindowingManual ExtractionRequestExcelWindowing = "manual"
-	ExtractionRequestExcelWindowingAuto   ExtractionRequestExcelWindowing = "auto"
-)
-
 // CreateFileBlueprintRequestMode represents create file blueprint request mode values.
 type CreateFileBlueprintRequestMode string
 

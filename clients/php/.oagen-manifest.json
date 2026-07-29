@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "php",
-  "generatedAt": "2026-07-28T12:55:04.059Z",
+  "generatedAt": "2026-07-29T07:41:49.644Z",
   "files": [
     "composer.json",
     "lib/Client.php",
@@ -154,7 +154,6 @@
     "lib/Resource/Extraction.php",
     "lib/Resource/ExtractionConsensus.php",
     "lib/Resource/ExtractionRequest.php",
-    "lib/Resource/ExtractionRequestExcelWindowing.php",
     "lib/Resource/ExtractionWorkflowArtifact.php",
     "lib/Resource/FieldType.php",
     "lib/Resource/File.php",

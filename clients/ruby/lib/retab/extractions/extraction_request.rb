@@ -16,9 +16,7 @@ module Retab
       bust_cache: :bust_cache,
       stream: :stream,
       background: :background,
-      auto_chunk_rows: :auto_chunk_rows,
-      deep_extraction: :deep_extraction,
-      excel_windowing: :excel_windowing
+      deep_extraction: :deep_extraction
     }.freeze
 
     attr_accessor(
@@ -32,9 +30,7 @@ module Retab
       :bust_cache,
       :stream,
       :background,
-      :auto_chunk_rows,
-      :deep_extraction,
-      :excel_windowing
+      :deep_extraction
     )
 
     def initialize(json)
@@ -50,9 +46,7 @@ module Retab
       @bust_cache = hash[:bust_cache].nil? ? false : hash[:bust_cache]
       @stream = hash[:stream].nil? ? false : hash[:stream]
       @background = hash[:background].nil? ? false : hash[:background]
-      @auto_chunk_rows = hash[:auto_chunk_rows]
-      @deep_extraction = hash[:deep_extraction]
-      @excel_windowing = hash[:excel_windowing]
+      @deep_extraction = hash[:deep_extraction].nil? ? false : hash[:deep_extraction]
     end
   end
 end

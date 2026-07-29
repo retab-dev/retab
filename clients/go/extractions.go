@@ -57,12 +57,8 @@ type ExtractionsCreateParams struct {
 	Stream    *bool `json:"stream,omitempty" url:"-"`
 	// Background is if true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
 	Background *bool `json:"background,omitempty" url:"-"`
-	// AutoChunkRows is rows per extraction window when excel_windowing is "auto" (10-1000, default 50).
-	AutoChunkRows *int `json:"auto_chunk_rows,omitempty" url:"-"`
-	// DeepExtraction is run the conversational long-array extraction: the document is fed one page-window at a time as a growing conversation and long list items are stitched across turns, which recovers rows that a single-shot extraction truncates on long documents. Slower and more expensive than the default single call. Cannot be combined with excel_windowing="auto" (both are windowing strategies). Absent or false runs the default extraction.
+	// DeepExtraction is optimizes for accuracy over latency in documents with very large arrays.
 	DeepExtraction *bool `json:"deep_extraction,omitempty" url:"-"`
-	// ExcelWindowing is spreadsheet auto-windowing mode. "auto" splits an xlsx/CSV input into per-table row chunks, extracts each chunk, and concatenates the results into {"data": [...]}. "auto" does not support stream; over a spreadsheet it also rejects background=true (the windowed compute has no durable background representation yet) and is capped at 40 extraction windows per request — larger workbooks belong in a workflow extract block. Absent or "manual" runs one extraction over the whole document.
-	ExcelWindowing *ExtractionRequestExcelWindowing `json:"excel_windowing,omitempty" url:"-"`
 }
 
 // Create extraction
@@ -85,19 +81,17 @@ func (s *ExtractionService) Create(ctx context.Context, params *ExtractionsCreat
 		return nil, fmt.Errorf("retab: model is required")
 	}
 	type createWireBody struct {
-		Document           *MIMEData                        `json:"document"`
-		JSONSchema         map[string]interface{}           `json:"json_schema"`
-		Model              *string                          `json:"model,omitempty"`
-		Instructions       *string                          `json:"instructions,omitempty"`
-		NConsensus         *int                             `json:"n_consensus,omitempty"`
-		Metadata           *map[string]string               `json:"metadata,omitempty"`
-		AdditionalMessages []map[string]interface{}         `json:"additional_messages,omitempty"`
-		BustCache          *bool                            `json:"bust_cache,omitempty"`
-		Stream             *bool                            `json:"stream,omitempty"`
-		Background         *bool                            `json:"background,omitempty"`
-		AutoChunkRows      *int                             `json:"auto_chunk_rows,omitempty"`
-		DeepExtraction     *bool                            `json:"deep_extraction,omitempty"`
-		ExcelWindowing     *ExtractionRequestExcelWindowing `json:"excel_windowing,omitempty"`
+		Document           *MIMEData                `json:"document"`
+		JSONSchema         map[string]interface{}   `json:"json_schema"`
+		Model              *string                  `json:"model,omitempty"`
+		Instructions       *string                  `json:"instructions,omitempty"`
+		NConsensus         *int                     `json:"n_consensus,omitempty"`
+		Metadata           *map[string]string       `json:"metadata,omitempty"`
+		AdditionalMessages []map[string]interface{} `json:"additional_messages,omitempty"`
+		BustCache          *bool                    `json:"bust_cache,omitempty"`
+		Stream             *bool                    `json:"stream,omitempty"`
+		Background         *bool                    `json:"background,omitempty"`
+		DeepExtraction     *bool                    `json:"deep_extraction,omitempty"`
 	}
 	if params == nil {
 		return nil, fmt.Errorf("retab: params is required")
@@ -121,9 +115,7 @@ func (s *ExtractionService) Create(ctx context.Context, params *ExtractionsCreat
 		BustCache:          params.BustCache,
 		Stream:             params.Stream,
 		Background:         params.Background,
-		AutoChunkRows:      params.AutoChunkRows,
 		DeepExtraction:     params.DeepExtraction,
-		ExcelWindowing:     params.ExcelWindowing,
 	}
 	var result Extraction
 	_, err := s.client.request(ctx, "POST", "/v1/extractions", nil, body, &result, opts)
@@ -153,31 +145,25 @@ type ExtractionsCreateStreamParams struct {
 	Stream    *bool `json:"stream,omitempty" url:"-"`
 	// Background is if true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
 	Background *bool `json:"background,omitempty" url:"-"`
-	// AutoChunkRows is rows per extraction window when excel_windowing is "auto" (10-1000, default 50).
-	AutoChunkRows *int `json:"auto_chunk_rows,omitempty" url:"-"`
-	// DeepExtraction is run the conversational long-array extraction: the document is fed one page-window at a time as a growing conversation and long list items are stitched across turns, which recovers rows that a single-shot extraction truncates on long documents. Slower and more expensive than the default single call. Cannot be combined with excel_windowing="auto" (both are windowing strategies). Absent or false runs the default extraction.
+	// DeepExtraction is optimizes for accuracy over latency in documents with very large arrays.
 	DeepExtraction *bool `json:"deep_extraction,omitempty" url:"-"`
-	// ExcelWindowing is spreadsheet auto-windowing mode. "auto" splits an xlsx/CSV input into per-table row chunks, extracts each chunk, and concatenates the results into {"data": [...]}. "auto" does not support stream; over a spreadsheet it also rejects background=true (the windowed compute has no durable background representation yet) and is capped at 40 extraction windows per request — larger workbooks belong in a workflow extract block. Absent or "manual" runs one extraction over the whole document.
-	ExcelWindowing *ExtractionRequestExcelWindowing `json:"excel_windowing,omitempty" url:"-"`
 }
 
 // CreateStream create Extraction Stream
 // Run a structured extraction on a document and stream partial results as they are produced.
 func (s *ExtractionService) CreateStream(ctx context.Context, params *ExtractionsCreateStreamParams, opts ...RequestOption) error {
 	type createStreamWireBody struct {
-		Document           *MIMEData                        `json:"document"`
-		JSONSchema         map[string]interface{}           `json:"json_schema"`
-		Model              *string                          `json:"model,omitempty"`
-		Instructions       *string                          `json:"instructions,omitempty"`
-		NConsensus         *int                             `json:"n_consensus,omitempty"`
-		Metadata           *map[string]string               `json:"metadata,omitempty"`
-		AdditionalMessages []map[string]interface{}         `json:"additional_messages,omitempty"`
-		BustCache          *bool                            `json:"bust_cache,omitempty"`
-		Stream             *bool                            `json:"stream,omitempty"`
-		Background         *bool                            `json:"background,omitempty"`
-		AutoChunkRows      *int                             `json:"auto_chunk_rows,omitempty"`
-		DeepExtraction     *bool                            `json:"deep_extraction,omitempty"`
-		ExcelWindowing     *ExtractionRequestExcelWindowing `json:"excel_windowing,omitempty"`
+		Document           *MIMEData                `json:"document"`
+		JSONSchema         map[string]interface{}   `json:"json_schema"`
+		Model              *string                  `json:"model,omitempty"`
+		Instructions       *string                  `json:"instructions,omitempty"`
+		NConsensus         *int                     `json:"n_consensus,omitempty"`
+		Metadata           *map[string]string       `json:"metadata,omitempty"`
+		AdditionalMessages []map[string]interface{} `json:"additional_messages,omitempty"`
+		BustCache          *bool                    `json:"bust_cache,omitempty"`
+		Stream             *bool                    `json:"stream,omitempty"`
+		Background         *bool                    `json:"background,omitempty"`
+		DeepExtraction     *bool                    `json:"deep_extraction,omitempty"`
 	}
 	if params == nil {
 		return fmt.Errorf("retab: params is required")
@@ -201,9 +187,7 @@ func (s *ExtractionService) CreateStream(ctx context.Context, params *Extraction
 		BustCache:          params.BustCache,
 		Stream:             params.Stream,
 		Background:         params.Background,
-		AutoChunkRows:      params.AutoChunkRows,
 		DeepExtraction:     params.DeepExtraction,
-		ExcelWindowing:     params.ExcelWindowing,
 	}
 	_, err := s.client.request(ctx, "POST", "/v1/extractions/stream", nil, body, nil, opts)
 	return err

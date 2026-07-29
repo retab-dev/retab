@@ -268,8 +268,18 @@ func init() {
 	usagePrimitivesCmd.Flags().String("user-id", "", "filter to executions triggered by a single user id (the user_id returned under triggered_by)")
 	usagePrimitivesCmd.Flags().String("run-id", "", "filter to a single workflow run id (origin run)")
 	usagePrimitivesCmd.Flags().String("block-id", "", "filter to a single workflow block id (origin block)")
-	usagePrimitivesCmd.Flags().String("operation", "", "filter by operation (extraction, classify, split, parse, edit, partition, schema_generation)")
-	usagePrimitivesCmd.Flags().String("status", "", "filter by execution lifecycle status")
+	// Validated client-side like `usage runs`' --status/--trigger-type: an
+	// unknown value can only match zero rows, and a silent empty page on a usage
+	// export reads as "no spend" rather than "you typed it wrong". The server
+	// rejects the same set with 422; this just fails before the round trip.
+	usagePrimitivesCmd.Flags().Var(
+		newEnumStringFlagValue("--operation",
+			"extraction", "extract", "classification", "classify",
+			"split", "parse", "edit", "partition", "schema_generation"),
+		"operation", "filter by operation (extraction, classify, split, parse, edit, partition, schema_generation)")
+	usagePrimitivesCmd.Flags().Var(
+		newEnumStringFlagValue("--status", "created", "running", "completed", "failed"),
+		"status", "filter by execution lifecycle status (created, running, completed, failed)")
 	usagePrimitivesCmd.Flags().StringArray("metadata", nil, "filter by metadata key=value (repeatable; pairs AND together)")
 	usagePrimitivesCmd.Flags().String("from-date", "", "inclusive created_at lower bound (YYYY-MM-DD, UTC)")
 	usagePrimitivesCmd.Flags().String("to-date", "", "inclusive created_at upper bound (YYYY-MM-DD, UTC)")

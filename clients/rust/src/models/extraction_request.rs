@@ -46,15 +46,11 @@ pub struct ExtractionRequest {
     /// Defaults to `false`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub background: Option<bool>,
-    /// Rows per extraction window when excel_windowing is "auto" (10-1000, default 50).
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub auto_chunk_rows: Option<i64>,
-    /// Run the conversational long-array extraction: the document is fed one page-window at a time as a growing conversation and long list items are stitched across turns, which recovers rows that a single-shot extraction truncates on long documents. Slower and more expensive than the default single call. Cannot be combined with excel_windowing="auto" (both are windowing strategies). Absent or false runs the default extraction.
+    /// Optimizes for accuracy over latency in documents with very large arrays.
+    ///
+    /// Defaults to `false`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub deep_extraction: Option<bool>,
-    /// Spreadsheet auto-windowing mode. "auto" splits an xlsx/CSV input into per-table row chunks, extracts each chunk, and concatenates the results into {"data": [...]}. "auto" does not support stream; over a spreadsheet it also rejects background=true (the windowed compute has no durable background representation yet) and is capped at 40 extraction windows per request — larger workbooks belong in a workflow extract block. Absent or "manual" runs one extraction over the whole document.
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub excel_windowing: Option<ExtractionRequestExcelWindowing>,
 }
 impl ExtractionRequest {
     /// Construct a new `ExtractionRequest` with the required fields set.
@@ -74,9 +70,7 @@ impl ExtractionRequest {
             bust_cache: Default::default(),
             stream: Default::default(),
             background: Default::default(),
-            auto_chunk_rows: Default::default(),
             deep_extraction: Default::default(),
-            excel_windowing: Default::default(),
         }
     }
 }

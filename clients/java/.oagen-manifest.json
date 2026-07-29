@@ -385,7 +385,6 @@
     "src/main/java/com/retab/types/ExperimentRunNConsensus.java",
     "src/main/java/com/retab/types/ExperimentSchemaDriftStatus.java",
     "src/main/java/com/retab/types/ExperimentSummaryMetricsResponseBlockType.java",
-    "src/main/java/com/retab/types/ExtractionRequestExcelWindowing.java",
     "src/main/java/com/retab/types/ExtractionStatus.java",
     "src/main/java/com/retab/types/ExtractionWorkflowArtifactStatus.java",
     "src/main/java/com/retab/types/ExtractionsStatus.java",

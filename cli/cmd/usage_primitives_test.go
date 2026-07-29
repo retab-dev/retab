@@ -37,6 +37,36 @@ func usagePrimitivesFixture() usagePrimitiveListResponse {
 	}
 }
 
+func TestUsagePrimitivesReturnsCursorAPIError(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.URL.Query().Get("after"); got != "pe_stale" {
+			t.Fatalf("after = %q, want pe_stale", got)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		_, _ = w.Write([]byte(`{"detail":"Cursor does not match a resource in this organization and environment. It may be stale, malformed, or belong to a different scope."}`))
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := usagePrimitivesCmd.Flags().Set("after", "pe_stale"); err != nil {
+		t.Fatalf("set --after: %v", err)
+	}
+	t.Cleanup(func() { _ = usagePrimitivesCmd.Flags().Set("after", "") })
+
+	var runErr error
+	stdout, stderr := captureStd(t, func() { runErr = usagePrimitivesCmd.RunE(usagePrimitivesCmd, nil) })
+	if runErr == nil {
+		t.Fatalf("usage primitives accepted stale cursor; stdout=%s", stdout)
+	}
+	if !strings.Contains(strings.ToLower(stderr), "cursor") {
+		t.Fatalf("stderr did not show cursor error: %q", stderr)
+	}
+}
+
 func TestUsagePrimitivesUsesHiddenEndpoint(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())

@@ -49,10 +49,10 @@ namespace Retab
         /// <summary>Filter to a single workflow block id (origin block).</summary>
         public string? BlockId { get; set; }
 
-        /// <summary>Filter by operation (extraction, classify, split, parse, edit, schema_generation).</summary>
+        /// <summary>Filter by operation: extraction, classify, split, parse, edit, partition, or schema_generation. The stored-kind aliases extract and classification are also accepted. An unknown value is rejected with 422.</summary>
         public string? Operation { get; set; }
 
-        /// <summary>Filter by execution lifecycle status.</summary>
+        /// <summary>Filter by execution lifecycle status: created, running, completed, or failed. An unknown value is rejected with 422.</summary>
         public string? Status { get; set; }
 
         /// <summary>Filter by metadata equality: a JSON object of string key/value pairs (e.g. {"tenant":"acme"}). Pairs AND together.</summary>

@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "dotnet",
-  "generatedAt": "2026-07-28T12:54:49.548Z",
+  "generatedAt": "2026-07-29T07:41:49.315Z",
   "files": [
     "README.md",
     "Retab.csproj",
@@ -288,7 +288,6 @@
     "src/Enums/ExperimentPublicStatus.cs",
     "src/Enums/ExperimentRunMetricsView.cs",
     "src/Enums/ExperimentSchemaDriftStatus.cs",
-    "src/Enums/ExtractionRequestExcelWindowing.cs",
     "src/Enums/FieldType.cs",
     "src/Enums/LatestBlockEvalRunSummaryStatus.cs",
     "src/Enums/LengthCompareConditionOp.cs",

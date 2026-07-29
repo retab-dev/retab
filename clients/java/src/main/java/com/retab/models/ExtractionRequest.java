@@ -5,7 +5,6 @@ package com.retab.models;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.retab.types.ExtractionRequestExcelWindowing;
 import java.util.List;
 import java.util.Map;
 
@@ -21,9 +20,7 @@ public final class ExtractionRequest {
   private final Boolean bustCache;
   private final Boolean stream;
   private final Boolean background;
-  private final Long autoChunkRows;
   private final Boolean deepExtraction;
-  private final ExtractionRequestExcelWindowing excelWindowing;
 
   @JsonCreator
   public ExtractionRequest(
@@ -38,10 +35,7 @@ public final class ExtractionRequest {
       @JsonProperty(value = "bust_cache", required = false) Boolean bustCache,
       @JsonProperty(value = "stream", required = false) Boolean stream,
       @JsonProperty(value = "background", required = false) Boolean background,
-      @JsonProperty(value = "auto_chunk_rows", required = false) Long autoChunkRows,
-      @JsonProperty(value = "deep_extraction", required = false) Boolean deepExtraction,
-      @JsonProperty(value = "excel_windowing", required = false)
-          ExtractionRequestExcelWindowing excelWindowing) {
+      @JsonProperty(value = "deep_extraction", required = false) Boolean deepExtraction) {
     this.document = document;
     this.jsonSchema = jsonSchema;
     this.model = model != null ? model : "retab-small";
@@ -52,9 +46,7 @@ public final class ExtractionRequest {
     this.bustCache = bustCache != null ? bustCache : false;
     this.stream = stream != null ? stream : false;
     this.background = background != null ? background : false;
-    this.autoChunkRows = autoChunkRows;
-    this.deepExtraction = deepExtraction;
-    this.excelWindowing = excelWindowing;
+    this.deepExtraction = deepExtraction != null ? deepExtraction : false;
   }
 
   @JsonProperty("document")
@@ -107,18 +99,8 @@ public final class ExtractionRequest {
     return background;
   }
 
-  @JsonProperty("auto_chunk_rows")
-  public Long getAutoChunkRows() {
-    return autoChunkRows;
-  }
-
   @JsonProperty("deep_extraction")
   public Boolean isDeepExtraction() {
     return deepExtraction;
-  }
-
-  @JsonProperty("excel_windowing")
-  public ExtractionRequestExcelWindowing getExcelWindowing() {
-    return excelWindowing;
   }
 }
