@@ -40,7 +40,10 @@ metadata. The verbs form a declarative workflow loop:
   get            dump a live workflow's spec back to YAML
 
 ` + "`--project-id`" + ` and ` + "`--to`" + ` are mutually exclusive, and one of
-them is required on ` + "`plan`" + ` and ` + "`apply`" + `:
+them is required on ` + "`plan`" + ` and ` + "`apply`" + `.
+` + "`validate`" + ` needs one too whenever the spec carries no
+` + "`metadata.id`" + `, since the server authorizes the check against the
+project the spec would create in.
 ` + "`--project-id`" + ` always targets a NEW workflow, even when the spec
 carries a ` + "`metadata.id`" + `. Editing a ` + "`spec get`" + ` dump is a
 ` + "`--to`" + ` operation.
