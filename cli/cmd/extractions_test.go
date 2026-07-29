@@ -8,11 +8,16 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"reflect"
+	"sort"
 	"strings"
 	"sync/atomic"
 	"testing"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 
 	retab "github.com/retab-dev/retab/clients/go"
 )
@@ -312,5 +317,225 @@ func TestExtractionsStreamCommandSendsDeepExtractionOnTheWire(t *testing.T) {
 	}
 	if body["stream"] != true {
 		t.Fatalf("stream body stream = %#v, want true", body["stream"])
+	}
+}
+
+// streamBodyExclusions are the create-request fields that deliberately do NOT
+// belong in a stream body, each with the reason. Everything else a caller can
+// set MUST reach the stream, because `retab extractions stream --help` says
+// "Flags and document/schema resolution are identical to
+// retab extractions create".
+var streamBodyExclusions = map[string]string{
+	"background": "background and stream are mutually exclusive execution modes: one returns a queued record to poll, the other holds the connection open",
+}
+
+// TestStreamBodyCarriesEveryCreateField is the structural guard for the whole
+// class of bug that --deep-extraction hit. `stream` hand-assembles its request
+// body field by field instead of serializing the params struct, so any field
+// added to (or already on) the create request is silently dropped from stream
+// until someone remembers to add a line — the flag stays registered, the CLI
+// accepts it, and the request runs without it. Enumerating the params struct
+// and requiring an explicit exclusion reason turns that silent omission into a
+// failing test.
+func TestStreamBodyCarriesEveryCreateField(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var body map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		w.Header().Set("Content-Type", "application/stream+json")
+		_, _ = fmt.Fprint(w, "{\"id\":\"chatcmpl_1\"}\n")
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	cmd := extractionsStreamCmd
+	cmd.SetOut(&strings.Builder{})
+	cmd.SetErr(&strings.Builder{})
+	// Set every flag the stream command exposes, so no field is absent merely
+	// because the test did not ask for it.
+	flags := map[string]string{
+		"url":             "https://example.com/ledger.pdf",
+		"model":           "retab-large",
+		"json-schema":     `{"type":"object"}`,
+		"deep-extraction": "true",
+		"instructions":    "steer me",
+		"n-consensus":     "3",
+		"bust-cache":      "true",
+	}
+	for name, value := range flags {
+		if err := cmd.Flags().Set(name, value); err != nil {
+			t.Fatalf("set --%s: %v", name, err)
+		}
+	}
+	if err := cmd.Flags().Set("metadata", "customer=acme"); err != nil {
+		t.Fatalf("set --metadata: %v", err)
+	}
+	messagesFile := filepath.Join(t.TempDir(), "messages.json")
+	if err := os.WriteFile(messagesFile, []byte(`[{"role":"user","content":"context"}]`), 0o600); err != nil {
+		t.Fatalf("write messages file: %v", err)
+	}
+	if err := cmd.Flags().Set("messages-file", messagesFile); err != nil {
+		t.Fatalf("set --messages-file: %v", err)
+	}
+	t.Cleanup(func() {
+		for name := range flags {
+			_ = cmd.Flags().Set(name, cmd.Flags().Lookup(name).DefValue)
+			cmd.Flags().Lookup(name).Changed = false
+		}
+		if slice, ok := cmd.Flags().Lookup("metadata").Value.(pflag.SliceValue); ok {
+			_ = slice.Replace(nil)
+		}
+		cmd.Flags().Lookup("metadata").Changed = false
+		_ = cmd.Flags().Set("messages-file", "")
+		cmd.Flags().Lookup("messages-file").Changed = false
+	})
+
+	if err := cmd.RunE(cmd, nil); err != nil {
+		t.Fatalf("stream RunE: %v", err)
+	}
+	if body == nil {
+		t.Fatal("no request body captured")
+	}
+
+	// The wire names the create params serialize to. Reflection over the params
+	// struct is what makes this list self-maintaining: a new field appears here
+	// automatically and must then be sent or excluded with a reason.
+	params := reflect.TypeOf(retab.ExtractionsCreateParams{})
+	var missing []string
+	for i := 0; i < params.NumField(); i++ {
+		field := params.Field(i)
+		name := strings.Split(field.Tag.Get("json"), ",")[0]
+		if name == "" || name == "-" {
+			continue
+		}
+		if reason, excluded := streamBodyExclusions[name]; excluded {
+			if _, present := body[name]; present {
+				t.Errorf("%q is in the stream body but is documented as excluded: %s", name, reason)
+			}
+			continue
+		}
+		if _, present := body[name]; !present {
+			missing = append(missing, name)
+		}
+	}
+	if len(missing) > 0 {
+		sort.Strings(missing)
+		t.Fatalf("the hand-assembled stream body drops create fields %v.\n"+
+			"Either send them in extractionsStreamCmd's body, or add each to streamBodyExclusions with the reason it does not apply to streaming.\n"+
+			"body was: %v", missing, sortedKeys(body))
+	}
+}
+
+func sortedKeys(m map[string]any) []string {
+	keys := make([]string, 0, len(m))
+	for key := range m {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+// --deep-extraction has three states on BOTH create and stream, and they must
+// agree: unset omits the field entirely (the server's "absent == default"
+// contract, and not a wire-shape change for every caller), --deep-extraction
+// sends true, and an explicit --deep-extraction=false sends false so a user can
+// override a wrapper that turned it on.
+func TestDeepExtractionThreeStatesMatchOnCreateAndStream(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var body map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
+		body = nil
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = fmt.Fprint(w, `{"id":"extr_1","file":{"id":"file_1","filename":"a.pdf","mime_type":"application/pdf"},"model":"retab-large","json_schema":{"type":"object"},"output":{}}`)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	cases := map[string]struct {
+		set  bool
+		flag string
+		want any
+	}{
+		"unset":          {set: false, want: nil},
+		"explicit true":  {set: true, flag: "true", want: true},
+		"explicit false": {set: true, flag: "false", want: false},
+	}
+
+	for name, tc := range cases {
+		// create
+		createCmd := newExtractionRequestTestCmd(t)
+		for flagName, value := range map[string]string{
+			"url":         "https://example.com/a.pdf",
+			"model":       "retab-large",
+			"json-schema": `{"type":"object"}`,
+		} {
+			if err := createCmd.Flags().Set(flagName, value); err != nil {
+				t.Fatalf("%s: set --%s: %v", name, flagName, err)
+			}
+		}
+		if tc.set {
+			if err := createCmd.Flags().Set("deep-extraction", tc.flag); err != nil {
+				t.Fatalf("%s: set --deep-extraction: %v", name, err)
+			}
+		}
+		createParams, err := newExtractionRequest(createCmd)
+		if err != nil {
+			t.Fatalf("%s: newExtractionRequest: %v", name, err)
+		}
+		client, err := newClient(createCmd)
+		if err != nil {
+			t.Fatalf("%s: client: %v", name, err)
+		}
+		if _, err := client.Extractions.Create(context.Background(), &createParams); err != nil {
+			t.Fatalf("%s: Extractions.Create: %v", name, err)
+		}
+		createValue, createPresent := body["deep_extraction"]
+		if tc.want == nil && createPresent {
+			t.Errorf("%s: create body carries deep_extraction=%#v, want the field omitted", name, createValue)
+		}
+		if tc.want != nil && createValue != tc.want {
+			t.Errorf("%s: create body deep_extraction = %#v, want %#v", name, createValue, tc.want)
+		}
+
+		// stream — same three states, same answers
+		streamCmd := extractionsStreamCmd
+		streamCmd.SetOut(&strings.Builder{})
+		streamCmd.SetErr(&strings.Builder{})
+		for flagName, value := range map[string]string{
+			"url":         "https://example.com/a.pdf",
+			"model":       "retab-large",
+			"json-schema": `{"type":"object"}`,
+		} {
+			if err := streamCmd.Flags().Set(flagName, value); err != nil {
+				t.Fatalf("%s: stream set --%s: %v", name, flagName, err)
+			}
+		}
+		if tc.set {
+			if err := streamCmd.Flags().Set("deep-extraction", tc.flag); err != nil {
+				t.Fatalf("%s: stream set --deep-extraction: %v", name, err)
+			}
+		}
+		if err := streamCmd.RunE(streamCmd, nil); err != nil {
+			t.Fatalf("%s: stream RunE: %v", name, err)
+		}
+		streamValue, streamPresent := body["deep_extraction"]
+		if tc.want == nil && streamPresent {
+			t.Errorf("%s: stream body carries deep_extraction=%#v, want the field omitted", name, streamValue)
+		}
+		if tc.want != nil && streamValue != tc.want {
+			t.Errorf("%s: stream body deep_extraction = %#v, want %#v", name, streamValue, tc.want)
+		}
+
+		for _, flagName := range []string{"url", "model", "json-schema", "deep-extraction"} {
+			_ = streamCmd.Flags().Set(flagName, streamCmd.Flags().Lookup(flagName).DefValue)
+			streamCmd.Flags().Lookup(flagName).Changed = false
+		}
 	}
 }

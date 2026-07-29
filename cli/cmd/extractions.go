@@ -416,15 +416,14 @@ func addExtractionBodyFlags(cmd *cobra.Command) {
 	// --excel-windowing=auto changes the response shape to {"data": [...]}, so
 	// silently accepting it would hand callers a differently-shaped body than
 	// they asked for. An unknown-flag error is the honest failure.
-	// The spreadsheet caveat is stated here because it is a RESPONSE-SHAPE
-	// change, and this file already refuses to accept a flag that makes one
-	// silently (see the --excel-windowing note above). On an xlsx/CSV input
-	// deep_extraction runs the row-window pipeline, whose reduce concatenates
-	// the per-chunk outputs, so the body is {"data": [<chunk output>, ...]}
-	// and NOT the shape the caller's json_schema describes. Verified against
-	// staging: a 240-row CSV under a schema whose root array is "lines" came
-	// back as {"data": [{"lines": [...]}, ...]}.
-	cmd.Flags().Bool("deep-extraction", false, `optimizes for accuracy over latency in documents with very large arrays. On a spreadsheet (xlsx/CSV) input this also CHANGES THE RESPONSE SHAPE: the file is extracted in fixed 50-row windows and the output is {"data": [<per-window object>, ...]} rather than the shape your json_schema describes`)
+	// The spreadsheet behaviour is stated here because it is not the same
+	// computation as the PDF path: an xlsx/CSV runs the row-window pipeline
+	// (fixed 50-row chunks, one extraction each, concatenated back into the
+	// caller's schema shape) rather than the conversational page windowing,
+	// and that pipeline has no consensus vote and no background/stream mode.
+	// The response shape is the caller's schema on both paths — it was not
+	// always: the reduce used to hand back {"data": [<chunk output>, ...]}.
+	cmd.Flags().Bool("deep-extraction", false, `optimizes for accuracy over latency in documents with very large arrays. A spreadsheet (xlsx/CSV) is instead extracted in fixed 50-row windows, which runs synchronously only (no --background, no stream) and returns no consensus`)
 	_ = cmd.MarkFlagRequired("model")
 }
 
