@@ -113,7 +113,7 @@ var usageBlockColumns = []TableColumn{
 	{Header: "PAGES", Extract: func(row any) string { return usageBlockCell(row, "page_count") }},
 	{Header: "FAILED", Extract: usageBlockFailedCell},
 	{Header: "CREDITS", Extract: func(row any) string { return usageBlockCell(row, "credits") }},
-	{Header: "LAST_ACTIVITY", Extract: func(row any) string { return usageBlockCell(row, "last_activity_at") }},
+	{Header: "LAST_ACTIVITY", Extract: func(row any) string { return normalizeTimestampCell(usageBlockCell(row, "last_activity_at")) }},
 }
 
 // usageBlockFailedCell surfaces the block's failed-execution count from the
