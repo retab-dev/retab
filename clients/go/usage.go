@@ -50,7 +50,7 @@ type UsageListPrimitivesParams struct {
 	BlockID *string `url:"block_id,omitempty" json:"-"`
 	// Operation is filter by operation: extraction, classify, split, parse, edit, partition, or schema_generation. The stored-kind aliases extract and classification are also accepted. An unknown value is rejected with 422.
 	Operation *string `url:"operation,omitempty" json:"-"`
-	// Status is filter by execution lifecycle status: created, running, completed, or failed. An unknown value is rejected with 422.
+	// Status is filter by execution lifecycle status: created, running, completed, failed, or canceled. Note the single-l spelling: a primitive execution is canceled, whereas a workflow run's status is cancelled. An unknown value is rejected with 422.
 	Status *string `url:"status,omitempty" json:"-"`
 	// Metadata is filter by metadata equality: a JSON object of string key/value pairs (e.g. {"tenant":"acme"}). Pairs AND together.
 	Metadata *string `url:"metadata,omitempty" json:"-"`

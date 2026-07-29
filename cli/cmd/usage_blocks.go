@@ -150,7 +150,16 @@ func usageBlockCell(row any, key string) string {
 
 func init() {
 	usageBlocksCmd.Flags().String("workflow-id", "", "filter to a single workflow id")
-	usageBlocksCmd.Flags().String("block-type", "", "filter by block type (e.g. extract, classify, split, parse, edit, partition)")
+	// Validated client-side like `usage primitives`' --operation/--status: an
+	// unknown block type can only match zero rows, and a silent empty page on a
+	// usage export reads as "no spend" rather than "you typed it wrong". These
+	// are the primitive-kind names recorded on the execution, not the workflow
+	// block type enum — a classifier block records "classify". The server
+	// rejects the same set with 422; this just fails before the round trip.
+	usageBlocksCmd.Flags().Var(
+		newEnumStringFlagValue("--block-type",
+			"extract", "classify", "split", "parse", "edit", "partition"),
+		"block-type", "filter by block type (extract, classify, split, parse, edit, partition)")
 	usageBlocksCmd.Flags().String("from-date", "", "inclusive activity lower bound (YYYY-MM-DD, UTC)")
 	usageBlocksCmd.Flags().String("to-date", "", "inclusive activity upper bound (YYYY-MM-DD, UTC)")
 	usageBlocksCmd.Flags().String("before", "", "cursor from list_metadata.before (mutually exclusive with --after)")

@@ -278,8 +278,12 @@ func init() {
 			"split", "parse", "edit", "partition", "schema_generation"),
 		"operation", "filter by operation (extraction, classify, split, parse, edit, partition, schema_generation)")
 	usagePrimitivesCmd.Flags().Var(
-		newEnumStringFlagValue("--status", "created", "running", "completed", "failed"),
-		"status", "filter by execution lifecycle status (created, running, completed, failed)")
+		// "canceled" carries ONE l here: that is how a primitive execution's
+		// terminal status is stored. A workflow run's equivalent status is
+		// spelled "cancelled", so `usage runs --status` is not interchangeable
+		// with this flag.
+		newEnumStringFlagValue("--status", "created", "running", "completed", "failed", "canceled"),
+		"status", "filter by execution lifecycle status (created, running, completed, failed, canceled)")
 	usagePrimitivesCmd.Flags().StringArray("metadata", nil, "filter by metadata key=value (repeatable; pairs AND together)")
 	usagePrimitivesCmd.Flags().String("from-date", "", "inclusive created_at lower bound (YYYY-MM-DD, UTC)")
 	usagePrimitivesCmd.Flags().String("to-date", "", "inclusive created_at upper bound (YYYY-MM-DD, UTC)")

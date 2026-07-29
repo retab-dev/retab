@@ -2191,18 +2191,26 @@ type UsagePrimitiveTriggeredBy struct {
 
 // UsageRunRecord represents an usage run record.
 type UsageRunRecord struct {
-	CompletedAt         *time.Time `json:"completed_at"`
-	CreatedAt           *time.Time `json:"created_at"`
-	Credits             float64    `json:"credits"`
-	DurationMs          *int       `json:"duration_ms"`
-	ExecutionDurationMs int        `json:"execution_duration_ms"`
-	PageCount           int        `json:"page_count"`
-	RetryCount          int        `json:"retry_count"`
-	RunID               string     `json:"run_id"`
-	StartedAt           *time.Time `json:"started_at"`
-	Status              string     `json:"status"`
-	TriggerType         string     `json:"trigger_type"`
-	WorkflowID          string     `json:"workflow_id"`
+	CompletedAt         *time.Time                  `json:"completed_at"`
+	CreatedAt           *time.Time                  `json:"created_at"`
+	Credits             float64                     `json:"credits"`
+	DurationMs          *int                        `json:"duration_ms"`
+	ExecutionDurationMs int                         `json:"execution_duration_ms"`
+	PageCount           int                         `json:"page_count"`
+	RetryCount          int                         `json:"retry_count"`
+	RunID               string                      `json:"run_id"`
+	StartedAt           *time.Time                  `json:"started_at"`
+	Status              string                      `json:"status"`
+	TriggerType         string                      `json:"trigger_type"`
+	TriggeredBy         *V1UsageUsageRunTriggeredBy `json:"triggered_by,omitempty"`
+	WorkflowID          string                      `json:"workflow_id"`
+}
+
+// V1UsageUsageRunTriggeredBy represents a v1usage usage run triggered by.
+type V1UsageUsageRunTriggeredBy struct {
+	APIKeyID  *string `json:"api_key_id"`
+	UserEmail *string `json:"user_email"`
+	UserID    *string `json:"user_id"`
 }
 
 // ValidateWorkflowBlockConfigResponse represents a validate workflow block config response.
