@@ -686,12 +686,18 @@ The experiment id is the only required positional. A leading
 This is destructive. Pass ` + "`--yes`" + ` to skip the confirmation prompt
 in scripts and CI — otherwise the command refuses to delete when stdin
 is not a terminal. Run history is removed alongside the experiment
-definition.`,
+definition. Against a production environment the delete also crosses the
+production safety gate, which ` + "`--yes`" + ` does not satisfy: pass
+` + "`--confirm`" + ` there instead (it covers both gates, so
+` + "`--confirm`" + ` alone is enough and you never need both).`,
 	Example: `  # Drop an experiment (interactive, asks to confirm)
   retab workflows experiments delete exp_pqr678
 
-  # Skip the prompt in scripts
-  retab workflows experiments delete exp_pqr678 --yes`,
+  # Skip the prompt in scripts (non-production environment)
+  retab workflows experiments delete exp_pqr678 --yes
+
+  # Same, against production — --confirm satisfies both gates
+  retab workflows experiments delete exp_pqr678 --confirm`,
 	Args: cobra.RangeArgs(1, 2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		experimentID, err := resolveExperimentIDArg(args)

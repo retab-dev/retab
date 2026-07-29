@@ -108,8 +108,9 @@ against production. The confirmation gate (pass ` + "`--confirm`" + `, or type
 "production" at the prompt) fires only at the commit boundaries that have a
 runtime or irreversible effect: ` + "`publish`" + ` (releases an immutable
 version), ` + "`runs create`" + `/` + "`runs restart`" + ` (execute against live
-inputs), and the ` + "`delete`" + ` commands. So you can wire and reconfigure a
-draft freely, and only the act of publishing, running, restarting, or deleting
+inputs), ` + "`runs cancel`" + ` (kills in-flight work), and the
+` + "`delete`" + ` commands. So you can wire and reconfigure a draft freely,
+and only the act of publishing, running, restarting, cancelling, or deleting
 asks you to confirm.
 
 Review is configured on the block (` + "`config.review`" + `), not as a
@@ -363,13 +364,19 @@ preserved as separate objects (see ` + "`workflows artifacts`" + `).
 
 This is destructive. Pass ` + "`--yes`" + ` to skip the confirmation prompt
 in scripts and CI — otherwise the command refuses to delete when stdin
-is not a terminal.`,
+is not a terminal. Against a production environment the delete also
+crosses the production safety gate, which ` + "`--yes`" + ` does not satisfy:
+pass ` + "`--confirm`" + ` there instead (it covers both gates, so
+` + "`--confirm`" + ` alone is enough and you never need both).`,
 	Example: `  # Delete a workflow (interactive, asks to confirm)
   retab workflows delete wf_abc123
 
-  # Skip the prompt in scripts
+  # Skip the prompt in scripts (non-production environment)
   retab workflows delete wf_abc123 --yes
-  # => { "id": "wf_abc123", "deleted": true }`,
+  # => { "id": "wf_abc123", "deleted": true }
+
+  # Same, against production — --confirm satisfies both gates
+  retab workflows delete wf_abc123 --confirm`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		if err := confirmDestructive(cmd, "workflow", args[0]); err != nil {

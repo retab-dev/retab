@@ -1381,12 +1381,18 @@ produced by the run are preserved separately (see
 This is destructive. Pass ` + "`--yes`" + ` to skip the confirmation prompt
 in scripts and CI — otherwise the command refuses to delete when stdin
 is not a terminal. Mirrors the contract of ` + "`workflows delete`" + `,
-` + "`workflows blocks delete`" + `, etc.`,
+` + "`workflows blocks delete`" + `, etc. Against a production environment
+the delete also crosses the production safety gate, which ` + "`--yes`" + `
+does not satisfy: pass ` + "`--confirm`" + ` there instead (it covers both
+gates, so ` + "`--confirm`" + ` alone is enough and you never need both).`,
 	Example: `  # Delete a run (interactive, asks to confirm)
   retab workflows runs delete run_xyz789
 
-  # Skip the prompt in scripts
-  retab workflows runs delete run_xyz789 --yes`,
+  # Skip the prompt in scripts (non-production environment)
+  retab workflows runs delete run_xyz789 --yes
+
+  # Same, against production — --confirm satisfies both gates
+  retab workflows runs delete run_xyz789 --confirm`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		if err := confirmDestructive(cmd, "run", args[0]); err != nil {

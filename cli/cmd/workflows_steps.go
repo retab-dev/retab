@@ -22,7 +22,7 @@ to see exactly what the block did.`,
   retab workflows steps list run_xyz789
 
   # Pull the full execution record for one step
-  retab workflows steps get step_extract_1`,
+  retab workflows steps get run_xyz789_block_extract1`,
 }
 
 var workflowsStepsListCmd = &cobra.Command{
@@ -110,12 +110,16 @@ model usage if applicable.
 
 This is the canonical entry point when debugging a run that produced
 the wrong output — find the offending step id, inspect its inputs, and
-correlate against the step's block config.`,
+correlate against the step's block config.
+
+A step id is ` + "`<run-id>_<block-id>`" + ` — take it from the
+` + "`step_id`" + ` field of ` + "`workflows steps list <run-id>`" + `
+rather than assembling it by hand.`,
 	Example: `  # Pull the full record for a single step
-  retab workflows steps get step_extract_1
+  retab workflows steps get run_xyz789_block_extract1
 
   # Save the input payload for offline replay
-  retab workflows steps get step_extract_1 \
+  retab workflows steps get run_xyz789_block_extract1 \
     | jq '.handle_inputs' > inputs.json`,
 	Args: cobra.RangeArgs(1, 2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
