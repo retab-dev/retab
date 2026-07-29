@@ -139,8 +139,19 @@ func renderConnectionDropForCLI(err error) string {
 //
 // Returns an empty string when the error is not a dial failure so the caller
 // falls back to the default `error: <err>` render.
+//
+// Not every host the CLI dials is the API: `--document-url` downloads a
+// user-supplied URL client-side (see materializeInlineMIMEData). Those
+// failures are tagged with nonAPIHostError and skipped here, because naming
+// the user's document host "the Retab API" and pointing at --base-url sends
+// them to fix unrelated config. The default render keeps the callsite's
+// context (`--document-url <block>=<url>: ...`), which is the useful part.
 func renderUnreachableServerForCLI(err error) string {
 	if err == nil {
+		return ""
+	}
+	var nonAPI *nonAPIHostError
+	if errors.As(err, &nonAPI) {
 		return ""
 	}
 	// DNS failures are checked first and take precedence: a name-resolution
@@ -160,6 +171,16 @@ func renderUnreachableServerForCLI(err error) string {
 	}
 	return fmt.Sprintf("error: cannot reach %s (connection refused). Is the server running, and is the base URL correct? Check --base-url / RETAB_API_BASE_URL (or `retab env`).", where)
 }
+
+// nonAPIHostError marks a transport failure against a host that came from the
+// user's own arguments rather than the configured Retab API base URL. It
+// exists so renderUnreachableServerForCLI can tell the two apart structurally
+// instead of guessing from the error text.
+type nonAPIHostError struct{ err error }
+
+func (e *nonAPIHostError) Error() string { return e.err.Error() }
+
+func (e *nonAPIHostError) Unwrap() error { return e.err }
 
 // isDNSFailure reports whether err is a name-resolution failure, detected
 // structurally via net.DNSError (traversed through wrappers) with a substring
@@ -2351,7 +2372,9 @@ func materializeInlineMIMEData(ctx context.Context, doc retab.MIMEData) (retab.M
 	}
 	resp, err := fileDownloadClient.Do(req)
 	if err != nil {
-		return retab.MIMEData{}, fmt.Errorf("download document for inline upload: %w", err)
+		// Tagged: this dials the user's document host, not the Retab API, so
+		// the unreachable-server renderer must not blame --base-url for it.
+		return retab.MIMEData{}, &nonAPIHostError{fmt.Errorf("download document for inline upload: %w", err)}
 	}
 	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {

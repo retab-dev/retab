@@ -107,8 +107,20 @@ func TestUsagePrimitivesForwardsFilterFlags(t *testing.T) {
 
 	var gotQuery string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		gotQuery = r.URL.RawQuery
 		w.Header().Set("Content-Type", "application/json")
+		// --workflow-id + --block-id makes the CLI resolve declarative block
+		// aliases first (see resolveUsageBlockIDFilter), so the stub has to answer
+		// the block list as a block list. Replying with the primitives envelope —
+		// whose list_metadata.after is a non-null primitives cursor — used to send
+		// AutoPaging into an endless page walk.
+		if r.URL.Path == "/v1/workflows/blocks" {
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"data":          []any{},
+				"list_metadata": map[string]any{"before": nil, "after": nil},
+			})
+			return
+		}
+		gotQuery = r.URL.RawQuery
 		_ = json.NewEncoder(w).Encode(usagePrimitivesFixture())
 	}))
 	defer server.Close()

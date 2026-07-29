@@ -1,13 +1,16 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
+	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
 )
 
@@ -143,7 +146,13 @@ func runUsagePrimitivesList(cmd *cobra.Command, _ []string) error {
 	addOptionalUsageQuery(cmd, query, "access-token-id", "access_token_id")
 	addOptionalUsageQuery(cmd, query, "user-id", "user_id")
 	addOptionalUsageQuery(cmd, query, "run-id", "run_id")
-	addOptionalUsageQuery(cmd, query, "block-id", "block_id")
+	blockFilter, err := resolveUsageBlockIDFilter(cmd)
+	if err != nil {
+		return err
+	}
+	if blockFilter.blockID != "" {
+		query.Set("block_id", blockFilter.blockID)
+	}
 	addOptionalUsageQuery(cmd, query, "operation", "operation")
 	addOptionalUsageQuery(cmd, query, "status", "status")
 	addOptionalUsageQuery(cmd, query, "before", "before")
@@ -174,7 +183,148 @@ func runUsagePrimitivesList(cmd *cobra.Command, _ []string) error {
 	if err := cliJSONRequestInto(cmd, http.MethodGet, "/v1/usage/primitives", query, nil, &result); err != nil {
 		return err
 	}
+	warnEmptyUsageBlockFilter(cmd, blockFilter, len(result.Data))
 	return printUsagePrimitiveListResult(cmd, result)
+}
+
+// usageBlockIDFilter is the outcome of mapping the user's --block-id onto the
+// block id the usage ledger actually records.
+type usageBlockIDFilter struct {
+	// requested is the raw --block-id value, empty when the flag is unset.
+	requested string
+	// blockID is what gets sent as the block_id query argument: the resolved
+	// runtime id when an alias was recognized, else `requested` unchanged.
+	blockID string
+	// loopParentID is set when the resolved block sits inside a for_each /
+	// while_loop container. Such a block never appears in the ledger under its
+	// own id — see warnEmptyUsageBlockFilter.
+	loopParentID string
+	// known reports whether the workflow's block list contained the id at all.
+	known bool
+}
+
+// resolveUsageBlockIDFilter maps a --block-id the user can legitimately see onto
+// the runtime block id the usage ledger records.
+//
+// A workflow block is reachable by three different spellings, and only the last
+// one is what `usage primitives` stores:
+//
+//   - the declarative id authored in the spec ("block_ex"), which is what
+//     `workflows spec get` prints and what `runs create` accepts as an alias;
+//   - the declarative path ("ex", "loop.item_extract"), the other alias
+//     `runs create` accepts;
+//   - the generated runtime id ("block_lte_nNvJ6RGq86aH3LEXD"), which only
+//     `workflows blocks list` and the usage export show.
+//
+// Filtering by either alias used to return an empty 200, and on a usage export
+// an empty page reads as "this block cost nothing" rather than "that is not the
+// id I index by" — the same trap the --operation / --status enums were tightened
+// for. Resolution needs the workflow's block list, so it only runs when
+// --workflow-id is also set; without it the value is forwarded untouched.
+//
+// An unrecognized value is also forwarded untouched rather than rejected: the
+// ledger legitimately carries ids that are in no block list, most importantly
+// the per-iteration ids a for_each expands to
+// ("<loop>_iter_<n>_<child>") and its "<loop>_sentinel_start" row.
+func resolveUsageBlockIDFilter(cmd *cobra.Command) (usageBlockIDFilter, error) {
+	blockID, _ := cmd.Flags().GetString("block-id")
+	blockID = strings.TrimSpace(blockID)
+	filter := usageBlockIDFilter{requested: blockID, blockID: blockID}
+	workflowID, _ := cmd.Flags().GetString("workflow-id")
+	workflowID = strings.TrimSpace(workflowID)
+	if blockID == "" || workflowID == "" {
+		return filter, nil
+	}
+	// Resolution is a convenience, never a gate. The usage ledger deliberately
+	// outlives the workflows it bills for — rows survive workflow deletion — so a
+	// failed, forbidden, or slow block lookup must not take down a billing read
+	// that would otherwise have returned data. Every failure degrades to the raw
+	// value.
+	client, err := newClient(cmd)
+	if err != nil {
+		return filter, nil
+	}
+	parent := cmd.Context()
+	if parent == nil {
+		parent = context.Background()
+	}
+	// Hard deadline, because listAllWorkflowBlocks walks every page: a blocks
+	// endpoint that keeps handing back a cursor would otherwise spin forever
+	// inside a read the user only asked to filter.
+	ctx, cancel := context.WithTimeout(parent, usageBlockLookupTimeout)
+	defer cancel()
+	blocks, err := listAllWorkflowBlocks(ctx, client, workflowID)
+	if err != nil {
+		return filter, nil
+	}
+	return matchUsageBlockIDFilter(blockID, blocks), nil
+}
+
+// usageBlockLookupTimeout bounds the --block-id alias lookup. Generous enough for
+// a paginated block list on a slow link, short enough that a wedged or
+// misbehaving endpoint costs the user a few seconds rather than the command. A
+// var only so the endless-pagination regression test can shrink it.
+var usageBlockLookupTimeout = 15 * time.Second
+
+// matchUsageBlockIDFilter is resolveUsageBlockIDFilter's pure half: the
+// runtime-id / declarative-id / declarative-path lookup over an already-fetched
+// block list.
+func matchUsageBlockIDFilter(blockID string, blocks []retab.WorkflowBlock) usageBlockIDFilter {
+	filter := usageBlockIDFilter{requested: blockID, blockID: blockID}
+	var matched *retab.WorkflowBlock
+	for i := range blocks {
+		if blocks[i].ID == blockID {
+			matched = &blocks[i]
+			break
+		}
+	}
+	if matched == nil {
+		// Exactly one alias must match. Declarative ids and paths are unique
+		// within a workflow, so an ambiguous hit means the caller is better
+		// served by the raw value than by an arbitrary pick.
+		var aliasHits []*retab.WorkflowBlock
+		for i := range blocks {
+			decl := blocks[i].DeclarativeSourceBlockID
+			path := blocks[i].DeclarativePath
+			if (decl != nil && *decl == blockID) || (path != nil && *path == blockID) {
+				aliasHits = append(aliasHits, &blocks[i])
+			}
+		}
+		if len(aliasHits) == 1 {
+			matched = aliasHits[0]
+			filter.blockID = matched.ID
+		}
+	}
+	if matched != nil {
+		filter.known = true
+		if matched.ParentID != nil {
+			filter.loopParentID = strings.TrimSpace(*matched.ParentID)
+		}
+	}
+	return filter
+}
+
+// warnEmptyUsageBlockFilter explains a zero-row page for a block id that really
+// does exist. A block nested in a for_each / while_loop container is never
+// recorded under its own id: the engine expands it per iteration and the ledger
+// stores "<container>_iter_<n>_<block>". Filtering by the design-time id is the
+// obvious thing to try and silently reports no spend, so say why instead.
+func warnEmptyUsageBlockFilter(cmd *cobra.Command, filter usageBlockIDFilter, rows int) {
+	if rows > 0 || filter.requested == "" || filter.loopParentID == "" {
+		return
+	}
+	fmt.Fprintf(cmd.ErrOrStderr(),
+		"warning: block %s runs inside container %s, so usage is recorded once per iteration "+
+			"as %s_iter_<n>_%s, not under the block id itself. "+
+			"Run `retab usage blocks --workflow-id %s` to list the ledger's block ids.\n",
+		filter.requested, filter.loopParentID, filter.loopParentID, filter.blockID,
+		mustFlagString(cmd, "workflow-id"))
+}
+
+// mustFlagString reads a string flag, returning "" when it is absent.
+func mustFlagString(cmd *cobra.Command, name string) string {
+	v, _ := cmd.Flags().GetString(name)
+	return strings.TrimSpace(v)
 }
 
 var usagePrimitiveColumns = []TableColumn{
@@ -267,7 +417,7 @@ func init() {
 	usagePrimitivesCmd.Flags().String("access-token-id", "", "filter to executions triggered by a single access token id (the access_token_id returned under triggered_by)")
 	usagePrimitivesCmd.Flags().String("user-id", "", "filter to executions triggered by a single user id (the user_id returned under triggered_by)")
 	usagePrimitivesCmd.Flags().String("run-id", "", "filter to a single workflow run id (origin run)")
-	usagePrimitivesCmd.Flags().String("block-id", "", "filter to a single workflow block id (origin block)")
+	usagePrimitivesCmd.Flags().String("block-id", "", "filter to a single workflow block id (origin block); with --workflow-id, a declarative spec block id or path is resolved too")
 	// Validated client-side like `usage runs`' --status/--trigger-type: an
 	// unknown value can only match zero rows, and a silent empty page on a usage
 	// export reads as "no spend" rather than "you typed it wrong". The server

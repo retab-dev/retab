@@ -306,6 +306,12 @@ four ways to supply them, mix and match as needed:
 Add ` + "`--json-inputs-file PATH`" + ` for blocks that accept structured
 JSON instead of (or alongside) documents.
 
+A workflow has at most one ` + "`start_document`" + ` block and at most one
+` + "`start_json`" + ` block, so in practice each document flag carries a single
+entry. The flags are repeatable only so a block id can be supplied once per
+source; passing the same block id twice, or via two different sources, is an
+error rather than a silent last-one-wins.
+
 By default the workflow's latest published version runs; pin a specific
 version with ` + "`--version`" + `, or pass ` + "`--draft`" + ` to run the
 editable draft without publishing it first (handy for iterating on a
@@ -328,10 +334,14 @@ removed in a future release.`,
   retab workflows runs create wf_abc123 \
     --document-id start=file_LPjuee2tTZgfM_Km5yh_G
 
-  # Multiple inputs across different blocks
+  # A document and the workflow's JSON input together
   retab workflows runs create wf_abc123 \
     --document start=./invoice.pdf \
-    --document-url reference=https://acme.com/po.pdf
+    --json-inputs-file ./inputs.json
+
+  # Reference a document by URL instead of uploading it
+  retab workflows runs create wf_abc123 \
+    --document-url start=https://acme.com/po.pdf
 
   # JSON-only inputs (e.g. an api_call block)
   retab workflows runs create wf_abc123 \

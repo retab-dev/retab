@@ -83,6 +83,11 @@ func TestRenderUnreachableServerForCLI(t *testing.T) {
 		{name: "DNS no such host", err: &url.Error{Op: "Get", URL: "https://api.example.invalid/v1/x", Err: &net.DNSError{Err: "no such host", Name: "api.example.invalid", IsNotFound: true}}, wantMsg: true, wantTarget: "https://api.example.invalid", wantPhrase: "host not found"},
 		{name: "EOF drop is NOT an unreachable error", err: io.EOF, wantMsg: false},
 		{name: "unrelated error stays nil", err: errors.New("validation failed"), wantMsg: false},
+		// A --document-url download dials the user's host, not the API. Blaming
+		// "the Retab API" / --base-url there sends the user to fix unrelated
+		// config, so these must fall through to the default render instead.
+		{name: "non-API host DNS failure is not attributed to the API", err: &nonAPIHostError{&url.Error{Op: "Get", URL: "https://example.invalid/x.pdf", Err: &net.DNSError{Err: "no such host", Name: "example.invalid", IsNotFound: true}}}, wantMsg: false},
+		{name: "non-API host dial refusal is not attributed to the API", err: fmt.Errorf("--document-url block_a=http://127.0.0.1:9/x.pdf: %w", &nonAPIHostError{dialRefused}), wantMsg: false},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -1312,5 +1317,36 @@ func TestRenderAPIErrorForCLIWithoutIssueListUnchanged(t *testing.T) {
 	}
 	if strings.Contains(got, "issues found") {
 		t.Fatalf("unexpected issue header:\n%s", got)
+	}
+}
+
+// TestMaterializeInlineMIMEDataTagsNonAPIHostFailures pins the end-to-end
+// contract behind the nonAPIHostError tag: a --document-url pointing at an
+// unreachable host must NOT be rendered as an unreachable Retab API with
+// --base-url remediation. Before this, `--document-url b=https://example.invalid/x.pdf`
+// printed "cannot reach the Retab API at https://example.invalid — host not
+// found. Check --base-url / RETAB_API_BASE_URL", naming the user's document
+// host as the API and hiding which flag was at fault.
+func TestMaterializeInlineMIMEDataTagsNonAPIHostFailures(t *testing.T) {
+	// Port 0 on the loopback address is never listening, so Do() fails at
+	// connection-establishment time without depending on DNS or the network.
+	_, err := materializeInlineMIMEData(context.Background(), retab.MIMEData{
+		Filename: "x.pdf",
+		URL:      "http://127.0.0.1:0/x.pdf",
+	})
+	if err == nil {
+		t.Fatal("expected a transport failure downloading from a dead host")
+	}
+	var nonAPI *nonAPIHostError
+	if !errors.As(err, &nonAPI) {
+		t.Fatalf("download failure should be tagged nonAPIHostError, got %T: %v", err, err)
+	}
+	// Callers wrap with the flag context; that wrapper must survive to the render.
+	wrapped := fmt.Errorf("--document-url block_a=http://127.0.0.1:0/x.pdf: %w", err)
+	if msg := renderUnreachableServerForCLI(wrapped); msg != "" {
+		t.Fatalf("non-API host failure must not render as an unreachable Retab API; got %q", msg)
+	}
+	if !strings.Contains(wrapped.Error(), "--document-url block_a=") {
+		t.Fatalf("default render should keep the flag context; got %q", wrapped.Error())
 	}
 }

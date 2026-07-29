@@ -165,7 +165,11 @@ func init() {
 	usageBlocksCmd.Flags().String("before", "", "cursor from list_metadata.before (mutually exclusive with --after)")
 	usageBlocksCmd.Flags().String("after", "", "cursor from list_metadata.after (mutually exclusive with --before)")
 	usageBlocksCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 10000}, "limit", "max items to return (1-10000)")
-	usageBlocksCmd.Flags().Var(&orderFlagValue{}, "order", "asc | desc")
+	// Unlike `usage runs` / `usage primitives`, which order by created_at, this
+	// export is keyset-paged by (block_id, workflow_id) — a block row is an
+	// aggregate with no single timestamp to sort on. Say so, or `--order desc`
+	// reads as "most recently active first" and silently is not.
+	usageBlocksCmd.Flags().Var(&orderFlagValue{}, "order", "asc | desc (by block id, not activity time)")
 
 	usageCmd.AddCommand(usageBlocksCmd)
 }
