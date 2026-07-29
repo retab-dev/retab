@@ -238,6 +238,13 @@ to walk backwards. Filter by arbitrary tags set at create time with
   # Page from a known extraction id
   retab extractions list --after extr_xyz789 --limit 50`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		// --before and --after are opposite pagination directions; sending both
+		// leaves the server to pick one and silently returns a page the caller did
+		// not ask for. Every other list command rejects the pair here (see
+		// validateBeforeAfterMutex); this one was missing the check.
+		if err := validateBeforeAfterMutex(cmd); err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err

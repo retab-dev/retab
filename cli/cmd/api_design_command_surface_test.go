@@ -122,7 +122,7 @@ func TestRemovedCommandSurfaceIsAbsent(t *testing.T) {
 
 func TestCoreAPIResourcesExposeExpectedCommandSurface(t *testing.T) {
 	expectedChildren := map[string][]string{
-		"":                              {"auth", "env", "org", "classifications", "edits", "extractions", "files", "invitations", "members", "parses", "partitions", "projects", "schemas", "secrets", "setup", "splits", "sync", "tables", "usage", "version", "workflows"},
+		"":                              {"auth", "env", "org", "classifications", "consensus", "edits", "extractions", "files", "invitations", "members", "parses", "partitions", "projects", "schemas", "secrets", "setup", "splits", "sync", "tables", "usage", "version", "workflows"},
 		"usage":                         {"runs", "blocks", "primitives"},
 		"auth":                          {"login", "logout", "status"},
 		"env":                           {"add", "switch", "which", "claim", "list", "get"},

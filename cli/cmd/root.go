@@ -72,6 +72,7 @@ func ExecuteArgs(args []string) error {
 
 func executeRoot() error {
 	hardenGroupCommands(rootCmd)
+	enrichPositionalArgErrors(rootCmd)
 	notify := startUpdateNotifier()
 	err := rootCmd.Execute()
 	notify()
@@ -225,6 +226,46 @@ func hardenGroupCommands(c *cobra.Command) {
 	c.Args = cobra.NoArgs
 	c.RunE = func(cmd *cobra.Command, _ []string) error {
 		return cmd.Help()
+	}
+}
+
+// argsErrorsEnriched records which commands have already had their positional
+// argument validator wrapped. executeRoot runs once per process in normal use
+// but repeatedly in tests, and wrapping twice would append the usage block twice.
+var argsErrorsEnriched = map[*cobra.Command]bool{}
+
+// enrichPositionalArgErrors wraps every command's positional-argument validator
+// so a failure says what the command expects, not just how many arguments it
+// counted.
+//
+// The root command sets SilenceUsage (so a failed API call does not dump a wall
+// of help), and cobra applies that to argument errors too — which is exactly
+// where the usage line is most useful. `retab workflows stats` answered only
+// "accepts 1 arg(s), received 0", never mentioning that it wants a workflow id.
+// Commands that validate their arguments by hand already produce good messages
+// ("error: workflow id required"); this closes the gap for the ~246 call sites
+// that use cobra's built-in validators.
+//
+// It must run AFTER hardenGroupCommands, which installs the validator on group
+// commands.
+func enrichPositionalArgErrors(c *cobra.Command) {
+	for _, sub := range c.Commands() {
+		enrichPositionalArgErrors(sub)
+	}
+	validate := c.Args
+	if validate == nil || argsErrorsEnriched[c] {
+		return
+	}
+	argsErrorsEnriched[c] = true
+	c.Args = func(cmd *cobra.Command, args []string) error {
+		err := validate(cmd, args)
+		if err == nil {
+			return nil
+		}
+		// %w keeps the original text matchable for callers (and tests) that look
+		// for cobra's wording.
+		return fmt.Errorf("%w\n\nUsage:\n  %s\n\nRun '%s --help' for the full description.",
+			err, cmd.UseLine(), cmd.CommandPath())
 	}
 }
 

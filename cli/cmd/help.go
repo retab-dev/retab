@@ -55,7 +55,7 @@ var featuredSubcommands = map[string][]string{
 var commandGroups = []commandGroup{
 	{
 		title:    "Primitives",
-		commands: []string{"parses", "extractions", "edits", "splits", "partitions", "classifications"},
+		commands: []string{"parses", "extractions", "consensus", "edits", "splits", "partitions", "classifications"},
 	},
 	{
 		// Standalone backend resources you store and reuse. `files` is a
