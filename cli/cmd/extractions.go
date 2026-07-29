@@ -81,21 +81,8 @@ func newExtractionRequest(cmd *cobra.Command) (retab.ExtractionsCreateParams, er
 	if cmd.Flags().Changed("n-consensus") {
 		params.NConsensus = ptr(nConsensus)
 	}
-	if cmd.Flags().Changed("excel-windowing") {
-		excelWindowing, _ := cmd.Flags().GetString("excel-windowing")
-		switch excelWindowing {
-		case string(retab.ExtractionRequestExcelWindowingManual), string(retab.ExtractionRequestExcelWindowingAuto):
-			params.ExcelWindowing = ptr(retab.ExtractionRequestExcelWindowing(excelWindowing))
-		default:
-			return retab.ExtractionsCreateParams{}, fmt.Errorf(`--excel-windowing must be "manual" or "auto"`)
-		}
-	}
-	if cmd.Flags().Changed("auto-chunk-rows") {
-		autoChunkRows, _ := cmd.Flags().GetInt("auto-chunk-rows")
-		params.AutoChunkRows = ptr(autoChunkRows)
-	}
-	// Sent only when set, like the windowing knobs above: an unconditional
-	// false would put deep_extraction on every request body this CLI writes.
+	// Sent only when set: an unconditional false would put deep_extraction on
+	// every request body this CLI writes.
 	if cmd.Flags().Changed("deep-extraction") {
 		deepExtraction, _ := cmd.Flags().GetBool("deep-extraction")
 		params.DeepExtraction = ptr(deepExtraction)
@@ -411,8 +398,15 @@ func addExtractionBodyFlags(cmd *cobra.Command) {
 	cmd.Flags().Bool("bust-cache", false, "bypass server-side cache")
 	cmd.Flags().StringArray("metadata", nil, "metadata key=value (repeatable)")
 	cmd.Flags().String("messages-file", "", "JSON array of additional_messages (or - for stdin)")
-	cmd.Flags().String("excel-windowing", "", `spreadsheet auto-windowing mode: "auto" splits an xlsx/CSV into per-table row chunks, extracts each chunk, and concatenates the results into {"data": [...]}; "manual" or omitted runs one extraction over the whole document`)
-	cmd.Flags().Var(&boundedIntFlagValue{min: 10, max: 1000}, "auto-chunk-rows", "rows per extraction window when --excel-windowing=auto (10-1000, default 50)")
+	// --excel-windowing / --auto-chunk-rows are deliberately absent: the
+	// excel_windowing and auto_chunk_rows request fields were retired from the
+	// public contract (they are no longer in public/docs/api-reference/openapi.json
+	// and were dropped from every generated client), so this overlay has no
+	// parameter to send them through. They are removed rather than hidden-and-
+	// ignored like --image-resolution-dpi: that flag is inert, whereas
+	// --excel-windowing=auto changes the response shape to {"data": [...]}, so
+	// silently accepting it would hand callers a differently-shaped body than
+	// they asked for. An unknown-flag error is the honest failure.
 	cmd.Flags().Bool("deep-extraction", false, "optimizes for accuracy over latency in documents with very large arrays")
 	_ = cmd.MarkFlagRequired("model")
 }

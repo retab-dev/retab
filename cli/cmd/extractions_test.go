@@ -29,8 +29,6 @@ func newExtractionRequestTestCmd(t *testing.T) *cobra.Command {
 	cmd.Flags().Bool("bust-cache", false, "")
 	cmd.Flags().StringArray("metadata", nil, "")
 	cmd.Flags().String("messages-file", "", "")
-	cmd.Flags().String("excel-windowing", "", "")
-	cmd.Flags().Var(&boundedIntFlagValue{min: 10, max: 1000}, "auto-chunk-rows", "")
 	cmd.Flags().Bool("deep-extraction", false, "")
 	return cmd
 }
@@ -94,63 +92,23 @@ func TestNewExtractionRequestGatesDeepExtractionParam(t *testing.T) {
 	})
 }
 
-// TestNewExtractionRequestGatesExcelWindowingParams pins that the windowing
-// knobs are OMITTED when unset, mapped verbatim when set, and that an unknown
-// --excel-windowing literal is rejected client-side.
-func TestNewExtractionRequestGatesExcelWindowingParams(t *testing.T) {
-	baseFlags := map[string]string{
-		"url":         "https://example.com/x.xlsx",
-		"model":       "gpt-4o",
-		"json-schema": `{"type":"object"}`,
-	}
-	setFlags := func(t *testing.T, cmd *cobra.Command, extra map[string]string) {
-		t.Helper()
-		for n, v := range baseFlags {
-			if err := cmd.Flags().Set(n, v); err != nil {
-				t.Fatalf("set --%s: %v", n, err)
-			}
-		}
-		for n, v := range extra {
-			if err := cmd.Flags().Set(n, v); err != nil {
-				t.Fatalf("set --%s: %v", n, err)
+// TestExtractionCommandsDropRetiredWindowingFlags pins that the retired
+// spreadsheet-windowing knobs are gone from the real extraction commands.
+//
+// excel_windowing / auto_chunk_rows left the public contract (they are absent
+// from public/docs/api-reference/openapi.json and from every generated client),
+// so ExtractionsCreateParams has no field to carry them. Re-adding the flags
+// without first restoring the request fields would either not compile or,
+// worse, accept --excel-windowing=auto and silently return a whole-document
+// extraction instead of the {"data": [...]} shape the caller asked for.
+func TestExtractionCommandsDropRetiredWindowingFlags(t *testing.T) {
+	for _, cmd := range []*cobra.Command{extractionsCreateCmd, extractionsStreamCmd} {
+		for _, name := range []string{"excel-windowing", "auto-chunk-rows"} {
+			if f := cmd.Flags().Lookup(name); f != nil {
+				t.Errorf("%s: --%s is retired from the public contract and must not be registered", cmd.Name(), name)
 			}
 		}
 	}
-
-	t.Run("omitted when unset", func(t *testing.T) {
-		cmd := newExtractionRequestTestCmd(t)
-		setFlags(t, cmd, nil)
-		params, err := newExtractionRequest(cmd)
-		if err != nil {
-			t.Fatalf("newExtractionRequest: %v", err)
-		}
-		if params.ExcelWindowing != nil || params.AutoChunkRows != nil {
-			t.Fatalf("windowing params must be nil when flags unset, got %v / %v", params.ExcelWindowing, params.AutoChunkRows)
-		}
-	})
-
-	t.Run("sent when set", func(t *testing.T) {
-		cmd := newExtractionRequestTestCmd(t)
-		setFlags(t, cmd, map[string]string{"excel-windowing": "auto", "auto-chunk-rows": "200"})
-		params, err := newExtractionRequest(cmd)
-		if err != nil {
-			t.Fatalf("newExtractionRequest: %v", err)
-		}
-		if params.ExcelWindowing == nil || string(*params.ExcelWindowing) != "auto" {
-			t.Fatalf("ExcelWindowing = %v, want auto", params.ExcelWindowing)
-		}
-		if params.AutoChunkRows == nil || *params.AutoChunkRows != 200 {
-			t.Fatalf("AutoChunkRows = %v, want 200", params.AutoChunkRows)
-		}
-	})
-
-	t.Run("unknown mode rejected", func(t *testing.T) {
-		cmd := newExtractionRequestTestCmd(t)
-		setFlags(t, cmd, map[string]string{"excel-windowing": "windowed"})
-		if _, err := newExtractionRequest(cmd); err == nil || !strings.Contains(err.Error(), "--excel-windowing") {
-			t.Fatalf("error = %v, want --excel-windowing rejection", err)
-		}
-	})
 }
 
 // TestNewExtractionRequestGatesConsensusParam pins that unset --n-consensus is
