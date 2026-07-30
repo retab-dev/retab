@@ -100,6 +100,16 @@ resubmit sooner.
 		fileIDs, _ := cmd.Flags().GetStringArray("file-id")
 		docsFile, _ := cmd.Flags().GetString("documents-file")
 
+		// --documents-file and --instructions-file both accept "-" for stdin,
+		// but stdin can only be consumed once: --documents-file reads it first
+		// via io.ReadAll, leaving --instructions-file with EOF and a misleading
+		// "empty text input" error. Reject the ambiguous pair up front.
+		if docsFile == "-" {
+			if instrFile, _ := cmd.Flags().GetString("instructions-file"); instrFile == "-" {
+				return fmt.Errorf("--documents-file and --instructions-file cannot both read from stdin (-)")
+			}
+		}
+
 		if docsFile != "" {
 			arr, err := readJSONArray(docsFile)
 			if err != nil {
@@ -310,11 +320,14 @@ func genFailureDetail(rec map[string]any) string {
 }
 
 // transientGenTokenRE matches short or numeric transient-failure signals that
-// must stand alone to count. Word boundaries keep them from false-positiving on
-// substrings of an arbitrary server message — e.g. "value 1503" must not match
-// the HTTP 503 signal, and an id/word containing "eof" must not match EOF — which
-// would otherwise trigger a wasteful resubmit of a genuinely terminal failure.
-var transientGenTokenRE = regexp.MustCompile(`\b(50[234]|eof|timeouts?)\b`)
+// must stand alone to count. The token must be flanked by a string edge or a
+// non-[word/hyphen] character so it can't false-positive on a substring of an
+// arbitrary server message — e.g. "value 1503" must not match the HTTP 503
+// signal, and a hyphenated id like "req-eof-1" or "sch-502-x" must not match
+// EOF/503 — which would otherwise trigger a wasteful resubmit of a genuinely
+// terminal failure. A plain \b is not enough here: it treats a hyphen as a
+// boundary, so \beof\b fires inside "req-eof-1".
+var transientGenTokenRE = regexp.MustCompile(`(^|[^\w-])(50[234]|eof|timeouts?)([^\w-]|$)`)
 
 // isTransientGenFailure reports whether a schema-generation failure looks
 // retryable. The dominant case is the backend's own "context deadline
