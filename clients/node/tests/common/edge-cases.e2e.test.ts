@@ -56,35 +56,38 @@ d('list query: invalid order enum', () => {
 });
 
 d('list query: pathological limits', () => {
-  test('limit=0 returns a typed page or a typed 400', async () => {
+  // The gateway enforces the bounds GET /v1/files already publishes
+  // (minimum 1, maximum 100). These previously tolerated a 400 OR a served
+  // page, pinning the lenient coercion that preceded the bounds; huma's
+  // request validation now rejects with 422. Kept as a union with 400 so the
+  // suite stays green against an older deployed build during a rollout,
+  // matching the order-enum test above.
+  test('limit=0 is rejected with a typed 4xx', async () => {
     const client = liveClient();
-    const { page, err } = await attempt(() => client.files.list({ limit: 0 }));
-    if (err) {
-      expect(err).toBeInstanceOf(RetabError);
-      expect((err as RetabError).status).toBe(400);
-    } else {
-      expect(Array.isArray(page!.data)).toBe(true);
-    }
+    const { err } = await attempt(() => client.files.list({ limit: 0 }));
+    expect(err).toBeInstanceOf(RetabError);
+    expect([400, 422]).toContain((err as RetabError).status);
   });
 
-  test('a negative limit returns a typed page or a typed 400', async () => {
+  test('a negative limit is rejected with a typed 4xx', async () => {
     const client = liveClient();
-    const { page, err } = await attempt(() => client.files.list({ limit: -5 }));
-    if (err) {
-      expect(err).toBeInstanceOf(RetabError);
-      expect((err as RetabError).status).toBe(400);
-    } else {
-      expect(Array.isArray(page!.data)).toBe(true);
-    }
+    const { err } = await attempt(() => client.files.list({ limit: -5 }));
+    expect(err).toBeInstanceOf(RetabError);
+    expect([400, 422]).toContain((err as RetabError).status);
   });
 
-  test('a huge limit is clamped/served as a typed page or rejected with a typed 400', async () => {
+  test('a limit above the documented maximum is rejected with a typed 4xx', async () => {
     const client = liveClient();
-    const { page, err } = await attempt(() => client.files.list({ limit: 1_000_000 }));
-    if (err) {
-      expect(err).toBeInstanceOf(RetabError);
-      expect((err as RetabError).status).toBe(400);
-    } else {
+    const { err } = await attempt(() => client.files.list({ limit: 1_000_000 }));
+    expect(err).toBeInstanceOf(RetabError);
+    expect([400, 422]).toContain((err as RetabError).status);
+  });
+
+  test('the inclusive bounds themselves are served', async () => {
+    const client = liveClient();
+    for (const limit of [1, 100]) {
+      const { page, err } = await attempt(() => client.files.list({ limit }));
+      expect(err).toBeUndefined();
       expect(Array.isArray(page!.data)).toBe(true);
     }
   });
