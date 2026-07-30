@@ -356,6 +356,47 @@ func TestSchemasGenerateInstructionsFileForwardedAndConflicts(t *testing.T) {
 	}
 }
 
+// TestSchemasGenerateRejectsBothStdinInputs pins that pointing both
+// --documents-file and --instructions-file at stdin ("-") is rejected up front
+// with a clear message, rather than the misleading "empty text input" a
+// double stdin read produces (documents-file drains stdin, leaving EOF for
+// instructions-file).
+func TestSchemasGenerateRejectsBothStdinInputs(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
+	t.Setenv("HOME", t.TempDir())
+
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits.Add(1)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"json_schema": map[string]any{"type": "object"}})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	schemasGenerateCmd.SetContext(context.Background())
+	t.Cleanup(func() { schemasGenerateCmd.SetContext(context.Background()) })
+	if err := schemasGenerateCmd.Flags().Set("documents-file", "-"); err != nil {
+		t.Fatal(err)
+	}
+	if err := schemasGenerateCmd.Flags().Set("instructions-file", "-"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_ = schemasGenerateCmd.Flags().Set("documents-file", "")
+		_ = schemasGenerateCmd.Flags().Set("instructions-file", "")
+	})
+
+	var err error
+	_, _ = captureStd(t, func() { err = schemasGenerateCmd.RunE(schemasGenerateCmd, nil) })
+	if err == nil || !strings.Contains(err.Error(), "both read from stdin") {
+		t.Fatalf("expected both-stdin rejection, got %v", err)
+	}
+	if hits.Load() != 0 {
+		t.Fatalf("guard should reject before any request, got %d hits", hits.Load())
+	}
+}
+
 // TestSchemasGenerateRetriesTransientServerFailure pins that a --background
 // --wait generation whose first attempt fails with a transient server error
 // (the orchestrator "context deadline exceeded") is automatically resubmitted,
@@ -615,6 +656,11 @@ func TestIsTransientGenFailure(t *testing.T) {
 		"unauthorized: invalid api key",
 		"document 5040 not found",
 		"unsupported file type",
+		// Hyphenated ids embedding a transient token must not be retried: a
+		// plain \b treats the hyphen as a boundary and would false-match here.
+		"generation req-eof-1 rejected: schema too deep",
+		"job sch-502-x failed validation",
+		"trace 504-abc: unsupported field type",
 	}
 	for _, d := range terminal {
 		if isTransientGenFailure(d) {

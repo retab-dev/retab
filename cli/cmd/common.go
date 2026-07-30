@@ -270,6 +270,16 @@ func renderAPIErrorForCLI(cmd *cobra.Command, apiErr *retab.APIError) string {
 	if apiErr.RequestID != "" {
 		lines = append(lines, "  Request-ID: "+apiErr.RequestID)
 	}
+	// A 404 "... not found" on a resource that plainly exists is, more often than a
+	// typo, the active organization having drifted (e.g. after a token refresh): the
+	// id is real but lives in an org you are not currently pointed at. The raw
+	// "not found" reads as data loss. Nudge toward the org check — cheaply, without
+	// asserting it (a genuine typo yields the same 404, and the advice still helps).
+	if apiErr.StatusCode == http.StatusNotFound && strings.Contains(strings.ToLower(message), "not found") {
+		lines = append(lines,
+			"  If you expect this to exist, it may belong to a different organization —",
+			"  check the active org with `retab org list` and switch with `retab org switch <org-id>`.")
+	}
 	return strings.Join(lines, "\n")
 }
 

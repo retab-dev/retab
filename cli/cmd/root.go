@@ -48,6 +48,30 @@ func (o *outputTableFlagValue) Set(raw string) error {
 	return nil
 }
 
+// outputJSONFlagValue backs the `--json` shortcut, mirroring outputTableFlagValue.
+// `--json` is the spelling users reach for first (and the one this CLI's own help
+// examples imply); routing it to `--output json` avoids the "unknown flag: --json"
+// papercut without introducing a second source of truth for the format.
+type outputJSONFlagValue struct {
+	output *outputFlagValue
+}
+
+func (o *outputJSONFlagValue) String() string { return "false" }
+func (o *outputJSONFlagValue) Type() string   { return "bool" }
+func (o *outputJSONFlagValue) IsBoolFlag() bool {
+	return true
+}
+func (o *outputJSONFlagValue) Set(raw string) error {
+	enabled, err := strconv.ParseBool(raw)
+	if err != nil {
+		return fmt.Errorf("invalid --json value %q", raw)
+	}
+	if enabled {
+		return o.output.Set(string(OutputJSON))
+	}
+	return nil
+}
+
 var rootOutputFlag = &outputFlagValue{}
 
 var rootCmd = &cobra.Command{
@@ -315,6 +339,10 @@ func init() {
 	rootCmd.PersistentFlags().Var(rootOutputFlag, "output", "output format: json | table | csv (default: auto-detect)")
 	rootCmd.PersistentFlags().Var(&outputTableFlagValue{output: rootOutputFlag}, "output-table", "shortcut for --output table")
 	if flag := rootCmd.PersistentFlags().Lookup("output-table"); flag != nil {
+		flag.NoOptDefVal = "true"
+	}
+	rootCmd.PersistentFlags().Var(&outputJSONFlagValue{output: rootOutputFlag}, "json", "shortcut for --output json")
+	if flag := rootCmd.PersistentFlags().Lookup("json"); flag != nil {
 		flag.NoOptDefVal = "true"
 	}
 	rootCmd.InitDefaultCompletionCmd()
