@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
@@ -34,6 +35,14 @@ func resolveWorkflowVersionRef(ctx context.Context, client *retab.Client, workfl
 	case "draft":
 		return "", fmt.Errorf("%q is not a published version; the version commands operate on published versions only — inspect the draft with `retab workflows spec get %s` or `retab workflows blocks list %s`, or publish it first", ref, workflowID, workflowID)
 	default:
+		// A `wph_...` is a publish-RECORD id (the `id` field in `versions list`),
+		// not the version id these commands address. Passing it hits the server and
+		// 404s with a bare "version not found", which reads as "this version is
+		// gone" rather than "wrong id field". Catch it here and point at the id that
+		// actually works — the `workflow_version_id` (ver_...) in the same list row.
+		if strings.HasPrefix(ref, "wph_") {
+			return "", fmt.Errorf("%q is a publish-record id, not a version id — the version commands take the workflow_version_id (ver_...). Find it in `retab workflows versions list %s` (the WORKFLOW_VERSION_ID column, or the workflow_version_id field in JSON)", ref, workflowID)
+		}
 		return ref, nil
 	}
 }
