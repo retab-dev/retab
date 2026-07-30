@@ -77,7 +77,7 @@ provider/API dollar costs.
 
 Filter by workflow, lifecycle status, trigger type, and created_at date range.
 Page by run id with ` + "`--before`" + ` / ` + "`--after`" + `, cap the page size
-with ` + "`--limit`" + ` (1-100).`,
+with ` + "`--limit`" + ` (1-10000).`,
 	Example: `  # Most recent 50 runs' usage
   retab usage runs --limit 50
 
@@ -207,7 +207,10 @@ func init() {
 	usageRunsCmd.Flags().String("to-date", "", "inclusive created_at upper bound (YYYY-MM-DD, UTC)")
 	usageRunsCmd.Flags().String("before", "", "run id: return items before this id (mutually exclusive with --after)")
 	usageRunsCmd.Flags().String("after", "", "run id: return items after this id (mutually exclusive with --before)")
-	usageRunsCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items to return (1-100)")
+	// 10000 is the server's cap (handlers_runs.go `maximum:"10000"`), matching
+	// `usage blocks` / `usage primitives`. A tighter client bound only forced a
+	// full-history run export to be walked 100 rows at a time.
+	usageRunsCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 10000}, "limit", "max items to return (1-10000)")
 	usageRunsCmd.Flags().Var(&orderFlagValue{}, "order", "asc | desc")
 
 	usageCmd.AddCommand(usageRunsCmd)

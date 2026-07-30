@@ -1627,7 +1627,7 @@ const exportSkippedRunIDCheckLimit = 50
 // specific set and got a clean-looking file back. The check is best-effort and
 // never fails the command: the export already succeeded, and a lookup problem
 // here is not a reason to turn a good CSV into an error.
-func warnExportSkippedRunIDs(ctx context.Context, cmd *cobra.Command, client *retab.Client, runIDs []string) {
+func warnExportSkippedRunIDs(ctx context.Context, cmd *cobra.Command, client *retab.Client, workflowID string, runIDs []string) {
 	if len(runIDs) == 0 || len(runIDs) > exportSkippedRunIDCheckLimit {
 		return
 	}
@@ -1635,9 +1635,19 @@ func warnExportSkippedRunIDs(ctx context.Context, cmd *cobra.Command, client *re
 	for _, runID := range runIDs {
 		run, err := client.Workflows.Runs.Get(ctx, runID)
 		if err != nil {
-			// A run id that cannot be read at all (deleted, wrong workflow, no
-			// access) is equally absent from the export, so it is worth naming.
+			// A run id that cannot be read at all (deleted, no access) is
+			// equally absent from the export, so it is worth naming.
 			skipped = append(skipped, runID+" (not readable)")
+			continue
+		}
+		// Run ids are org-scoped, not workflow-scoped, so a run belonging to a
+		// DIFFERENT workflow reads back fine and completed — it then fell
+		// through both arms below and was dropped from the CSV in total
+		// silence, while a merely mistyped id got a note. That is backwards:
+		// pasting a real run id from the wrong workflow is the likelier
+		// mistake, and it is the one that produced a clean-looking file.
+		if run.WorkflowID != workflowID {
+			skipped = append(skipped, runID+" (belongs to "+run.WorkflowID+")")
 			continue
 		}
 		if status := run.Lifecycle.Status(); status != "completed" {
@@ -1649,7 +1659,7 @@ func warnExportSkippedRunIDs(ctx context.Context, cmd *cobra.Command, client *re
 	}
 	fmt.Fprintf(
 		cmd.ErrOrStderr(),
-		"note: %d of %d requested run(s) are not in the export — it covers completed runs only: %s\n",
+		"note: %d of %d requested run(s) are not in the export — it covers this workflow's completed runs only: %s\n",
 		len(skipped), len(runIDs), strings.Join(skipped, ", "),
 	)
 }
@@ -1775,7 +1785,7 @@ also configurable.`,
 		if err != nil {
 			return err
 		}
-		warnExportSkippedRunIDs(ctx, cmd, client, selectedRunIDs)
+		warnExportSkippedRunIDs(ctx, cmd, client, workflowID, selectedRunIDs)
 		// The export endpoint wraps the CSV bytes in a JSON envelope
 		// (``{"csv_data": "...", "rows": N, "columns": M}``). For
 		// interactive / non-JSON output, dump the raw CSV directly so

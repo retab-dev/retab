@@ -1662,7 +1662,7 @@ func TestWorkflowsRunsExportWarnsAboutSkippedRunIDs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	warnExportSkippedRunIDs(context.Background(), cmd, client, []string{"run_done", "run_failed", "run_cancelled", "run_missing"})
+	warnExportSkippedRunIDs(context.Background(), cmd, client, "wf_123", []string{"run_done", "run_failed", "run_cancelled", "run_missing"})
 
 	note := stderr.String()
 	for _, want := range []string{"run_failed (error)", "run_cancelled (cancelled)", "run_missing (not readable)", "3 of 4"} {
@@ -1677,13 +1677,13 @@ func TestWorkflowsRunsExportWarnsAboutSkippedRunIDs(t *testing.T) {
 	// An all-completed selection stays silent: a note on every export would
 	// train the reader to ignore it.
 	stderr.Reset()
-	warnExportSkippedRunIDs(context.Background(), cmd, client, []string{"run_done"})
+	warnExportSkippedRunIDs(context.Background(), cmd, client, "wf_123", []string{"run_done"})
 	if stderr.Len() != 0 {
 		t.Fatalf("no note expected when nothing was skipped, got: %q", stderr.String())
 	}
 
 	// No --run-id means no explicit selection to reconcile against.
-	warnExportSkippedRunIDs(context.Background(), cmd, client, nil)
+	warnExportSkippedRunIDs(context.Background(), cmd, client, "wf_123", nil)
 	if stderr.Len() != 0 {
 		t.Fatalf("no note expected without --run-id, got: %q", stderr.String())
 	}
@@ -3285,5 +3285,64 @@ func TestShouldDumpRawExportCSV(t *testing.T) {
 			t.Errorf("%s: shouldDumpRawExportCSV(%v,%q,%v)=%v want %v",
 				c.name, c.raw, c.format, c.isTTY, got, c.want)
 		}
+	}
+}
+
+// Run ids are org-scoped, so a completed run belonging to ANOTHER workflow reads
+// back fine and passes the status check — it was then dropped from the CSV with
+// no note at all, while a merely mistyped id got one. Pasting a real run id from
+// the wrong workflow is the likelier mistake and produced the more misleading
+// artifact: a clean-looking CSV silently short the run the caller asked for.
+func TestWorkflowsRunsExportWarnsAboutRunIDsFromAnotherWorkflow(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
+	t.Setenv("HOME", t.TempDir())
+
+	workflowByRun := map[string]string{
+		"run_mine":  "wf_123",
+		"run_other": "wf_999",
+	}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		runID := strings.TrimPrefix(r.URL.Path, "/v1/workflows/runs/")
+		workflowID, ok := workflowByRun[runID]
+		if !ok {
+			w.WriteHeader(http.StatusNotFound)
+			_ = json.NewEncoder(w).Encode(map[string]any{"detail": "Workflow run not found"})
+			return
+		}
+		// Both runs are COMPLETED — the status arm cannot catch the foreign one.
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"id":                  runID,
+			"workflow_id":         workflowID,
+			"workflow_version_id": "ver_1",
+			"trigger":             map[string]any{"type": "manual"},
+			"lifecycle":           map[string]any{"status": "completed"},
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	cmd := &cobra.Command{}
+	var stderr bytes.Buffer
+	cmd.SetErr(&stderr)
+	client, err := newClient(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	warnExportSkippedRunIDs(context.Background(), cmd, client, "wf_123", []string{"run_mine", "run_other"})
+
+	note := stderr.String()
+	if !strings.Contains(note, "run_other") {
+		t.Fatalf("a completed run from another workflow was dropped from the export in silence, got: %q", note)
+	}
+	if !strings.Contains(note, "wf_999") {
+		t.Fatalf("note should say which workflow the foreign run belongs to, got: %q", note)
+	}
+	if !strings.Contains(note, "1 of 2") {
+		t.Fatalf("note should count the foreign run as skipped, got: %q", note)
+	}
+	if strings.Contains(note, "run_mine") {
+		t.Fatalf("this workflow's own completed run must not be reported as skipped, got: %q", note)
 	}
 }

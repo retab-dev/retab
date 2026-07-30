@@ -6,6 +6,8 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/spf13/cobra"
 )
 
 func usageRunsFixture() usageRunListResponse {
@@ -209,5 +211,40 @@ func TestUsageRunsRejectsBeforeAndAfterTogether(t *testing.T) {
 	})
 	if runErr == nil || !strings.Contains(runErr.Error(), "mutually exclusive") {
 		t.Fatalf("expected mutually-exclusive error, got %v", runErr)
+	}
+}
+
+// TestUsageLimitBoundsMatchServerAcrossGrains pins all three usage exports to the
+// server's `maximum:"10000"` limit (handlers_runs.go / handlers_blocks.go /
+// handlers_primitives.go). `usage runs` used to stop at 100 while its two siblings
+// accepted 10000, so a full-history run export had to be walked 100 rows at a time
+// for a bound the API never imposed.
+func TestUsageLimitBoundsMatchServerAcrossGrains(t *testing.T) {
+	for _, grain := range []struct {
+		name string
+		cmd  *cobra.Command
+	}{
+		{"runs", usageRunsCmd},
+		{"blocks", usageBlocksCmd},
+		{"primitives", usagePrimitivesCmd},
+	} {
+		t.Run(grain.name, func(t *testing.T) {
+			flag := grain.cmd.Flags().Lookup("limit")
+			if flag == nil {
+				t.Fatalf("usage %s has no --limit flag", grain.name)
+			}
+			bounded, ok := flag.Value.(*boundedIntFlagValue)
+			if !ok {
+				t.Fatalf("usage %s --limit is %T, want *boundedIntFlagValue", grain.name, flag.Value)
+			}
+			if bounded.min != 1 || bounded.max != 10000 {
+				t.Fatalf("usage %s --limit bounds = [%d,%d], want [1,10000]", grain.name, bounded.min, bounded.max)
+			}
+			// The help string is what users actually read; drifting it back to a
+			// stale range is the same bug wearing a different hat.
+			if !strings.Contains(flag.Usage, "1-10000") {
+				t.Fatalf("usage %s --limit help = %q, want it to mention 1-10000", grain.name, flag.Usage)
+			}
+		})
 	}
 }
