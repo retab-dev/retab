@@ -1184,8 +1184,22 @@ back), matching ` + "`experiments runs list`" + `.`,
 var workflowsExperimentsResultsGetCmd = &cobra.Command{
 	Use:   "get <result-id>",
 	Short: "Get an experiment result",
-	Long:  `Fetch one experiment result by flat result id.`,
-	Args:  cobra.ExactArgs(1),
+	Long: `Fetch one experiment result by flat result id: the exact inputs the
+candidate config saw, the outputs it produced, timing, and the ` + "`artifact`" + `
+reference for the underlying operation.
+
+The ` + "`artifact`" + ` reference is the entry point to the per-pass evidence
+behind a score, and each operation has its own reader:
+
+  {"operation": "partition", "id": "prtn_..."}   retab partitions get prtn_...
+  {"operation": "extraction", "id": "extr_..."}  retab extractions get extr_...
+  {"operation": "split", "id": "splt_..."}       retab splits get splt_...
+
+For a split_by_key ` + "`for_each`" + ` block that partition artifact is where the
+per-partition consensus lives — the pages each pass assigned to each partition,
+and each partition's own agreement — which is what explains a score that
+` + "`workflows experiments metrics get --view votes`" + ` reports as less than 1.0.`,
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
