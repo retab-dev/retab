@@ -305,6 +305,7 @@ func renderRootHelpWithStyles(w io.Writer, root *cobra.Command, s styles) {
 		{"--debug", "", "verbose debug output", ""},
 		{"--output", "FORMAT", "output format: json | table | csv (default: auto)", ""},
 		{"--output-table", "", "shortcut for --output table", ""},
+		{"--json", "", "shortcut for --output json", ""},
 		{"-h, --help", "", "show this help", ""},
 		{"-v, --version", "", "show version", ""},
 	}
