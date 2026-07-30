@@ -136,26 +136,39 @@ def test_malformed_from_date_raises_400(sync_client: Retab) -> None:
 
 
 @pytest.mark.parametrize("bad_limit", [0, -5])
-def test_nonpositive_limit_is_coerced_not_rejected(sync_client: Retab, bad_limit: int) -> None:
-    """limit<=0 is NOT a 4xx — the gateway coerces it to its default page size.
+def test_nonpositive_limit_is_rejected(sync_client: Retab, bad_limit: int) -> None:
+    """limit<=0 is now a 422.
 
-    This pins the *observed* contract: a non-positive limit returns a
-    well-shaped page rather than an error. If the backend later starts
-    rejecting it, this test flags the contract change.
+    The GET /v1/files limit parameter enforces the bounds its own published
+    contract already declared (minimum 1, maximum 100); the Go port had dropped
+    them, so a non-positive limit was silently coerced to the default page size.
+    This test previously pinned that coercion as a canary; it now pins the
+    bounded contract. A client that was sending limit=0 starts getting 422.
     """
     with sync_client as client:
-        envelope = _assert_well_shaped(raw_list(client, "files", limit=bad_limit))
-        # Coerced to the default page (10) rather than 0 / a negative page.
-        assert len(envelope["data"]) >= 0
+        with pytest.raises(APIError) as excinfo:
+            raw_list(client, "files", limit=bad_limit)
+        assert excinfo.value.status_code == 422
 
 
-def test_limit_far_above_max_is_tolerated(sync_client: Retab) -> None:
-    """A limit far above any documented max returns a well-shaped page (capped to
-    available rows, no 4xx)."""
+def test_limit_far_above_max_is_rejected(sync_client: Retab) -> None:
+    """A limit above the documented maximum (100) is now a 422, not coerced.
+
+    Previously a limit far above any max returned a page capped to available
+    rows; the restored maximum makes it an explicit validation error.
+    """
     with sync_client as client:
-        envelope = _assert_well_shaped(raw_list(client, "files", limit=100000))
-        # The page is bounded by the collection; the terminal page has after=None.
-        assert isinstance(envelope["data"], list)
+        with pytest.raises(APIError) as excinfo:
+            raw_list(client, "files", limit=100000)
+        assert excinfo.value.status_code == 422
+
+
+def test_limit_at_bounds_is_accepted(sync_client: Retab) -> None:
+    """The inclusive bounds themselves stay valid: 1 and 100 return a page."""
+    with sync_client as client:
+        for good_limit in (1, 100):
+            envelope = _assert_well_shaped(raw_list(client, "files", limit=good_limit))
+            assert isinstance(envelope["data"], list)
 
 
 @pytest.mark.parametrize("cursor_field", ["after", "before"])
