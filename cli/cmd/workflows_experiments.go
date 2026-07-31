@@ -4,6 +4,7 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -309,6 +310,19 @@ After creation, create a run with
 		workflowID, err := resolveWorkflowIDArg(cmd, args)
 		if err != nil {
 			return err
+		}
+		// Without --run no run is launched, so the wait flags have nothing to
+		// wait for. Accepting and silently dropping them ("create --wait" in a
+		// CI script exits 0 having launched nothing) is worse than refusing.
+		if run, _ := cmd.Flags().GetBool("run"); !run {
+			if wait, _ := cmd.Flags().GetBool("wait"); wait {
+				return fmt.Errorf("--wait requires --run: `create` alone only defines the experiment; add --run to launch a run to wait on")
+			}
+			for _, name := range []string{"poll-interval-ms", "timeout-seconds"} {
+				if cmd.Flags().Changed(name) {
+					return fmt.Errorf("--%s requires --run: `create` alone only defines the experiment; add --run to launch a run to wait on", name)
+				}
+			}
 		}
 		req := retab.WorkflowExperimentsCreateParams{}
 		req.WorkflowID = workflowID
@@ -949,19 +963,43 @@ func waitForExperimentRun(
 	}
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
+	// Poll errors are transient (a redeploy blip must not abort a wait on a
+	// run that is still executing server-side) and retried until the deadline,
+	// mirroring waitForPrimitive; errors that cannot heal (see waitPollTracker)
+	// abort immediately. Tracking last/lastErr keeps the documented promise
+	// that the last-observed run is returned alongside a timeout error even
+	// when the deadline lands mid-GET.
+	var last *retab.ExperimentRun
+	var lastErr error
+	var tracker waitPollTracker
 	for {
 		run, err := client.Workflows.Experiments.Runs.Get(ctx, runID)
 		if err != nil {
-			return nil, err
-		}
-		if isTerminalExperimentRun(run) {
-			return run, nil
+			if tracker.fatal(err) {
+				return last, err
+			}
+			lastErr = err
+		} else {
+			tracker.sawSuccess()
+			last = run
+			lastErr = nil
+			if isTerminalExperimentRun(run) {
+				return run, nil
+			}
 		}
 		timer := time.NewTimer(pollInterval)
 		select {
 		case <-ctx.Done():
 			timer.Stop()
-			return run, fmt.Errorf("timed out waiting for experiment run %s: %w", runID, ctx.Err())
+			// A poll error caused by the deadline/interrupt itself is not a
+			// server problem — fall through to the timeout/interrupt wording.
+			if lastErr != nil && !errors.Is(lastErr, context.Canceled) && !errors.Is(lastErr, context.DeadlineExceeded) {
+				return last, fmt.Errorf("gave up waiting for experiment run %s after repeated poll errors: %w", runID, lastErr)
+			}
+			if errors.Is(ctx.Err(), context.Canceled) {
+				return last, fmt.Errorf("wait for experiment run %s interrupted: %w", runID, ctx.Err())
+			}
+			return last, fmt.Errorf("timed out waiting for experiment run %s: %w", runID, ctx.Err())
 		case <-timer.C:
 		}
 	}

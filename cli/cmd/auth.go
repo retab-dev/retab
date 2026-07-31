@@ -1191,6 +1191,14 @@ func promptSecret(prompt string) (string, error) {
 	// an error — `auth login --browser=false </dev/null` must fail fast, not
 	// fall through to the interactive browser flow.
 	if err != nil && !(errors.Is(err, io.EOF) && line != "") {
+		// Don't return the bare io.EOF: runE's connection-drop heuristic
+		// (renderConnectionDropForCLI) matches errors.Is(err, io.EOF) and would
+		// relabel an empty stdin as "upstream server closed the connection" —
+		// a server-side crash message for a request that was never sent. Name
+		// the actual problem instead.
+		if errors.Is(err, io.EOF) {
+			return "", fmt.Errorf("no input on stdin: the prompt %q needs a value (stdin was closed or empty)", strings.TrimSpace(prompt))
+		}
 		return "", err
 	}
 	return strings.TrimRight(line, "\r\n"), nil

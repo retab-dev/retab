@@ -1289,6 +1289,15 @@ func parseTableWhereFlag(raw string) (map[string]any, error) {
 			}, nil
 		}
 	}
+	// The operator that occurs EARLIEST in the string wins — not the one that
+	// happens to be listed first. The column always precedes the operator, so
+	// an operator-shaped word later in the string belongs to the VALUE:
+	// "note eq meeting between 3 and 4" is an eq filter whose value mentions
+	// "between", not a between filter on a column named "note eq meeting".
+	// A tie at the same offset takes the longest token, though the vocabulary
+	// makes genuine ties impossible today.
+	bestIndex := -1
+	bestOperator := ""
 	for _, operator := range []string{"not-contains", "not_contains", "starts-with", "starts_with", "ends-with", "ends_with", "not-in", "not_in", "between", "contains", "gte", "lte", "ne", "gt", "lt", "eq", "in"} {
 		needle := " " + operator + " "
 		// Search case-insensitively on the original string: indexing into
@@ -1299,6 +1308,15 @@ func parseTableWhereFlag(raw string) (map[string]any, error) {
 		if index < 0 {
 			continue
 		}
+		if bestIndex < 0 || index < bestIndex || (index == bestIndex && len(operator) > len(bestOperator)) {
+			bestIndex = index
+			bestOperator = operator
+		}
+	}
+	if bestIndex >= 0 {
+		operator := bestOperator
+		needle := " " + operator + " "
+		index := bestIndex
 		column := strings.TrimSpace(trimmed[:index])
 		value := strings.TrimSpace(trimmed[index+len(needle):])
 		if column == "" || value == "" {

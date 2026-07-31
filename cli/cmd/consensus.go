@@ -4,6 +4,7 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
 
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
@@ -48,6 +49,12 @@ showing which source path in each input fed each reconciled path.`,
   cat runs.json | retab consensus create --inputs - --include-alignment`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		inputsPath, _ := cmd.Flags().GetString("inputs")
+		// readJSON treats "" like "-" (stdin), but only "-" is documented as
+		// stdin here: `--inputs ""` would silently block on a terminal waiting
+		// for input that never comes, or swallow unrelated piped data.
+		if strings.TrimSpace(inputsPath) == "" {
+			return fmt.Errorf("--inputs cannot be blank: pass a JSON file path, or - to read stdin")
+		}
 		raw, err := readJSON(inputsPath)
 		if err != nil {
 			return err

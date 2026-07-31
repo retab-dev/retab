@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
@@ -135,19 +136,25 @@ func secretValueFromInput(cmd *cobra.Command) (string, error) {
 	if fromFile != "" && fromStdin {
 		return "", fmt.Errorf("--from-file and --from-stdin are mutually exclusive")
 	}
+	// Both byte paths run through normalizeInputBytes: PowerShell 5.1's `>`
+	// redirect writes UTF-16LE and `Out-File -Encoding utf8` prepends a BOM,
+	// so storing the raw bytes would corrupt the secret on the primary target
+	// platform. The trailing line break an editor or `echo` appends is
+	// trimmed too, so a file-sourced secret equals the same value typed at
+	// the prompt (promptSecret trims its trailing newline the same way).
 	if fromFile != "" {
 		raw, err := os.ReadFile(fromFile)
 		if err != nil {
 			return "", fmt.Errorf("read --from-file: %w", err)
 		}
-		return string(raw), nil
+		return strings.TrimRight(string(normalizeInputBytes(raw)), "\r\n"), nil
 	}
 	if fromStdin {
 		raw, err := io.ReadAll(cmd.InOrStdin())
 		if err != nil {
 			return "", fmt.Errorf("read --from-stdin: %w", err)
 		}
-		return string(raw), nil
+		return strings.TrimRight(string(normalizeInputBytes(raw)), "\r\n"), nil
 	}
 	return promptSecret("Secret value: ")
 }

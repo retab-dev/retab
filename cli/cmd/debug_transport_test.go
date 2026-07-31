@@ -330,3 +330,91 @@ func (s *stderrCapture) restore() {
 	os.Stderr = s.original
 	_ = s.r.Close()
 }
+
+// captureTransport records the body and ContentLength of the request it is
+// asked to send, then answers 200. Used to assert what actually reaches the
+// wire under --debug.
+type captureTransport struct {
+	gotBody       []byte
+	gotContentLen int64
+}
+
+func (c *captureTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	c.gotContentLen = req.ContentLength
+	if req.Body != nil {
+		c.gotBody, _ = io.ReadAll(req.Body)
+		_ = req.Body.Close()
+	}
+	return &http.Response{
+		StatusCode: http.StatusOK,
+		Body:       io.NopCloser(strings.NewReader(`{"ok":true}`)),
+		Header:     make(http.Header),
+		Request:    req,
+	}, nil
+}
+
+// errThenEOFReader errors on the first Read, simulating a body reader that
+// fails partway. GetBody on the request supplies the full payload for replay.
+type errThenEOFReader struct{ failed bool }
+
+func (r *errThenEOFReader) Read(p []byte) (int, error) {
+	if !r.failed {
+		r.failed = true
+		return 0, io.ErrUnexpectedEOF
+	}
+	return 0, io.EOF
+}
+func (r *errThenEOFReader) Close() error { return nil }
+
+// Regression: when --debug's initial body read fails but the request carries a
+// GetBody, the recovery path must send the FULL body on the wire (re-read from
+// GetBody), not an empty body with a stale ContentLength. Previously the
+// recovery branch left requestBody nil, so the debug dump drained the shared
+// restored reader and the wrapped transport received an empty body.
+func TestDebugTransport_RecoversBodyAfterReadError(t *testing.T) {
+	stderr := captureStderr(t)
+	defer stderr.restore()
+
+	const payload = `{"hello":"world","n":42}`
+	capture := &captureTransport{}
+	tr := &debugTransport{wrapped: capture}
+
+	req, _ := http.NewRequest(http.MethodPost, "http://example.test/v1/things", &errThenEOFReader{})
+	req.ContentLength = int64(len(payload))
+	req.GetBody = func() (io.ReadCloser, error) {
+		return io.NopCloser(strings.NewReader(payload)), nil
+	}
+
+	resp, err := tr.RoundTrip(req)
+	if err != nil {
+		t.Fatalf("roundtrip: %v", err)
+	}
+	_ = resp.Body.Close()
+
+	if string(capture.gotBody) != payload {
+		t.Fatalf("wire body = %q, want the full payload %q", capture.gotBody, payload)
+	}
+	if capture.gotContentLen != int64(len(payload)) {
+		t.Fatalf("wire ContentLength = %d, want %d", capture.gotContentLen, len(payload))
+	}
+}
+
+// When the initial body read fails and there is no GetBody to replay from,
+// the request must be failed outright rather than sent with a broken body.
+func TestDebugTransport_FailsWhenBodyUnreadableAndNoGetBody(t *testing.T) {
+	stderr := captureStderr(t)
+	defer stderr.restore()
+
+	capture := &captureTransport{}
+	tr := &debugTransport{wrapped: capture}
+
+	req, _ := http.NewRequest(http.MethodPost, "http://example.test/v1/things", &errThenEOFReader{})
+	req.GetBody = nil
+
+	if _, err := tr.RoundTrip(req); err == nil {
+		t.Fatal("expected an error when the body is unreadable and GetBody is nil")
+	}
+	if capture.gotBody != nil {
+		t.Fatalf("no request should have reached the wire, got body %q", capture.gotBody)
+	}
+}

@@ -5,6 +5,7 @@ package cmd
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/url"
@@ -1205,19 +1206,43 @@ func waitForWorkflowEvalRun(
 	}
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
+	// Poll errors are transient (a redeploy blip must not abort a wait on a
+	// run that is still executing server-side) and retried until the deadline,
+	// mirroring waitForPrimitive; errors that cannot heal (see waitPollTracker)
+	// abort immediately. Tracking last/lastErr keeps the documented promise
+	// that the last-observed run is returned alongside a timeout error even
+	// when the deadline lands mid-GET.
+	var last *retab.WorkflowEvalRun
+	var lastErr error
+	var tracker waitPollTracker
 	for {
 		run, err := client.Workflows.Evals.Runs.Get(ctx, runID)
 		if err != nil {
-			return nil, err
-		}
-		if isTerminalWorkflowEvalRun(run) {
-			return run, nil
+			if tracker.fatal(err) {
+				return last, err
+			}
+			lastErr = err
+		} else {
+			tracker.sawSuccess()
+			last = run
+			lastErr = nil
+			if isTerminalWorkflowEvalRun(run) {
+				return run, nil
+			}
 		}
 		timer := time.NewTimer(pollInterval)
 		select {
 		case <-ctx.Done():
 			timer.Stop()
-			return run, fmt.Errorf("timed out waiting for workflow-eval run %s: %w", runID, ctx.Err())
+			// A poll error caused by the deadline/interrupt itself is not a
+			// server problem — fall through to the timeout/interrupt wording.
+			if lastErr != nil && !errors.Is(lastErr, context.Canceled) && !errors.Is(lastErr, context.DeadlineExceeded) {
+				return last, fmt.Errorf("gave up waiting for workflow-eval run %s after repeated poll errors: %w", runID, lastErr)
+			}
+			if errors.Is(ctx.Err(), context.Canceled) {
+				return last, fmt.Errorf("wait for workflow-eval run %s interrupted: %w", runID, ctx.Err())
+			}
+			return last, fmt.Errorf("timed out waiting for workflow-eval run %s: %w", runID, ctx.Err())
 		case <-timer.C:
 		}
 	}

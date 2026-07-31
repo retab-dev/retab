@@ -5,6 +5,7 @@ package cmd
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -643,6 +644,8 @@ func waitForWorkflowRunByID(cmd *cobra.Command, id string, initial map[string]an
 	ctx, cancelTimeout := context.WithTimeout(ctx, timeout)
 	defer cancelTimeout()
 	last := initial
+	var lastErr error
+	var tracker waitPollTracker
 	for {
 		if status := primitiveStatus(last); workflowRunWaitTerminalStatuses[status] {
 			if err := printResult(cmd, last); err != nil {
@@ -662,6 +665,15 @@ func waitForWorkflowRunByID(cmd *cobra.Command, id string, initial map[string]an
 		case <-ctx.Done():
 			timer.Stop()
 			_ = printResult(cmd, last)
+			// A poll error caused by the deadline/interrupt itself is not a
+			// server problem — fall through to the timeout/interrupt wording.
+			// Mirrors waitForPrimitive.
+			if lastErr != nil && !errors.Is(lastErr, context.Canceled) && !errors.Is(lastErr, context.DeadlineExceeded) {
+				return fmt.Errorf("gave up waiting for workflow run %s after repeated poll errors: %w", id, lastErr)
+			}
+			if errors.Is(ctx.Err(), context.Canceled) {
+				return fmt.Errorf("wait for workflow run %s interrupted: %w", id, ctx.Err())
+			}
 			return fmt.Errorf("timed out waiting for workflow run %s: %w", id, ctx.Err())
 		case <-timer.C:
 		}
@@ -670,13 +682,26 @@ func waitForWorkflowRunByID(cmd *cobra.Command, id string, initial map[string]an
 		// ctxFor, so a server that accepts the connection but never responds
 		// would hang the wait past --timeout-seconds forever. Mirrors
 		// waitForPrimitive, which uses cliJSONRequestIntoCtx for the same reason.
+		//
+		// A poll error is transient (redeploy blip, dropped connection) unless it
+		// is a hard client-side rejection: retrying until the deadline instead of
+		// aborting matches waitForPrimitive, so one reset connection cannot fail
+		// a wait on a run that is still executing server-side. Errors that
+		// cannot heal (see waitPollTracker) still abort immediately.
 		var current any
 		if err := cliJSONRequestIntoCtx(ctx, cmd, http.MethodGet, "/v1/workflows/runs/"+url.PathEscape(id), nil, nil, &current); err != nil {
-			return err
+			if tracker.fatal(err) {
+				return err
+			}
+			lastErr = err
+			continue
 		}
-		var err error
-		if last, err = primitiveMap(current); err != nil {
-			return err
+		if resource, perr := primitiveMap(current); perr != nil {
+			lastErr = perr
+		} else {
+			tracker.sawSuccess()
+			last = resource
+			lastErr = nil
 		}
 	}
 }

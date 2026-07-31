@@ -117,8 +117,11 @@ func TestSecretsSetReadsValueFromFileAndDoesNotPrintIt(t *testing.T) {
 		if err := json.Unmarshal(body, &payload); err != nil {
 			t.Fatalf("body is not JSON: %v", err)
 		}
-		if payload["value"] != "super-secret-value\n" {
-			t.Fatalf("value = %q, want file contents", payload["value"])
+		// The trailing newline the editor/echo appended is trimmed (and any
+		// BOM/UTF-16 re-encoding normalized) so the stored secret equals the
+		// same value typed at the interactive prompt.
+		if payload["value"] != "super-secret-value" {
+			t.Fatalf("value = %q, want trimmed file contents", payload["value"])
 		}
 		sawSet = true
 		w.Header().Set("Content-Type", "application/json")

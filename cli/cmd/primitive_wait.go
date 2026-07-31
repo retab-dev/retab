@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"time"
 
+	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
 )
 
@@ -147,6 +148,45 @@ func primitiveWaitDurations(cmd *cobra.Command) (time.Duration, time.Duration) {
 	return pollInterval, timeout
 }
 
+// waitMaxConsecutive404s is how many consecutive 404 polls a wait loop
+// tolerates before giving up. Read-after-write lag can make a just-created
+// resource briefly 404 (the same lag deleteWithRetryOn404 smooths over), so
+// the first few are forgiven; past that the id is simply wrong or the
+// resource is gone, and burning the remaining timeout cannot change that.
+const waitMaxConsecutive404s = 3
+
+// waitPollTracker classifies poll errors inside a wait loop: transient
+// (retry until the deadline), or hopeless (abort now). Auth and validation
+// rejections can never heal on retry; a 404 gets a short grace window (see
+// waitMaxConsecutive404s). Everything else — 5xx, transport blips — is
+// treated as transient, preserving the redeploy-tolerant behavior the wait
+// loops promise.
+type waitPollTracker struct {
+	consecutive404s int
+}
+
+// fatal reports whether the wait should abort immediately with this error.
+func (t *waitPollTracker) fatal(err error) bool {
+	var apiErr *retab.APIError
+	if !errors.As(err, &apiErr) {
+		return false
+	}
+	switch apiErr.StatusCode {
+	case http.StatusUnauthorized, http.StatusForbidden,
+		http.StatusBadRequest, http.StatusUnprocessableEntity:
+		return true
+	case http.StatusNotFound:
+		t.consecutive404s++
+		return t.consecutive404s >= waitMaxConsecutive404s
+	}
+	return false
+}
+
+// sawSuccess resets the 404 grace window after any successful poll.
+func (t *waitPollTracker) sawSuccess() {
+	t.consecutive404s = 0
+}
+
 func waitForPrimitive(
 	ctx context.Context,
 	cmd *cobra.Command,
@@ -165,22 +205,30 @@ func waitForPrimitive(
 	defer cancel()
 	var last map[string]any
 	var lastErr error
+	var tracker waitPollTracker
 	for {
 		// A poll error is treated as transient (the server may be redeploying /
 		// briefly unreachable, or a background primitive's host instance is
 		// restarting) and retried until the primitive reaches a terminal status or
 		// the overall timeout elapses — rather than aborting the wait on the first
 		// blip. A genuinely persistent error surfaces when the timeout fires.
+		// Errors that cannot heal (bad credentials, malformed request, an id
+		// that keeps 404ing past its read-after-write grace) abort immediately
+		// instead of silently burning the whole timeout — see waitPollTracker.
 		// The deadline ctx must bound the request itself, not just the sleep
 		// between polls: a server that accepts the connection but never
 		// responds would otherwise hang the wait forever.
 		var result any
 		err := cliJSONRequestIntoCtx(ctx, cmd, http.MethodGet, primitiveGetPath(spec, id), nil, nil, &result)
 		if err != nil {
+			if tracker.fatal(err) {
+				return last, err
+			}
 			lastErr = err
 		} else if current, perr := primitiveMap(result); perr != nil {
 			lastErr = perr
 		} else {
+			tracker.sawSuccess()
 			last = current
 			lastErr = nil
 			if isTerminalPrimitiveStatus(primitiveStatus(current)) {

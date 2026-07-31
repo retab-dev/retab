@@ -8,6 +8,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // outputFlagValue is a pflag.Value for --output that rejects unknown
@@ -43,9 +44,22 @@ func (o *outputTableFlagValue) Set(raw string) error {
 		return fmt.Errorf("invalid --output-table value %q", raw)
 	}
 	if enabled {
-		return o.output.Set(string(OutputTable))
+		return setRootOutputFormat(o.output, string(OutputTable))
 	}
 	return nil
+}
+
+// setRootOutputFormat routes a format shortcut (`--output-table`, `--json`)
+// through pflag's FlagSet.Set on the real `output` flag when it is registered,
+// so the flag's Changed bit is stamped — consumers like explicitOutputJSON
+// gate on Changed("output"), and mutating the Value directly would leave the
+// shortcut silently ignored there. Falls back to the bare Value for unit
+// tests that wire the values without a FlagSet.
+func setRootOutputFormat(output *outputFlagValue, format string) error {
+	if flags := rootCmd.PersistentFlags(); flags.Lookup("output") != nil && flags.Lookup("output").Value == pflag.Value(output) {
+		return flags.Set("output", format)
+	}
+	return output.Set(format)
 }
 
 // outputJSONFlagValue backs the `--json` shortcut, mirroring outputTableFlagValue.
@@ -67,7 +81,7 @@ func (o *outputJSONFlagValue) Set(raw string) error {
 		return fmt.Errorf("invalid --json value %q", raw)
 	}
 	if enabled {
-		return o.output.Set(string(OutputJSON))
+		return setRootOutputFormat(o.output, string(OutputJSON))
 	}
 	return nil
 }
@@ -113,6 +127,14 @@ func executeRoot() error {
 func normalizeUnicodeDashArgs(args []string) []string {
 	out := make([]string, len(args))
 	for i, arg := range args {
+		// Everything after the `--` end-of-flags terminator is positional by
+		// definition; normalizing it would mangle a filename or pattern that
+		// legitimately starts with a Unicode dash and defeat the one escape
+		// hatch that exists for exactly that case.
+		if arg == "--" {
+			copy(out[i:], args[i:])
+			break
+		}
 		out[i] = normalizeUnicodeDashArg(arg)
 	}
 	return out
@@ -125,6 +147,11 @@ func normalizeUnicodeDashArg(arg string) string {
 		}
 		if strings.HasPrefix(arg, dash) {
 			suffix := strings.TrimPrefix(arg, dash)
+			if suffix == "" {
+				// A bare Unicode dash carries no flag name to rescue; turning
+				// it into `--` would inject a second end-of-flags terminator.
+				return arg
+			}
 			if utf8.RuneCountInString(suffix) == 1 {
 				return "-" + suffix
 			}

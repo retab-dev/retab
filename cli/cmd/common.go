@@ -2469,16 +2469,40 @@ func (t *debugTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if req.Body != nil {
 		body, readErr := io.ReadAll(req.Body)
 		if readErr != nil {
+			// The body is partially consumed and cannot be replayed from the
+			// original reader; sending the request anyway would put a
+			// truncated/empty body on the wire (while ContentLength still
+			// claims the full size) — a confusing 4xx that only reproduces
+			// under --debug. Re-read the full body from GetBody when the
+			// transport provides it, otherwise fail the request outright.
 			fmt.Fprintf(os.Stderr, "--- HTTP debug read error ---\n%v\n", readErr)
+			_ = req.Body.Close()
+			if req.GetBody == nil {
+				return nil, fmt.Errorf("--debug: read request body: %w", readErr)
+			}
+			fresh, getErr := req.GetBody()
+			if getErr != nil {
+				return nil, fmt.Errorf("--debug: re-open request body after read error: %w", getErr)
+			}
+			reread, rereadErr := io.ReadAll(fresh)
+			_ = fresh.Close()
+			if rereadErr != nil {
+				return nil, fmt.Errorf("--debug: re-read request body after read error: %w", rereadErr)
+			}
+			body = reread
 		} else {
 			_ = req.Body.Close()
-			requestBody = body
-			req.Body = io.NopCloser(bytes.NewReader(requestBody))
-			req.GetBody = func() (io.ReadCloser, error) {
-				return io.NopCloser(bytes.NewReader(requestBody)), nil
-			}
-			req.ContentLength = int64(len(body))
 		}
+		// Normalize the (now fully-buffered) body for both branches: give the
+		// wire request its own reader so the dump below — which builds a
+		// separate reader from requestBody — cannot drain what still has to go
+		// over the wire, and align ContentLength with the buffered length.
+		requestBody = body
+		req.Body = io.NopCloser(bytes.NewReader(requestBody))
+		req.GetBody = func() (io.ReadCloser, error) {
+			return io.NopCloser(bytes.NewReader(requestBody)), nil
+		}
+		req.ContentLength = int64(len(requestBody))
 	}
 
 	// Clone after restoring the request body so the debug dump cannot consume
