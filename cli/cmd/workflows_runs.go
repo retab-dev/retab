@@ -359,6 +359,9 @@ removed in a future release.`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		req := workflowRunCreateParams{WorkflowID: args[0]}
 		req.Version, _ = cmd.Flags().GetString("version")
+		if err := rejectPublishHistoryIDAsVersion(req.Version); err != nil {
+			return err
+		}
 		// --draft is a convenience alias for --version draft (run the editable
 		// draft without publishing). It conflicts with an explicit --version that
 		// names something other than the draft.
@@ -1745,6 +1748,7 @@ also configurable.`,
 		req := retab.WorkflowRunsExportParams{}
 		req.WorkflowID = workflowID
 		req.BlockID, _ = cmd.Flags().GetString("block-id")
+		req.BlockID = strings.TrimSpace(req.BlockID)
 		if v, _ := cmd.Flags().GetString("export-source"); v != "" {
 			source := retab.WorkflowExportPayloadRequestExportSource(v)
 			req.ExportSource = &source
@@ -1806,7 +1810,19 @@ also configurable.`,
 			}
 			req.Quote = &q
 		}
-		result, err := client.Workflows.Runs.Export(ctx, &req)
+		// The export indexes by the runtime block id, so the spec alias the author
+		// wrote — the only id `spec get` shows them — 404s on a block that is
+		// plainly in the graph. Resolve only after that failure, so an export that
+		// already worked still costs exactly one request.
+		result, err := callWithBlockAliasFallback(
+			req.BlockID,
+			func(blockID string) (*retab.WorkflowExportPayloadResponse, error) {
+				attempt := req
+				attempt.BlockID = blockID
+				return client.Workflows.Runs.Export(ctx, &attempt)
+			},
+			func() string { return resolveWorkflowBlockAlias(ctx, client, workflowID, req.BlockID) },
+		)
 		if err != nil {
 			return err
 		}

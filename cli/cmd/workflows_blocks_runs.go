@@ -59,9 +59,22 @@ func runWorkflowsBlocksRunsList(cmd *cobra.Command, args []string) error {
 	ctx, cancel := ctxFor(cmd)
 	defer cancel()
 	if workflowID != "" {
-		if _, err := client.Workflows.Blocks.Get(ctx, blockID, &retab.WorkflowBlocksGetParams{WorkflowID: &workflowID}); err != nil {
+		// The scope check indexes by runtime block id, so authoring a workflow
+		// from a spec and then listing one block's steps by the id you wrote 404s
+		// on a block that is right there in the graph. Resolve only after that
+		// failure, so the check still costs one request when the id is concrete.
+		resolved, err := callWithBlockAliasFallback(
+			blockID,
+			func(id string) (string, error) {
+				_, err := client.Workflows.Blocks.Get(ctx, id, &retab.WorkflowBlocksGetParams{WorkflowID: &workflowID})
+				return id, err
+			},
+			func() string { return resolveWorkflowBlockAlias(ctx, client, workflowID, blockID) },
+		)
+		if err != nil {
 			return err
 		}
+		blockID = resolved
 	}
 	params := workflowBlockRunsListParams(cmd, blockID)
 	result, err := client.Workflows.Steps.List(ctx, params)

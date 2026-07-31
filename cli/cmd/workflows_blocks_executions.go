@@ -88,7 +88,21 @@ step.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Blocks.Executions.Create(ctx, &request)
+		// The endpoint looks the step up by runtime block id, and a spec alias
+		// misses — surfacing as "422 Step data not found for this block in the
+		// given run", which reads like the run never executed the block rather
+		// than like the id is not the one it indexes by. Retrying only after that
+		// failure means a create that already worked is untouched, and a failed
+		// create has by definition executed nothing to be repeated.
+		result, err := callWithBlockAliasFallback(
+			request.BlockID,
+			func(blockID string) (*retab.StoredBlockExecution, error) {
+				attempt := request
+				attempt.BlockID = blockID
+				return client.Workflows.Blocks.Executions.Create(ctx, &attempt)
+			},
+			func() string { return resolveWorkflowBlockAliasForRun(ctx, client, runID, request.BlockID) },
+		)
 		if err != nil {
 			return err
 		}
@@ -132,8 +146,15 @@ block execution history should be returned.`,
 			PaginationParams: collectListParams(cmd),
 			RunID:            runID,
 		}
-		params.BlockID = blockID
-		result, err := client.Workflows.Blocks.Executions.List(ctx, &params)
+		result, err := callWithBlockAliasFallback(
+			blockID,
+			func(id string) (*retab.PaginatedList[retab.StoredBlockExecution], error) {
+				attempt := params
+				attempt.BlockID = id
+				return client.Workflows.Blocks.Executions.List(ctx, &attempt)
+			},
+			func() string { return resolveWorkflowBlockAliasForRun(ctx, client, runID, blockID) },
+		)
 		if err != nil {
 			return err
 		}
