@@ -17,9 +17,9 @@ func triggeredByCell(t *testing.T, trigger usagePrimitiveTriggeredBy) string {
 // the API resolved one.
 func TestTriggeredByCellPrefersTheEmailOverTheUserID(t *testing.T) {
 	got := triggeredByCell(t, usagePrimitiveTriggeredBy{
-		AuthMethod: "session_token",
-		UserID:     "user_01H8XYZ",
-		UserEmail:  "ada@retab.com",
+		AuthMethod: strPtr("session_token"),
+		UserID:     strPtr("user_01H8XYZ"),
+		UserEmail:  strPtr("ada@retab.com"),
 	})
 	if got != "session_token:ada@retab.com" {
 		t.Fatalf("cell = %q, want the email", got)
@@ -30,8 +30,8 @@ func TestTriggeredByCellPrefersTheEmailOverTheUserID(t *testing.T) {
 // still identifies the caller rather than going blank.
 func TestTriggeredByCellFallsBackToTheUserID(t *testing.T) {
 	got := triggeredByCell(t, usagePrimitiveTriggeredBy{
-		AuthMethod: "session_token",
-		UserID:     "user_01H8XYZ",
+		AuthMethod: strPtr("session_token"),
+		UserID:     strPtr("user_01H8XYZ"),
 	})
 	if got != "session_token:user_01H8XYZ" {
 		t.Fatalf("cell = %q, want the user id fallback", got)
@@ -42,10 +42,10 @@ func TestTriggeredByCellFallsBackToTheUserID(t *testing.T) {
 // and outranks everything else — a key has no email of its own.
 func TestTriggeredByCellPrefersTheKeyNameForAPIKeys(t *testing.T) {
 	got := triggeredByCell(t, usagePrimitiveTriggeredBy{
-		AuthMethod: "api_key",
-		APIKeyID:   "665f00aa11bb22cc33dd44ee",
-		KeyPrefix:  "sk_prod",
-		KeyName:    "backend-ingest",
+		AuthMethod: strPtr("api_key"),
+		APIKeyID:   strPtr("665f00aa11bb22cc33dd44ee"),
+		KeyPrefix:  strPtr("sk_prod"),
+		KeyName:    strPtr("backend-ingest"),
 	})
 	if got != "api_key:backend-ingest" {
 		t.Fatalf("cell = %q, want the key name", got)
@@ -56,9 +56,9 @@ func TestTriggeredByCellPrefersTheKeyNameForAPIKeys(t *testing.T) {
 // api_keys document id.
 func TestTriggeredByCellFallsBackToTheKeyPrefixNotTheObjectID(t *testing.T) {
 	got := triggeredByCell(t, usagePrimitiveTriggeredBy{
-		AuthMethod: "api_key",
-		APIKeyID:   "665f00aa11bb22cc33dd44ee",
-		KeyPrefix:  "sk_prod",
+		AuthMethod: strPtr("api_key"),
+		APIKeyID:   strPtr("665f00aa11bb22cc33dd44ee"),
+		KeyPrefix:  strPtr("sk_prod"),
 	})
 	if got != "api_key:sk_prod" {
 		t.Fatalf("cell = %q, want the key prefix", got)
@@ -71,7 +71,7 @@ func TestTriggeredByCellFallsBackToTheKeyPrefixNotTheObjectID(t *testing.T) {
 // A master-key execution has no person and no key name; the auth method alone is
 // the honest answer.
 func TestTriggeredByCellShowsTheBareAuthMethodWhenThereIsNoHandle(t *testing.T) {
-	if got := triggeredByCell(t, usagePrimitiveTriggeredBy{AuthMethod: "master_key"}); got != "master_key" {
+	if got := triggeredByCell(t, usagePrimitiveTriggeredBy{AuthMethod: strPtr("master_key")}); got != "master_key" {
 		t.Fatalf("cell = %q, want the bare auth method", got)
 	}
 }
@@ -89,14 +89,14 @@ func TestTriggeredByCellIsEmptyWithoutProvenance(t *testing.T) {
 // the table.
 func TestTriggeredByJSONRoundTripKeepsTheEmail(t *testing.T) {
 	trigger := usagePrimitiveTriggeredBy{
-		AuthMethod: "session_token",
-		UserID:     "user_01H8XYZ",
-		UserEmail:  "ada@retab.com",
+		AuthMethod: strPtr("session_token"),
+		UserID:     strPtr("user_01H8XYZ"),
+		UserEmail:  strPtr("ada@retab.com"),
 	}
-	if trigger.UserEmail != "ada@retab.com" {
+	if derefUsageString(trigger.UserEmail) != "ada@retab.com" {
 		t.Fatalf("user_email lost: %+v", trigger)
 	}
-	if cell := triggeredByCell(t, trigger); cell == trigger.UserID {
+	if cell := triggeredByCell(t, trigger); cell == derefUsageString(trigger.UserID) {
 		t.Fatal("the summary cell must not be the bare user id when an email exists")
 	}
 }

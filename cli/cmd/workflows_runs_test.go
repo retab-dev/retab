@@ -2610,6 +2610,74 @@ func TestWorkflowsRunsListRejectsReversedDurationRange(t *testing.T) {
 	}
 }
 
+func TestWorkflowsRunsListRejectsZeroDurationFilters(t *testing.T) {
+	// A zero duration bound is sent as min_duration_ms=0 / max_duration_ms=0 and
+	// then dropped by the server, which applies each bound only when it is > 0
+	// (huma forbids pointer query params, so 0 doubles as "unset"). Observed on
+	// staging: `--max-duration 0` returned all 29 runs in the workspace instead
+	// of none, and `--min-duration 0` returned 29 where `--min-duration 1`
+	// returned 26. Refuse client-side rather than answer with rows that ignore
+	// the bound.
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Fatalf("server should NOT be reached for a zero duration bound, got %s %s", r.Method, r.URL.RequestURI())
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	for _, flag := range []string{"min-duration", "max-duration"} {
+		t.Run(flag, func(t *testing.T) {
+			if err := workflowsRunsListCmd.Flags().Set(flag, "0"); err != nil {
+				t.Fatalf("set --%s: %v", flag, err)
+			}
+			t.Cleanup(func() { resetWorkflowRunsFlag(t, workflowsRunsListCmd, flag) })
+
+			err := workflowsRunsListCmd.RunE(workflowsRunsListCmd, nil)
+			if err == nil {
+				t.Fatalf("expected --%s 0 to be rejected, got nil", flag)
+			}
+			if !strings.Contains(err.Error(), "--"+flag) {
+				t.Fatalf("error %q should name --%s", err.Error(), flag)
+			}
+		})
+	}
+}
+
+func TestWorkflowsRunsListAcceptsPositiveDurationFilters(t *testing.T) {
+	// Guard the other side of the zero check: a positive bound must still reach
+	// the wire, so the fix above cannot drift into rejecting every duration
+	// filter.
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
+	t.Setenv("HOME", t.TempDir())
+
+	var gotQuery string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotQuery = r.URL.RawQuery
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"data":[],"list_metadata":{}}`))
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	for flag, value := range map[string]string{"min-duration": "1", "max-duration": "5000"} {
+		if err := workflowsRunsListCmd.Flags().Set(flag, value); err != nil {
+			t.Fatalf("set --%s: %v", flag, err)
+		}
+		t.Cleanup(func() { resetWorkflowRunsFlag(t, workflowsRunsListCmd, flag) })
+	}
+
+	if err := workflowsRunsListCmd.RunE(workflowsRunsListCmd, nil); err != nil {
+		t.Fatalf("positive duration bounds should be accepted, got %v", err)
+	}
+	for _, want := range []string{"min_duration_ms=1", "max_duration_ms=5000"} {
+		if !strings.Contains(gotQuery, want) {
+			t.Fatalf("query %q should carry %q", gotQuery, want)
+		}
+	}
+}
+
 func TestWorkflowsRunsListAcceptsEqualDateRange(t *testing.T) {
 	// Equal from/to is a legitimate "single-day window" filter — must
 	// NOT be rejected as a reversed range. Pin so the validator can't

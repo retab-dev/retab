@@ -12,6 +12,11 @@ import (
 
 // usageBlockRecord mirrors the GET /v1/usage/blocks row (UsageBlockRecord on the
 // server). Only usage + operational metadata is present by design.
+//
+// Optional fields carry no `,omitempty`: the server's usage DTOs hold a "null
+// when empty, never omit" contract so every row exposes the same key set, and
+// `--output json` re-marshals this struct rather than passing the response body
+// through. See usagePrimitiveRecord for the full rationale.
 type usageBlockRecord struct {
 	BlockID        string  `json:"block_id"`
 	WorkflowID     string  `json:"workflow_id"`
@@ -22,9 +27,9 @@ type usageBlockRecord struct {
 	Credits        float64 `json:"credits"`
 	// StatusCounts is the block's execution count broken down by lifecycle status
 	// (e.g. {"completed": 190, "failed": 11}); its values sum to ExecutionCount.
-	StatusCounts    map[string]int64 `json:"status_counts,omitempty"`
-	FirstActivityAt *string          `json:"first_activity_at,omitempty"`
-	LastActivityAt  *string          `json:"last_activity_at,omitempty"`
+	StatusCounts    map[string]int64 `json:"status_counts"`
+	FirstActivityAt *string          `json:"first_activity_at"`
+	LastActivityAt  *string          `json:"last_activity_at"`
 }
 
 // usageBlockListResponse is the GET /v1/usage/blocks envelope. The `data` field

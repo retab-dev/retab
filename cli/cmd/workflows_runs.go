@@ -1346,6 +1346,9 @@ repeatable, AND-ed). There is no cost filter. Page by run id
 		if minDuration != nil && maxDuration != nil && *minDuration > *maxDuration {
 			return fmt.Errorf("--min-duration (%d) cannot be greater than --max-duration (%d)", *minDuration, *maxDuration)
 		}
+		if err := rejectZeroDurationFilters(cmd); err != nil {
+			return err
+		}
 		if err := rejectUnsupportedCostFilters(cmd); err != nil {
 			return err
 		}
@@ -1355,6 +1358,41 @@ repeatable, AND-ed). There is no cost filter. Page by run id
 		}
 		return printWorkflowRunListResult(cmd, result)
 	}),
+}
+
+// rejectZeroDurationFilters fails when --min-duration 0 / --max-duration 0 are
+// passed to `runs list`. GET /v1/workflows/runs carries these as plain int64
+// query params (huma forbids pointer query params, so there is no way to tell
+// "absent" from "explicitly zero" on the wire) and buildRunFilter applies each
+// bound only when it is > 0. A zero therefore reaches the server and is dropped:
+// `--max-duration 0` asks for the most restrictive window there is and comes
+// back with every run in the workspace — the exact inversion of what was typed.
+// `--min-duration 0` is not degenerate either; it means "has a measured
+// duration", which would exclude still-running and awaiting_review runs, and it
+// is silently ignored too.
+//
+// Same principle as rejectUnsupportedCostFilters: a filter that quietly returns
+// the wrong rows is worse than one that refuses. The bound cannot be honored, so
+// say so instead of answering with an unfiltered page.
+func rejectZeroDurationFilters(cmd *cobra.Command) error {
+	var passed []string
+	for _, name := range []string{"min-duration", "max-duration"} {
+		if !cmd.Flags().Changed(name) {
+			continue
+		}
+		if v, _ := cmd.Flags().GetInt(name); v == 0 {
+			passed = append(passed, "--"+name)
+		}
+	}
+	if len(passed) == 0 {
+		return nil
+	}
+	return fmt.Errorf(
+		"%s: 0 is indistinguishable from an absent filter on the wire, so the API ignores it "+
+			"and returns runs that do not respect the bound; drop the flag to list every run, "+
+			"or pass a positive number of milliseconds",
+		strings.Join(passed, " / "),
+	)
 }
 
 // rejectUnsupportedCostFilters fails when --min-cost / --max-cost are passed to

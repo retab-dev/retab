@@ -16,49 +16,67 @@ import (
 
 // usagePrimitiveRecord mirrors the GET /v1/usage/primitives row
 // (UsagePrimitiveRecord on the server). Only usage + operational metadata plus
-// the caller's own user metadata is present by design. The origin identifiers,
-// resource kind, created_at, and metadata are nullable on the wire (explicit
-// JSON null when absent); decoding a null into these Go fields leaves the zero
-// value, which the table renderer prints as an empty cell.
+// the caller's own user metadata is present by design.
+//
+// Every optional field is a pointer / map / slice WITHOUT `,omitempty`, because
+// the server's usage DTOs hold a "null when empty, never omit" contract (see
+// usage_null_contract_test.go server-side, which fails the build if any usage
+// DTO field re-introduces `,omitempty`): a consumer must see the same key set on
+// every row. `--output json` re-marshals THIS struct rather than passing the
+// response body through, so an `,omitempty` here silently breaks that contract
+// downstream of an endpoint that carefully preserves it — a script reading
+// row["duration_ms"] would work on completed rows and KeyError on running ones.
+// A nil pointer marshals back to the explicit null the server sent, and the
+// table/CSV renderers already print nil as an empty cell.
 type usagePrimitiveRecord struct {
 	PrimitiveExecutionID string                     `json:"primitive_execution_id"`
 	Operation            string                     `json:"operation"`
-	EnvironmentID        string                     `json:"environment_id,omitempty"`
-	WorkflowID           string                     `json:"workflow_id,omitempty"`
-	RunID                string                     `json:"run_id,omitempty"`
-	ProjectID            string                     `json:"project_id,omitempty"`
-	BlockID              string                     `json:"block_id,omitempty"`
+	EnvironmentID        *string                    `json:"environment_id"`
+	WorkflowID           *string                    `json:"workflow_id"`
+	RunID                *string                    `json:"run_id"`
+	ProjectID            *string                    `json:"project_id"`
+	BlockID              *string                    `json:"block_id"`
 	Status               string                     `json:"status"`
-	ResourceKind         string                     `json:"resource_kind,omitempty"`
-	Model                string                     `json:"model,omitempty"`
-	CreatedAt            *string                    `json:"created_at,omitempty"`
-	CompletedAt          *string                    `json:"completed_at,omitempty"`
-	DurationMs           *int64                     `json:"duration_ms,omitempty"`
+	ResourceKind         *string                    `json:"resource_kind"`
+	Model                *string                    `json:"model"`
+	CreatedAt            *string                    `json:"created_at"`
+	CompletedAt          *string                    `json:"completed_at"`
+	DurationMs           *int64                     `json:"duration_ms"`
 	PageCount            int64                      `json:"page_count"`
 	Credits              float64                    `json:"credits"`
-	Documents            []usagePrimitiveDocumentEl `json:"documents,omitempty"`
-	Metadata             map[string]string          `json:"metadata,omitempty"`
-	TriggeredBy          *usagePrimitiveTriggeredBy `json:"triggered_by,omitempty"`
+	Documents            []usagePrimitiveDocumentEl `json:"documents"`
+	Metadata             map[string]string          `json:"metadata"`
+	TriggeredBy          *usagePrimitiveTriggeredBy `json:"triggered_by"`
 }
 
 // usagePrimitiveTriggeredBy is the triggering credential's provenance: the auth
 // method plus the credential's non-secret identifiers (api key id / access
 // token id / user id, and the key's display prefix + name). Null for rows
-// recorded before provenance capture.
+// recorded before provenance capture. Nullable-without-omitempty for the same
+// stable-key-set reason as usagePrimitiveRecord.
 type usagePrimitiveTriggeredBy struct {
-	AuthMethod    string `json:"auth_method,omitempty"`
-	UserID        string `json:"user_id,omitempty"`
-	UserEmail     string `json:"user_email,omitempty"`
-	APIKeyID      string `json:"api_key_id,omitempty"`
-	AccessTokenID string `json:"access_token_id,omitempty"`
-	KeyPrefix     string `json:"key_prefix,omitempty"`
-	KeyName       string `json:"key_name,omitempty"`
+	AuthMethod    *string `json:"auth_method"`
+	UserID        *string `json:"user_id"`
+	UserEmail     *string `json:"user_email"`
+	APIKeyID      *string `json:"api_key_id"`
+	AccessTokenID *string `json:"access_token_id"`
+	KeyPrefix     *string `json:"key_prefix"`
+	KeyName       *string `json:"key_name"`
 }
 
 // usagePrimitiveDocumentEl is one source document of a primitive execution row.
 type usagePrimitiveDocumentEl struct {
-	FileID   string `json:"file_id,omitempty"`
-	Filename string `json:"filename,omitempty"`
+	FileID   *string `json:"file_id"`
+	Filename *string `json:"filename"`
+}
+
+// derefUsageString reads a nullable usage-DTO string field, mapping the server's
+// explicit null to "" for the table/CSV cell renderers.
+func derefUsageString(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }
 
 // usagePrimitiveListResponse is the GET /v1/usage/primitives envelope. The `data`
@@ -357,23 +375,24 @@ func usagePrimitiveTriggeredByCell(row any) string {
 	// Prefer the most human-readable handle available: a key's display name for
 	// application callers, the acting person's email when the API resolved one,
 	// then the raw ids.
-	label := t.KeyName
+	label := derefUsageString(t.KeyName)
 	if label == "" {
-		label = t.KeyPrefix
+		label = derefUsageString(t.KeyPrefix)
 	}
 	if label == "" {
-		label = t.UserEmail
+		label = derefUsageString(t.UserEmail)
 	}
 	if label == "" {
-		label = t.UserID
+		label = derefUsageString(t.UserID)
 	}
+	authMethod := derefUsageString(t.AuthMethod)
 	if label == "" {
-		return t.AuthMethod
+		return authMethod
 	}
-	if t.AuthMethod == "" {
+	if authMethod == "" {
 		return label
 	}
-	return fmt.Sprintf("%s:%s", t.AuthMethod, label)
+	return fmt.Sprintf("%s:%s", authMethod, label)
 }
 
 // usagePrimitiveFilenameCell renders the first source document's filename (with a
@@ -384,9 +403,9 @@ func usagePrimitiveFilenameCell(row any) string {
 	if !ok || len(rec.Documents) == 0 {
 		return ""
 	}
-	name := rec.Documents[0].Filename
+	name := derefUsageString(rec.Documents[0].Filename)
 	if name == "" {
-		name = rec.Documents[0].FileID
+		name = derefUsageString(rec.Documents[0].FileID)
 	}
 	if extra := len(rec.Documents) - 1; extra > 0 {
 		name = fmt.Sprintf("%s +%d", name, extra)

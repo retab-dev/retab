@@ -56,11 +56,28 @@ func TestNonNegativeNumericFlagsRejectNegativeValuesLocally(t *testing.T) {
 			if reset == "" {
 				reset = "0"
 			}
-			if resetErr := tc.cmd.Flags().Set(tc.flag, reset); resetErr != nil {
-				t.Fatalf("reset --%s: %v", tc.flag, resetErr)
-			}
+			restoreNumericFlag(t, tc.cmd, tc.flag, reset)
 		})
 	}
+}
+
+// restoreNumericFlag puts a flag back to `value` AND clears Changed. These
+// cobra commands are package-level globals shared by every test in the package,
+// and pflag's Set marks the flag Changed — so restoring the value alone leaves
+// the flag looking like the user explicitly passed it. That is not hypothetical:
+// resetting --min-duration/--max-duration to "0" here left them Changed for the
+// rest of the suite, which is indistinguishable from `runs list --min-duration 0`
+// and trips the guard that rejects a zero duration bound.
+func restoreNumericFlag(t *testing.T, cmd *cobra.Command, name, value string) {
+	t.Helper()
+	if err := cmd.Flags().Set(name, value); err != nil {
+		t.Fatalf("reset --%s: %v", name, err)
+	}
+	flag := cmd.Flags().Lookup(name)
+	if flag == nil {
+		t.Fatalf("missing flag --%s", name)
+	}
+	flag.Changed = false
 }
 
 func TestPositiveNumericFlagsRejectZeroValuesLocally(t *testing.T) {
@@ -87,9 +104,7 @@ func TestPositiveNumericFlagsRejectZeroValuesLocally(t *testing.T) {
 			if !strings.Contains(err.Error(), tc.wantError) {
 				t.Fatalf("error %q does not contain %q", err.Error(), tc.wantError)
 			}
-			if resetErr := tc.cmd.Flags().Set(tc.flag, tc.reset); resetErr != nil {
-				t.Fatalf("reset --%s: %v", tc.flag, resetErr)
-			}
+			restoreNumericFlag(t, tc.cmd, tc.flag, tc.reset)
 		})
 	}
 }
@@ -116,9 +131,7 @@ func TestConsensusFlagsRejectValuesAboveBackendRangeLocally(t *testing.T) {
 			if !strings.Contains(err.Error(), "between") {
 				t.Fatalf("error %q does not mention bounded validation", err.Error())
 			}
-			if resetErr := tc.cmd.Flags().Set("n-consensus", tc.reset); resetErr != nil {
-				t.Fatalf("reset --n-consensus: %v", resetErr)
-			}
+			restoreNumericFlag(t, tc.cmd, "n-consensus", tc.reset)
 		})
 	}
 }
@@ -168,9 +181,7 @@ func TestSharedListLimitFlagsRejectValuesAboveBackendRangeLocally(t *testing.T) 
 			if !strings.Contains(err.Error(), "between 1 and 100") {
 				t.Fatalf("error %q does not mention backend limit range", err.Error())
 			}
-			if resetErr := tc.cmd.Flags().Set("limit", "1"); resetErr != nil {
-				t.Fatalf("reset --limit: %v", resetErr)
-			}
+			restoreNumericFlag(t, tc.cmd, "limit", "1")
 		})
 	}
 }

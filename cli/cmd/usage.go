@@ -27,29 +27,34 @@ filenames, artifact URIs, or provider costs.`,
 
 // usageRunRecord mirrors the GET /v1/usage/runs row (UsageRunRecord on the
 // server). Only usage + operational metadata is present by design.
+//
+// Optional fields carry no `,omitempty`: the server's usage DTOs hold a "null
+// when empty, never omit" contract so every row exposes the same key set, and
+// `--output json` re-marshals this struct rather than passing the response body
+// through. See usagePrimitiveRecord for the full rationale.
 type usageRunRecord struct {
 	RunID       string  `json:"run_id"`
 	WorkflowID  string  `json:"workflow_id"`
 	Status      string  `json:"status"`
 	TriggerType string  `json:"trigger_type"`
-	CreatedAt   *string `json:"created_at,omitempty"`
-	StartedAt   *string `json:"started_at,omitempty"`
-	CompletedAt *string `json:"completed_at,omitempty"`
-	DurationMs  *int64  `json:"duration_ms,omitempty"`
+	CreatedAt   *string `json:"created_at"`
+	StartedAt   *string `json:"started_at"`
+	CompletedAt *string `json:"completed_at"`
+	DurationMs  *int64  `json:"duration_ms"`
 	PageCount   int64   `json:"page_count"`
 	Credits     float64 `json:"credits"`
 	// TriggeredBy is WHO started the run, where TriggerType is WHAT kind of
 	// trigger it was. Null for the trigger types with no acting principal
 	// (schedule, webhook, email, restart).
-	TriggeredBy *usageRunTriggeredBy `json:"triggered_by,omitempty"`
+	TriggeredBy *usageRunTriggeredBy `json:"triggered_by"`
 }
 
 // usageRunTriggeredBy is the acting principal that started a run: the WorkOS
 // user id plus the email resolved for it, or the api key id for an api trigger.
 type usageRunTriggeredBy struct {
-	UserID    *string `json:"user_id,omitempty"`
-	UserEmail *string `json:"user_email,omitempty"`
-	APIKeyID  *string `json:"api_key_id,omitempty"`
+	UserID    *string `json:"user_id"`
+	UserEmail *string `json:"user_email"`
+	APIKeyID  *string `json:"api_key_id"`
 }
 
 type usageRunListMetadata struct {
