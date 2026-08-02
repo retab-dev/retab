@@ -8,10 +8,7 @@ import (
 	"testing"
 )
 
-var approvedCLINonWorkflowNonReferenceRoutes = map[string]bool{
-	// Split reconstruction shipped in the CLI ahead of the public reference.
-	"POST /v1/splits/reconstruct": true,
-}
+var approvedCLINonWorkflowNonReferenceRoutes = map[string]bool{}
 
 func TestNonWorkflowCLIClientCallsHaveRouteContracts(t *testing.T) {
 	source := readCLISource(t)
