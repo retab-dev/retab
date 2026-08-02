@@ -35,7 +35,7 @@ function captureRequest(): { client: Retab; captured: CapturedRequest[] } {
           json_schema: { type: 'object' },
           output: {},
         }),
-        { status: 200, headers: { 'Content-Type': 'application/json' } },
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
       );
     }) as typeof fetch,
   });
@@ -61,8 +61,7 @@ describe('deep_extraction request shape', () => {
       undefined,
       undefined,
       undefined,
-      undefined,
-      true,
+      true
     );
 
     expect(captured).toHaveLength(1);
@@ -95,8 +94,7 @@ describe('deep_extraction request shape', () => {
       undefined,
       undefined,
       undefined,
-      undefined,
-      false,
+      false
     );
 
     expect(captured[0]!.body.deep_extraction).toBe(false);
@@ -119,8 +117,7 @@ describe('deep_extraction request shape', () => {
       undefined,
       undefined,
       undefined,
-      undefined,
-      true,
+      true
     );
 
     expect('deepExtraction' in captured[0]!.body).toBe(false);
@@ -144,11 +141,15 @@ describe('deep_extraction request shape', () => {
       undefined,
       undefined,
       undefined,
-      undefined,
-      true,
+      true
     );
 
-    for (const knob of ['window_size', 'holdback_rows', 'long_list_strategy', 'long_list_target_field']) {
+    for (const knob of [
+      'window_size',
+      'holdback_rows',
+      'long_list_strategy',
+      'long_list_target_field',
+    ]) {
       expect(knob in captured[0]!.body).toBe(false);
     }
   });
@@ -170,8 +171,7 @@ describe('deep_extraction request shape', () => {
       undefined,
       undefined,
       undefined,
-      undefined,
-      true,
+      true
     );
 
     expect(captured).toHaveLength(1);

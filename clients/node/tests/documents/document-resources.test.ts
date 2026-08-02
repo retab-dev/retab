@@ -90,7 +90,7 @@ describe('document resources — create wire contract', () => {
       true,
       false,
       false,
-      { invoice_id: 'group' }
+      true
     );
 
     const call = lastCall(calls);
@@ -107,7 +107,7 @@ describe('document resources — create wire contract', () => {
       bust_cache: true,
       stream: false,
       background: false,
-      chunking_keys: { invoice_id: 'group' },
+      deep_extraction: true,
     });
   });
 
