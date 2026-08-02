@@ -32,6 +32,18 @@
   <ItemGroup>
     <Compile Remove="tests/**/*.cs" />
     <Compile Remove="tests/**/obj/**/*.cs" />
+    <!-- The SDK's default compile glob excludes this project's own intermediate
+         and output directories via $(BaseIntermediateOutputPath) and
+         $(BaseOutputPath). A caller that redirects either one moves those
+         defaults off obj/ and bin/. The docs snippet linter does exactly that
+         (it builds this project with BaseIntermediateOutputPath pointed at a
+         shared cache), so a stale Retab.AssemblyInfo.cs left behind by an
+         earlier `dotnet build` or `pack` here gets swept back into the
+         compilation and fails it with CS0579 duplicate-attribute errors.
+         Exclude these by path so the exclusion holds no matter where a caller
+         points the intermediate and output paths. -->
+    <Compile Remove="obj/**/*.cs" />
+    <Compile Remove="bin/**/*.cs" />
   </ItemGroup>
 
   <ItemGroup>
