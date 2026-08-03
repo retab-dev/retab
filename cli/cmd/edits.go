@@ -299,6 +299,11 @@ Once created, run it by passing ` + "`--template-id`" + ` to
 		if err := validateEditTemplateName(name); err != nil {
 			return err
 		}
+		// --form-fields-file and --document-file both accept "-" for stdin, which
+		// can only be consumed once; reject the ambiguous pair before either read.
+		if err := ensureSingleStdinFlag(cmd, "form-fields-file", "document-file"); err != nil {
+			return err
+		}
 		formFieldsPath, _ := cmd.Flags().GetString("form-fields-file")
 		if formFieldsPath == "" {
 			return fmt.Errorf("--form-fields-file is required")

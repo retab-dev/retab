@@ -56,6 +56,11 @@ returned subdocument references can be fed back into per-section
 		if err != nil {
 			return err
 		}
+		// --subdocuments-file and --document-file both accept "-" for stdin, which
+		// can only be consumed once; reject the ambiguous pair before either read.
+		if err := ensureSingleStdinFlag(cmd, "subdocuments-file", "document-file"); err != nil {
+			return err
+		}
 		subdocsFile, _ := cmd.Flags().GetString("subdocuments-file")
 		if subdocsFile == "" {
 			return fmt.Errorf("--subdocuments-file is required")

@@ -506,6 +506,12 @@ After creation, run with ` + "`workflows evals runs create`" + `.`,
 			return err
 		}
 		req.Name = &trimmedName
+		// --target-file, --source-file, and --assertion-file all accept "-" for
+		// stdin, which can only be consumed once; reject any ambiguous
+		// combination before resolveEvalComponent reads the first one.
+		if err := ensureSingleStdinFlag(cmd, "target-file", "source-file", "assertion-file"); err != nil {
+			return err
+		}
 		// Each component may be supplied as a JSON file OR via the inline
 		// flag form — but not both for the same component.
 		inlineTarget, inlineTargetSet := inlineEvalTarget(cmd)
@@ -775,6 +781,11 @@ flaky runs.`,
 		fileAssertionSet := strings.TrimSpace(assertionFilePath) != ""
 		if fileAssertionSet && inlineAssertionSet {
 			return fmt.Errorf("--assertion-file and --output-handle-id/--path/--equals are mutually exclusive")
+		}
+		// --source-file and --assertion-file both accept "-" for stdin, which can
+		// only be consumed once; reject the ambiguous pair before either read.
+		if err := ensureSingleStdinFlag(cmd, "source-file", "assertion-file"); err != nil {
+			return err
 		}
 		// Reject an empty invocation before issuing a no-op PATCH that
 		// would round-trip to the server and silently bump updated_at.

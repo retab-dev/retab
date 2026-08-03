@@ -104,10 +104,8 @@ resubmit sooner.
 		// but stdin can only be consumed once: --documents-file reads it first
 		// via io.ReadAll, leaving --instructions-file with EOF and a misleading
 		// "empty text input" error. Reject the ambiguous pair up front.
-		if docsFile == "-" {
-			if instrFile, _ := cmd.Flags().GetString("instructions-file"); instrFile == "-" {
-				return fmt.Errorf("--documents-file and --instructions-file cannot both read from stdin (-)")
-			}
+		if err := ensureSingleStdinFlag(cmd, "documents-file", "instructions-file"); err != nil {
+			return err
 		}
 
 		if docsFile != "" {

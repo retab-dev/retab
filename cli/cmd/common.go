@@ -1488,6 +1488,33 @@ func parseJSONMap(raw string) (map[string]any, error) {
 	return obj, nil
 }
 
+// ensureSingleStdinFlag rejects an invocation in which more than one of the
+// named flags is set to "-" (read from stdin). stdin can only be consumed
+// once: the first reader drains it and every later "-" flag then sees EOF,
+// surfacing a misleading "empty JSON input" / "empty text input" error far
+// from the real cause. Only pass flags that actually treat "-" as stdin.
+// Flags absent from the command are skipped, so a caller may list a superset
+// safely (e.g. a shared builder used by several commands).
+func ensureSingleStdinFlag(cmd *cobra.Command, flags ...string) error {
+	var stdin []string
+	for _, name := range flags {
+		if cmd.Flags().Lookup(name) == nil {
+			continue
+		}
+		if v, _ := cmd.Flags().GetString(name); v == "-" {
+			stdin = append(stdin, "--"+name)
+		}
+	}
+	switch len(stdin) {
+	case 0, 1:
+		return nil
+	case 2:
+		return fmt.Errorf("%s and %s cannot both read from stdin (-); only one flag may read stdin", stdin[0], stdin[1])
+	default:
+		return fmt.Errorf("%s cannot all read from stdin (-); only one flag may read stdin", strings.Join(stdin, ", "))
+	}
+}
+
 // readJSONArray decodes JSON into a []any.
 func readJSONArray(path string) ([]any, error) {
 	value, err := readJSON(path)

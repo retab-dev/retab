@@ -39,14 +39,14 @@ func newExtractionRequest(cmd *cobra.Command) (retab.ExtractionsCreateParams, er
 	nConsensus, _ := cmd.Flags().GetInt("n-consensus")
 	instructions, _ := cmd.Flags().GetString("instructions")
 	bustCache, _ := cmd.Flags().GetBool("bust-cache")
-	// --json-schema-file and --messages-file both accept "-" for stdin, but
-	// stdin can only be consumed once: resolveSchema reads it first, leaving
-	// --messages-file with EOF and a misleading "empty JSON input" error.
-	// Reject the ambiguous pair up front (mirrors the schemas-generate guard).
-	if schemaFile, _ := cmd.Flags().GetString("json-schema-file"); schemaFile == "-" {
-		if messagesFile, _ := cmd.Flags().GetString("messages-file"); messagesFile == "-" {
-			return retab.ExtractionsCreateParams{}, fmt.Errorf("--json-schema-file and --messages-file cannot both read from stdin (-)")
-		}
+	// --json-schema-file, --messages-file, and --document-file all accept "-"
+	// for stdin, but stdin can only be consumed once: whichever reads first
+	// (resolveSchema, then messages, then resolveDocument) drains it, leaving
+	// the others with EOF and a misleading "empty JSON input" error. Reject any
+	// ambiguous combination up front. The earlier guard missed --document-file,
+	// so `--json-schema-file - --document-file -` slipped through.
+	if err := ensureSingleStdinFlag(cmd, "json-schema-file", "messages-file", "document-file"); err != nil {
+		return retab.ExtractionsCreateParams{}, err
 	}
 	schema, err := resolveSchema(cmd)
 	if err != nil {

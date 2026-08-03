@@ -371,6 +371,12 @@ removed in a future release.`,
 			}
 			req.Version = "draft"
 		}
+		// --documents-file and --json-inputs-file both accept "-" for stdin,
+		// which can only be consumed once; reject the ambiguous pair before
+		// either read.
+		if err := ensureSingleStdinFlag(cmd, "documents-file", "json-inputs-file"); err != nil {
+			return err
+		}
 		docsFile, _ := cmd.Flags().GetString("documents-file")
 		if docsFile != "" {
 			docs, err := readJSONMap(docsFile)

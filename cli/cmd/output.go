@@ -559,7 +559,9 @@ func printResultCSV(v any) error {
 		fmt.Fprintln(os.Stderr, "note: --output csv not applicable, falling back to json")
 		return printJSON(v)
 	}
-	columns := pickAutoColumns(rows)
+	// truncate=false: CSV must be faithful/re-importable — no width caps or
+	// ellipsis. (The table path keeps truncation for grid readability.)
+	columns := pickAutoColumnsWidth(rows, false)
 	if len(columns) == 0 && len(rows) == 0 {
 		return renderAutoCSV(os.Stdout, rows, defaultEmptyAutoColumns)
 	}
@@ -674,6 +676,18 @@ func rowIsObject(row any) bool {
 // columns wider. The trailing column is the natural place to absorb
 // long values (timestamps, URLs, descriptions).
 func pickAutoColumns(rows []any) []TableColumn {
+	// Table output truncates long cells to keep the grid readable.
+	return pickAutoColumnsWidth(rows, true)
+}
+
+// pickAutoColumnsWidth is pickAutoColumns with an explicit truncate switch.
+// CSV output must pass truncate=false: a CSV is a data-interchange format, and
+// silently cutting a value and injecting an ellipsis (…) corrupts it on
+// re-import. Every explicit-column CSV renderer in the CLI already avoids
+// truncation for exactly this reason (see cleanWorkflowTableCell in tables.go);
+// the auto-column path used by `--output csv` must match, not inherit the
+// table grid's width caps.
+func pickAutoColumnsWidth(rows []any, truncate bool) []TableColumn {
 	// Collect the matching alias-sets in priority order, capped at
 	// maxAutoColumns. We materialize the alias slice for each pick
 	// here so the closure below captures by value rather than
@@ -729,6 +743,15 @@ func pickAutoColumns(rows []any) []TableColumn {
 							continue
 						}
 						s := stringifyCell(v)
+						if !truncate {
+							// CSV: emit the raw value verbatim — no width cap, no
+							// ellipsis, and no timestamp canonicalization — so the
+							// output stays faithful and re-importable (a full-
+							// precision timestamp keeps its sub-second digits). The
+							// table path below normalizes timestamps and truncates
+							// purely for grid readability.
+							return s
+						}
 						if isTimestamp {
 							s = normalizeTimestampCell(s)
 						}

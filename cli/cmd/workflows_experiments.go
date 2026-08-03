@@ -46,6 +46,11 @@ For deterministic regression testing of a single pinned assertion, see
 }
 
 func parseExperimentDocs(cmd *cobra.Command) ([]*retab.ExperimentDocumentCaptureRequest, []*retab.ExplicitExperimentDocumentRequest, error) {
+	// --captures-file and --documents-file both accept "-" for stdin, which can
+	// only be consumed once; reject the ambiguous pair before either read.
+	if err := ensureSingleStdinFlag(cmd, "captures-file", "documents-file"); err != nil {
+		return nil, nil, err
+	}
 	var captures []*retab.ExperimentDocumentCaptureRequest
 	var explicit []*retab.ExplicitExperimentDocumentRequest
 	// --capture is the inline shortcut for the common case: a production run id

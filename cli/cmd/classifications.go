@@ -59,6 +59,11 @@ when the type is obvious from the cover.`,
 		if err != nil {
 			return err
 		}
+		// --categories-file and --document-file both accept "-" for stdin, which
+		// can only be consumed once; reject the ambiguous pair before either read.
+		if err := ensureSingleStdinFlag(cmd, "categories-file", "document-file"); err != nil {
+			return err
+		}
 		categoriesFile, _ := cmd.Flags().GetString("categories-file")
 		categoryFlags, _ := cmd.Flags().GetStringArray("category")
 		var categories []*retab.Category

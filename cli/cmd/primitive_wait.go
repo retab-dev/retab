@@ -169,6 +169,12 @@ type waitPollTracker struct {
 func (t *waitPollTracker) fatal(err error) bool {
 	var apiErr *retab.APIError
 	if !errors.As(err, &apiErr) {
+		// A transport blip is not a 404, so it breaks the streak. The grace
+		// window forgives CONSECUTIVE not-found polls (read-after-write lag),
+		// not a running tally of 404s scattered among unrelated failures —
+		// otherwise a resource that flaps 404/5xx during a redeploy would
+		// fail-fast earlier than the documented grace.
+		t.consecutive404s = 0
 		return false
 	}
 	switch apiErr.StatusCode {
@@ -178,8 +184,12 @@ func (t *waitPollTracker) fatal(err error) bool {
 	case http.StatusNotFound:
 		t.consecutive404s++
 		return t.consecutive404s >= waitMaxConsecutive404s
+	default:
+		// Any other status (5xx, 429, …) is transient but, like a transport
+		// blip, breaks the consecutive-404 streak.
+		t.consecutive404s = 0
+		return false
 	}
-	return false
 }
 
 // sawSuccess resets the 404 grace window after any successful poll.
