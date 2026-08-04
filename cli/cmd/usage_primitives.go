@@ -90,7 +90,7 @@ var usagePrimitivesCmd = &cobra.Command{
 	Use:   "primitives",
 	Short: "Per-operation usage export (credits and pages per primitive execution)",
 	Long: `List one usage row per primitive execution (extraction, classify, split, parse,
-edit, partition, schema_generation …): the operation, its origin identifiers (workflow, run,
+edit, partition, schema_generation, consensus …): the operation, its origin identifiers (workflow, run,
 project, block), lifecycle status, the Retab model tier, source document filenames/ids,
 created/completed timestamps, deduplicated page count, credit spend, and your own metadata.
 
@@ -444,8 +444,14 @@ func init() {
 	usagePrimitivesCmd.Flags().Var(
 		newEnumStringFlagValue("--operation",
 			"extraction", "extract", "classification", "classify",
-			"split", "parse", "edit", "partition", "schema_generation"),
-		"operation", "filter by operation (extraction, classify, split, parse, edit, partition, schema_generation)")
+			"split", "parse", "edit", "partition", "schema_generation",
+			// consensus rows reach the ledger through the same processing-ledger
+			// write as every other primitive, and the server's operation filter
+			// accepts them. Omitting it here made the CLI reject a value the public
+			// contract documents, so consensus spend was unreachable from the CLI
+			// while the server would have served it.
+			"consensus"),
+		"operation", "filter by operation (extraction, classify, split, parse, edit, partition, schema_generation, consensus)")
 	usagePrimitivesCmd.Flags().Var(
 		// "canceled" carries ONE l here: that is how a primitive execution's
 		// terminal status is stored. A workflow run's equivalent status is

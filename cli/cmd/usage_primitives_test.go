@@ -327,3 +327,29 @@ func TestUsagePrimitivesRejectsBeforeAndAfterTogether(t *testing.T) {
 		t.Fatalf("expected mutually-exclusive error, got %v", runErr)
 	}
 }
+
+// The public contract for GET /v1/usage/primitives documents `consensus` as a
+// filterable operation, and the server's overview operation set includes it — a
+// consensus execution reaches the ledger through the same processing-ledger write
+// as every other primitive. The client-side allowlist exists to turn a typo into a
+// loud error instead of a silent empty page, so a value the server accepts must not
+// be rejected here: that made consensus spend unreachable from the CLI entirely.
+func TestUsagePrimitivesOperationFlagAcceptsConsensus(t *testing.T) {
+	flag := usagePrimitivesCmd.Flags().Lookup("operation")
+	if flag == nil {
+		t.Fatalf("no --operation flag")
+	}
+	t.Cleanup(func() { _ = flag.Value.Set("") })
+
+	for _, operation := range []string{
+		"consensus", "extraction", "extract", "classification", "classify",
+		"split", "parse", "edit", "partition", "schema_generation",
+	} {
+		if err := flag.Value.Set(operation); err != nil {
+			t.Fatalf("--operation %s rejected: %v", operation, err)
+		}
+	}
+	if err := flag.Value.Set("consensuss"); err == nil {
+		t.Fatalf("expected a typo'd --operation to be rejected")
+	}
+}
