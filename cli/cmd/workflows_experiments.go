@@ -516,6 +516,13 @@ func artifactFreshnessCell(row any) string {
 	return stringifyCell(value)
 }
 
+// experimentRunTriggerTypeValues is the closed set the server's
+// listExperimentRuns `trigger_type` enum accepts. Experiment runs are only ever
+// created manually (the create handler hard-codes trigger source "manual_run"),
+// so this is deliberately a single value rather than the wider workflow-run
+// trigger vocabulary in allowedWorkflowRunTriggerTypes.
+var experimentRunTriggerTypeValues = []string{"manual_run"}
+
 // experimentResultColumns is the dedicated TableColumn spec for
 // `workflows experiments results list --output table/csv`. The generic
 // auto-renderer only surfaced ID + a confusing TYPE column; these columns show
@@ -1396,7 +1403,13 @@ func init() {
 	workflowsExperimentsRunsListCmd.Flags().String("block-id", "", "filter by block id")
 	workflowsExperimentsRunsListCmd.Flags().String("status", "", "filter by lifecycle status")
 	workflowsExperimentsRunsListCmd.Flags().String("exclude-status", "", "exclude lifecycle status")
-	workflowsExperimentsRunsListCmd.Flags().String("trigger-type", "", "filter by trigger type")
+	// Every experiment run is created with trigger source "manual_run", so that is
+	// the only value the server can match. Validate client-side like `workflows
+	// runs --trigger-type` does, so a typo fails loudly instead of returning an
+	// empty page that reads as "this experiment never ran".
+	workflowsExperimentsRunsListCmd.Flags().Var(
+		newEnumStringFlagValue("--trigger-type", experimentRunTriggerTypeValues...),
+		"trigger-type", "filter by trigger type: manual_run")
 	workflowsExperimentsRunsListCmd.Flags().Var(&rfc3339FlagValue{}, "from-date", "created on or after this date (YYYY-MM-DD or RFC3339)")
 	workflowsExperimentsRunsListCmd.Flags().Var(&rfc3339FlagValue{}, "to-date", "created on or before this date (YYYY-MM-DD or RFC3339)")
 	workflowsExperimentsRunsListCmd.Flags().String("sort-by", "", "sort field")
