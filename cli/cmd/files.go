@@ -148,7 +148,7 @@ func printFilesListResult(cmd *cobra.Command, result *retab.PaginatedList[retab.
 	columns := []TableColumn{
 		{Header: "ID", Extract: func(row any) string { return resourceCell(row, "id") }},
 		{Header: "NAME", Extract: func(row any) string { return resourceCell(row, "filename") }},
-		{Header: timestampHeader, Extract: func(row any) string { return normalizeTimestampCell(resourceCell(row, timestampField)) }},
+		{Header: timestampHeader, Extract: func(row any) string { return resourceCell(row, timestampField) }, IsTimestamp: true},
 	}
 	rows := resourcesToRows(result.Data)
 	if raw == string(OutputCSV) {

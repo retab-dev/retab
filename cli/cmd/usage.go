@@ -156,7 +156,7 @@ var usageRunColumns = []TableColumn{
 	{Header: "STATUS", Extract: func(row any) string { return usageRunCell(row, "status") }},
 	{Header: "TRIGGER", Extract: func(row any) string { return usageRunCell(row, "trigger_type") }},
 	{Header: "TRIGGERED_BY", Extract: usageRunTriggeredByCell},
-	{Header: "CREATED_AT", Extract: func(row any) string { return normalizeTimestampCell(usageRunCell(row, "created_at")) }},
+	{Header: "CREATED_AT", Extract: func(row any) string { return usageRunCell(row, "created_at") }, IsTimestamp: true},
 	{Header: "DURATION_MS", Extract: func(row any) string { return usageRunCell(row, "duration_ms") }},
 	{Header: "PAGES", Extract: func(row any) string { return usageRunCell(row, "page_count") }},
 	{Header: "CREDITS", Extract: func(row any) string { return usageRunCell(row, "credits") }},

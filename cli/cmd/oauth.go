@@ -349,6 +349,19 @@ func refreshAccessToken(ctx context.Context, tok *oauthTokens) (*oauthTokens, er
 	if refreshed.RefreshToken == "" {
 		refreshed.RefreshToken = tok.RefreshToken
 	}
+	// A refresh_token grant stays within the same organization, but the WorkOS
+	// response is not guaranteed to echo organization_id / token_type (both are
+	// omitempty). When it doesn't, preserve the caller's existing values rather
+	// than persisting empty ones — otherwise every transparent refresh silently
+	// blanks the org id that `auth status` reports (and org switch already sets),
+	// mirroring the refresh_token preservation directly above. The token stays
+	// scoped to the same org regardless; this only fixes what we record.
+	if refreshed.OrganizationID == "" {
+		refreshed.OrganizationID = tok.OrganizationID
+	}
+	if refreshed.TokenType == "" {
+		refreshed.TokenType = tok.TokenType
+	}
 	return refreshed, nil
 }
 

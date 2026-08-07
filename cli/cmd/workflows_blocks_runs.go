@@ -121,8 +121,8 @@ var blockRunColumns = []TableColumn{
 	{Header: "STATUS", Extract: func(row any) string { return blockRunCell(row, "lifecycle.status") }},
 	{Header: "TYPE", Extract: func(row any) string { return blockRunCell(row, "block_type") }},
 	{Header: "LABEL", Extract: func(row any) string { return blockRunCell(row, "block_label") }},
-	{Header: "STARTED_AT", Extract: func(row any) string { return normalizeTimestampCell(blockRunCell(row, "started_at")) }},
-	{Header: "COMPLETED_AT", Extract: func(row any) string { return normalizeTimestampCell(blockRunCell(row, "completed_at")) }},
+	{Header: "STARTED_AT", Extract: func(row any) string { return blockRunCell(row, "started_at") }, IsTimestamp: true},
+	{Header: "COMPLETED_AT", Extract: func(row any) string { return blockRunCell(row, "completed_at") }, IsTimestamp: true},
 	{Header: "ARTIFACT", Extract: blockRunArtifactCell},
 	{Header: "RETRIES", Extract: func(row any) string { return blockRunCell(row, "retry_count") }},
 }

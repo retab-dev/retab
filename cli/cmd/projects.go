@@ -139,7 +139,7 @@ var projectColumns = []TableColumn{
 	{Header: "ID", Extract: func(row any) string { return projectCell(row, "id") }},
 	{Header: "NAME", Extract: func(row any) string { return projectCell(row, "name") }},
 	{Header: "SLUG", Extract: func(row any) string { return projectCell(row, "slug") }},
-	{Header: "CREATED_AT", Extract: func(row any) string { return normalizeTimestampCell(projectCell(row, "created_at")) }},
+	{Header: "CREATED_AT", Extract: func(row any) string { return projectCell(row, "created_at") }, IsTimestamp: true},
 }
 
 func projectCell(row any, key string) string {

@@ -81,6 +81,28 @@ func DefaultOutputFormat(w io.Writer) OutputFormat {
 type TableColumn struct {
 	Header  string
 	Extract func(row any) string
+	// IsTimestamp marks a column whose cell is an RFC3339 timestamp that the
+	// table renderer canonicalizes (via normalizeTimestampCell) purely for grid
+	// readability — one consistent second-precision UTC form across resources.
+	// The CSV path deliberately does NOT consult this flag: `--output csv` emits
+	// the raw Extract value verbatim so the export stays faithful and
+	// re-importable (full sub-second precision, original offset), matching the
+	// contract the generic auto-column CSV path already follows. Extract funcs on
+	// such columns must therefore return the RAW timestamp, not a pre-normalized
+	// one, so the CSV cell isn't silently canonicalized.
+	IsTimestamp bool
+}
+
+// tableCellValue renders col's cell for a text-table (not CSV) render, applying
+// the timestamp canonicalization the grid wants while leaving CSV untouched.
+// Centralizing the IsTimestamp handling here keeps renderTable and
+// renderAutoTableWithEmptyHint in lockstep.
+func tableCellValue(col TableColumn, row any) string {
+	s := col.Extract(row)
+	if col.IsTimestamp {
+		s = normalizeTimestampCell(s)
+	}
+	return s
 }
 
 // RenderList writes data to w using the given format.
@@ -244,7 +266,7 @@ func renderTable(w io.Writer, v any, columns []TableColumn) error {
 					return err
 				}
 			}
-			if _, err := fmt.Fprint(tw, col.Extract(row)); err != nil {
+			if _, err := fmt.Fprint(tw, tableCellValue(col, row)); err != nil {
 				return err
 			}
 		}
@@ -1093,7 +1115,7 @@ func renderAutoTableWithEmptyHint(
 					return err
 				}
 			}
-			if _, err := fmt.Fprint(tw, col.Extract(row)); err != nil {
+			if _, err := fmt.Fprint(tw, tableCellValue(col, row)); err != nil {
 				return err
 			}
 		}

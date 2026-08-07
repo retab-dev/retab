@@ -84,8 +84,8 @@ var publishedVersionColumns = []TableColumn{
 	{Header: "CURRENT", Extract: publishedVersionCurrentCell},
 	{Header: "DESCRIPTION", Extract: func(row any) string { return workflowVersionCell(row, "description") }},
 	{Header: "PUBLISHED_AT", Extract: func(row any) string {
-		return normalizeTimestampCell(workflowVersionCell(row, "published_at"))
-	}},
+		return workflowVersionCell(row, "published_at")
+	}, IsTimestamp: true},
 }
 
 func workflowVersionCell(row any, key string) string {

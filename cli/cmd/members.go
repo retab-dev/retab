@@ -142,8 +142,10 @@ func memberRowCell(row any, key string) string {
 		}
 		return "-"
 	case "last_active_at":
+		// Raw value: the LAST_ACTIVE_AT column is marked IsTimestamp, so the
+		// table renderer canonicalizes it while CSV keeps it verbatim.
 		if v := strings.TrimSpace(derefString(m.LastActiveAt)); v != "" {
-			return normalizeTimestampCell(v)
+			return v
 		}
 		return "-"
 	default:
@@ -156,7 +158,7 @@ var memberListColumns = []TableColumn{
 	{Header: "EMAIL", Extract: func(row any) string { return memberRowCell(row, "email") }},
 	{Header: "ROLE", Extract: func(row any) string { return memberRowCell(row, "role") }},
 	{Header: "NAME", Extract: func(row any) string { return memberRowCell(row, "name") }},
-	{Header: "LAST_ACTIVE_AT", Extract: func(row any) string { return memberRowCell(row, "last_active_at") }},
+	{Header: "LAST_ACTIVE_AT", Extract: func(row any) string { return memberRowCell(row, "last_active_at") }, IsTimestamp: true},
 }
 
 var membersCmd = &cobra.Command{

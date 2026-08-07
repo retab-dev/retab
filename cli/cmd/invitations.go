@@ -67,8 +67,10 @@ func invitationRowCell(row any, key string) string {
 		}
 		return "-"
 	case "expires_at":
+		// Raw value: the EXPIRES_AT column is marked IsTimestamp, so the table
+		// renderer canonicalizes it while CSV keeps it verbatim.
 		if v := strings.TrimSpace(derefString(inv.ExpiresAt)); v != "" {
-			return normalizeTimestampCell(v)
+			return v
 		}
 		return "-"
 	default:
@@ -81,7 +83,7 @@ var invitationListColumns = []TableColumn{
 	{Header: "EMAIL", Extract: func(row any) string { return invitationRowCell(row, "email") }},
 	{Header: "STATE", Extract: func(row any) string { return invitationRowCell(row, "state") }},
 	{Header: "ROLE", Extract: func(row any) string { return invitationRowCell(row, "role") }},
-	{Header: "EXPIRES_AT", Extract: func(row any) string { return invitationRowCell(row, "expires_at") }},
+	{Header: "EXPIRES_AT", Extract: func(row any) string { return invitationRowCell(row, "expires_at") }, IsTimestamp: true},
 }
 
 var invitationsCmd = &cobra.Command{

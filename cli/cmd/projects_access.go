@@ -97,7 +97,9 @@ func membershipCell(row any, key string) string {
 		}
 		return "no"
 	case "created_at":
-		return normalizeTimestampCell(m.CreatedAt)
+		// Raw value: the CREATED_AT column is marked IsTimestamp, so the table
+		// renderer canonicalizes it while CSV keeps it verbatim.
+		return m.CreatedAt
 	default:
 		return ""
 	}
@@ -114,7 +116,7 @@ var membershipColumns = []TableColumn{
 	{Header: "SUBJECT", Extract: func(row any) string { return membershipCell(row, "subject") }},
 	{Header: "ROLE", Extract: func(row any) string { return membershipCell(row, "role") }},
 	{Header: "ACTIVE", Extract: func(row any) string { return membershipCell(row, "active") }},
-	{Header: "CREATED_AT", Extract: func(row any) string { return membershipCell(row, "created_at") }},
+	{Header: "CREATED_AT", Extract: func(row any) string { return membershipCell(row, "created_at") }, IsTimestamp: true},
 	{Header: "ID", Extract: func(row any) string { return membershipCell(row, "id") }},
 }
 

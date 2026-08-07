@@ -373,8 +373,11 @@ func TestUploadFilenameOverride(t *testing.T) {
 	}
 }
 
-// usage primitives' timestamp columns must canonicalize like every other
-// timestamp column in the CLI; normalizeTimestampCell must leave non-timestamps
+// usage primitives' timestamp columns must canonicalize in the TABLE grid like
+// every other timestamp column, while the raw Extract value (what `--output csv`
+// emits) stays faithful — full sub-second precision, verbatim. Normalization
+// lives on the table renderer (keyed by IsTimestamp), not in the Extract func,
+// so CSV is re-importable. normalizeTimestampCell must leave non-timestamps
 // untouched rather than mangling them.
 func TestUsagePrimitiveTimestampColumnsAreNormalized(t *testing.T) {
 	row := map[string]any{
@@ -391,13 +394,26 @@ func TestUsagePrimitiveTimestampColumnsAreNormalized(t *testing.T) {
 		if column == nil {
 			t.Fatalf("usage primitives has no %s column", header)
 		}
-		got := column.Extract(row)
-		want := map[string]string{
+		if !column.IsTimestamp {
+			t.Errorf("%s column must be marked IsTimestamp so the table renderer canonicalizes it", header)
+		}
+		// Table grid: canonical second-precision UTC.
+		gotTable := tableCellValue(*column, row)
+		wantTable := map[string]string{
 			"CREATED_AT":   "2026-07-16T11:04:36Z",
 			"COMPLETED_AT": "2026-07-16T11:05:01Z",
 		}[header]
-		if got != want {
-			t.Errorf("%s = %q, want %q", header, got, want)
+		if gotTable != wantTable {
+			t.Errorf("table %s = %q, want %q", header, gotTable, wantTable)
+		}
+		// CSV / raw: faithful, sub-second precision preserved.
+		gotRaw := column.Extract(row)
+		wantRaw := map[string]string{
+			"CREATED_AT":   "2026-07-16T11:04:36.389000Z",
+			"COMPLETED_AT": "2026-07-16T11:05:01.120000Z",
+		}[header]
+		if gotRaw != wantRaw {
+			t.Errorf("raw (CSV) %s = %q, want faithful %q", header, gotRaw, wantRaw)
 		}
 	}
 	for _, passthrough := range []string{"", "-", "not a time"} {

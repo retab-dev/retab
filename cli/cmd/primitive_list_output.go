@@ -11,8 +11,8 @@ var primitiveListColumns = []TableColumn{
 	{Header: "STATUS", Extract: func(row any) string { return primitiveListCell(row, "status") }},
 	{Header: "MODEL", Extract: func(row any) string { return primitiveListCell(row, "model") }},
 	{Header: "CREATED_AT", Extract: func(row any) string {
-		return normalizeTimestampCell(primitiveListCell(row, "created_at"))
-	}},
+		return primitiveListCell(row, "created_at")
+	}, IsTimestamp: true},
 }
 
 func printPrimitiveListResult(cmd *cobra.Command, result any) error {

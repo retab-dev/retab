@@ -107,11 +107,11 @@ var blockConfigHistoryColumns = []TableColumn{
 	{Header: "TYPE", Extract: func(row any) string { return blockConfigHistoryCell(row, "block_type") }},
 	{Header: "LABEL", Extract: func(row any) string { return blockConfigHistoryCell(row, "block_label") }},
 	{Header: "FIRST_SEEN_AT", Extract: func(row any) string {
-		return normalizeTimestampCell(blockConfigHistoryCell(row, "first_seen_at"))
-	}},
+		return blockConfigHistoryCell(row, "first_seen_at")
+	}, IsTimestamp: true},
 	{Header: "LAST_SEEN_AT", Extract: func(row any) string {
-		return normalizeTimestampCell(blockConfigHistoryCell(row, "last_seen_at"))
-	}},
+		return blockConfigHistoryCell(row, "last_seen_at")
+	}, IsTimestamp: true},
 	{Header: "RUNS", Extract: func(row any) string { return blockConfigHistoryCell(row, "run_count") }},
 	{Header: "CURRENT_DRAFT", Extract: func(row any) string { return blockConfigHistoryCell(row, "matches_current_draft") }},
 	{Header: "CURRENT_PUBLISHED", Extract: func(row any) string { return blockConfigHistoryCell(row, "is_current_published") }},
