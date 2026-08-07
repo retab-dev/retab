@@ -49,7 +49,7 @@ namespace Retab
         /// <summary>Filter to a single workflow block id (origin block).</summary>
         public string? BlockId { get; set; }
 
-        /// <summary>Filter by operation: extraction, classify, split, parse, edit, partition, or schema_generation. The stored-kind aliases extract and classification are also accepted. An unknown value is rejected with 422.</summary>
+        /// <summary>Filter by operation: extraction, classify, split, parse, edit, partition, schema_generation, or consensus. The stored-kind aliases extract and classification are also accepted. An unknown value is rejected with 422.</summary>
         public string? Operation { get; set; }
 
         /// <summary>Filter by execution lifecycle status: created, running, completed, failed, or canceled. Note the single-l spelling: a primitive execution is canceled, whereas a workflow run's status is cancelled. An unknown value is rejected with 422.</summary>

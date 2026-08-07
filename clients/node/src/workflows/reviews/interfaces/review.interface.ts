@@ -20,6 +20,15 @@ import {
   serializeReviewAnyOf,
 } from './review-any-of.interface.js';
 import type {
+  ReviewAnyPagesUnassigned,
+  ReviewAnyPagesUnassignedResponse,
+} from './review-any-pages-unassigned.interface.js';
+import {
+  ZReviewAnyPagesUnassigned,
+  deserializeReviewAnyPagesUnassigned,
+  serializeReviewAnyPagesUnassigned,
+} from './review-any-pages-unassigned.interface.js';
+import type {
   ReviewAnyRequiredFieldNull,
   ReviewAnyRequiredFieldNullResponse,
 } from './review-any-required-field-null.interface.js';
@@ -132,6 +141,7 @@ export interface Review {
     | ReviewSplitCountNeq
     | ReviewAnySplitPagesLt
     | ReviewBoundaryConfidenceLt
+    | ReviewAnyPagesUnassigned
     | ReviewAnyRequiredFieldNull
     | ReviewJsonCondition
     | ReviewBranchIn
@@ -161,6 +171,7 @@ export interface ReviewResponse {
     | ReviewSplitCountNeqResponse
     | ReviewAnySplitPagesLtResponse
     | ReviewBoundaryConfidenceLtResponse
+    | ReviewAnyPagesUnassignedResponse
     | ReviewAnyRequiredFieldNullResponse
     | ReviewJsonConditionResponse
     | ReviewBranchInResponse
@@ -189,6 +200,7 @@ export const ZReview = z.object({
     ZReviewSplitCountNeq,
     ZReviewAnySplitPagesLt,
     ZReviewBoundaryConfidenceLt,
+    ZReviewAnyPagesUnassigned,
     ZReviewAnyRequiredFieldNull,
     ZReviewJsonCondition,
     ZReviewBranchIn,
@@ -216,6 +228,10 @@ export function deserializeReview(wire: ReviewResponse): Review {
           all_of: () => deserializeReviewAllOf(wire['triggered_by'] as ReviewAllOfResponse),
           always: () => deserializeReviewAlways(wire['triggered_by'] as ReviewAlwaysResponse),
           any_of: () => deserializeReviewAnyOf(wire['triggered_by'] as ReviewAnyOfResponse),
+          any_pages_unassigned: () =>
+            deserializeReviewAnyPagesUnassigned(
+              wire['triggered_by'] as ReviewAnyPagesUnassignedResponse
+            ),
           any_required_field_null: () =>
             deserializeReviewAnyRequiredFieldNull(
               wire['triggered_by'] as ReviewAnyRequiredFieldNullResponse
@@ -253,6 +269,7 @@ export function deserializeReview(wire: ReviewResponse): Review {
             | ReviewSplitCountNeq
             | ReviewAnySplitPagesLt
             | ReviewBoundaryConfidenceLt
+            | ReviewAnyPagesUnassigned
             | ReviewAnyRequiredFieldNull
             | ReviewJsonCondition
             | ReviewBranchIn
@@ -269,6 +286,7 @@ export function deserializeReview(wire: ReviewResponse): Review {
         | ReviewSplitCountNeq
         | ReviewAnySplitPagesLt
         | ReviewBoundaryConfidenceLt
+        | ReviewAnyPagesUnassigned
         | ReviewAnyRequiredFieldNull
         | ReviewJsonCondition
         | ReviewBranchIn
@@ -301,6 +319,8 @@ export function serializeReview(domain: Review): ReviewResponse {
           all_of: () => serializeReviewAllOf(domain['triggeredBy'] as ReviewAllOf),
           always: () => serializeReviewAlways(domain['triggeredBy'] as ReviewAlways),
           any_of: () => serializeReviewAnyOf(domain['triggeredBy'] as ReviewAnyOf),
+          any_pages_unassigned: () =>
+            serializeReviewAnyPagesUnassigned(domain['triggeredBy'] as ReviewAnyPagesUnassigned),
           any_required_field_null: () =>
             serializeReviewAnyRequiredFieldNull(
               domain['triggeredBy'] as ReviewAnyRequiredFieldNull
@@ -334,6 +354,7 @@ export function serializeReview(domain: Review): ReviewResponse {
             | ReviewSplitCountNeqResponse
             | ReviewAnySplitPagesLtResponse
             | ReviewBoundaryConfidenceLtResponse
+            | ReviewAnyPagesUnassignedResponse
             | ReviewAnyRequiredFieldNullResponse
             | ReviewJsonConditionResponse
             | ReviewBranchInResponse
@@ -350,6 +371,7 @@ export function serializeReview(domain: Review): ReviewResponse {
         | ReviewSplitCountNeqResponse
         | ReviewAnySplitPagesLtResponse
         | ReviewBoundaryConfidenceLtResponse
+        | ReviewAnyPagesUnassignedResponse
         | ReviewAnyRequiredFieldNullResponse
         | ReviewJsonConditionResponse
         | ReviewBranchInResponse

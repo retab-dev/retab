@@ -14,6 +14,15 @@ import {
   serializeReviewAnyOf,
 } from './review-any-of.interface.js';
 import type {
+  ReviewAnyPagesUnassigned,
+  ReviewAnyPagesUnassignedResponse,
+} from './review-any-pages-unassigned.interface.js';
+import {
+  ZReviewAnyPagesUnassigned,
+  deserializeReviewAnyPagesUnassigned,
+  serializeReviewAnyPagesUnassigned,
+} from './review-any-pages-unassigned.interface.js';
+import type {
   ReviewAnyRequiredFieldNull,
   ReviewAnyRequiredFieldNullResponse,
 } from './review-any-required-field-null.interface.js';
@@ -111,6 +120,7 @@ export interface ReviewAllOf {
     | ReviewSplitCountNeq
     | ReviewAnySplitPagesLt
     | ReviewBoundaryConfidenceLt
+    | ReviewAnyPagesUnassigned
     | ReviewAnyRequiredFieldNull
     | ReviewJsonCondition
     | ReviewBranchIn
@@ -130,6 +140,7 @@ export interface ReviewAllOfResponse {
     | ReviewSplitCountNeqResponse
     | ReviewAnySplitPagesLtResponse
     | ReviewBoundaryConfidenceLtResponse
+    | ReviewAnyPagesUnassignedResponse
     | ReviewAnyRequiredFieldNullResponse
     | ReviewJsonConditionResponse
     | ReviewBranchInResponse
@@ -151,6 +162,7 @@ export const ZReviewAllOf = z.lazy(() =>
         ZReviewSplitCountNeq,
         ZReviewAnySplitPagesLt,
         ZReviewBoundaryConfidenceLt,
+        ZReviewAnyPagesUnassigned,
         ZReviewAnyRequiredFieldNull,
         ZReviewJsonCondition,
         ZReviewBranchIn,
@@ -171,6 +183,8 @@ export function deserializeReviewAllOf(wire: ReviewAllOfResponse): ReviewAllOf {
             all_of: () => deserializeReviewAllOf(__i as ReviewAllOfResponse),
             always: () => deserializeReviewAlways(__i as ReviewAlwaysResponse),
             any_of: () => deserializeReviewAnyOf(__i as ReviewAnyOfResponse),
+            any_pages_unassigned: () =>
+              deserializeReviewAnyPagesUnassigned(__i as ReviewAnyPagesUnassignedResponse),
             any_required_field_null: () =>
               deserializeReviewAnyRequiredFieldNull(__i as ReviewAnyRequiredFieldNullResponse),
             any_split_pages_lt: () =>
@@ -198,6 +212,7 @@ export function deserializeReviewAllOf(wire: ReviewAllOfResponse): ReviewAllOf {
               | ReviewSplitCountNeq
               | ReviewAnySplitPagesLt
               | ReviewBoundaryConfidenceLt
+              | ReviewAnyPagesUnassigned
               | ReviewAnyRequiredFieldNull
               | ReviewJsonCondition
               | ReviewBranchIn
@@ -214,6 +229,7 @@ export function deserializeReviewAllOf(wire: ReviewAllOfResponse): ReviewAllOf {
           | ReviewSplitCountNeq
           | ReviewAnySplitPagesLt
           | ReviewBoundaryConfidenceLt
+          | ReviewAnyPagesUnassigned
           | ReviewAnyRequiredFieldNull
           | ReviewJsonCondition
           | ReviewBranchIn
@@ -233,6 +249,8 @@ export function serializeReviewAllOf(domain: ReviewAllOf): ReviewAllOfResponse {
             all_of: () => serializeReviewAllOf(__i as ReviewAllOf),
             always: () => serializeReviewAlways(__i as ReviewAlways),
             any_of: () => serializeReviewAnyOf(__i as ReviewAnyOf),
+            any_pages_unassigned: () =>
+              serializeReviewAnyPagesUnassigned(__i as ReviewAnyPagesUnassigned),
             any_required_field_null: () =>
               serializeReviewAnyRequiredFieldNull(__i as ReviewAnyRequiredFieldNull),
             any_split_pages_lt: () => serializeReviewAnySplitPagesLt(__i as ReviewAnySplitPagesLt),
@@ -256,6 +274,7 @@ export function serializeReviewAllOf(domain: ReviewAllOf): ReviewAllOfResponse {
               | ReviewSplitCountNeqResponse
               | ReviewAnySplitPagesLtResponse
               | ReviewBoundaryConfidenceLtResponse
+              | ReviewAnyPagesUnassignedResponse
               | ReviewAnyRequiredFieldNullResponse
               | ReviewJsonConditionResponse
               | ReviewBranchInResponse
@@ -272,6 +291,7 @@ export function serializeReviewAllOf(domain: ReviewAllOf): ReviewAllOfResponse {
           | ReviewSplitCountNeqResponse
           | ReviewAnySplitPagesLtResponse
           | ReviewBoundaryConfidenceLtResponse
+          | ReviewAnyPagesUnassignedResponse
           | ReviewAnyRequiredFieldNullResponse
           | ReviewJsonConditionResponse
           | ReviewBranchInResponse

@@ -79,6 +79,7 @@ class ReviewAllOf(BaseModel):
         | ReviewSplitCountNeq
         | ReviewAnySplitPagesLt
         | ReviewBoundaryConfidenceLt
+        | ReviewAnyPagesUnassigned
         | ReviewAnyRequiredFieldNull
         | ReviewJsonCondition
         | ReviewBranchIn
@@ -111,12 +112,21 @@ class ReviewAnyOf(BaseModel):
         | ReviewSplitCountNeq
         | ReviewAnySplitPagesLt
         | ReviewBoundaryConfidenceLt
+        | ReviewAnyPagesUnassigned
         | ReviewAnyRequiredFieldNull
         | ReviewJsonCondition
         | ReviewBranchIn
         | ReviewAnyOf
         | ReviewAllOf
     ]
+
+
+class ReviewAnyPagesUnassigned(BaseModel):
+    """Gate when the split_by_key partition left any source page out of every partition (dropped pages)."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    kind: Literal["any_pages_unassigned"] = Field(default="any_pages_unassigned")
 
 
 class ReviewAnyRequiredFieldNull(BaseModel):
@@ -238,6 +248,7 @@ class Review(BaseModel):
         | ReviewSplitCountNeq
         | ReviewAnySplitPagesLt
         | ReviewBoundaryConfidenceLt
+        | ReviewAnyPagesUnassigned
         | ReviewAnyRequiredFieldNull
         | ReviewJsonCondition
         | ReviewBranchIn
@@ -275,6 +286,7 @@ __all__ = [
     "ReviewAllOf",
     "ReviewAlways",
     "ReviewAnyOf",
+    "ReviewAnyPagesUnassigned",
     "ReviewAnyRequiredFieldNull",
     "ReviewAnySplitPagesLt",
     "ReviewBlockType",
@@ -307,6 +319,7 @@ RejectReviewRequest.model_rebuild()
 ReviewAllOf.model_rebuild()
 ReviewAlways.model_rebuild()
 ReviewAnyOf.model_rebuild()
+ReviewAnyPagesUnassigned.model_rebuild()
 ReviewAnyRequiredFieldNull.model_rebuild()
 ReviewAnySplitPagesLt.model_rebuild()
 ReviewBoundaryConfidenceLt.model_rebuild()

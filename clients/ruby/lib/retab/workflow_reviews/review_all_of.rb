@@ -28,6 +28,8 @@ module Retab
             Retab::ReviewAlways.new(item)
           when "any_of"
             Retab::ReviewAnyOf.new(item)
+          when "any_pages_unassigned"
+            Retab::ReviewAnyPagesUnassigned.new(item)
           when "any_required_field_null"
             Retab::ReviewAnyRequiredFieldNull.new(item)
           when "any_split_pages_lt"

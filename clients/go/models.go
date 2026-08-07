@@ -1760,6 +1760,11 @@ type ReviewAnyOf struct {
 	Predicates []ReviewKind `json:"predicates"`
 }
 
+// ReviewAnyPagesUnassigned gate when the split_by_key partition left any source page out of every partition (dropped pages).
+type ReviewAnyPagesUnassigned struct {
+	Kind *string `json:"kind,omitempty"`
+}
+
 // ReviewAnyRequiredFieldNull gate when any required field in the extract schema is null or missing.
 type ReviewAnyRequiredFieldNull struct {
 	Kind *string `json:"kind,omitempty"`
@@ -3914,7 +3919,7 @@ func HandleInputTypeFromJSONHandleInput(v JSONHandleInput) HandleInputType {
 // ReviewKind is a discriminated union keyed by the "kind" field.
 // It stores the exact wire payload so round-trips never drop variant fields;
 // inspect it with Kind()/As*() and build one with ReviewKindFrom*().
-// Variants: ReviewAllOf, ReviewAlways, ReviewAnyOf, ReviewAnyRequiredFieldNull, ReviewAnySplitPagesLt, ReviewBoundaryConfidenceLt, ReviewBranchIn, ReviewCategoryIn, ReviewConfidenceLt, ReviewJSONCondition, ReviewSplitCountNeq, ReviewTopMarginLt, ReviewValidationFailed.
+// Variants: ReviewAllOf, ReviewAlways, ReviewAnyOf, ReviewAnyPagesUnassigned, ReviewAnyRequiredFieldNull, ReviewAnySplitPagesLt, ReviewBoundaryConfidenceLt, ReviewBranchIn, ReviewCategoryIn, ReviewConfidenceLt, ReviewJSONCondition, ReviewSplitCountNeq, ReviewTopMarginLt, ReviewValidationFailed.
 type ReviewKind struct {
 	raw json.RawMessage
 }
@@ -3997,6 +4002,25 @@ func (u ReviewKind) AsReviewAnyOf() (*ReviewAnyOf, error) {
 func ReviewKindFromReviewAnyOf(v ReviewAnyOf) ReviewKind {
 	data, _ := json.Marshal(v)
 	data = withUnionDiscriminator(data, "kind", "any_of")
+	return ReviewKind{raw: data}
+}
+
+// AsReviewAnyPagesUnassigned decodes the union payload as ReviewAnyPagesUnassigned.
+func (u ReviewKind) AsReviewAnyPagesUnassigned() (*ReviewAnyPagesUnassigned, error) {
+	if len(u.raw) == 0 {
+		return nil, nil
+	}
+	var v ReviewAnyPagesUnassigned
+	if err := json.Unmarshal(u.raw, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// ReviewKindFromReviewAnyPagesUnassigned builds a ReviewKind from a ReviewAnyPagesUnassigned.
+func ReviewKindFromReviewAnyPagesUnassigned(v ReviewAnyPagesUnassigned) ReviewKind {
+	data, _ := json.Marshal(v)
+	data = withUnionDiscriminator(data, "kind", "any_pages_unassigned")
 	return ReviewKind{raw: data}
 }
 

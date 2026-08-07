@@ -9,6 +9,7 @@ export * from './review.interface.js';
 export * from './review-all-of.interface.js';
 export * from './review-always.interface.js';
 export * from './review-any-of.interface.js';
+export * from './review-any-pages-unassigned.interface.js';
 export * from './review-any-required-field-null.interface.js';
 export * from './review-any-split-pages-lt.interface.js';
 export * from './review-block-type.interface.js';

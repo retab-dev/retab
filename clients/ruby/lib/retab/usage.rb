@@ -91,7 +91,7 @@ module Retab
     # @param user_id [String, nil] Filter to executions triggered by a single user id (the user_id returned under triggered_by).
     # @param run_id [String, nil] Filter to a single workflow run id (origin run).
     # @param block_id [String, nil] Filter to a single workflow block id (origin block).
-    # @param operation [String, nil] Filter by operation: extraction, classify, split, parse, edit, partition, or schema_generation. The stored-kind aliases extract and classification are also accepted. An unknown value is rejected with 422.
+    # @param operation [String, nil] Filter by operation: extraction, classify, split, parse, edit, partition, schema_generation, or consensus. The stored-kind aliases extract and classification are also accepted. An unknown value is rejected with 422.
     # @param status [String, nil] Filter by execution lifecycle status: created, running, completed, failed, or canceled. Note the single-l spelling: a primitive execution is canceled, whereas a workflow run's status is cancelled. An unknown value is rejected with 422.
     # @param metadata [String, nil] Filter by metadata equality: a JSON object of string key/value pairs (e.g. {"tenant":"acme"}). Pairs AND together.
     # @param from_date [String, nil] Inclusive created_at lower bound (YYYY-MM-DD, UTC).

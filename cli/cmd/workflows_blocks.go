@@ -555,7 +555,9 @@ Extract also supports ` + "`any_required_field_null`" + `, ` + "`confidence_lt`"
 and ` + "`json_condition`" + `;
 split and split-by-key ` + "`for_each`" + ` support ` + "`split_count_neq`" + `,
 ` + "`any_split_pages_lt`" + `, ` + "`boundary_confidence_lt`" + `, and
-` + "`json_condition`" + `; classifier supports ` + "`category_in`" + `,
+` + "`json_condition`" + ` (split-by-key ` + "`for_each`" + ` also supports
+` + "`any_pages_unassigned`" + `, which fires when the partition left source
+pages out of every partition); classifier supports ` + "`category_in`" + `,
 ` + "`confidence_lt`" + `, ` + "`top_margin_lt`" + `, and ` + "`json_condition`" + `.
 Consensus criteria require ` + "`n_consensus > 1`" + ` on the reviewed block.
 Use ` + "`confidence_lt`" + ` for the block's overall consensus likelihood,

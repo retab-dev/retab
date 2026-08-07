@@ -2826,6 +2826,16 @@ class ModelRoundTripTest < Minitest::Test
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
+  def test_review_any_pages_unassigned_round_trip
+    fixture = {
+      "kind" => "any_pages_unassigned"
+    }
+    model = Retab::ReviewAnyPagesUnassigned.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
   def test_review_any_required_field_null_round_trip
     fixture = {
       "kind" => "any_required_field_null"

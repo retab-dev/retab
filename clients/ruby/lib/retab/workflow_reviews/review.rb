@@ -55,6 +55,8 @@ module Retab
           Retab::ReviewAlways.new(hash[:triggered_by])
         when "any_of"
           Retab::ReviewAnyOf.new(hash[:triggered_by])
+        when "any_pages_unassigned"
+          Retab::ReviewAnyPagesUnassigned.new(hash[:triggered_by])
         when "any_required_field_null"
           Retab::ReviewAnyRequiredFieldNull.new(hash[:triggered_by])
         when "any_split_pages_lt"

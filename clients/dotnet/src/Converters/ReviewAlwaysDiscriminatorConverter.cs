@@ -21,6 +21,7 @@ namespace Retab
                 case "all_of": return jObject.ToObject<ReviewAllOf>(serializer);
                 case "always": return jObject.ToObject<ReviewAlways>(serializer);
                 case "any_of": return jObject.ToObject<ReviewAnyOf>(serializer);
+                case "any_pages_unassigned": return jObject.ToObject<ReviewAnyPagesUnassigned>(serializer);
                 case "any_required_field_null": return jObject.ToObject<ReviewAnyRequiredFieldNull>(serializer);
                 case "any_split_pages_lt": return jObject.ToObject<ReviewAnySplitPagesLt>(serializer);
                 case "boundary_confidence_lt": return jObject.ToObject<ReviewBoundaryConfidenceLt>(serializer);

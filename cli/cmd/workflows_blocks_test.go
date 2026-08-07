@@ -29,6 +29,7 @@ func TestWorkflowsBlocksCreateHelpShowsExtractReviewConfig(t *testing.T) {
 		`confidence_lt`,
 		`top_margin_lt`,
 		`boundary_confidence_lt`,
+		`any_pages_unassigned`,
 		`split_count_neq`,
 		`category_in`,
 		`json_condition`,

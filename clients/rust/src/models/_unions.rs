@@ -464,6 +464,8 @@ pub enum ReviewAllOfPredicatesOneOf {
     ReviewAnySplitPagesLt(Box<ReviewAnySplitPagesLt>),
     #[serde(rename = "boundary_confidence_lt")]
     ReviewBoundaryConfidenceLt(Box<ReviewBoundaryConfidenceLt>),
+    #[serde(rename = "any_pages_unassigned")]
+    ReviewAnyPagesUnassigned(Box<ReviewAnyPagesUnassigned>),
     #[serde(rename = "any_required_field_null")]
     ReviewAnyRequiredFieldNull(Box<ReviewAnyRequiredFieldNull>),
     #[serde(rename = "json_condition")]
@@ -521,6 +523,12 @@ impl From<ReviewAnySplitPagesLt> for ReviewAllOfPredicatesOneOf {
 impl From<ReviewBoundaryConfidenceLt> for ReviewAllOfPredicatesOneOf {
     fn from(v: ReviewBoundaryConfidenceLt) -> Self {
         ReviewAllOfPredicatesOneOf::ReviewBoundaryConfidenceLt(Box::new(v))
+    }
+}
+
+impl From<ReviewAnyPagesUnassigned> for ReviewAllOfPredicatesOneOf {
+    fn from(v: ReviewAnyPagesUnassigned) -> Self {
+        ReviewAllOfPredicatesOneOf::ReviewAnyPagesUnassigned(Box::new(v))
     }
 }
 
