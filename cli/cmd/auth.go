@@ -149,13 +149,28 @@ override and takes precedence over anything written to disk.`,
 			return err
 		}
 
-		cfg, _ := loadConfig()
+		// Do NOT ignore a load failure: proceeding with the zero config and
+		// saving would clobber ~/.retab/config.json (other environment
+		// profiles, base_url) with a file holding only the OAuth fields.
+		// loadConfig returns nil for a missing file, so first-time login still
+		// works. Same guard as `env switch`.
+		cfg, err := loadConfig()
+		if err != nil {
+			return err
+		}
 		cfg.OAuth = tokens
 		// Switching to OAuth wipes the static credentials; users who want a
 		// different mode can re-run `retab auth login --api-key ...` or
 		// `retab auth login --access-token ...` afterward.
 		cfg.APIKey = ""
 		cfg.AccessToken = ""
+		// Clear the default-profile pointer too. A fresh-install scoped login
+		// (`auth login --env X --api-key ...`) claims DefaultEnvironment, and
+		// branch 5 of resolveCredential outranks a stored OAuth session — so
+		// without this, an explicit browser login would report success while
+		// plain `retab ...` silently kept using the old profile key. The named
+		// profile stays in cfg.Environments for `--env` selection.
+		cfg.DefaultEnvironment = ""
 		cfg.BaseURL = stripLegacyV1Suffix(loginBaseURL)
 		environment, envErr := selectOAuthLoginEnvironment(ctx, loginBaseURL, tokens, cfg.EnvironmentID)
 		if environment != nil {
@@ -279,7 +294,14 @@ func runAPIKeyLogin(apiKey, baseURL, slug string) error {
 	if strings.HasPrefix(apiKey, "acctk_") {
 		return fmt.Errorf("access tokens must be passed with --access-token, not --api-key")
 	}
-	cfg, _ := loadConfig()
+	// Do NOT ignore a load failure: saving the zero config would clobber
+	// ~/.retab/config.json (other environment profiles, OAuth session) with a
+	// file holding only this key. loadConfig returns nil for a missing file, so
+	// first-time login still works. Same guard as `env switch`.
+	cfg, err := loadConfig()
+	if err != nil {
+		return err
+	}
 
 	if slug != "" {
 		normalized, err := validateSlug(slug)
@@ -346,6 +368,12 @@ func runAPIKeyLogin(apiKey, baseURL, slug string) error {
 	// Wipe stale bearer state — explicit API-key login is the user's intent.
 	cfg.OAuth = nil
 	cfg.AccessToken = ""
+	// Clear the default-profile pointer too: branch 5 of resolveCredential (a
+	// default claimed by an earlier fresh-install scoped login) outranks this
+	// top-level key (branch 8), so without this the login would report success
+	// while plain `retab ...` kept using the old profile. The named profile
+	// stays in cfg.Environments for `--env` selection.
+	cfg.DefaultEnvironment = ""
 	cfg.BaseURL = stripLegacyV1Suffix(configuredLoginBaseURL(baseURL))
 	if err := saveConfig(cfg); err != nil {
 		return err
@@ -422,10 +450,23 @@ func runAccessTokenLogin(accessToken, baseURL string) error {
 	if !strings.HasPrefix(accessToken, "acctk_") {
 		return fmt.Errorf("access token must start with acctk_")
 	}
-	cfg, _ := loadConfig()
+	// Do NOT ignore a load failure: saving the zero config would clobber
+	// ~/.retab/config.json (other environment profiles, base_url) with a file
+	// holding only this token. loadConfig returns nil for a missing file, so
+	// first-time login still works. Same guard as `env switch`.
+	cfg, err := loadConfig()
+	if err != nil {
+		return err
+	}
 	cfg.AccessToken = accessToken
 	cfg.APIKey = ""
 	cfg.OAuth = nil
+	// Clear the default-profile pointer too: branch 5 of resolveCredential (a
+	// default claimed by an earlier fresh-install scoped login) outranks the
+	// stored access token (branch 6), so without this the login would report
+	// success while plain `retab ...` kept using the old profile. The named
+	// profile stays in cfg.Environments for `--env` selection.
+	cfg.DefaultEnvironment = ""
 	cfg.BaseURL = stripLegacyV1Suffix(configuredLoginBaseURL(baseURL))
 	if err := saveConfig(cfg); err != nil {
 		return err

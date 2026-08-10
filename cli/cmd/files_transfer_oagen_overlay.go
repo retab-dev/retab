@@ -209,6 +209,15 @@ func stageStdinUpload(cmd *cobra.Command) (string, func(), error) {
 	if err := validateBareUploadFilename(filename); err != nil {
 		return "", func() {}, err
 	}
+	// Reject Windows reserved device names (CON, NUL, "aux.pdf", ...): here the
+	// value becomes a LOCAL path (filepath.Join below), and on Windows such a
+	// name resolves to the device in any directory, so the write is discarded
+	// and the later read returns 0 bytes — a silent 0-byte upload. Applied on
+	// every platform, mirroring the download-side guard. Kept in sync with the
+	// non-overlay files.go.
+	if isReservedWindowsBaseName(filename) {
+		return "", func() {}, fmt.Errorf("--filename %q is a reserved Windows device name; choose another name", rawFilename)
+	}
 	body, err := io.ReadAll(cmd.InOrStdin())
 	if err != nil {
 		return "", func() {}, fmt.Errorf("read stdin: %w", err)

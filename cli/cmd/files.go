@@ -420,6 +420,18 @@ func stageStdinUpload(cmd *cobra.Command) (string, func(), error) {
 	if err := validateBareUploadFilename(filename); err != nil {
 		return "", func() {}, err
 	}
+	// Reject Windows reserved device names (CON, NUL, COM1, "aux.pdf", ...).
+	// Unlike the path-upload branch — where --filename is only a server-recorded
+	// name and the download side already guards reserved names — here the value
+	// becomes a LOCAL path (filepath.Join(dir, filename) below). On Windows such
+	// a name resolves to the device in ANY directory, so os.WriteFile would send
+	// the piped bytes to the device (discarded, no error) and the later
+	// os.ReadFile would return 0 bytes — a silent 0-byte upload. Applied on every
+	// platform (like the download-side guard) so a pipe behaves identically on
+	// Unix and Windows.
+	if isReservedWindowsBaseName(filename) {
+		return "", func() {}, fmt.Errorf("--filename %q is a reserved Windows device name; choose another name", rawFilename)
+	}
 	body, err := io.ReadAll(cmd.InOrStdin())
 	if err != nil {
 		return "", func() {}, fmt.Errorf("read stdin: %w", err)

@@ -1077,13 +1077,20 @@ func renderWorkflowTableRowsCSV(result *retab.WorkflowTableRowsResponse, options
 		}
 		record := []string{}
 		if options.ShowRowID {
-			record = append(record, row.ID)
+			// row.ID is server-supplied, so sanitize it too — writeCSV's policy
+			// is to run every column through sanitizeCSVCell.
+			record = append(record, sanitizeCSVCell(row.ID))
 		}
 		if options.ShowPosition {
-			record = append(record, strconv.Itoa(row.Position))
+			record = append(record, sanitizeCSVCell(strconv.Itoa(row.Position)))
 		}
 		for _, name := range columnNames {
-			record = append(record, workflowTableCellText(row.Data[name], options))
+			// sanitizeCSVCell neutralizes spreadsheet formula injection (a cell
+			// beginning `= @ + -`), matching the shared writeCSV core in
+			// output.go; the hand-rolled query CSV path used to skip it, so a
+			// cell like `=HYPERLINK(...)` executed on open here but was rendered
+			// inert by `tables list --output csv`.
+			record = append(record, sanitizeCSVCell(workflowTableCellText(row.Data[name], options)))
 		}
 		if err := writer.Write(record); err != nil {
 			return err
@@ -1173,6 +1180,11 @@ func workflowTableCellNeedsJSON(value any) bool {
 }
 
 func cleanWorkflowTableCell(value string, options tableQueryRenderOptions) string {
+	// Collapse internal whitespace (tabs, newlines, runs of spaces) to a single
+	// space on every path — including CSV. This CLI is line-oriented (rows feed
+	// grep/awk/wc pipelines), so guaranteeing one physical line per CSV record
+	// is deliberate; embedded-newline RFC 4180 quoting would break those tools.
+	// See TestTablesQueryCSVOutputAndRowMetadata, which pins this.
 	cleaned := strings.Join(strings.Fields(value), " ")
 	// CSV output must be a faithful, re-importable table (see
 	// workflowTableCellText): truncating a long cell to "<prefix>..." would
