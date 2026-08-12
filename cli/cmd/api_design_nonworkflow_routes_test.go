@@ -8,7 +8,14 @@ import (
 	"testing"
 )
 
-var approvedCLINonWorkflowNonReferenceRoutes = map[string]bool{}
+// approvedCLINonWorkflowNonReferenceRoutes are non-workflow routes the CLI
+// intentionally calls ahead of the public OpenAPI reference. splits/reconstruct
+// is wired through the CLI + generated SDKs before it ships in the reference;
+// drop entries here once the route ships (the test below fails if it lands in
+// OpenAPI first, so the list can't go stale).
+var approvedCLINonWorkflowNonReferenceRoutes = map[string]bool{
+	"POST /v1/splits/reconstruct": true,
+}
 
 func TestNonWorkflowCLIClientCallsHaveRouteContracts(t *testing.T) {
 	source := readCLISource(t)
