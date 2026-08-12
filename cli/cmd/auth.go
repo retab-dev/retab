@@ -172,7 +172,23 @@ override and takes precedence over anything written to disk.`,
 		// profile stays in cfg.Environments for `--env` selection.
 		cfg.DefaultEnvironment = ""
 		cfg.BaseURL = stripLegacyV1Suffix(loginBaseURL)
-		environment, envErr := selectOAuthLoginEnvironment(ctx, loginBaseURL, tokens, cfg.EnvironmentID)
+		// Reset the persisted environment scope BEFORE resolving the new one.
+		// The prior value belongs to whatever account was logged in before, and
+		// this login may be switching accounts. If resolution below fails (a
+		// handled path — /v1/environments is a live network call), leaving the
+		// old EnvironmentID/EnvironmentType in place would pair the NEW OAuth
+		// tokens with the OLD account's environment: every env-scoped command
+		// would mint a dashboard token for an environment that isn't in the new
+		// org, and — worse — the offline production gate reads the stale
+		// EnvironmentType, so a prior "non_production" would silently disengage
+		// the confirmation prompt for what is now a production session. Clearing
+		// first fails safe (empty type => gated). The old id is still offered as
+		// the selection preference so a re-login to the SAME account re-picks the
+		// same environment. Mirrors `org switch`.
+		previousEnvironmentID := cfg.EnvironmentID
+		cfg.EnvironmentID = ""
+		cfg.EnvironmentType = ""
+		environment, envErr := selectOAuthLoginEnvironment(ctx, loginBaseURL, tokens, previousEnvironmentID)
 		if environment != nil {
 			cfg.EnvironmentID = environment.ID
 			// Persist the type so the offline production-confirmation gate

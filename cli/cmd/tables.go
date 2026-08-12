@@ -1379,7 +1379,19 @@ func normalizeTableOperator(operator string) string {
 func tableWhereValue(operator string, value string) (any, error) {
 	switch operator {
 	case "in", "not_in":
-		return splitCommaList(value), nil
+		// Coerce every element, exactly as eq/lt/between do. Without this the
+		// list alone forwards raw strings, so `--where "priority in 1,2,3"`
+		// sends ["1","2","3"] against an integer column and matches nothing —
+		// a silently-empty page that reads as "no data". `between` already
+		// coerces each bound; this keeps `in`/`not_in` consistent. A genuinely
+		// string column is unaffected: coerceTableScalarValue leaves a
+		// non-JSON-scalar token (e.g. "GB") as its string self.
+		parts := splitCommaList(value)
+		coerced := make([]any, len(parts))
+		for i, part := range parts {
+			coerced[i] = coerceTableScalarValue(part)
+		}
+		return coerced, nil
 	case "between":
 		// "between" needs exactly two non-empty bounds. Split on ".." (range
 		// form) or "," (list form), then validate both branches the same way.

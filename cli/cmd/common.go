@@ -2148,6 +2148,20 @@ func mimeTypeFromExtension(filePath string) string {
 	case ".xlsm":
 		return "application/vnd.ms-excel.sheet.macroEnabled.12"
 	}
+	// Consult the parse path's hardcoded table before the host MIME registry.
+	// It already maps every kind the CLI itself understands (images incl.
+	// .tif/.bmp/.webp, .pdf, text kinds) to a fixed, host-independent type,
+	// with the explicit design goal that mime.TypeByExtension is NOT consulted
+	// for them. Upload MIME went through mime.TypeByExtension directly, so on a
+	// host lacking a registry entry (`.tif` on a stripped Linux/container box)
+	// `files upload scan.tif` fell through to http.DetectContentType, which
+	// can't sniff TIFF, and declared application/octet-stream — while `files
+	// parse` on the same file reported image/tiff. Sharing the table makes the
+	// two paths agree regardless of host. Unknown extensions (.zip, ...) still
+	// defer to the registry below.
+	if m := extMIME[ext]; m != "" {
+		return m
+	}
 	byExt := mime.TypeByExtension(ext)
 	if byExt == "" {
 		return ""

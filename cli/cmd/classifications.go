@@ -101,8 +101,19 @@ when the type is obvious from the cover.`,
 			}
 		}
 		for i, raw := range categoryFlags {
-			name, desc, _ := splitKV(raw)
-			cat := &retab.Category{Name: name, Description: ptr(desc)}
+			name, desc, hasDesc := splitKV(raw)
+			// Only attach a description when the user actually wrote `name=desc`.
+			// Category.Description is `*string,omitempty`, which omits a nil
+			// pointer but NOT a non-nil pointer to "" — so the old
+			// unconditional ptr(desc) put `"description":""` on the wire for a
+			// bare `--category invoice`, while the --categories-file path omits
+			// the key entirely for the equivalent {"name":"invoice"}. Two
+			// equivalent inputs must serialize identically; mirror the file
+			// path by leaving Description nil when no `=` was given.
+			cat := &retab.Category{Name: name}
+			if hasDesc {
+				cat.Description = ptr(desc)
+			}
 			if err := validateClassificationCategory(i, cat, "--category"); err != nil {
 				return err
 			}
