@@ -17,7 +17,7 @@ class WorkflowReviewsTest extends TestCase
     {
         $fixture = $this->loadFixture('list_review');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflows()->reviews()->list(workflowId: 'test_value', runId: 'test_value', blockId: 'test_value', stepId: 'test_value', iterationKey: 'test_value', decisionStatus: \Retab\Resource\ReviewDecisionStatus::Pending, before: 'test_value', after: 'test_value', limit: 1);
+        $result = $client->workflows()->reviews()->list(workflowId: 'test_value', runId: 'test_value', blockId: 'test_value', stepId: 'test_value', iterationKey: 'test_value', decisionStatus: \Retab\Resource\ReviewDecisionStatus::Pending, before: 'test_value', after: 'test_value', limit: 1, order: \Retab\Resource\EditsOrder::Asc);
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());
@@ -32,6 +32,7 @@ class WorkflowReviewsTest extends TestCase
         $this->assertSame('test_value', $query['before']);
         $this->assertSame('test_value', $query['after']);
         $this->assertArrayHasKey('limit', $query);
+        $this->assertSame('asc', $query['order']);
     }
 
     public function testGet(): void

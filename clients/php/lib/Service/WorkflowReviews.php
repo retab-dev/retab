@@ -35,6 +35,7 @@ class WorkflowReviews
      * @param string|null $before Cursor: only return reviews that appear before this review id in the result order. Use list_metadata.before from the previous page.
      * @param string|null $after Cursor: only return reviews that appear after this review id in the result order. Use list_metadata.after from the previous page.
      * @param int|null $limit Defaults to 50.
+     * @param \Retab\Resource\EditsOrder $order Sort direction over created_at. 'asc' (default) returns the oldest reviews first; 'desc' returns the newest first. Cursor paging with before/after follows the chosen direction. Defaults to "asc".
      * @return \Retab\PaginatedResponse<\Retab\Resource\Review>
      * @throws \Retab\Exception\RetabException
      */
@@ -48,6 +49,7 @@ class WorkflowReviews
         ?string $before = null,
         ?string $after = null,
         ?int $limit = null,
+        \Retab\Resource\EditsOrder $order = \Retab\Resource\EditsOrder::Asc,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\PaginatedResponse {
         $query = array_filter([
@@ -60,6 +62,7 @@ class WorkflowReviews
             'before' => $before,
             'after' => $after,
             'limit' => $limit,
+            'order' => $order->value,
         ], fn($v) => $v !== null);
         return $this->client->requestPage(
             method: 'GET',

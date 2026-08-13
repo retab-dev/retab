@@ -46,6 +46,7 @@
     "src/common/interfaces/workflow-experiments-exclude-status.interface.ts",
     "src/common/interfaces/workflow-experiments-order.interface.ts",
     "src/common/interfaces/workflow-experiments-status.interface.ts",
+    "src/common/interfaces/workflow-reviews-order.interface.ts",
     "src/common/interfaces/workflow-runs-exclude-status.interface.ts",
     "src/common/interfaces/workflow-runs-order.interface.ts",
     "src/common/interfaces/workflow-runs-status.interface.ts",

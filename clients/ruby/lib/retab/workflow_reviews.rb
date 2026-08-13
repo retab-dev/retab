@@ -24,6 +24,7 @@ module Retab
     # @param before [String, nil] Cursor: only return reviews that appear before this review id in the result order. Use list_metadata.before from the previous page.
     # @param after [String, nil] Cursor: only return reviews that appear after this review id in the result order. Use list_metadata.after from the previous page.
     # @param limit [Integer, nil]
+    # @param order [Retab::Types::WorkflowReviewsOrder, nil] Sort direction over created_at. 'asc' (default) returns the oldest reviews first; 'desc' returns the newest first. Cursor paging with before/after follows the chosen direction.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::PaginatedList<Retab::Review>]
     def list(
@@ -36,6 +37,7 @@ module Retab
       before: nil,
       after: nil,
       limit: 50,
+      order: "asc",
       request_options: {}
     )
       params = {
@@ -47,7 +49,8 @@ module Retab
         "decision_status" => decision_status,
         "before" => before,
         "after" => after,
-        "limit" => limit
+        "limit" => limit,
+        "order" => order
       }.compact
       response = @client.request(
         method: :get,
@@ -67,6 +70,7 @@ module Retab
           before: before,
           after: cursor,
           limit: limit,
+          order: order,
           request_options: request_options
         )
       }
@@ -81,7 +85,8 @@ module Retab
           iteration_key: iteration_key,
           decision_status: decision_status,
           before: before,
-          limit: limit
+          limit: limit,
+          order: order
         },
         fetch_next: fetch_next
       )

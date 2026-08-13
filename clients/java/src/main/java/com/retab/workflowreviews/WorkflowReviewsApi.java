@@ -10,6 +10,7 @@ import com.retab.models.RejectReviewRequest;
 import com.retab.models.Review;
 import com.retab.models.SubmitDecisionResponse;
 import com.retab.types.ReviewDecisionStatus;
+import com.retab.types.SortOrder;
 import com.retab.workflowreviewversions.WorkflowReviewVersionsApi;
 import java.io.IOException;
 import java.net.URI;
@@ -37,7 +38,7 @@ public final class WorkflowReviewsApi {
   }
 
   public List<Review> list() throws IOException, InterruptedException {
-    return list(null, null, null, null, null, null, null, null, null);
+    return list(null, null, null, null, null, null, null, null, null, null);
   }
 
   public List<Review> list(
@@ -49,7 +50,8 @@ public final class WorkflowReviewsApi {
       ReviewDecisionStatus decisionStatus,
       String before,
       String after,
-      Long limit)
+      Long limit,
+      SortOrder order)
       throws IOException, InterruptedException {
     String path = "/v1/workflows/reviews";
     StringBuilder query = new StringBuilder();
@@ -62,6 +64,7 @@ public final class WorkflowReviewsApi {
     appendQueryParam(query, "before", before);
     appendQueryParam(query, "after", after);
     appendQueryParam(query, "limit", limit);
+    appendQueryParam(query, "order", order);
     URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
     HttpRequest.Builder requestBuilder =

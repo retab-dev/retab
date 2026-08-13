@@ -741,6 +741,9 @@ const (
 	ReviewDecisionStatusAll      ReviewDecisionStatus = "all"
 )
 
+// WorkflowReviewsOrder is an alias for ClassificationsOrder.
+type WorkflowReviewsOrder = ClassificationsOrder
+
 // WorkflowRunsStatus is an alias for WorkflowExportPayloadRequestExcludeStatus.
 type WorkflowRunsStatus = WorkflowExportPayloadRequestExcludeStatus
 

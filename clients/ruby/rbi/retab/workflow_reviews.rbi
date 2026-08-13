@@ -23,10 +23,11 @@ module Retab
         before: T.nilable(String),
         after: T.nilable(String),
         limit: T.nilable(Integer),
+        order: T.nilable(String),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::PaginatedList[Retab::Review])
     end
-    def list(workflow_id:, run_id:, block_id:, step_id:, iteration_key:, decision_status:, before:, after:, limit:, request_options:); end
+    def list(workflow_id:, run_id:, block_id:, step_id:, iteration_key:, decision_status:, before:, after:, limit:, order:, request_options:); end
 
     sig do
       params(

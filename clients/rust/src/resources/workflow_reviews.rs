@@ -40,6 +40,11 @@ pub struct ListParams {
     /// Defaults to `50`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub limit: Option<i64>,
+    /// Sort direction over created_at. 'asc' (default) returns the oldest reviews first; 'desc' returns the newest first. Cursor paging with before/after follows the chosen direction.
+    ///
+    /// Defaults to `asc`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub order: Option<WorkflowReviewsOrder>,
 }
 
 impl Default for ListParams {
@@ -55,6 +60,7 @@ impl Default for ListParams {
             before: Default::default(),
             after: Default::default(),
             limit: Some(50),
+            order: Some(WorkflowReviewsOrder::Asc),
         }
     }
 }

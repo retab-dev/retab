@@ -7,7 +7,7 @@ from typing import Any, cast
 
 from retab._resource import AsyncAPIResource, SyncAPIResource
 from retab.types.standards import PreparedRequest
-from retab.types.pagination import AsyncPaginatedList, PaginatedList
+from retab.types.pagination import AsyncPaginatedList, PaginatedList, PaginationOrder
 from retab.types.workflows.reviews import ApproveReviewRequest, RejectReviewRequest, Review, ReviewDecisionStatus, SubmitDecisionResponse
 
 from .versions import WorkflowReviewVersions, AsyncWorkflowReviewVersions
@@ -27,6 +27,7 @@ class WorkflowReviewsMixin:
         before: str | None = None,
         after: str | None = None,
         limit: int | None = 50,
+        order: PaginationOrder | None = cast(PaginationOrder, "asc"),
         **extra_params: Any,
     ) -> PreparedRequest:
         """List Reviews List reviews — the review queue, oldest first by `created_at`."""
@@ -40,6 +41,7 @@ class WorkflowReviewsMixin:
             "before": before,
             "after": after,
             "limit": limit,
+            "order": order,
         }
         if extra_params:
             params.update(extra_params)
@@ -95,6 +97,7 @@ class WorkflowReviews(SyncAPIResource, WorkflowReviewsMixin):
         before: str | None = None,
         after: str | None = None,
         limit: int | None = 50,
+        order: PaginationOrder | None = cast(PaginationOrder, "asc"),
         **extra_params: Any,
     ) -> PaginatedList[Review]:
         """List Reviews List reviews — the review queue, oldest first by `created_at`."""
@@ -108,6 +111,7 @@ class WorkflowReviews(SyncAPIResource, WorkflowReviewsMixin):
             before=before,
             after=after,
             limit=limit,
+            order=order,
             **extra_params,
         )
         return self.request_page(prepared_request, model=Review)
@@ -149,6 +153,7 @@ class AsyncWorkflowReviews(AsyncAPIResource, WorkflowReviewsMixin):
         before: str | None = None,
         after: str | None = None,
         limit: int | None = 50,
+        order: PaginationOrder | None = cast(PaginationOrder, "asc"),
         **extra_params: Any,
     ) -> AsyncPaginatedList[Review]:
         """List Reviews List reviews — the review queue, oldest first by `created_at`."""
@@ -162,6 +167,7 @@ class AsyncWorkflowReviews(AsyncAPIResource, WorkflowReviewsMixin):
             before=before,
             after=after,
             limit=limit,
+            order=order,
             **extra_params,
         )
         return await self.request_page(prepared_request, model=Review)
