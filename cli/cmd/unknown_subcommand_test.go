@@ -38,6 +38,21 @@ func runRootForTest(t *testing.T, args ...string) error {
 	return ExecuteArgs(args)
 }
 
+// setFlagClean sets a flag's value on a shared command singleton without
+// leaving the Changed bit set. pflag's FlagSet.Set marks the flag Changed, so
+// restoring a flag with Set(name, "") leaves Changed=true — which a later test
+// inspecting Changed(name) misreads as "the user passed --name". Setting the
+// underlying Value directly and clearing Changed restores a truly pristine
+// flag. A missing flag is a no-op.
+func setFlagClean(cmd *cobra.Command, name, value string) {
+	f := cmd.Flags().Lookup(name)
+	if f == nil {
+		return
+	}
+	_ = f.Value.Set(value)
+	f.Changed = false
+}
+
 // resetCommandTreeFlags restores every flag on cmd and its descendants to its
 // default value and clears the Changed bit, so parsed state from one test can't
 // bleed into the next through the shared global command tree. Slice flags are

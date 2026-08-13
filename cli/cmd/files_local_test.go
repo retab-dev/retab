@@ -849,39 +849,49 @@ func TestFilesParseTextFormat(t *testing.T) {
 
 // --- helpers to reset persistent command flags between table-driven runs ---
 
+// resetParseFlags restores filesParseCmd's shared flags to a pristine state
+// (value AND Changed bit) at the START of the test, not just on cleanup. The
+// old version only reset on cleanup via Flags().Set(...), which both left the
+// Changed bit set AND did nothing about state a PRIOR test had already leaked —
+// so a run-order where another parse test dirtied `format` first made
+// TestFilesParseHonorsExplicitOutputJSON (which reads Changed("format")) flake.
+// setFlagClean clears Changed, so `format`/`bbox`/... look genuinely unset.
 func resetParseFlags(t *testing.T) {
 	t.Helper()
-	t.Cleanup(func() {
-		_ = filesParseCmd.Flags().Set("format", "text")
-		_ = filesParseCmd.Flags().Set("bbox", "false")
-		_ = filesParseCmd.Flags().Set("out", "")
-		_ = filesParseCmd.Flags().Set("no-cache", "false")
-	})
-	_ = filesParseCmd.Flags().Set("no-cache", "true")
+	clean := func(noCache string) {
+		setFlagClean(filesParseCmd, "format", "text")
+		setFlagClean(filesParseCmd, "bbox", "false")
+		setFlagClean(filesParseCmd, "out", "")
+		setFlagClean(filesParseCmd, "no-cache", noCache)
+	}
+	clean("true")
+	t.Cleanup(func() { clean("false") })
 }
 
 func resetGrepFlags(t *testing.T) {
 	t.Helper()
-	t.Cleanup(func() {
-		_ = filesGrepCmd.Flags().Set("regex", "false")
-		_ = filesGrepCmd.Flags().Set("case-sensitive", "false")
-		_ = filesGrepCmd.Flags().Set("bbox", "false")
-		_ = filesGrepCmd.Flags().Set("no-cache", "false")
-	})
-	_ = filesGrepCmd.Flags().Set("no-cache", "true")
+	clean := func(noCache string) {
+		setFlagClean(filesGrepCmd, "regex", "false")
+		setFlagClean(filesGrepCmd, "case-sensitive", "false")
+		setFlagClean(filesGrepCmd, "bbox", "false")
+		setFlagClean(filesGrepCmd, "no-cache", noCache)
+	}
+	clean("true")
+	t.Cleanup(func() { clean("false") })
 }
 
 func resetInspectFlags(t *testing.T) {
 	t.Helper()
-	t.Cleanup(func() {
-		_ = filesInspectCmd.Flags().Set("lines", "")
-		_ = filesInspectCmd.Flags().Set("cells", "")
-		_ = filesInspectCmd.Flags().Set("render", "")
-		_ = filesInspectCmd.Flags().Set("sheet", "")
-		_ = filesInspectCmd.Flags().Set("out", "")
-		_ = filesInspectCmd.Flags().Set("no-cache", "false")
-	})
-	_ = filesInspectCmd.Flags().Set("no-cache", "true")
+	clean := func(noCache string) {
+		setFlagClean(filesInspectCmd, "lines", "")
+		setFlagClean(filesInspectCmd, "cells", "")
+		setFlagClean(filesInspectCmd, "render", "")
+		setFlagClean(filesInspectCmd, "sheet", "")
+		setFlagClean(filesInspectCmd, "out", "")
+		setFlagClean(filesInspectCmd, "no-cache", noCache)
+	}
+	clean("true")
+	t.Cleanup(func() { clean("false") })
 }
 
 // --- fixture builders ------------------------------------------------------

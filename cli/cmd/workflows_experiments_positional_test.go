@@ -128,7 +128,7 @@ func TestWorkflowsExperimentsUpdateTwoArgForm(t *testing.T) {
 	if err := workflowsExperimentsUpdateCmd.Flags().Set("name", "renamed"); err != nil {
 		t.Fatalf("set --name: %v", err)
 	}
-	t.Cleanup(func() { _ = workflowsExperimentsUpdateCmd.Flags().Set("name", "") })
+	t.Cleanup(func() { setFlagClean(workflowsExperimentsUpdateCmd, "name", "") })
 
 	_, stderr := captureStd(t, func() {
 		if err := workflowsExperimentsUpdateCmd.RunE(workflowsExperimentsUpdateCmd, []string{"wf_abc", "exp_xyz"}); err != nil {
@@ -163,7 +163,7 @@ func TestWorkflowsExperimentsUpdateRejectsMismatchedWorkflow(t *testing.T) {
 	if err := workflowsExperimentsUpdateCmd.Flags().Set("name", "renamed"); err != nil {
 		t.Fatalf("set --name: %v", err)
 	}
-	t.Cleanup(func() { _ = workflowsExperimentsUpdateCmd.Flags().Set("name", "") })
+	t.Cleanup(func() { setFlagClean(workflowsExperimentsUpdateCmd, "name", "") })
 
 	_, _ = captureStd(t, func() {
 		err := workflowsExperimentsUpdateCmd.RunE(workflowsExperimentsUpdateCmd, []string{"wf_wrong", "exp_xyz"})

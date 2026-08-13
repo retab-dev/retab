@@ -296,14 +296,25 @@ func TestMakeOAuthTokenProvider_InFlightSucceedsEvenWhenSaveFails(t *testing.T) 
 	defer srv.Close()
 	withTrustingTokenClient(t, srv.Client())
 
-	// Point HOME at a path that exists but is NOT writable, so MkdirAll
-	// inside saveConfig will fail. macOS's /etc is a portable choice
-	// because non-root users can't create dirs there.
-	if os.Geteuid() == 0 {
-		t.Skip("running as root — cannot induce save failure on /etc")
+	// Isolate the config dir AND force saveConfig to fail, cross-platform.
+	//
+	// TestMain points $HOME and %USERPROFILE% at ONE shared temp dir for the
+	// whole package, and per-test HOME overrides don't cover %USERPROFILE% (the
+	// var os.UserHomeDir reads on Windows). Without a private dir here, a
+	// sibling test's saved OAuth block leaks in: the provider re-reads config
+	// under the lock and adopts that still-valid token instead of refreshing,
+	// so it returns the neighbour's access_token rather than at_inflight.
+	//
+	// Point BOTH vars at a fresh dir, then plant a FILE where ~/.retab should
+	// be. saveConfig's MkdirAll can't create a directory over a file, so the
+	// save fails on every OS — exactly the path this test exercises: the
+	// in-flight request must still succeed.
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("USERPROFILE", home)
+	if err := os.WriteFile(filepath.Join(home, ".retab"), []byte("x"), 0o600); err != nil {
+		t.Fatalf("plant .retab file: %v", err)
 	}
-	t.Setenv("HOME", "/etc")
-	t.Cleanup(func() { _ = os.RemoveAll("/etc/.retab") })
 
 	tok := &oauthTokens{
 		RefreshToken:     "rt_stale",

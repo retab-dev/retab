@@ -81,12 +81,25 @@ func scopeListServer(t *testing.T, gotWorkflowID *string) *httptest.Server {
 
 // withFlag sets a command flag for the duration of one eval, restoring it
 // afterward so the package-level cobra singletons don't leak between cases.
+//
+// Restoring the VALUE is not enough: pflag's Set marks the flag Changed, and
+// Set-ing it back to "" leaves Changed=true. A later test that inspects
+// Changed("workflow-id") — e.g. resolveWorkflowScope, which rejects an
+// explicitly-blank flag — would then see a phantom "--workflow-id must not be
+// blank". Reset to the flag's default AND clear the Changed bit.
 func withFlag(t *testing.T, cmd *cobra.Command, name, value string) {
 	t.Helper()
 	if err := cmd.Flags().Set(name, value); err != nil {
 		t.Fatalf("set --%s: %v", name, err)
 	}
-	t.Cleanup(func() { _ = cmd.Flags().Set(name, "") })
+	t.Cleanup(func() {
+		f := cmd.Flags().Lookup(name)
+		if f == nil {
+			return
+		}
+		_ = f.Value.Set(f.DefValue)
+		f.Changed = false
+	})
 }
 
 // TestWorkflowsReviewsListAcceptsPositional pins the harmonization for the
