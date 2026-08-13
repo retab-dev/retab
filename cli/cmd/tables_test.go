@@ -377,7 +377,7 @@ func TestTablesCreateUploadsCSVAsMultipart(t *testing.T) {
 	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	stdout, stderr := captureStd(t, func() {
-		if err := runRootForTest(t, "tables", "create", "--name", "bank_holidays", "--file", csvPath); err != nil {
+		if err := runRootForTest(t, "tables", "create", "--name", "bank_holidays", "--file", csvPath, "--project-id", "proj_bank"); err != nil {
 			t.Fatalf("tables create: %v", err)
 		}
 	})

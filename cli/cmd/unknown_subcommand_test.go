@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"strings"
 	"testing"
+
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // Regression guard: an unknown subcommand of a router command must fail
@@ -23,14 +26,38 @@ func runRootForTest(t *testing.T, args ...string) error {
 		rootCmd.SetArgs(nil)
 		rootCmd.SetOut(nil)
 		rootCmd.SetErr(nil)
-		// Parsed persistent flags (e.g. `--output csv`) stick on the shared
-		// rootCmd after Execute; reset the ones tests commonly pass so a
-		// value doesn't leak into a later test that reads the global flag.
-		for _, name := range []string{"output", "api-key", "base-url", "environment-id"} {
-			_ = rootCmd.PersistentFlags().Set(name, "")
-		}
+		// Execute parses args onto the SHARED global command tree, and the
+		// parsed values — including each flag's Changed bit — persist after the
+		// run. Resetting only a handful of root persistent flags left local
+		// subcommand flags (e.g. the required `project-id` on `tables create`)
+		// leaking their Changed=true state into the next test, which then either
+		// skipped a required-flag check or read a stale value depending on test
+		// order. Reset the WHOLE tree so every runRootForTest starts clean.
+		resetCommandTreeFlags(rootCmd)
 	})
 	return ExecuteArgs(args)
+}
+
+// resetCommandTreeFlags restores every flag on cmd and its descendants to its
+// default value and clears the Changed bit, so parsed state from one test can't
+// bleed into the next through the shared global command tree. Slice flags are
+// cleared via SliceValue.Replace (Set(DefValue) would append, not reset).
+func resetCommandTreeFlags(cmd *cobra.Command) {
+	reset := func(fs *pflag.FlagSet) {
+		fs.VisitAll(func(f *pflag.Flag) {
+			if sv, ok := f.Value.(pflag.SliceValue); ok {
+				_ = sv.Replace(nil)
+			} else {
+				_ = f.Value.Set(f.DefValue)
+			}
+			f.Changed = false
+		})
+	}
+	reset(cmd.Flags())
+	reset(cmd.PersistentFlags())
+	for _, sub := range cmd.Commands() {
+		resetCommandTreeFlags(sub)
+	}
 }
 
 func TestUnknownSubcommandFailsOnRouters(t *testing.T) {
