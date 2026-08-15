@@ -231,6 +231,9 @@ Any version returned by ` + "`reviews versions list`" + ` is a valid approval ta
 		if err := validateReviewVersionIDFlagIfSet(cmd); err != nil {
 			return err
 		}
+		if err := validateAcknowledgeSupersededFlag(cmd); err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
@@ -242,6 +245,9 @@ Any version returned by ` + "`reviews versions list`" + ` is a valid approval ta
 			return err
 		}
 		req := retab.WorkflowReviewsApproveParams{VersionID: versionID}
+		if ack := acknowledgedSupersededFlag(cmd); len(ack) > 0 {
+			req.AcknowledgedSupersededVersionIDs = ack
+		}
 		result, err := client.Workflows.Reviews.Approve(ctx, args[0], &req)
 		if err != nil {
 			return err
@@ -389,6 +395,9 @@ Run ` + "`reviews schema <review-id>`" + ` to print the snapshot contract.`,
 		if err != nil {
 			return err
 		}
+		if err := validateAcknowledgeSupersededFlag(cmd); err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
@@ -402,6 +411,9 @@ Run ` + "`reviews schema <review-id>`" + ` to print the snapshot contract.`,
 		}
 		if note, _ := cmd.Flags().GetString("note"); note != "" {
 			req.Note = ptr(note)
+		}
+		if ack := acknowledgedSupersededFlag(cmd); len(ack) > 0 {
+			req.AcknowledgedSupersededVersionIDs = ack
 		}
 		result, err := client.Workflows.Reviews.Versions.Create(ctx, &req)
 		if err != nil {
@@ -758,6 +770,24 @@ func reviewSchemaForBlockType(blockType string) (reviewSnapshotSchema, error) {
 							"properties": map[string]any{
 								"name":  map[string]any{"type": "string"},
 								"pages": map[string]any{"type": "array", "items": map[string]any{"type": "integer"}},
+								// A split document's stored shape carries `partitions`, so the
+								// seed version the block writes has the key — a block with no
+								// partition_key configured emits exactly "partitions": [].
+								// Advertising the item as name+pages only told a reviewer that
+								// the snapshot they had just read back was invalid, and that
+								// the way forward was to delete real sub-partition data.
+								"partitions": map[string]any{
+									"type": "array",
+									"items": map[string]any{
+										"type":                 "object",
+										"required":             []string{"key", "pages"},
+										"additionalProperties": false,
+										"properties": map[string]any{
+											"key":   map[string]any{"type": "string"},
+											"pages": map[string]any{"type": "array", "items": map[string]any{"type": "integer"}},
+										},
+									},
+								},
 							},
 						},
 					},
@@ -773,6 +803,7 @@ func reviewSchemaForBlockType(blockType string) (reviewSnapshotSchema, error) {
 				"pages are 1-based positive integers.",
 				"pages must be sorted ascending with no duplicates inside one document.",
 				"Submit the complete split list, not only the changed document.",
+				"partitions is optional: keep the value the seed version carried, or omit the key entirely.",
 			},
 		}, nil
 	case "for_each":
@@ -854,6 +885,13 @@ func reviewSchemaWithBlockConfig(schema reviewSnapshotSchema, config map[string]
 			schema.Snapshot = cloneReviewSchemaMap(jsonSchema)
 			schema.Example = reviewExampleForJSONSchema(jsonSchema, schema.Example)
 			schema.Notes = append(schema.Notes, reviewSchemaConfigSourceNote("extract", configSource, "json_schema"))
+			// The server rejects a snapshot key the block never declared, whatever
+			// the schema says about additionalProperties: an approved snapshot
+			// becomes the block's output verbatim, so a correction cannot widen the
+			// shape downstream blocks were written against. Say so, since a schema
+			// that is merely silent on additionalProperties reads as "extras fine".
+			schema.Notes = append(schema.Notes,
+				"Only fields declared above are accepted; a key the block never declared is rejected with 422.")
 		}
 	case "classifier":
 		categories := reviewClassifierCategoryNames(config)
@@ -1016,6 +1054,41 @@ func requireReviewVersionIDFlag(cmd *cobra.Command, name string) (string, error)
 	return value, nil
 }
 
+// acknowledgedSupersededFlag reads --acknowledge-superseded into the wire field
+// the 409 names.
+//
+// A contested lineage is refused with a 409 whose detail ends "re-send this
+// request with acknowledged_superseded_version_ids=[...]". Without a flag to
+// carry that, the CLI printed a remediation it could not perform: the only ways
+// through were to abandon the version you meant to decide, or to leave the CLI
+// for a raw HTTP call.
+func acknowledgedSupersededFlag(cmd *cobra.Command) []string {
+	values, _ := cmd.Flags().GetStringArray("acknowledge-superseded")
+	out := make([]string, 0, len(values))
+	for _, value := range values {
+		// Accept both repeated flags and one comma-separated list, so the ids can
+		// be pasted straight out of the 409 detail.
+		for _, id := range strings.Split(value, ",") {
+			if trimmed := strings.TrimSpace(id); trimmed != "" {
+				out = append(out, trimmed)
+			}
+		}
+	}
+	return out
+}
+
+// validateAcknowledgeSupersededFlag rejects malformed ids before the request, so
+// a typo comes back as a local error rather than a server-side no-op that
+// silently fails to cover the version it was meant to acknowledge.
+func validateAcknowledgeSupersededFlag(cmd *cobra.Command) error {
+	for _, id := range acknowledgedSupersededFlag(cmd) {
+		if !reviewVersionIDPattern.MatchString(id) {
+			return fmt.Errorf("--acknowledge-superseded %q must be a rvr_<26-char base32> version id", id)
+		}
+	}
+	return nil
+}
+
 // validateReviewVersionIDFlagIfSet rejects a malformed --version-id up-front
 // (before any credential/client work) so a bad id fails fast, while leaving the
 // flag optional. A blank flag is fine — the decision then defaults to the latest
@@ -1081,6 +1154,7 @@ func init() {
 	// handwritten message; see workflowsListCmd for the rationale).
 
 	workflowsReviewsApproveCmd.Flags().String("version-id", "", "rvr_<26-char base32> version id to approve (defaults to the review's latest version)")
+	workflowsReviewsApproveCmd.Flags().StringArray("acknowledge-superseded", nil, "rvr_ version id(s) this decision deliberately supersedes, as named by a 409 (repeatable, or one comma-separated list)")
 
 	workflowsReviewsRejectCmd.Flags().String("version-id", "", "rvr_<26-char base32> version id to reject (defaults to the review's latest version)")
 	workflowsReviewsRejectCmd.Flags().String("reason", "", "why the output was rejected (required)")
@@ -1095,6 +1169,7 @@ func init() {
 	workflowsReviewsVersionsCreateCmd.Flags().String("parent-id", "", "rvr_<26-char base32> parent version id for the new version (required)")
 	workflowsReviewsVersionsCreateCmd.Flags().String("snapshot-file", "", "JSON file with the corrected block snapshot — or - for stdin (required)")
 	workflowsReviewsVersionsCreateCmd.Flags().String("note", "", "free-text rationale for the version")
+	workflowsReviewsVersionsCreateCmd.Flags().StringArray("acknowledge-superseded", nil, "rvr_ version id(s) this version deliberately supersedes, as named by a 409 (repeatable, or one comma-separated list)")
 	_ = workflowsReviewsVersionsCreateCmd.MarkFlagRequired("parent-id")
 	_ = workflowsReviewsVersionsCreateCmd.MarkFlagRequired("snapshot-file")
 
