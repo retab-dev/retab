@@ -480,6 +480,9 @@ func TestReviewsSchemaCommandPrintsBlockSpecificSnapshotContract(t *testing.T) {
 		`"receipt"`,
 		`"additionalProperties": false`,
 		`"Do not include confidence fields or other metadata."`,
+		// The config-source note has to stay grammatical for a plural field
+		// name too — "The categories above was loaded" was the pre-fix text.
+		`"The categories above came from the reviewed classifier block's workflow-version config."`,
 		`"create_usage"`,
 	} {
 		if !strings.Contains(stdout, want) {
@@ -544,7 +547,7 @@ func TestReviewsSchemaCommandUsesExtractBlockJSONSchema(t *testing.T) {
 		`"invoice_number"`,
 		`"total"`,
 		`"additionalProperties": false`,
-		`"The json_schema above was loaded from the reviewed extract block's workflow-version config."`,
+		`"The json_schema above came from the reviewed extract block's workflow-version config."`,
 	} {
 		if !strings.Contains(stdout, want) {
 			t.Fatalf("expected %q in schema output:\n%s", want, stdout)

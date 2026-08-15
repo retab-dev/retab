@@ -872,10 +872,13 @@ func reviewSchemaWithBlockConfig(schema reviewSnapshotSchema, config map[string]
 }
 
 func reviewSchemaConfigSourceNote(blockType string, configSource string, field string) string {
+	// "came from" rather than "was loaded from": `field` is sometimes plural
+	// ("categories"), and a verb that agrees with both readings keeps the note
+	// grammatical for every block type.
 	if configSource == "workflow-version" {
-		return fmt.Sprintf("The %s above was loaded from the reviewed %s block's workflow-version config.", field, blockType)
+		return fmt.Sprintf("The %s above came from the reviewed %s block's workflow-version config.", field, blockType)
 	}
-	return fmt.Sprintf("The %s above was loaded from the current %s block config; it may differ if the block changed after this review was created.", field, blockType)
+	return fmt.Sprintf("The %s above came from the current %s block config; it may differ if the block changed after this review was created.", field, blockType)
 }
 
 func cloneReviewSchemaMap(input map[string]any) map[string]any {
