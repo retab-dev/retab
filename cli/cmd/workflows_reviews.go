@@ -826,6 +826,18 @@ func reviewSchemaForBlockType(blockType string) (reviewSnapshotSchema, error) {
 							},
 						},
 					},
+					// The seed version a split_by_key for_each writes carries
+					// `unassigned_pages` alongside `partitions`, and the server accepts it
+					// on a correction. Advertising partitions-only with
+					// additionalProperties:false told a reviewer that the snapshot they had
+					// just read back was invalid, and that the way forward was to DELETE the
+					// list — which is exactly the signal the any_pages_unassigned predicate
+					// reads, so "page 8 is unassigned" got silently rewritten to "nothing is
+					// unassigned". Same class as the split `partitions` key above.
+					"unassigned_pages": map[string]any{
+						"type":  "array",
+						"items": map[string]any{"type": "integer"},
+					},
 				},
 			},
 			Example: map[string]any{
@@ -840,6 +852,8 @@ func reviewSchemaForBlockType(blockType string) (reviewSnapshotSchema, error) {
 				"pages must be sorted ascending with no duplicates inside one partition.",
 				"If the for_each block has allow_overlap=false, one page cannot appear in more than one partition.",
 				"Submit the complete partition list, not only the changed partition.",
+				"unassigned_pages is optional: keep the value the seed version carried, or omit the key entirely. Deleting a non-empty list claims every page was assigned.",
+				"unassigned_pages must be sorted ascending, positive, with no duplicates.",
 			},
 		}, nil
 	default:
@@ -1150,6 +1164,13 @@ func init() {
 	workflowsReviewsListCmd.Flags().Var(decisionFlag, "decision-status", "review slice to list: pending | approved | rejected | decided | all")
 	workflowsReviewsListCmd.Flags().String("before", "", "cursor for the previous page (from list_metadata.before; mutually exclusive with --after)")
 	workflowsReviewsListCmd.Flags().String("after", "", "cursor for the next page (from list_metadata.after; mutually exclusive with --before)")
+	// GET /v1/workflows/reviews takes `order` (asc|desc over created_at), and both the
+	// MCP tool and the human_review prompt tell an agent to pass desc when it wants
+	// the newest reviews rather than the back of the queue. The CLI registered no
+	// flag, so collectListParams never saw one and the only reachable direction was
+	// the asc default — a long queue's newest reviews were unreachable without
+	// walking every page.
+	workflowsReviewsListCmd.Flags().Var(&orderFlagValue{}, "order", "asc | desc (default asc: oldest reviews first)")
 	// Mutex enforced inside RunE via validateBeforeAfterMutex (concise
 	// handwritten message; see workflowsListCmd for the rationale).
 
