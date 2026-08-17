@@ -846,15 +846,15 @@ func TestWorkflowsSpecExportHonorsGlobalOutputJSON(t *testing.T) {
 	if err := workflowsSpecExportCmd.Flags().Set("format", "yaml"); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = workflowsSpecExportCmd.Flags().Set("format", "yaml") })
+	t.Cleanup(func() { setFlagClean(workflowsSpecExportCmd, "format", "yaml") })
 	if err := workflowsSpecExportCmd.Flags().Set("json", "false"); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = workflowsSpecExportCmd.Flags().Set("json", "false") })
+	t.Cleanup(func() { setFlagClean(workflowsSpecExportCmd, "json", "false") })
 	if err := rootCmd.PersistentFlags().Set("output", "json"); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = rootCmd.PersistentFlags().Set("output", "") })
+	t.Cleanup(func() { setFlagClean(rootCmd, "output", "") })
 
 	var err error
 	stdout, _ := captureStd(t, func() {
@@ -870,6 +870,55 @@ func TestWorkflowsSpecExportHonorsGlobalOutputJSON(t *testing.T) {
 	}
 	if decoded["workflow_id"] != "wf_test" || decoded["yaml_definition"] != "metadata:\n  id: wf_test\n" {
 		t.Fatalf("decoded envelope = %#v", decoded)
+	}
+}
+
+// `spec get` documents that when --json and --format disagree, the explicit
+// --format wins (--json is the cheap alias). The old gate `--json && format ==
+// "yaml"` couldn't tell an explicit `--format yaml` from the default, so --json
+// silently overrode it. This pins the documented precedence: `--format yaml
+// --json` yields bare YAML, not the JSON envelope.
+func TestWorkflowsSpecGetExplicitFormatYAMLBeatsJSONShortcut(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet || r.URL.Path != "/v1/workflows/wf_test/spec" {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"workflow_id":     "wf_test",
+			"yaml_definition": "metadata:\n  id: wf_test\n",
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	// Explicit --format yaml AND the --json shortcut, disagreeing.
+	if err := workflowsSpecExportCmd.Flags().Set("format", "yaml"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { setFlagClean(workflowsSpecExportCmd, "format", "yaml") })
+	if err := workflowsSpecExportCmd.Flags().Set("json", "true"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { setFlagClean(workflowsSpecExportCmd, "json", "false") })
+
+	var err error
+	stdout, _ := captureStd(t, func() {
+		err = workflowsSpecExportCmd.RunE(workflowsSpecExportCmd, []string{"wf_test"})
+	})
+	if err != nil {
+		t.Fatalf("spec get: %v", err)
+	}
+
+	// Explicit --format yaml must win: bare YAML body, not the JSON envelope.
+	if strings.TrimSpace(stdout) != "metadata:\n  id: wf_test" {
+		t.Fatalf("--format yaml --json should emit bare YAML (explicit format wins), got:\n%s", stdout)
+	}
+	if json.Valid([]byte(stdout)) && strings.Contains(stdout, "workflow_id") {
+		t.Fatalf("got the JSON envelope; --json wrongly overrode explicit --format yaml:\n%s", stdout)
 	}
 }
 

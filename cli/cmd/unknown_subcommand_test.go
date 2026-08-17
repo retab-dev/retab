@@ -47,6 +47,10 @@ func runRootForTest(t *testing.T, args ...string) error {
 func setFlagClean(cmd *cobra.Command, name, value string) {
 	f := cmd.Flags().Lookup(name)
 	if f == nil {
+		// A persistent flag may not be merged into Flags() yet; look there too.
+		f = cmd.PersistentFlags().Lookup(name)
+	}
+	if f == nil {
 		return
 	}
 	_ = f.Value.Set(value)

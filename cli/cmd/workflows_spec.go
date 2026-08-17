@@ -638,7 +638,13 @@ over inline header secrets for workflows you keep in git.`,
 		// passed and they disagree, the explicit `--format` value wins
 		// (`--json` is the cheap-to-type alias, `--format` is the strict
 		// version). Both being set to compatible values is a no-op.
-		if jsonShortcut, _ := cmd.Flags().GetBool("json"); jsonShortcut && format == "yaml" {
+		//
+		// Gate on !Changed("format"): `format == "yaml"` alone cannot tell an
+		// explicit `--format yaml` from the default, so the old condition let
+		// `--json` silently override `--format yaml` — the exact reverse of the
+		// documented precedence. Only promote to json when the user did NOT
+		// spell out a format.
+		if jsonShortcut, _ := cmd.Flags().GetBool("json"); jsonShortcut && !cmd.Flags().Changed("format") {
 			format = "json"
 		}
 		// Honour the global output flag users expect every command to
