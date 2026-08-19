@@ -208,6 +208,46 @@ func TestProductionGate_HighRisk_OAuthExplicitNonProductionEnvironmentID_NeverGa
 	}
 }
 
+// An explicit --environment-id override whose type can't be proven (the
+// environment lookup fails) must fail safe to gated, even for a non-production
+// session. The override routes the write away from the session environment, so
+// falling back to the session's own non-production expectation would let an
+// unconfirmed, possibly-production write through. Regression for the fail-open
+// bug in expectedEnvironmentForSafety's lookup-failure branch.
+func TestProductionGate_HighRisk_ExplicitEnvironmentID_LookupFails_FailsSafeToGated(t *testing.T) {
+	isolateHome(t)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Simulate a transient failure / unreachable environment metadata.
+		http.Error(w, "boom", http.StatusInternalServerError)
+	}))
+	defer server.Close()
+
+	if err := saveConfig(retabConfig{
+		BaseURL: server.URL,
+		OAuth: &oauthTokens{
+			AccessToken: "oauth-access-token",
+			ExpiresAt:   time.Now().Add(time.Hour),
+		},
+		// The session itself is a non-production environment: pre-fix this made
+		// the gate disengage on the fallback path.
+		EnvironmentID:   "env_staging123",
+		EnvironmentType: "non_production",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	cmd := newSafetyTestCmd(t, classHighRisk, "")
+	if err := cmd.Root().PersistentFlags().Set("environment-id", "env_unprovable999"); err != nil {
+		t.Fatalf("set --environment-id: %v", err)
+	}
+	err := productionGate(cmd, &fakeDecider{interactive: false})
+	if err == nil {
+		t.Fatal("explicit override with an unprovable environment must fail safe to gated")
+	}
+	if !strings.Contains(err.Error(), "production write requires --confirm in non-interactive mode") {
+		t.Fatalf("unexpected error message: %v", err)
+	}
+}
+
 // --- test environment is never gated ------------------------------------
 
 func TestProductionGate_HighRisk_TestEnvironment_NeverGated(t *testing.T) {

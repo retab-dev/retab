@@ -892,6 +892,15 @@ func resolveWorkflowRunDocumentReference(cmd *cobra.Command, document any) (any,
 		if err != nil {
 			return nil, false, err
 		}
+		// Preserve a caller-supplied filename from the {id, filename, ...}
+		// descriptor. resolveFileIDToMIMEData names the MIMEData after the
+		// stored object, so without this the override in a --documents-file
+		// reference is silently dropped. (The compensating loop in the create
+		// handler can't do this — the descriptor is already MIMEData by the
+		// time it runs.)
+		if filename != "" {
+			mime.Filename = filename
+		}
 		return mime, true, nil
 	case content != "" && mimeType != "":
 		if filename == "" {

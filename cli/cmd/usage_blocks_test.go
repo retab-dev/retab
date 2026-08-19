@@ -143,6 +143,37 @@ func TestUsageBlocksForwardsFilterFlags(t *testing.T) {
 	}
 }
 
+// usage blocks must forward the CLI's --environment-id selection as the
+// environment_id query scope, exactly like usage primitives.
+func TestUsageBlocksForwardsEnvironmentID(t *testing.T) {
+	isolateUsageBlocksFlags(t)
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
+	t.Setenv("HOME", t.TempDir())
+
+	var gotQuery string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotQuery = r.URL.RawQuery
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(usageBlocksFixture())
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := rootCmd.PersistentFlags().Set("environment-id", "env_123"); err != nil {
+		t.Fatalf("set --environment-id: %v", err)
+	}
+	t.Cleanup(func() { _ = rootCmd.PersistentFlags().Set("environment-id", "") })
+
+	captureStd(t, func() {
+		if err := usageBlocksCmd.RunE(usageBlocksCmd, nil); err != nil {
+			t.Fatalf("usage blocks: %v", err)
+		}
+	})
+	if !strings.Contains(gotQuery, "environment_id=env_123") {
+		t.Fatalf("query = %s, want environment_id=env_123", gotQuery)
+	}
+}
+
 func TestUsageBlocksRootCommandDispatchesAndPreservesOpaqueCursor(t *testing.T) {
 	isolateUsageBlocksFlags(t)
 	t.Setenv("RETAB_API_KEY", "rt_test_key")

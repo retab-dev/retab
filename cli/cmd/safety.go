@@ -195,11 +195,16 @@ func expectedEnvironmentForSafety(cmd *cobra.Command, cfg retabConfig, cred reso
 		// the persisted session environment.
 		return slugProduction
 	}
-	// Lookup failed (network blip, token scope, ...): fall back to the
-	// session's own expectation. A production session stays gated
-	// (fail safe); a non-production session is not hard-blocked in CI by
-	// a transient lookup error.
-	return expected
+	// Lookup failed (network blip, token scope, ...): the request is being
+	// explicitly routed to an environment we could not prove is
+	// non-production. Fail safe to gated — the same posture used everywhere
+	// else in this module for an unprovable environment (see the legacy-OAuth
+	// and unplaceable-key paths). Falling back to the session's own
+	// expectation would be wrong here: the override routes the write away from
+	// the session environment, so a non-production session must not disengage
+	// the gate for a write it can't confirm is non-production. The user can
+	// still proceed explicitly with --confirm.
+	return slugProduction
 }
 
 func isExplicitEnvironmentSelector(source string) bool {
