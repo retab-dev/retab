@@ -48,6 +48,14 @@ showing which source path in each input fed each reconciled path.`,
   # Pipe inputs in and ask for the alignment mapping
   cat runs.json | retab consensus create --inputs - --include-alignment`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		// stdin can only be consumed once: reject `--inputs -` together with
+		// `--json-schema -` up front with a clear message, matching every other
+		// two-file create command (classifications, splits, extractions).
+		// Without this, --inputs drains stdin and --json-schema then reads EOF
+		// and fails with a misleading "empty JSON input".
+		if err := ensureSingleStdinFlag(cmd, "inputs", "json-schema"); err != nil {
+			return err
+		}
 		inputsPath, _ := cmd.Flags().GetString("inputs")
 		// readJSON treats "" like "-" (stdin), but only "-" is documented as
 		// stdin here: `--inputs ""` would silently block on a terminal waiting

@@ -746,10 +746,16 @@ duplicate block ids.`,
 		if configPath != "" && mergeConfigPath != "" {
 			return fmt.Errorf("--config-file and --merge-config-file are mutually exclusive")
 		}
+		// The two config paths are gated below by value (`if configPath != ""`),
+		// not by Changed(): a flag set to an empty value (e.g. `--config-file ""`
+		// from an unset shell variable) applies nothing. Judge them the same way
+		// here so such an invocation is caught as "nothing to update" instead of
+		// slipping past a Changed()-only guard and firing the very no-op PATCH
+		// this guard exists to prevent.
 		if !cmd.Flags().Changed("label") && !cmd.Flags().Changed("position-x") &&
 			!cmd.Flags().Changed("position-y") && !cmd.Flags().Changed("width") &&
 			!cmd.Flags().Changed("height") && !cmd.Flags().Changed("parent-id") &&
-			!cmd.Flags().Changed("config-file") && !cmd.Flags().Changed("merge-config-file") {
+			configPath == "" && mergeConfigPath == "" {
 			return fmt.Errorf("nothing to update: pass at least one of --label, --position-x, --position-y, --width, --height, --parent-id, --config-file, or --merge-config-file")
 		}
 		req := retab.WorkflowBlocksUpdateParams{}

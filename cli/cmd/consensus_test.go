@@ -81,6 +81,46 @@ func TestConsensusCreateRejectsNonObjectInputsBeforeRequest(t *testing.T) {
 	}
 }
 
+// TestConsensusCreateRejectsBothInputsAndSchemaFromStdin pins that reading both
+// --inputs and --json-schema from stdin (-) fails up front with a clear message,
+// before draining stdin or hitting the network — matching the sibling create
+// commands. Without the guard, --inputs consumes stdin and --json-schema then
+// reads EOF and reports a misleading "empty JSON input".
+func TestConsensusCreateRejectsBothInputsAndSchemaFromStdin(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
+	t.Setenv("HOME", t.TempDir())
+
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		hits.Add(1)
+		http.Error(w, "server should not be reached", http.StatusInternalServerError)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	resetConsensusFlags(t)
+	if err := consensusCreateCmd.Flags().Set("inputs", "-"); err != nil {
+		t.Fatal(err)
+	}
+	if err := consensusCreateCmd.Flags().Set("json-schema", "-"); err != nil {
+		t.Fatal(err)
+	}
+
+	var err error
+	captureStd(t, func() {
+		err = consensusCreateCmd.RunE(consensusCreateCmd, nil)
+	})
+	if err == nil {
+		t.Fatal("expected an error when both --inputs and --json-schema read stdin")
+	}
+	if !strings.Contains(err.Error(), "cannot both read from stdin") {
+		t.Fatalf("error %q does not mention the stdin conflict", err)
+	}
+	if got := hits.Load(); got != 0 {
+		t.Fatalf("server was hit %d time(s), want no requests", got)
+	}
+}
+
 // TestConsensusCreateSendsInputsSchemaAndAlignment pins the wire request: the
 // inputs array, the schema under json_schema (the field that changes how
 // numeric leaves reconcile, so a silent drop would quietly degrade results),

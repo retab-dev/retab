@@ -647,6 +647,50 @@ func TestWorkflowsBlocksUpdateRejectsEmptyMergeConfigBeforeHTTP(t *testing.T) {
 	}
 }
 
+// An empty --config-file value (e.g. from an unset shell variable) must be
+// treated as "nothing to update", not slip past the guard and fire a no-op
+// PATCH that bumps updated_at. Uses a fresh command so cobra's Changed() state
+// doesn't leak from sibling tests that share workflowsBlocksUpdateCmd.
+func TestWorkflowsBlocksUpdateEmptyConfigFileIsNothingToUpdate(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
+
+	httpCalled := false
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		httpCalled = true
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	cmd := &cobra.Command{Use: "blocks-update", RunE: workflowsBlocksUpdateCmd.RunE}
+	cmd.Flags().String("label", "", "")
+	cmd.Flags().Float64("position-x", 0, "")
+	cmd.Flags().Float64("position-y", 0, "")
+	cmd.Flags().Float64("width", 0, "")
+	cmd.Flags().Float64("height", 0, "")
+	cmd.Flags().String("parent-id", "", "")
+	cmd.Flags().String("config-file", "", "")
+	cmd.Flags().String("merge-config-file", "", "")
+	cmd.Flags().String("workflow-id", "", "")
+
+	// Explicitly set to empty, mimicking `--config-file ""`.
+	if err := cmd.Flags().Set("config-file", ""); err != nil {
+		t.Fatal(err)
+	}
+
+	err := cmd.RunE(cmd, []string{"blk_123"})
+	if err == nil {
+		t.Fatal("expected an empty --config-file to be rejected as nothing to update")
+	}
+	if !strings.Contains(err.Error(), "nothing to update") {
+		t.Fatalf("error should say nothing to update, got %q", err.Error())
+	}
+	if httpCalled {
+		t.Fatal("an empty --config-file must not issue any HTTP request")
+	}
+}
+
 func TestWorkflowsBlocksCreateHelpExampleHasUniquePlaceholderID(t *testing.T) {
 	// Regression: the inline example used to hard-code
 	// ``"id": "extract_review"``. Block ids are unique per organization,
