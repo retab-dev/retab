@@ -867,6 +867,35 @@ func TestWorkflowsBlocksGetAcceptsTwoPositionalArgs(t *testing.T) {
 	}
 }
 
+// resolveBlockPositionalWorkflowID must trim surrounding whitespace on the
+// block id (and reject a whitespace-only one), matching the sibling scope
+// resolvers, so `blocks get/update/delete` don't 404 on an id that resolves
+// fine on list/history/stats.
+func TestResolveBlockPositionalWorkflowIDTrimsIDs(t *testing.T) {
+	newCmd := func() *cobra.Command {
+		c := &cobra.Command{Use: "x"}
+		c.Flags().String("workflow-id", "", "")
+		return c
+	}
+
+	// One positional: block id only, padded.
+	if _, blockID, err := resolveBlockPositionalWorkflowID(newCmd(), []string{"  blk_x  "}); err != nil || blockID != "blk_x" {
+		t.Fatalf("one-arg: blockID=%q err=%v, want blk_x", blockID, err)
+	}
+
+	// Two positionals: both padded.
+	wf, blockID, err := resolveBlockPositionalWorkflowID(newCmd(), []string{"  wf_y  ", "  blk_z  "})
+	if err != nil || wf == nil || *wf != "wf_y" || blockID != "blk_z" {
+		t.Fatalf("two-arg: wf=%v block=%q err=%v, want wf_y/blk_z", wf, blockID, err)
+	}
+
+	// Whitespace-only block id is rejected, not sent as an empty path segment.
+	if _, _, err := resolveBlockPositionalWorkflowID(newCmd(), []string{"   "}); err == nil ||
+		!strings.Contains(err.Error(), "block-id positional argument is empty") {
+		t.Fatalf("blank block id: err=%v, want block-id empty error", err)
+	}
+}
+
 func TestWorkflowsBlocksGetRejectsConflictingWorkflowID(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("RETAB_API_KEY", "rt_test_key")

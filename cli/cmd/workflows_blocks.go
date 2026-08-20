@@ -512,22 +512,33 @@ func workflowBlockLookupWorkflowID(cmd *cobra.Command) *string {
 // supplied one. Errors if both are set with conflicting values.
 func resolveBlockPositionalWorkflowID(cmd *cobra.Command, args []string) (*string, string, error) {
 	flagWorkflowID := workflowBlockLookupWorkflowID(cmd)
+	// Trim both ids, matching the sibling scope resolvers (resolveWorkflowBlockScope,
+	// resolveBlockStatsScope): a block id with surrounding whitespace — e.g. from
+	// `$(… | tail)` — would otherwise be sent verbatim and 404 on get/update/delete
+	// while resolving fine on list/history/stats.
+	var workflowID *string
+	var blockID string
 	switch len(args) {
 	case 1:
-		return flagWorkflowID, args[0], nil
+		workflowID = flagWorkflowID
+		blockID = strings.TrimSpace(args[0])
 	case 2:
 		positionalWorkflowID := strings.TrimSpace(args[0])
-		blockID := args[1]
+		blockID = strings.TrimSpace(args[1])
 		if positionalWorkflowID == "" {
 			return nil, "", fmt.Errorf("workflow-id positional argument is empty")
 		}
 		if flagWorkflowID != nil && *flagWorkflowID != positionalWorkflowID {
 			return nil, "", fmt.Errorf("conflicting workflow id: positional %q vs --workflow-id %q", positionalWorkflowID, *flagWorkflowID)
 		}
-		return ptr(positionalWorkflowID), blockID, nil
+		workflowID = ptr(positionalWorkflowID)
 	default:
 		return nil, "", fmt.Errorf("expected 1 or 2 positional arguments, got %d", len(args))
 	}
+	if blockID == "" {
+		return nil, "", fmt.Errorf("block-id positional argument is empty")
+	}
+	return workflowID, blockID, nil
 }
 
 var workflowsBlocksCreateCmd = &cobra.Command{

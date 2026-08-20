@@ -7,6 +7,42 @@ import (
 	"testing"
 )
 
+// The --limit flag on the projects list surfaces must reject a negative value
+// at parse time (matching every other list command), rather than silently
+// ignoring it and falling back to the server default.
+func TestProjectsLimitRejectsNegative(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		set  func(string) error
+		rst  func()
+	}{
+		{
+			name: "projects list",
+			set:  func(v string) error { return projectsListCmd.Flags().Set("limit", v) },
+			rst:  func() { _ = projectsListCmd.Flags().Set("limit", "0") },
+		},
+		{
+			name: "projects access list",
+			set:  func(v string) error { return projectsAccessListCmd.Flags().Set("limit", v) },
+			rst:  func() { _ = projectsAccessListCmd.Flags().Set("limit", "0") },
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Cleanup(tc.rst)
+			if err := tc.set("-5"); err == nil || !strings.Contains(err.Error(), "non-negative") {
+				t.Fatalf("--limit -5: err=%v, want a non-negative error", err)
+			}
+			// 0 (unset sentinel) and a positive value are still accepted.
+			if err := tc.set("0"); err != nil {
+				t.Fatalf("--limit 0 should be accepted, got %v", err)
+			}
+			if err := tc.set("25"); err != nil {
+				t.Fatalf("--limit 25 should be accepted, got %v", err)
+			}
+		})
+	}
+}
+
 // TestProjectsListHitsProjectsEndpoint pins that `retab projects list`
 // fetches the env-scoped /v1/projects surface and renders the pagination
 // envelope. This is the discovery path for the project ids that
