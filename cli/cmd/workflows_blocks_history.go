@@ -28,9 +28,14 @@ type workflowBlockConfigHistoryVersion struct {
 	LastSeenAt                    string                            `json:"last_seen_at,omitempty"`
 	PublishEpochs                 []workflowBlockConfigPublishEpoch `json:"publish_epochs,omitempty"`
 	RunCount                      *int                              `json:"run_count,omitempty"`
-	MatchesCurrentDraft           bool                              `json:"matches_current_draft,omitempty"`
-	IsCurrentPublished            bool                              `json:"is_current_published,omitempty"`
-	IsCurrent                     bool                              `json:"is_current,omitempty"`
+	// No omitempty on these state booleans: this command exists to surface the
+	// current-draft / current-published / current flags, and omitempty on a
+	// plain bool drops a false value on re-marshal, making "not current"
+	// indistinguishable from "field absent" in --output json. The server always
+	// computes them, so they should always render as true/false.
+	MatchesCurrentDraft bool `json:"matches_current_draft"`
+	IsCurrentPublished  bool `json:"is_current_published"`
+	IsCurrent           bool `json:"is_current"`
 }
 
 type workflowBlockConfigPublishEpoch struct {

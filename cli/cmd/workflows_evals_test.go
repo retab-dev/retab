@@ -1627,6 +1627,92 @@ func TestWorkflowsEvalsUpdateInlineAssertion(t *testing.T) {
 	}
 }
 
+// Mixing --assertion-file with an inline assertion flag (but no --equals) must
+// report the file-vs-inline conflict, not the misleading "inline assertion
+// requires --equals". Regression: the inline-completeness check ran first and
+// preempted the mutual-exclusivity error. Covers both create and update.
+func TestWorkflowsEvalsAssertionFilePlusInlineReportsConflictNotMissingEquals(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
+	t.Setenv("HOME", t.TempDir())
+
+	httpCalled := false
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		httpCalled = true
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	assertionPath := filepath.Join(t.TempDir(), "assertion.json")
+	if err := os.WriteFile(assertionPath,
+		[]byte(`{"target":{"output_handle_id":"output-json-0"},"condition":{"kind":"equals","expected":"x"}}`),
+		0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	assertConflict := func(t *testing.T, err error) {
+		t.Helper()
+		if err == nil {
+			t.Fatal("expected an error when mixing --assertion-file with an inline flag")
+		}
+		if !strings.Contains(err.Error(), "mutually exclusive") {
+			t.Fatalf("expected the mutual-exclusivity error, got %q", err.Error())
+		}
+		if strings.Contains(err.Error(), "requires --equals") {
+			t.Fatalf("should not surface the misleading --equals error, got %q", err.Error())
+		}
+	}
+
+	t.Run("create", func(t *testing.T) {
+		for f, v := range map[string]string{
+			"name":             "eval-1",
+			"assertion-file":   assertionPath,
+			"output-handle-id": "output-json-0",
+		} {
+			if err := workflowsEvalsCreateCmd.Flags().Set(f, v); err != nil {
+				t.Fatal(err)
+			}
+		}
+		t.Cleanup(func() {
+			for _, f := range []string{"name", "assertion-file", "output-handle-id"} {
+				_ = workflowsEvalsCreateCmd.Flags().Set(f, "")
+				workflowsEvalsCreateCmd.Flags().Lookup(f).Changed = false
+			}
+		})
+		var err error
+		captureStd(t, func() {
+			err = workflowsEvalsCreateCmd.RunE(workflowsEvalsCreateCmd, []string{"wrk_1"})
+		})
+		assertConflict(t, err)
+	})
+
+	t.Run("update", func(t *testing.T) {
+		for f, v := range map[string]string{
+			"assertion-file":   assertionPath,
+			"output-handle-id": "output-json-0",
+		} {
+			if err := workflowsEvalsUpdateCmd.Flags().Set(f, v); err != nil {
+				t.Fatal(err)
+			}
+		}
+		t.Cleanup(func() {
+			for _, f := range []string{"assertion-file", "output-handle-id"} {
+				_ = workflowsEvalsUpdateCmd.Flags().Set(f, "")
+				workflowsEvalsUpdateCmd.Flags().Lookup(f).Changed = false
+			}
+		})
+		var err error
+		captureStd(t, func() {
+			err = workflowsEvalsUpdateCmd.RunE(workflowsEvalsUpdateCmd, []string{"wfnodeeval_x"})
+		})
+		assertConflict(t, err)
+	})
+
+	if httpCalled {
+		t.Fatal("a form conflict must be rejected before any HTTP call")
+	}
+}
+
 func TestWorkflowsExperimentsCreateHelpDoesNotMentionRunBatch(t *testing.T) {
 	if strings.Contains(workflowsExperimentsCreateCmd.Long, "run-batch") {
 		t.Fatalf("experiments create help should not mention run-batch, got:\n%s", workflowsExperimentsCreateCmd.Long)

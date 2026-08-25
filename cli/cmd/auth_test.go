@@ -570,6 +570,66 @@ func TestAccessTokenLoginStoresBearerCredential(t *testing.T) {
 	}
 }
 
+// An unscoped API-key login switching credentials must clear a stale
+// environment selection left by a prior login, mirroring the OAuth login and
+// `org switch` reset. Otherwise `env which`/`env list` would report an
+// environment that isn't in the new key's org.
+func TestAPIKeyLoginClearsStaleEnvironmentSelection(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("RETAB_API_KEY", "")
+
+	if err := saveConfig(retabConfig{
+		OAuth:           &oauthTokens{AccessToken: "oauth_old"},
+		EnvironmentID:   "env_old_account",
+		EnvironmentType: "non_production",
+	}); err != nil {
+		t.Fatalf("saveConfig: %v", err)
+	}
+
+	if err := runAPIKeyLogin("sk_live_test", "", ""); err != nil {
+		t.Fatalf("runAPIKeyLogin: %v", err)
+	}
+	cfg, err := loadConfig()
+	if err != nil {
+		t.Fatalf("loadConfig: %v", err)
+	}
+	if cfg.EnvironmentID != "" {
+		t.Fatalf("EnvironmentID should be cleared, got %q", cfg.EnvironmentID)
+	}
+	if cfg.EnvironmentType != "" {
+		t.Fatalf("EnvironmentType should be cleared, got %q", cfg.EnvironmentType)
+	}
+}
+
+// An access-token login switching credentials must likewise clear a stale
+// environment selection from a prior login.
+func TestAccessTokenLoginClearsStaleEnvironmentSelection(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("RETAB_API_KEY", "")
+
+	if err := saveConfig(retabConfig{
+		APIKey:          "sk_live_old",
+		EnvironmentID:   "env_old_account",
+		EnvironmentType: "non_production",
+	}); err != nil {
+		t.Fatalf("saveConfig: %v", err)
+	}
+
+	if err := runAccessTokenLogin("acctk_production_secret", ""); err != nil {
+		t.Fatalf("runAccessTokenLogin: %v", err)
+	}
+	cfg, err := loadConfig()
+	if err != nil {
+		t.Fatalf("loadConfig: %v", err)
+	}
+	if cfg.EnvironmentID != "" {
+		t.Fatalf("EnvironmentID should be cleared, got %q", cfg.EnvironmentID)
+	}
+	if cfg.EnvironmentType != "" {
+		t.Fatalf("EnvironmentType should be cleared, got %q", cfg.EnvironmentType)
+	}
+}
+
 func TestAPIKeyLoginRejectsAccessTokenPrefix(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("RETAB_API_KEY", "")

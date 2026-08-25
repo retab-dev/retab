@@ -512,22 +512,33 @@ func workflowBlockLookupWorkflowID(cmd *cobra.Command) *string {
 // supplied one. Errors if both are set with conflicting values.
 func resolveBlockPositionalWorkflowID(cmd *cobra.Command, args []string) (*string, string, error) {
 	flagWorkflowID := workflowBlockLookupWorkflowID(cmd)
+	// Trim both ids, matching the sibling scope resolvers (resolveWorkflowBlockScope,
+	// resolveBlockStatsScope): a block id with surrounding whitespace — e.g. from
+	// `$(… | tail)` — would otherwise be sent verbatim and 404 on get/update/delete
+	// while resolving fine on list/history/stats.
+	var workflowID *string
+	var blockID string
 	switch len(args) {
 	case 1:
-		return flagWorkflowID, args[0], nil
+		workflowID = flagWorkflowID
+		blockID = strings.TrimSpace(args[0])
 	case 2:
 		positionalWorkflowID := strings.TrimSpace(args[0])
-		blockID := args[1]
+		blockID = strings.TrimSpace(args[1])
 		if positionalWorkflowID == "" {
 			return nil, "", fmt.Errorf("workflow-id positional argument is empty")
 		}
 		if flagWorkflowID != nil && *flagWorkflowID != positionalWorkflowID {
 			return nil, "", fmt.Errorf("conflicting workflow id: positional %q vs --workflow-id %q", positionalWorkflowID, *flagWorkflowID)
 		}
-		return ptr(positionalWorkflowID), blockID, nil
+		workflowID = ptr(positionalWorkflowID)
 	default:
 		return nil, "", fmt.Errorf("expected 1 or 2 positional arguments, got %d", len(args))
 	}
+	if blockID == "" {
+		return nil, "", fmt.Errorf("block-id positional argument is empty")
+	}
+	return workflowID, blockID, nil
 }
 
 var workflowsBlocksCreateCmd = &cobra.Command{
@@ -746,10 +757,16 @@ duplicate block ids.`,
 		if configPath != "" && mergeConfigPath != "" {
 			return fmt.Errorf("--config-file and --merge-config-file are mutually exclusive")
 		}
+		// The two config paths are gated below by value (`if configPath != ""`),
+		// not by Changed(): a flag set to an empty value (e.g. `--config-file ""`
+		// from an unset shell variable) applies nothing. Judge them the same way
+		// here so such an invocation is caught as "nothing to update" instead of
+		// slipping past a Changed()-only guard and firing the very no-op PATCH
+		// this guard exists to prevent.
 		if !cmd.Flags().Changed("label") && !cmd.Flags().Changed("position-x") &&
 			!cmd.Flags().Changed("position-y") && !cmd.Flags().Changed("width") &&
 			!cmd.Flags().Changed("height") && !cmd.Flags().Changed("parent-id") &&
-			!cmd.Flags().Changed("config-file") && !cmd.Flags().Changed("merge-config-file") {
+			configPath == "" && mergeConfigPath == "" {
 			return fmt.Errorf("nothing to update: pass at least one of --label, --position-x, --position-y, --width, --height, --parent-id, --config-file, or --merge-config-file")
 		}
 		req := retab.WorkflowBlocksUpdateParams{}

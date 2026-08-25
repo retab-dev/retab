@@ -390,6 +390,13 @@ func runAPIKeyLogin(apiKey, baseURL, slug string) error {
 	// while plain `retab ...` kept using the old profile. The named profile
 	// stays in cfg.Environments for `--env` selection.
 	cfg.DefaultEnvironment = ""
+	// Reset the persisted environment scope: this login may be switching
+	// accounts, and the prior EnvironmentID/EnvironmentType belong to whatever
+	// credential was active before. Leaving them would make `env which`/`env
+	// list` report an environment that isn't in this key's org. Mirrors the
+	// OAuth login and `org switch` reset.
+	cfg.EnvironmentID = ""
+	cfg.EnvironmentType = ""
 	cfg.BaseURL = stripLegacyV1Suffix(configuredLoginBaseURL(baseURL))
 	if err := saveConfig(cfg); err != nil {
 		return err
@@ -483,6 +490,12 @@ func runAccessTokenLogin(accessToken, baseURL string) error {
 	// success while plain `retab ...` kept using the old profile. The named
 	// profile stays in cfg.Environments for `--env` selection.
 	cfg.DefaultEnvironment = ""
+	// Reset the persisted environment scope: this login may be switching
+	// accounts, and a stale EnvironmentID/EnvironmentType from the prior
+	// credential would misreport the active environment in `env which`/`env
+	// list`. Mirrors the OAuth login and `org switch` reset.
+	cfg.EnvironmentID = ""
+	cfg.EnvironmentType = ""
 	cfg.BaseURL = stripLegacyV1Suffix(configuredLoginBaseURL(baseURL))
 	if err := saveConfig(cfg); err != nil {
 		return err

@@ -119,6 +119,7 @@ func runUsageRunsList(cmd *cobra.Command, _ []string) error {
 	}
 
 	query := url.Values{}
+	addSelectedEnvironmentQuery(cmd, query)
 	addOptionalUsageQuery(cmd, query, "workflow-id", "workflow_id")
 	addOptionalUsageQuery(cmd, query, "status", "status")
 	addOptionalUsageQuery(cmd, query, "trigger-type", "trigger_type")
@@ -147,6 +148,20 @@ func runUsageRunsList(cmd *cobra.Command, _ []string) error {
 func addOptionalUsageQuery(cmd *cobra.Command, query url.Values, flagName, queryName string) {
 	if v, _ := cmd.Flags().GetString(flagName); strings.TrimSpace(v) != "" {
 		query.Set(queryName, strings.TrimSpace(v))
+	}
+}
+
+// addSelectedEnvironmentQuery forwards the CLI's selected environment (global
+// --environment-id flag, RETAB_ENVIRONMENT_ID, or the stored config default) as
+// the environment_id scope argument, exactly like usage primitives does. Empty →
+// the server falls back to the credential's environment. Without this, the whole
+// `usage` group would honor --environment-id inconsistently: primitives scopes
+// but runs/blocks would silently ignore the selection under API-key auth (which,
+// unlike OAuth, carries no environment scope in the bearer token).
+func addSelectedEnvironmentQuery(cmd *cobra.Command, query url.Values) {
+	cfg, _ := loadConfig()
+	if envID := selectedEnvironmentID(cmd, cfg); strings.TrimSpace(envID) != "" {
+		query.Set("environment_id", strings.TrimSpace(envID))
 	}
 }
 

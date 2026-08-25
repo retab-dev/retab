@@ -150,6 +150,38 @@ func TestUsageRunsForwardsFilterFlags(t *testing.T) {
 	}
 }
 
+// usage runs must forward the CLI's --environment-id selection as the
+// environment_id query scope, exactly like usage primitives — otherwise the
+// selection is silently dropped under API-key auth (which carries no
+// environment scope in the credential).
+func TestUsageRunsForwardsEnvironmentID(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
+	t.Setenv("HOME", t.TempDir())
+
+	var gotQuery string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotQuery = r.URL.RawQuery
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(usageRunsFixture())
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := rootCmd.PersistentFlags().Set("environment-id", "env_123"); err != nil {
+		t.Fatalf("set --environment-id: %v", err)
+	}
+	t.Cleanup(func() { _ = rootCmd.PersistentFlags().Set("environment-id", "") })
+
+	captureStd(t, func() {
+		if err := usageRunsCmd.RunE(usageRunsCmd, nil); err != nil {
+			t.Fatalf("usage runs: %v", err)
+		}
+	})
+	if !strings.Contains(gotQuery, "environment_id=env_123") {
+		t.Fatalf("query = %s, want environment_id=env_123", gotQuery)
+	}
+}
+
 func TestUsageRunsTableExposesUsageColumnsOnly(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())

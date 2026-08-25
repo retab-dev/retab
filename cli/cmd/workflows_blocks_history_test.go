@@ -140,6 +140,37 @@ func TestWorkflowsBlocksHistoryRunCountCellPreservesOmission(t *testing.T) {
 	}
 }
 
+// The state booleans this command exists to surface must render as explicit
+// true/false in --output json. Regression: omitempty on the plain-bool fields
+// dropped a false value on re-marshal, making "not current" indistinguishable
+// from "field absent".
+func TestWorkflowsBlocksHistoryJSONEmitsFalseStateBooleans(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		writeBlockConfigHistoryTestResponse(t, w)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	stdout, _ := captureStd(t, func() {
+		if err := workflowsBlocksHistoryCmd.RunE(workflowsBlocksHistoryCmd, []string{"wf_123", "blk_extract"}); err != nil {
+			t.Fatalf("blocks history: %v", err)
+		}
+	})
+	// The fixture reports is_current_published:false and (by omission) is_current:false.
+	for _, want := range []string{
+		`"is_current_published": false`,
+		`"is_current": false`,
+		`"matches_current_draft": true`,
+	} {
+		if !strings.Contains(stdout, want) {
+			t.Fatalf("stdout missing %q:\n%s", want, stdout)
+		}
+	}
+}
+
 func writeBlockConfigHistoryTestResponse(t *testing.T, w http.ResponseWriter) {
 	t.Helper()
 	w.Header().Set("Content-Type", "application/json")

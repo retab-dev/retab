@@ -87,6 +87,7 @@ func runUsageBlocksList(cmd *cobra.Command, _ []string) error {
 	}
 
 	query := url.Values{}
+	addSelectedEnvironmentQuery(cmd, query)
 	addOptionalUsageQuery(cmd, query, "workflow-id", "workflow_id")
 	addOptionalUsageQuery(cmd, query, "block-type", "block_type")
 	addOptionalUsageQuery(cmd, query, "before", "before")

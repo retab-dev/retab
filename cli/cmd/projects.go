@@ -164,7 +164,7 @@ func printProjectsList(cmd *cobra.Command, result *cliPaginatedList[cliProject])
 func init() {
 	projectsListCmd.Flags().String("before", "", "project id: return items before this id (mutually exclusive with --after)")
 	projectsListCmd.Flags().String("after", "", "project id: return items after this id (mutually exclusive with --before)")
-	projectsListCmd.Flags().Int("limit", 0, "maximum number of projects to return")
+	projectsListCmd.Flags().Var(&nonNegativeIntFlagValue{}, "limit", "maximum number of projects to return")
 	projectsListCmd.Flags().Bool("include-archived", false, "include archived projects in the list")
 
 	projectsCreateCmd.Flags().String("name", "", "project name (required)")

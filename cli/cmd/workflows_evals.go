@@ -519,10 +519,11 @@ After creation, run with ` + "`workflows evals runs create`" + `.`,
 		if err != nil {
 			return err
 		}
-		inlineAssertion, inlineAssertionSet, err := inlineEvalAssertion(cmd)
-		if err != nil {
-			return err
-		}
+		// Defer the inline-completeness error (missing --equals): if the user also
+		// passed --assertion-file, the file-vs-inline conflict below is the real
+		// mistake and its message is the useful one. inlineEvalAssertion still
+		// reports inlineAssertionSet=true on that error, so the conflict is detected.
+		inlineAssertion, inlineAssertionSet, assertionErr := inlineEvalAssertion(cmd)
 		target, err := resolveEvalComponent(cmd, "target-file", "--block-id", inlineTarget, inlineTargetSet)
 		if err != nil {
 			return err
@@ -534,6 +535,9 @@ After creation, run with ` + "`workflows evals runs create`" + `.`,
 		assertion, err := resolveEvalComponent(cmd, "assertion-file", "--output-handle-id/--path/--equals", inlineAssertion, inlineAssertionSet)
 		if err != nil {
 			return err
+		}
+		if assertionErr != nil {
+			return assertionErr
 		}
 		if target == nil || source == nil || assertion == nil {
 			return fmt.Errorf("each of target, source, and assertion is required — supply it as a file " +
@@ -776,11 +780,11 @@ flaky runs.`,
 		// Detect inline assertion flags and enforce --equals (the expected value)
 		// without building the full assertion here — the update path merges inline
 		// overrides onto the existing assertion below, so we must not synthesize a
-		// fresh assertion that drops untouched fields.
-		_, inlineAssertionSet, err := inlineEvalAssertion(cmd)
-		if err != nil {
-			return err
-		}
+		// fresh assertion that drops untouched fields. Defer the inline-completeness
+		// error (missing --equals) until after the file-vs-inline conflict check: if
+		// the user also passed --assertion-file, that conflict is the real mistake
+		// and its message is the useful one. inlineAssertionSet is still true here.
+		_, inlineAssertionSet, assertionErr := inlineEvalAssertion(cmd)
 		// File presence is value-based (an empty path means "not supplied"),
 		// matching resolveJSONMap — Changed() would spuriously fire on a flag a
 		// prior call set back to "".
@@ -788,6 +792,9 @@ flaky runs.`,
 		fileAssertionSet := strings.TrimSpace(assertionFilePath) != ""
 		if fileAssertionSet && inlineAssertionSet {
 			return fmt.Errorf("--assertion-file and --output-handle-id/--path/--equals are mutually exclusive")
+		}
+		if assertionErr != nil {
+			return assertionErr
 		}
 		// --source-file and --assertion-file both accept "-" for stdin, which can
 		// only be consumed once; reject the ambiguous pair before either read.

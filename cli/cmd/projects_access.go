@@ -375,7 +375,7 @@ func addMembershipListFlags(cmd *cobra.Command) {
 	cmd.Flags().Bool("include-inactive", false, "include revoked (inactive) grants")
 	cmd.Flags().String("before", "", "membership id: return items before this id (mutually exclusive with --after)")
 	cmd.Flags().String("after", "", "membership id: return items after this id (mutually exclusive with --before)")
-	cmd.Flags().Int("limit", 0, "maximum number of grants to return")
+	cmd.Flags().Var(&nonNegativeIntFlagValue{}, "limit", "maximum number of grants to return")
 }
 
 func init() {

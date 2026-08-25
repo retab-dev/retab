@@ -705,6 +705,93 @@ func TestWorkflowsRunsCreateResolvesFileRefIDFromDocumentsFile(t *testing.T) {
 	}
 }
 
+// A caller-supplied filename on a {id, filename} descriptor in --documents-file
+// must survive file-id resolution and reach the wire, overriding the stored
+// object's name. Regression: the resolver dropped the descriptor filename and
+// the compensating loop in the create handler was unreachable dead code, so the
+// stored name silently won.
+func TestWorkflowsRunsCreatePreservesDocumentsFileFilenameOverride(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "rt_test_key")
+	t.Setenv("HOME", t.TempDir())
+
+	var postedDocuments map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/workflows/blocks" && r.URL.Query().Get("workflow_id") == "wf_123":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"data":          []map[string]any{{"id": "block_start", "type": "start_document", "label": "Document"}},
+				"list_metadata": map[string]any{},
+			})
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/files/file_abc/download-link":
+			// The stored object is named "scan001.pdf" — different from the
+			// caller's override below.
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"download_url": "https://storage.googleapis.com/bucket/file_abc.pdf?X-Goog-Signature=abc",
+				"expires_in":   "2026-05-15T01:00:00Z",
+				"filename":     "scan001.pdf",
+				"mime_data": map[string]any{
+					"filename": "scan001.pdf",
+					"url":      "https://storage.retab.com/org_1/file_abc.pdf",
+				},
+			})
+		case r.Method == http.MethodPost && r.URL.Path == "/v1/workflows/runs":
+			var body map[string]any
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+				t.Fatalf("decode request body: %v", err)
+			}
+			postedDocuments, _ = body["documents"].(map[string]any)
+			_ = json.NewEncoder(w).Encode(map[string]any{"id": "run_123", "status": "running"})
+		default:
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	dir := t.TempDir()
+	docsPath := filepath.Join(dir, "documents.json")
+	if err := os.WriteFile(
+		docsPath,
+		[]byte(`{"block_start":{"id":"file_abc","filename":"invoice.pdf","mime_type":"application/pdf"}}`),
+		0o600,
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	cmd := &cobra.Command{Use: "eval-run-create", RunE: workflowsRunsCreateCmd.RunE}
+	cmd.Flags().String("version", "", "")
+	cmd.Flags().String("documents-file", "", "")
+	cmd.Flags().StringArray("document", nil, "")
+	cmd.Flags().StringArray("document-file", nil, "")
+	cmd.Flags().StringArray("document-url", nil, "")
+	cmd.Flags().StringArray("document-id", nil, "")
+	cmd.Flags().String("json-inputs-file", "", "")
+
+	if err := cmd.Flags().Set("documents-file", docsPath); err != nil {
+		t.Fatal(err)
+	}
+
+	stdout, _ := captureStd(t, func() {
+		if err := cmd.RunE(cmd, []string{"wf_123"}); err != nil {
+			t.Fatalf("runs create: %v", err)
+		}
+	})
+	if !strings.Contains(stdout, "run_123") {
+		t.Fatalf("expected run response on stdout, got:\n%s", stdout)
+	}
+	startDocument, ok := postedDocuments["block_start"].(map[string]any)
+	if !ok {
+		t.Fatalf("block_start document = %#v", postedDocuments["block_start"])
+	}
+	if startDocument["filename"] != "invoice.pdf" {
+		t.Fatalf("caller-supplied filename must win, got %#v", startDocument["filename"])
+	}
+	if startDocument["url"] != "https://storage.retab.com/org_1/file_abc.pdf" {
+		t.Fatalf("file id must still resolve to the durable storage URL, got %#v", startDocument["url"])
+	}
+}
+
 func TestWorkflowsRunsCreateRejectsConflictingDocumentIDAndURL(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "rt_test_key")
 	t.Setenv("HOME", t.TempDir())
