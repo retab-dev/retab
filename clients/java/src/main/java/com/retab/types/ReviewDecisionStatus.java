@@ -13,6 +13,7 @@ public enum ReviewDecisionStatus {
   APPROVED("approved"),
   REJECTED("rejected"),
   DECIDED("decided"),
+  CANCELLED("cancelled"),
   ALL("all");
 
   private final String value;

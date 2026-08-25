@@ -4,5 +4,8 @@
   "snapshot": {
     "key": {}
   },
-  "note": "test_note"
+  "note": "test_note",
+  "acknowledged_superseded_version_ids": [
+    "acknowledged_superseded_version_ids_01234"
+  ]
 }

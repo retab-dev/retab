@@ -25,6 +25,9 @@ namespace Retab
         public DateTimeOffset CreatedAt { get; set; }
         public ReviewDecision? Decision { get; set; }
 
+        /// <summary>When the review's run was cancelled while the review was still undecided, or null.</summary>
+        public DateTimeOffset? CancelledAt { get; set; }
+
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a
         /// deserialize → serialize round-trip never drops data (e.g. variant-

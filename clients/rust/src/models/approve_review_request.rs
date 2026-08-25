@@ -10,6 +10,11 @@ use serde::{Deserialize, Serialize};
 pub struct ApproveReviewRequest {
     /// Exact content-addressed key of the version to approve.
     pub version_id: String,
+    /// Version ids the caller has seen and is deliberately superseding. A review's versions form a lineage; deciding (or parenting on) a version that is not its only latest version discards every other latest version, so the server refuses that write with a 409 unless every discarded id is listed here. Leave empty unless you are intentionally rolling back to an earlier version or choosing one arm of a forked lineage. The 409 detail names the exact ids to pass.
+    ///
+    /// Defaults to `[]`.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub acknowledged_superseded_version_ids: Option<Vec<String>>,
 }
 impl ApproveReviewRequest {
     /// Construct a new `ApproveReviewRequest` with the required fields set.
@@ -17,6 +22,7 @@ impl ApproveReviewRequest {
     pub fn new(version_id: impl Into<String>) -> Self {
         Self {
             version_id: version_id.into(),
+            acknowledged_superseded_version_ids: Default::default(),
         }
     }
 }

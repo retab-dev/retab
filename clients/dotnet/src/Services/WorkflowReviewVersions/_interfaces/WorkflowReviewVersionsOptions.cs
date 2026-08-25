@@ -25,5 +25,8 @@ namespace Retab
 
         public string? Note { get; set; }
 
+        /// <summary>Version ids the caller has seen and is deliberately superseding. A review's versions form a lineage; deciding (or parenting on) a version that is not its only latest version discards every other latest version, so the server refuses that write with a 409 unless every discarded id is listed here. Leave empty unless you are intentionally rolling back to an earlier version or choosing one arm of a forked lineage. The 409 detail names the exact ids to pass.</summary>
+        public List<string>? AcknowledgedSupersededVersionIds { get; set; }
+
     }
 }

@@ -38,13 +38,15 @@ export class WorkflowReviewVersions {
     reviewId: string,
     parentId: string,
     snapshot: Record<string, unknown>,
-    note?: string | null
+    note?: string | null,
+    acknowledgedSupersededVersionIds?: string[]
   ): Promise<ReviewVersion> {
     const body = {
       review_id: reviewId,
       parent_id: parentId,
       snapshot: snapshot,
       note: note,
+      acknowledged_superseded_version_ids: acknowledgedSupersededVersionIds,
     };
     const __wire = await this.client.request<ReviewVersionResponse>({
       method: 'POST',

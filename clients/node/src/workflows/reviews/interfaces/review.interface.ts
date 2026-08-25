@@ -150,6 +150,8 @@ export interface Review {
   /** When the review was created. */
   createdAt: Date;
   decision?: ReviewDecision | null;
+  /** When the review's run was cancelled while the review was still undecided, or null. */
+  cancelledAt?: Date | null;
 }
 
 export interface ReviewResponse {
@@ -179,6 +181,7 @@ export interface ReviewResponse {
     | ReviewAllOfResponse;
   created_at: string;
   decision?: ReviewDecisionResponse | null;
+  cancelled_at?: string | null;
 }
 
 export const ZReview = z.object({
@@ -209,6 +212,7 @@ export const ZReview = z.object({
   ]),
   createdAt: z.coerce.date(),
   decision: ZReviewDecision.nullable().optional(),
+  cancelledAt: z.coerce.date().nullable().optional(),
 }) as z.ZodType<Review>;
 
 export function deserializeReview(wire: ReviewResponse): Review {
@@ -299,6 +303,12 @@ export function deserializeReview(wire: ReviewResponse): Review {
         : wire['decision'] == null
           ? wire['decision']
           : deserializeReviewDecision(wire['decision']),
+    cancelledAt:
+      wire['cancelled_at'] == null
+        ? (wire['cancelled_at'] as undefined)
+        : wire['cancelled_at'] == null
+          ? wire['cancelled_at']
+          : new Date(wire['cancelled_at']),
   };
 }
 
@@ -384,5 +394,11 @@ export function serializeReview(domain: Review): ReviewResponse {
         : domain['decision'] == null
           ? domain['decision']
           : serializeReviewDecision(domain['decision']),
+    cancelled_at:
+      domain['cancelledAt'] == null
+        ? (domain['cancelledAt'] as undefined)
+        : domain['cancelledAt'] == null
+          ? domain['cancelledAt']
+          : domain['cancelledAt'].toISOString(),
   };
 }

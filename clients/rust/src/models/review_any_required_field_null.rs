@@ -5,7 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use crate::enums::*;
 use serde::{Deserialize, Serialize};
-/// Gate when any required field in the extract schema is null or missing.
+/// Gate when any required field in the extract schema has no answer: null, missing, or an empty/whitespace-only string (extraction reports a string field it could not find as "", not null). Zero, false, and empty arrays/objects are real answers and do not gate.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ReviewAnyRequiredFieldNull {
     /// Defaults to `any_required_field_null`.

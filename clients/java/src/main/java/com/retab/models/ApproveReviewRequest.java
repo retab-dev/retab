@@ -5,19 +5,29 @@ package com.retab.models;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class ApproveReviewRequest {
   private final String versionId;
+  private final List<String> acknowledgedSupersededVersionIds;
 
   @JsonCreator
   public ApproveReviewRequest(
-      @JsonProperty(value = "version_id", required = true) String versionId) {
+      @JsonProperty(value = "version_id", required = true) String versionId,
+      @JsonProperty(value = "acknowledged_superseded_version_ids", required = false)
+          List<String> acknowledgedSupersededVersionIds) {
     this.versionId = versionId;
+    this.acknowledgedSupersededVersionIds = acknowledgedSupersededVersionIds;
   }
 
   @JsonProperty("version_id")
   public String getVersionId() {
     return versionId;
+  }
+
+  @JsonProperty("acknowledged_superseded_version_ids")
+  public List<String> getAcknowledgedSupersededVersionIds() {
+    return acknowledgedSupersededVersionIds;
   }
 }

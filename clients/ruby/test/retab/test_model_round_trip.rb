@@ -87,7 +87,8 @@ class ModelRoundTripTest < Minitest::Test
 
   def test_approve_review_request_round_trip
     fixture = {
-      "version_id" => "stub"
+      "version_id" => "stub",
+      "acknowledged_superseded_version_ids" => []
     }
     model = Retab::ApproveReviewRequest.new(fixture.to_json)
     json = model.to_h
@@ -928,7 +929,8 @@ class ModelRoundTripTest < Minitest::Test
       "review_id" => "stub",
       "parent_id" => "stub",
       "snapshot" => {},
-      "note" => nil
+      "note" => nil,
+      "acknowledged_superseded_version_ids" => []
     }
     model = Retab::CreateReviewVersionRequest.new(fixture.to_json)
     json = model.to_h
@@ -4249,7 +4251,8 @@ class ModelRoundTripTest < Minitest::Test
       "block_type" => "stub",
       "triggered_by" => {},
       "created_at" => "stub",
-      "decision" => nil
+      "decision" => nil,
+      "cancelled_at" => nil
     }
     model = Retab::Review.new(fixture.to_json)
     json = model.to_h

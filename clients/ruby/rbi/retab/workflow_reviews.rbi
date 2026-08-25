@@ -41,10 +41,11 @@ module Retab
       params(
         review_id: String,
         version_id: String,
+        acknowledged_superseded_version_ids: T.nilable(T::Array[String]),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::SubmitDecisionResponse)
     end
-    def approve(review_id:, version_id:, request_options:); end
+    def approve(review_id:, version_id:, acknowledged_superseded_version_ids:, request_options:); end
 
     sig do
       params(

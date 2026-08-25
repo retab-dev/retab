@@ -695,6 +695,13 @@ var workflowEvalRunColumns = []TableColumn{
 	{Header: "TESTS", Extract: func(row any) string { return workflowEvalCell(row, "total_evals") }},
 	{Header: "PASSED", Extract: func(row any) string { return workflowEvalCell(row, "counts.outcome.passed") }},
 	{Header: "FAILED", Extract: func(row any) string { return workflowEvalCell(row, "counts.outcome.failed") }},
+	// BLOCKED is its own outcome bucket (see evals.ComputeVerdict): the block ran
+	// but the assertion could not be evaluated — a bad relative path, an
+	// unparseable regex, a missing output handle. It gates CI exactly like a
+	// failure does, so without this column a run whose only outcome was blocked
+	// renders as TESTS=1 with PASSED and FAILED both blank — indistinguishable
+	// from a run where nothing was evaluated at all.
+	{Header: "BLOCKED", Extract: func(row any) string { return workflowEvalCell(row, "counts.outcome.blocked") }},
 	{Header: "CREATED_AT", Extract: func(row any) string { return workflowEvalCell(row, "timing.created_at") }},
 }
 
@@ -1418,6 +1425,9 @@ func validateWorkflowEvalsRunsListFilters(cmd *cobra.Command) error {
 		return err
 	}
 	if err := validateEnumFlag(cmd, "exclude-status", allowedWorkflowEvalRunStatuses, workflowEvalRunStatusValues); err != nil {
+		return err
+	}
+	if err := validateEnumFlag(cmd, "trigger-type", allowedWorkflowRunTriggerTypes, workflowRunTriggerTypeValues); err != nil {
 		return err
 	}
 	if err := validateOrderFlag(cmd, "order"); err != nil {

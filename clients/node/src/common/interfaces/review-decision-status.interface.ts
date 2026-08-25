@@ -2,12 +2,19 @@
 
 import { z } from 'zod';
 
-export type ReviewDecisionStatus = 'pending' | 'approved' | 'rejected' | 'decided' | 'all';
+export type ReviewDecisionStatus =
+  | 'pending'
+  | 'approved'
+  | 'rejected'
+  | 'decided'
+  | 'cancelled'
+  | 'all';
 
 export const ZReviewDecisionStatus = z.enum([
   'pending',
   'approved',
   'rejected',
   'decided',
+  'cancelled',
   'all',
 ] as const);

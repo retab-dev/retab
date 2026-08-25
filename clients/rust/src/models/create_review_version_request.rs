@@ -16,6 +16,11 @@ pub struct CreateReviewVersionRequest {
     pub snapshot: std::collections::HashMap<String, serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub note: Option<String>,
+    /// Version ids the caller has seen and is deliberately superseding. A review's versions form a lineage; deciding (or parenting on) a version that is not its only latest version discards every other latest version, so the server refuses that write with a 409 unless every discarded id is listed here. Leave empty unless you are intentionally rolling back to an earlier version or choosing one arm of a forked lineage. The 409 detail names the exact ids to pass.
+    ///
+    /// Defaults to `[]`.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub acknowledged_superseded_version_ids: Option<Vec<String>>,
 }
 impl CreateReviewVersionRequest {
     /// Construct a new `CreateReviewVersionRequest` with the required fields set.
@@ -30,6 +35,7 @@ impl CreateReviewVersionRequest {
             parent_id: parent_id.into(),
             snapshot,
             note: Default::default(),
+            acknowledged_superseded_version_ids: Default::default(),
         }
     }
 }

@@ -14,6 +14,11 @@ readonly class ApproveReviewRequest implements \JsonSerializable
     public function __construct(
         /** Exact content-addressed key of the version to approve. */
         public string $versionId,
+        /**
+         * Version ids the caller has seen and is deliberately superseding. A review's versions form a lineage; deciding (or parenting on) a version that is not its only latest version discards every other latest version, so the server refuses that write with a 409 unless every discarded id is listed here. Leave empty unless you are intentionally rolling back to an earlier version or choosing one arm of a forked lineage. The 409 detail names the exact ids to pass.
+         * @var array<string>|null
+         */
+        public ?array $acknowledgedSupersededVersionIds = null,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -28,6 +33,7 @@ readonly class ApproveReviewRequest implements \JsonSerializable
         }
         return new self(
             versionId: $data['version_id'],
+            acknowledgedSupersededVersionIds: $data['acknowledged_superseded_version_ids'] ?? null,
         );
     }
 
@@ -36,6 +42,7 @@ readonly class ApproveReviewRequest implements \JsonSerializable
     {
         return [
             'version_id' => $this->versionId,
+            'acknowledged_superseded_version_ids' => $this->acknowledgedSupersededVersionIds,
         ];
     }
 }

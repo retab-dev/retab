@@ -6,7 +6,7 @@ declare(strict_types=1);
 
 namespace Retab\Resource;
 
-/** Gate when any required field in the extract schema is null or missing. */
+/** Gate when any required field in the extract schema has no answer: null, missing, or an empty/whitespace-only string (extraction reports a string field it could not find as "", not null). Zero, false, and empty arrays/objects are real answers and do not gate. */
 readonly class ReviewAnyRequiredFieldNull implements \JsonSerializable
 {
     use JsonSerializableTrait;

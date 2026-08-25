@@ -11,6 +11,7 @@ pub enum ReviewDecisionStatus {
     Approved,
     Rejected,
     Decided,
+    Cancelled,
     All,
     /// Wire value not recognized by this SDK version. The original
     /// string is preserved verbatim. WorkOS may add new enum values
@@ -29,6 +30,7 @@ impl ReviewDecisionStatus {
             Self::Approved => "approved",
             Self::Rejected => "rejected",
             Self::Decided => "decided",
+            Self::Cancelled => "cancelled",
             Self::All => "all",
             Self::Unknown(s) => s.as_str(),
         }
@@ -56,6 +58,7 @@ impl FromStr for ReviewDecisionStatus {
             "approved" => Self::Approved,
             "rejected" => Self::Rejected,
             "decided" => Self::Decided,
+            "cancelled" => Self::Cancelled,
             "all" => Self::All,
             other => Self::Unknown(other.to_string()),
         })

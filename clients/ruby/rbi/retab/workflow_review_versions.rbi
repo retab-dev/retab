@@ -26,10 +26,11 @@ module Retab
         parent_id: String,
         snapshot: T::Hash[String, T.untyped],
         note: T.nilable(String),
+        acknowledged_superseded_version_ids: T.nilable(T::Array[String]),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::ReviewVersion)
     end
-    def create(review_id:, parent_id:, snapshot:, note:, request_options:); end
+    def create(review_id:, parent_id:, snapshot:, note:, acknowledged_superseded_version_ids:, request_options:); end
 
     sig do
       params(

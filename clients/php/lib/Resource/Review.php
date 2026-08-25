@@ -25,6 +25,8 @@ readonly class Review implements \JsonSerializable
         public ?string $parentStepId = null,
         public ?string $iterationKey = null,
         public ?ReviewDecision $decision = null,
+        /** When the review's run was cancelled while the review was still undecided, or null. */
+        public ?\DateTimeImmutable $cancelledAt = null,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -60,6 +62,7 @@ readonly class Review implements \JsonSerializable
             parentStepId: $data['parent_step_id'] ?? null,
             iterationKey: $data['iteration_key'] ?? null,
             decision: isset($data['decision']) ? ReviewDecision::fromArray($data['decision']) : null,
+            cancelledAt: isset($data['cancelled_at']) ? new \DateTimeImmutable($data['cancelled_at']) : null,
         );
     }
 
@@ -79,6 +82,7 @@ readonly class Review implements \JsonSerializable
             'parent_step_id' => $this->parentStepId,
             'iteration_key' => $this->iterationKey,
             'decision' => $this->decision?->toArray(),
+            'cancelled_at' => $this->cancelledAt?->format(\DateTimeInterface::RFC3339_EXTENDED),
         ];
     }
 }

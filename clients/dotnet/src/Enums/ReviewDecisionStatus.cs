@@ -20,6 +20,8 @@ namespace Retab
         Rejected,
         [EnumMember(Value = "decided")]
         Decided,
+        [EnumMember(Value = "cancelled")]
+        Cancelled,
         [EnumMember(Value = "all")]
         All,
     }

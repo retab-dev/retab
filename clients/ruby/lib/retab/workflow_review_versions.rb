@@ -59,6 +59,7 @@ module Retab
     # @param parent_id [String]
     # @param snapshot [Hash{String => Object}] The full reviewed snapshot to store as an immutable version. The object must match the gated block type: extract uses the raw output object; classifier uses {'category': string}; split uses {'documents': [{'name': string, 'pages': positive sorted int[]}]}; for_each uses {'partitions': [{'key': string, 'pages': positive sorted int[]}]}. The server validates the shape and stores the exact submitted object when valid.
     # @param note [String, nil]
+    # @param acknowledged_superseded_version_ids [Array<String>, nil] Version ids the caller has seen and is deliberately superseding. A review's versions form a lineage; deciding (or parenting on) a version that is not its only latest version discards every other latest version, so the server refuses that write with a 409 unless every discarded id is listed here. Leave empty unless you are intentionally rolling back to an earlier version or choosing one arm of a forked lineage. The 409 detail names the exact ids to pass.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::ReviewVersion]
     def create(
@@ -66,13 +67,15 @@ module Retab
       parent_id:,
       snapshot:,
       note: nil,
+      acknowledged_superseded_version_ids: nil,
       request_options: {}
     )
       body = {
         "review_id" => review_id,
         "parent_id" => parent_id,
         "snapshot" => snapshot,
-        "note" => note
+        "note" => note,
+        "acknowledged_superseded_version_ids" => acknowledged_superseded_version_ids
       }.compact
       response = @client.request(
         method: :post,

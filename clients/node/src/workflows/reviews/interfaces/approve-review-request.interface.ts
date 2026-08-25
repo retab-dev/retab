@@ -5,14 +5,21 @@ import { z } from 'zod';
 export interface ApproveReviewRequest {
   /** Exact content-addressed key of the version to approve. */
   versionId: string;
+  /**
+   * Version ids the caller has seen and is deliberately superseding. A review's versions form a lineage; deciding (or parenting on) a version that is not its only latest version discards every other latest version, so the server refuses that write with a 409 unless every discarded id is listed here. Leave empty unless you are intentionally rolling back to an earlier version or choosing one arm of a forked lineage. The 409 detail names the exact ids to pass.
+   * @default []
+   */
+  acknowledgedSupersededVersionIds?: string[];
 }
 
 export interface ApproveReviewRequestResponse {
   version_id: string;
+  acknowledged_superseded_version_ids?: string[];
 }
 
 export const ZApproveReviewRequest = z.object({
   versionId: z.string(),
+  acknowledgedSupersededVersionIds: z.string().array().optional(),
 }) as z.ZodType<ApproveReviewRequest>;
 
 export function deserializeApproveReviewRequest(
@@ -20,6 +27,7 @@ export function deserializeApproveReviewRequest(
 ): ApproveReviewRequest {
   return {
     versionId: wire['version_id'],
+    acknowledgedSupersededVersionIds: wire['acknowledged_superseded_version_ids'],
   };
 }
 
@@ -28,5 +36,6 @@ export function serializeApproveReviewRequest(
 ): ApproveReviewRequestResponse {
   return {
     version_id: domain['versionId'],
+    acknowledged_superseded_version_ids: domain['acknowledgedSupersededVersionIds'],
   };
 }

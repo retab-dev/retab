@@ -12,5 +12,6 @@ enum ReviewDecisionStatus: string
     case Approved = 'approved';
     case Rejected = 'rejected';
     case Decided = 'decided';
+    case Cancelled = 'cancelled';
     case All = 'all';
 }

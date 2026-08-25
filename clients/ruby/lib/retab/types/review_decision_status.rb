@@ -9,8 +9,9 @@ module Retab
       APPROVED = "approved"
       REJECTED = "rejected"
       DECIDED = "decided"
+      CANCELLED = "cancelled"
       VALUE_ALL = "all"
-      ALL = [PENDING, APPROVED, REJECTED, DECIDED, VALUE_ALL].freeze
+      ALL = [PENDING, APPROVED, REJECTED, DECIDED, CANCELLED, VALUE_ALL].freeze
     end
   end
 end

@@ -58,13 +58,13 @@ class WorkflowReviewsMixin:
         data = None
         return PreparedRequest(method="GET", url=f"/v1/workflows/reviews/{review_id}", params=params or None, data=data)
 
-    def prepare_approve(self, review_id: str, version_id: str, **extra_params: Any) -> PreparedRequest:
+    def prepare_approve(self, review_id: str, version_id: str, acknowledged_superseded_version_ids: list[str] | None = None, **extra_params: Any) -> PreparedRequest:
         """Approve Review Approve one review version and resume the workflow run. The response carries `resume_status` so callers can see whether the run resumed successfully."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
-        payload = ApproveReviewRequest(version_id=cast(Any, version_id))
+        payload = ApproveReviewRequest(version_id=cast(Any, version_id), acknowledged_superseded_version_ids=cast(Any, acknowledged_superseded_version_ids))
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url=f"/v1/workflows/reviews/{review_id}/approve", params=params or None, data=data)
 
@@ -122,9 +122,9 @@ class WorkflowReviews(SyncAPIResource, WorkflowReviewsMixin):
         response = self._client._prepared_request(prepared_request)
         return Review.model_validate(response)
 
-    def approve(self, review_id: str, version_id: str, **extra_params: Any) -> SubmitDecisionResponse:
+    def approve(self, review_id: str, version_id: str, acknowledged_superseded_version_ids: list[str] | None = None, **extra_params: Any) -> SubmitDecisionResponse:
         """Approve Review Approve one review version and resume the workflow run. The response carries `resume_status` so callers can see whether the run resumed successfully."""
-        prepared_request = self.prepare_approve(review_id, version_id=version_id, **extra_params)
+        prepared_request = self.prepare_approve(review_id, version_id=version_id, acknowledged_superseded_version_ids=acknowledged_superseded_version_ids, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return SubmitDecisionResponse.model_validate(response)
 
@@ -178,9 +178,9 @@ class AsyncWorkflowReviews(AsyncAPIResource, WorkflowReviewsMixin):
         response = await self._client._prepared_request(prepared_request)
         return Review.model_validate(response)
 
-    async def approve(self, review_id: str, version_id: str, **extra_params: Any) -> SubmitDecisionResponse:
+    async def approve(self, review_id: str, version_id: str, acknowledged_superseded_version_ids: list[str] | None = None, **extra_params: Any) -> SubmitDecisionResponse:
         """Approve Review Approve one review version and resume the workflow run. The response carries `resume_status` so callers can see whether the run resumed successfully."""
-        prepared_request = self.prepare_approve(review_id, version_id=version_id, **extra_params)
+        prepared_request = self.prepare_approve(review_id, version_id=version_id, acknowledged_superseded_version_ids=acknowledged_superseded_version_ids, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return SubmitDecisionResponse.model_validate(response)
 

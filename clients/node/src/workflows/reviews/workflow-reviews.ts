@@ -66,9 +66,14 @@ export class WorkflowReviews {
   }
 
   /** Approve Review */
-  async approve(reviewId: string, versionId: string): Promise<SubmitDecisionResponse> {
+  async approve(
+    reviewId: string,
+    versionId: string,
+    acknowledgedSupersededVersionIds?: string[]
+  ): Promise<SubmitDecisionResponse> {
     const body = {
       version_id: versionId,
+      acknowledged_superseded_version_ids: acknowledgedSupersededVersionIds,
     };
     const __wire = await this.client.request<SubmitDecisionResponseResponse>({
       method: 'POST',

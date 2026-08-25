@@ -22,7 +22,7 @@ SubmissionStatus: TypeAlias = Literal["accepted", "already_applied", "conflict"]
 ResumeStatus: TypeAlias = Literal["resumed", "pending", "failed", "skipped"]
 
 
-ReviewDecisionStatus: TypeAlias = Literal["pending", "approved", "rejected", "decided", "all"]
+ReviewDecisionStatus: TypeAlias = Literal["pending", "approved", "rejected", "decided", "cancelled", "all"]
 
 
 class Actor(BaseModel):
@@ -41,6 +41,10 @@ class ApproveReviewRequest(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
     version_id: str = Field(..., description="Exact content-addressed key of the version to approve.")
+    acknowledged_superseded_version_ids: list[str] | None = Field(
+        default=[],
+        description="Version ids the caller has seen and is deliberately superseding. A review's versions form a lineage; deciding (or parenting on) a version that is not its only latest version discards every other latest version, so the server refuses that write with a 409 unless every discarded id is listed here. Leave empty unless you are intentionally rolling back to an earlier version or choosing one arm of a forked lineage. The 409 detail names the exact ids to pass.",
+    )
 
 
 class ReviewDecision(BaseModel):
@@ -130,7 +134,7 @@ class ReviewAnyPagesUnassigned(BaseModel):
 
 
 class ReviewAnyRequiredFieldNull(BaseModel):
-    """Gate when any required field in the extract schema is null or missing."""
+    """Gate when any required field in the extract schema has no answer: null, missing, or an empty/whitespace-only string (extraction reports a string field it could not find as "", not null). Zero, false, and empty arrays/objects are real answers and do not gate."""
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
 
@@ -257,6 +261,7 @@ class Review(BaseModel):
     ) = Field(..., discriminator="kind")
     created_at: datetime.datetime = Field(..., description="When the review was created.")
     decision: ReviewDecision | None = None
+    cancelled_at: datetime.datetime | None = Field(default=None, description="When the review's run was cancelled while the review was still undecided, or null.")
 
 
 class SubmitDecisionResponse(BaseModel):

@@ -81,6 +81,12 @@ module Retab
     sig { params(value: T.nilable(Retab::ReviewDecision)).returns(T.nilable(Retab::ReviewDecision)) }
     def decision=(value); end
 
+    sig { returns(T.nilable(String)) }
+    def cancelled_at; end
+
+    sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
+    def cancelled_at=(value); end
+
     sig { returns(T::Hash[Symbol, T.untyped]) }
     def to_h; end
 

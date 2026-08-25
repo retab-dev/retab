@@ -26,7 +26,7 @@ pub struct ListParams {
     pub step_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub iteration_key: Option<String>,
-    /// Filter by decision state: pending, approved, rejected, decided, or all.
+    /// Filter by decision state: pending, approved, rejected, decided, cancelled, or all.
     ///
     /// Defaults to `pending`.
     #[serde(skip_serializing_if = "Option::is_none")]

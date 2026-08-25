@@ -1,7 +1,7 @@
 namespace Retab
 {
 
-    /// <summary>Gate when any required field in the extract schema is null or missing.</summary>
+    /// <summary>Gate when any required field in the extract schema has no answer: null, missing, or an empty/whitespace-only string (extraction reports a string field it could not find as "", not null). Zero, false, and empty arrays/objects are real answers and do not gate.</summary>
     public class ReviewAnyRequiredFieldNull
     {
         public string? Kind { get; set; } = "any_required_field_null";

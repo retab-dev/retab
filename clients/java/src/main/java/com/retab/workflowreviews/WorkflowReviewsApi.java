@@ -113,16 +113,23 @@ public final class WorkflowReviewsApi {
 
   public SubmitDecisionResponse approve(String reviewId, ApproveReviewRequest request)
       throws IOException, InterruptedException {
-    return approve(reviewId, request == null ? null : request.getVersionId());
+    return approve(
+        reviewId,
+        request == null ? null : request.getVersionId(),
+        request == null ? null : request.getAcknowledgedSupersededVersionIds());
   }
 
-  public SubmitDecisionResponse approve(String reviewId, String versionId)
+  public SubmitDecisionResponse approve(
+      String reviewId, String versionId, List<String> acknowledgedSupersededVersionIds)
       throws IOException, InterruptedException {
     String path = "/v1/workflows/reviews/" + encodePathSegment(reviewId) + "/approve";
     StringBuilder query = new StringBuilder();
     URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
     Map<String, Object> body = new LinkedHashMap<>();
     body.put("version_id", versionId);
+    if (acknowledgedSupersededVersionIds != null) {
+      body.put("acknowledged_superseded_version_ids", acknowledgedSupersededVersionIds);
+    }
     String requestBody = client.getObjectMapper().writeValueAsString(body);
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);
     HttpRequest.Builder requestBuilder =

@@ -420,6 +420,11 @@ func TestWorkflowsEvalsRunsListRejectsInvalidFiltersBeforeRequest(t *testing.T) 
 		{name: "invalid from-date", flag: "from-date", value: "not-a-date", wantError: "YYYY-MM-DD", reset: ""},
 		{name: "invalid to-date", flag: "to-date", value: "not-a-date", wantError: "YYYY-MM-DD", reset: ""},
 		{name: "invalid order", flag: "order", value: "sideways", wantError: "asc", reset: ""},
+		// --trigger-type was the one filter still forwarded unvalidated. Unlike a
+		// bad --status (which the server 400s), an unknown trigger type is a legal
+		// query the server simply matches nothing against, so a typo returned an
+		// empty list and exit 0 — a vacuous "no eval runs" that reads as success.
+		{name: "invalid trigger-type", flag: "trigger-type", value: "banana", wantError: "invalid --trigger-type", reset: ""},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

@@ -20,7 +20,7 @@ module Retab
     # @param block_id [String, nil]
     # @param step_id [String, nil]
     # @param iteration_key [String, nil]
-    # @param decision_status [Retab::Types::ReviewDecisionStatus, nil] Filter by decision state: pending, approved, rejected, decided, or all.
+    # @param decision_status [Retab::Types::ReviewDecisionStatus, nil] Filter by decision state: pending, approved, rejected, decided, cancelled, or all.
     # @param before [String, nil] Cursor: only return reviews that appear before this review id in the result order. Use list_metadata.before from the previous page.
     # @param after [String, nil] Cursor: only return reviews that appear after this review id in the result order. Use list_metadata.after from the previous page.
     # @param limit [Integer, nil]
@@ -118,16 +118,19 @@ module Retab
     # Approve Review
     # @param review_id [String]
     # @param version_id [String] Exact content-addressed key of the version to approve.
+    # @param acknowledged_superseded_version_ids [Array<String>, nil] Version ids the caller has seen and is deliberately superseding. A review's versions form a lineage; deciding (or parenting on) a version that is not its only latest version discards every other latest version, so the server refuses that write with a 409 unless every discarded id is listed here. Leave empty unless you are intentionally rolling back to an earlier version or choosing one arm of a forked lineage. The 409 detail names the exact ids to pass.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::SubmitDecisionResponse]
     def approve(
       review_id:,
       version_id:,
+      acknowledged_superseded_version_ids: nil,
       request_options: {}
     )
       body = {
-        "version_id" => version_id
-      }
+        "version_id" => version_id,
+        "acknowledged_superseded_version_ids" => acknowledged_superseded_version_ids
+      }.compact
       response = @client.request(
         method: :post,
         path: "/v1/workflows/reviews/#{Retab::Util.encode_path(review_id)}/approve",

@@ -2732,6 +2732,8 @@ type Review struct {
 	// CreatedAt is when the review was created.
 	CreatedAt time.Time       `json:"created_at"`
 	Decision  *ReviewDecision `json:"decision,omitempty"`
+	// CancelledAt is when the review's run was cancelled while the review was still undecided, or null.
+	CancelledAt *time.Time `json:"cancelled_at,omitempty"`
 }
 
 // SubmitDecisionResponse response to a review approve or reject request.

@@ -60,7 +60,8 @@ one item with ` + "`reviews get`" + ` to see it.
 
 Use ` + "`--decision-status`" + ` to control which slice of the queue is returned.
 ` + "`--decision-status pending`" + ` (the default) returns the open queue.
-Use approved, rejected, decided, or all to inspect past decisions.
+Use approved, rejected, decided, or all to inspect past decisions,
+and cancelled for undecided reviews whose run was cancelled.
 
 Without a workflow id the queue spans the whole workspace; scope it to one
 workflow either positionally (` + "`list <workflow-id>`" + `) or with the
@@ -649,6 +650,7 @@ var reviewQueueColumns = []TableColumn{
 	{Header: "BLOCK_TYPE", Extract: func(row any) string { return reviewQueueCell(row, "block_type") }},
 	{Header: "CREATED_AT", Extract: func(row any) string { return reviewQueueCell(row, "created_at") }},
 	{Header: "TRIGGERED_BY", Extract: func(row any) string { return reviewQueueCell(row, "triggered_by.kind") }},
+	{Header: "CANCELLED_AT", Extract: func(row any) string { return reviewQueueCell(row, "cancelled_at") }},
 }
 
 // reviewOverlayColumns extends reviewQueueColumns with the terminal decision
@@ -667,6 +669,7 @@ var reviewOverlayColumns = []TableColumn{
 	{Header: "DECIDED_VERSION_ID", Extract: func(row any) string {
 		return truncateReviewCell(reviewQueueCell(row, "decision.version_id"), 12)
 	}},
+	{Header: "CANCELLED_AT", Extract: func(row any) string { return reviewQueueCell(row, "cancelled_at") }},
 }
 
 var reviewDecisionColumns = []TableColumn{
@@ -1159,9 +1162,9 @@ func init() {
 	workflowsReviewsListCmd.Flags().String("step-id", "", "filter by execution step id")
 	workflowsReviewsListCmd.Flags().String("iteration-key", "", "filter by for_each iteration key")
 	workflowsReviewsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 200}, "limit", "max items to return (1-200)")
-	decisionFlag := newEnumStringFlagValue("--decision-status", "pending", "approved", "rejected", "decided", "all")
+	decisionFlag := newEnumStringFlagValue("--decision-status", "pending", "approved", "rejected", "decided", "cancelled", "all")
 	_ = decisionFlag.Set("pending")
-	workflowsReviewsListCmd.Flags().Var(decisionFlag, "decision-status", "review slice to list: pending | approved | rejected | decided | all")
+	workflowsReviewsListCmd.Flags().Var(decisionFlag, "decision-status", "review slice to list: pending | approved | rejected | decided | cancelled | all")
 	workflowsReviewsListCmd.Flags().String("before", "", "cursor for the previous page (from list_metadata.before; mutually exclusive with --after)")
 	workflowsReviewsListCmd.Flags().String("after", "", "cursor for the next page (from list_metadata.after; mutually exclusive with --before)")
 	// GET /v1/workflows/reviews takes `order` (asc|desc over created_at), and both the

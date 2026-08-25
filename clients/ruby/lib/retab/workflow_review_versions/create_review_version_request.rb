@@ -9,14 +9,16 @@ module Retab
       review_id: :review_id,
       parent_id: :parent_id,
       snapshot: :snapshot,
-      note: :note
+      note: :note,
+      acknowledged_superseded_version_ids: :acknowledged_superseded_version_ids
     }.freeze
 
     attr_accessor(
       :review_id,
       :parent_id,
       :snapshot,
-      :note
+      :note,
+      :acknowledged_superseded_version_ids
     )
 
     def initialize(json)
@@ -26,6 +28,7 @@ module Retab
       @parent_id = hash[:parent_id]
       @snapshot = hash[:snapshot] || {}
       @note = hash[:note]
+      @acknowledged_superseded_version_ids = (hash[:acknowledged_superseded_version_ids] || [])
     end
   end
 end

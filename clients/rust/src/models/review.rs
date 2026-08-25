@@ -24,6 +24,9 @@ pub struct Review {
     pub created_at: String,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub decision: Option<ReviewDecision>,
+    /// When the review's run was cancelled while the review was still undecided, or null.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub cancelled_at: Option<String>,
 }
 impl Review {
     /// Construct a new `Review` with the required fields set.
@@ -52,6 +55,7 @@ impl Review {
             triggered_by,
             created_at: created_at.into(),
             decision: Default::default(),
+            cancelled_at: Default::default(),
         }
     }
 }

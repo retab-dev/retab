@@ -5,6 +5,7 @@ package com.retab.models;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
 import java.util.Map;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -13,17 +14,21 @@ public final class CreateReviewVersionRequest {
   private final String parentId;
   private final Map<String, Object> snapshot;
   private final String note;
+  private final List<String> acknowledgedSupersededVersionIds;
 
   @JsonCreator
   public CreateReviewVersionRequest(
       @JsonProperty(value = "review_id", required = true) String reviewId,
       @JsonProperty(value = "parent_id", required = true) String parentId,
       @JsonProperty(value = "snapshot", required = true) Map<String, Object> snapshot,
-      @JsonProperty(value = "note", required = false) String note) {
+      @JsonProperty(value = "note", required = false) String note,
+      @JsonProperty(value = "acknowledged_superseded_version_ids", required = false)
+          List<String> acknowledgedSupersededVersionIds) {
     this.reviewId = reviewId;
     this.parentId = parentId;
     this.snapshot = snapshot;
     this.note = note;
+    this.acknowledgedSupersededVersionIds = acknowledgedSupersededVersionIds;
   }
 
   @JsonProperty("review_id")
@@ -44,5 +49,10 @@ public final class CreateReviewVersionRequest {
   @JsonProperty("note")
   public String getNote() {
     return note;
+  }
+
+  @JsonProperty("acknowledged_superseded_version_ids")
+  public List<String> getAcknowledgedSupersededVersionIds() {
+    return acknowledgedSupersededVersionIds;
   }
 }

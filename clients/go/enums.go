@@ -734,11 +734,12 @@ type ExperimentRunsOrder = ClassificationsOrder
 type ReviewDecisionStatus string
 
 const (
-	ReviewDecisionStatusPending  ReviewDecisionStatus = "pending"
-	ReviewDecisionStatusApproved ReviewDecisionStatus = "approved"
-	ReviewDecisionStatusRejected ReviewDecisionStatus = "rejected"
-	ReviewDecisionStatusDecided  ReviewDecisionStatus = "decided"
-	ReviewDecisionStatusAll      ReviewDecisionStatus = "all"
+	ReviewDecisionStatusPending   ReviewDecisionStatus = "pending"
+	ReviewDecisionStatusApproved  ReviewDecisionStatus = "approved"
+	ReviewDecisionStatusRejected  ReviewDecisionStatus = "rejected"
+	ReviewDecisionStatusDecided   ReviewDecisionStatus = "decided"
+	ReviewDecisionStatusCancelled ReviewDecisionStatus = "cancelled"
+	ReviewDecisionStatusAll       ReviewDecisionStatus = "all"
 )
 
 // WorkflowReviewsOrder is an alias for ClassificationsOrder.

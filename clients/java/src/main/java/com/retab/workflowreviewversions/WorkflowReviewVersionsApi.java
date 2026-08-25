@@ -68,11 +68,16 @@ public final class WorkflowReviewVersionsApi {
         request == null ? null : request.getReviewId(),
         request == null ? null : request.getParentId(),
         request == null ? null : request.getSnapshot(),
-        request == null ? null : request.getNote());
+        request == null ? null : request.getNote(),
+        request == null ? null : request.getAcknowledgedSupersededVersionIds());
   }
 
   public ReviewVersion create(
-      String reviewId, String parentId, Map<String, Object> snapshot, String note)
+      String reviewId,
+      String parentId,
+      Map<String, Object> snapshot,
+      String note,
+      List<String> acknowledgedSupersededVersionIds)
       throws IOException, InterruptedException {
     String path = "/v1/workflows/reviews/versions";
     StringBuilder query = new StringBuilder();
@@ -83,6 +88,9 @@ public final class WorkflowReviewVersionsApi {
     body.put("snapshot", snapshot);
     if (note != null) {
       body.put("note", note);
+    }
+    if (acknowledgedSupersededVersionIds != null) {
+      body.put("acknowledged_superseded_version_ids", acknowledgedSupersededVersionIds);
     }
     String requestBody = client.getObjectMapper().writeValueAsString(body);
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);

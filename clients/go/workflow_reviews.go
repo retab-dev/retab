@@ -22,7 +22,7 @@ type WorkflowReviewsListParams struct {
 	BlockID      *string `url:"block_id,omitempty" json:"-"`
 	StepID       *string `url:"step_id,omitempty" json:"-"`
 	IterationKey *string `url:"iteration_key,omitempty" json:"-"`
-	// DecisionStatus is filter by decision state: pending, approved, rejected, decided, or all.
+	// DecisionStatus is filter by decision state: pending, approved, rejected, decided, cancelled, or all.
 	// Defaults to "pending".
 	DecisionStatus *ReviewDecisionStatus `url:"decision_status,omitempty" json:"-"`
 }

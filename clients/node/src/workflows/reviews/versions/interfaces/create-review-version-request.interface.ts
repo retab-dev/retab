@@ -8,6 +8,11 @@ export interface CreateReviewVersionRequest {
   /** The full reviewed snapshot to store as an immutable version. The object must match the gated block type: extract uses the raw output object; classifier uses {'category': string}; split uses {'documents': [{'name': string, 'pages': positive sorted int[]}]}; for_each uses {'partitions': [{'key': string, 'pages': positive sorted int[]}]}. The server validates the shape and stores the exact submitted object when valid. */
   snapshot: Record<string, unknown>;
   note?: string | null;
+  /**
+   * Version ids the caller has seen and is deliberately superseding. A review's versions form a lineage; deciding (or parenting on) a version that is not its only latest version discards every other latest version, so the server refuses that write with a 409 unless every discarded id is listed here. Leave empty unless you are intentionally rolling back to an earlier version or choosing one arm of a forked lineage. The 409 detail names the exact ids to pass.
+   * @default []
+   */
+  acknowledgedSupersededVersionIds?: string[];
 }
 
 export interface CreateReviewVersionRequestResponse {
@@ -15,6 +20,7 @@ export interface CreateReviewVersionRequestResponse {
   parent_id: string;
   snapshot: Record<string, unknown>;
   note?: string | null;
+  acknowledged_superseded_version_ids?: string[];
 }
 
 export const ZCreateReviewVersionRequest = z.object({
@@ -22,6 +28,7 @@ export const ZCreateReviewVersionRequest = z.object({
   parentId: z.string(),
   snapshot: z.record(z.string(), z.unknown()),
   note: z.string().nullable().optional(),
+  acknowledgedSupersededVersionIds: z.string().array().optional(),
 }) as z.ZodType<CreateReviewVersionRequest>;
 
 export function deserializeCreateReviewVersionRequest(
@@ -32,6 +39,7 @@ export function deserializeCreateReviewVersionRequest(
     parentId: wire['parent_id'],
     snapshot: wire['snapshot'],
     note: wire['note'],
+    acknowledgedSupersededVersionIds: wire['acknowledged_superseded_version_ids'],
   };
 }
 
@@ -43,5 +51,6 @@ export function serializeCreateReviewVersionRequest(
     parent_id: domain['parentId'],
     snapshot: domain['snapshot'],
     note: domain['note'],
+    acknowledged_superseded_version_ids: domain['acknowledgedSupersededVersionIds'],
   };
 }

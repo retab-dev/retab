@@ -27,13 +27,21 @@ class WorkflowReviewVersionsMixin:
         data = None
         return PreparedRequest(method="GET", url="/v1/workflows/reviews/versions", params=params or None, data=data)
 
-    def prepare_create(self, review_id: str, parent_id: str, snapshot: dict[str, Any], note: str | None = None, **extra_params: Any) -> PreparedRequest:
+    def prepare_create(
+        self, review_id: str, parent_id: str, snapshot: dict[str, Any], note: str | None = None, acknowledged_superseded_version_ids: list[str] | None = None, **extra_params: Any
+    ) -> PreparedRequest:
         """Create Review Version Create one immutable, content-addressed review version."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
-        payload = CreateReviewVersionRequest(review_id=cast(Any, review_id), parent_id=cast(Any, parent_id), snapshot=cast(Any, snapshot), note=cast(Any, note))
+        payload = CreateReviewVersionRequest(
+            review_id=cast(Any, review_id),
+            parent_id=cast(Any, parent_id),
+            snapshot=cast(Any, snapshot),
+            note=cast(Any, note),
+            acknowledged_superseded_version_ids=cast(Any, acknowledged_superseded_version_ids),
+        )
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/workflows/reviews/versions", params=params or None, data=data)
 
@@ -55,9 +63,13 @@ class WorkflowReviewVersions(SyncAPIResource, WorkflowReviewVersionsMixin):
         prepared_request = self.prepare_list(review_id=review_id, before=before, after=after, limit=limit, **extra_params)
         return self.request_page(prepared_request, model=ReviewVersion)
 
-    def create(self, review_id: str, parent_id: str, snapshot: dict[str, Any], note: str | None = None, **extra_params: Any) -> ReviewVersion:
+    def create(
+        self, review_id: str, parent_id: str, snapshot: dict[str, Any], note: str | None = None, acknowledged_superseded_version_ids: list[str] | None = None, **extra_params: Any
+    ) -> ReviewVersion:
         """Create Review Version Create one immutable, content-addressed review version."""
-        prepared_request = self.prepare_create(review_id=review_id, parent_id=parent_id, snapshot=snapshot, note=note, **extra_params)
+        prepared_request = self.prepare_create(
+            review_id=review_id, parent_id=parent_id, snapshot=snapshot, note=note, acknowledged_superseded_version_ids=acknowledged_superseded_version_ids, **extra_params
+        )
         response = self._client._prepared_request(prepared_request)
         return ReviewVersion.model_validate(response)
 
@@ -76,9 +88,13 @@ class AsyncWorkflowReviewVersions(AsyncAPIResource, WorkflowReviewVersionsMixin)
         prepared_request = self.prepare_list(review_id=review_id, before=before, after=after, limit=limit, **extra_params)
         return await self.request_page(prepared_request, model=ReviewVersion)
 
-    async def create(self, review_id: str, parent_id: str, snapshot: dict[str, Any], note: str | None = None, **extra_params: Any) -> ReviewVersion:
+    async def create(
+        self, review_id: str, parent_id: str, snapshot: dict[str, Any], note: str | None = None, acknowledged_superseded_version_ids: list[str] | None = None, **extra_params: Any
+    ) -> ReviewVersion:
         """Create Review Version Create one immutable, content-addressed review version."""
-        prepared_request = self.prepare_create(review_id=review_id, parent_id=parent_id, snapshot=snapshot, note=note, **extra_params)
+        prepared_request = self.prepare_create(
+            review_id=review_id, parent_id=parent_id, snapshot=snapshot, note=note, acknowledged_superseded_version_ids=acknowledged_superseded_version_ids, **extra_params
+        )
         response = await self._client._prepared_request(prepared_request)
         return ReviewVersion.model_validate(response)
 

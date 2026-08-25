@@ -22,6 +22,7 @@ public final class Review {
   private final ReviewKind triggeredBy;
   private final OffsetDateTime createdAt;
   private final ReviewDecision decision;
+  private final OffsetDateTime cancelledAt;
 
   @JsonCreator
   public Review(
@@ -36,7 +37,8 @@ public final class Review {
       @JsonProperty(value = "block_type", required = true) ReviewBlockType blockType,
       @JsonProperty(value = "triggered_by", required = true) ReviewKind triggeredBy,
       @JsonProperty(value = "created_at", required = true) OffsetDateTime createdAt,
-      @JsonProperty(value = "decision", required = false) ReviewDecision decision) {
+      @JsonProperty(value = "decision", required = false) ReviewDecision decision,
+      @JsonProperty(value = "cancelled_at", required = false) OffsetDateTime cancelledAt) {
     this.id = id;
     this.workflowId = workflowId;
     this.workflowVersionId = workflowVersionId;
@@ -49,6 +51,7 @@ public final class Review {
     this.triggeredBy = triggeredBy;
     this.createdAt = createdAt;
     this.decision = decision;
+    this.cancelledAt = cancelledAt;
   }
 
   @JsonProperty("id")
@@ -109,5 +112,10 @@ public final class Review {
   @JsonProperty("decision")
   public ReviewDecision getDecision() {
     return decision;
+  }
+
+  @JsonProperty("cancelled_at")
+  public OffsetDateTime getCancelledAt() {
+    return cancelledAt;
   }
 }

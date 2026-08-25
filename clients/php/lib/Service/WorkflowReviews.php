@@ -31,7 +31,7 @@ class WorkflowReviews
      * @param string|null $blockId
      * @param string|null $stepId
      * @param string|null $iterationKey
-     * @param \Retab\Resource\ReviewDecisionStatus $decisionStatus Filter by decision state: pending, approved, rejected, decided, or all. Defaults to "pending".
+     * @param \Retab\Resource\ReviewDecisionStatus $decisionStatus Filter by decision state: pending, approved, rejected, decided, cancelled, or all. Defaults to "pending".
      * @param string|null $before Cursor: only return reviews that appear before this review id in the result order. Use list_metadata.before from the previous page.
      * @param string|null $after Cursor: only return reviews that appear after this review id in the result order. Use list_metadata.after from the previous page.
      * @param int|null $limit Defaults to 50.
@@ -102,17 +102,20 @@ class WorkflowReviews
      * resumed successfully.
      * @param string $reviewId
      * @param string $versionId Exact content-addressed key of the version to approve.
+     * @param array<string>|null $acknowledgedSupersededVersionIds Version ids the caller has seen and is deliberately superseding. A review's versions form a lineage; deciding (or parenting on) a version that is not its only latest version discards every other latest version, so the server refuses that write with a 409 unless every discarded id is listed here. Leave empty unless you are intentionally rolling back to an earlier version or choosing one arm of a forked lineage. The 409 detail names the exact ids to pass.
      * @return \Retab\Resource\SubmitDecisionResponse
      * @throws \Retab\Exception\RetabException
      */
     public function approve(
         string $reviewId,
         string $versionId,
+        ?array $acknowledgedSupersededVersionIds = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\SubmitDecisionResponse {
-        $body = [
+        $body = array_filter([
             'version_id' => $versionId,
-        ];
+            'acknowledged_superseded_version_ids' => $acknowledgedSupersededVersionIds,
+        ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',
             path: 'v1/workflows/reviews/' . rawurlencode($reviewId) . '/approve',

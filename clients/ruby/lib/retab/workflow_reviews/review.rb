@@ -17,7 +17,8 @@ module Retab
       block_type: :block_type,
       triggered_by: :triggered_by,
       created_at: :created_at,
-      decision: :decision
+      decision: :decision,
+      cancelled_at: :cancelled_at
     }.freeze
 
     attr_accessor(
@@ -32,7 +33,8 @@ module Retab
       :block_type,
       :triggered_by,
       :created_at,
-      :decision
+      :decision,
+      :cancelled_at
     )
 
     def initialize(json)
@@ -83,6 +85,7 @@ module Retab
       ) : nil
       @created_at = hash[:created_at]
       @decision = hash[:decision] ? Retab::ReviewDecision.new(hash[:decision]) : nil
+      @cancelled_at = hash[:cancelled_at]
     end
   end
 end

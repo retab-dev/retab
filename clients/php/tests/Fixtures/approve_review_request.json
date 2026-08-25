@@ -1,3 +1,6 @@
 {
-  "version_id": "version_id_01234"
+  "version_id": "version_id_01234",
+  "acknowledged_superseded_version_ids": [
+    "acknowledged_superseded_version_ids_01234"
+  ]
 }

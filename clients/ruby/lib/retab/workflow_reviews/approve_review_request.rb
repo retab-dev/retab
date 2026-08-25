@@ -6,15 +6,20 @@ module Retab
   class ApproveReviewRequest < Retab::Types::BaseModel
 
     HASH_ATTRS = {
-      version_id: :version_id
+      version_id: :version_id,
+      acknowledged_superseded_version_ids: :acknowledged_superseded_version_ids
     }.freeze
 
-    attr_accessor :version_id
+    attr_accessor(
+      :version_id,
+      :acknowledged_superseded_version_ids
+    )
 
     def initialize(json)
       super()
       hash = self.class.normalize(json)
       @version_id = hash[:version_id]
+      @acknowledged_superseded_version_ids = (hash[:acknowledged_superseded_version_ids] || [])
     end
   end
 end

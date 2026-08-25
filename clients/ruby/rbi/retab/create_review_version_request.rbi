@@ -33,6 +33,12 @@ module Retab
     sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
     def note=(value); end
 
+    sig { returns(T.nilable(T::Array[String])) }
+    def acknowledged_superseded_version_ids; end
+
+    sig { params(value: T.nilable(T::Array[String])).returns(T.nilable(T::Array[String])) }
+    def acknowledged_superseded_version_ids=(value); end
+
     sig { returns(T::Hash[Symbol, T.untyped]) }
     def to_h; end
 
