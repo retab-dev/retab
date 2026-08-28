@@ -13,9 +13,9 @@ import (
 // is wired through the CLI + generated SDKs before it ships in the reference;
 // drop entries here once the route ships (the test below fails if it lands in
 // OpenAPI first, so the list can't go stale).
-// Empty because splits/reconstruct has since shipped in the reference, which is
-// exactly the condition this list is required to be emptied on.
-var approvedCLINonWorkflowNonReferenceRoutes = map[string]bool{}
+var approvedCLINonWorkflowNonReferenceRoutes = map[string]bool{
+	"POST /v1/splits/reconstruct": true,
+}
 
 func TestNonWorkflowCLIClientCallsHaveRouteContracts(t *testing.T) {
 	source := readCLISource(t)
