@@ -38,6 +38,11 @@ func TestRenderConnectionDropForCLI(t *testing.T) {
 		{name: "net/http style suffix", err: errors.New(`Post "http://localhost:4000/v1/workflows/wf/publish": EOF`), want: true},
 		{name: "unexpected EOF substring", err: errors.New(`read body: unexpected EOF`), want: true},
 		{name: "unrelated error stays nil", err: errors.New("validation failed"), want: false},
+		// A document-host EOF (materializeInlineMIMEData downloading a --url /
+		// --file-id doc client-side) is tagged nonAPIHostError. It unwraps to
+		// io.EOF but must NOT be blamed on the Retab server; it falls through to
+		// the default render, which keeps the callsite context.
+		{name: "non-API host EOF is not attributed to the server", err: &nonAPIHostError{fmt.Errorf("download document for inline upload: %w", &url.Error{Op: "Get", URL: "https://flaky-host.example/doc.pdf", Err: io.EOF})}, want: false},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

@@ -112,8 +112,19 @@ func runE(fn func(cmd *cobra.Command, args []string) error) func(cmd *cobra.Comm
 //
 // Returns an empty string when the error is not a connection drop —
 // the caller falls back to the default “error: <err>“ render.
+//
+// Not every host the CLI dials is the API: materializeInlineMIMEData downloads
+// a user-supplied --url / --file-id document client-side and tags a failure with
+// nonAPIHostError. Such an EOF unwraps to io.EOF and would otherwise be blamed on
+// "the server" here, discarding the callsite context ("download document for
+// inline upload: ..."); skip it so the default render keeps that context, exactly
+// as renderUnreachableServerForCLI does for the dial-failure case.
 func renderConnectionDropForCLI(err error) string {
 	if err == nil {
+		return ""
+	}
+	var nonAPI *nonAPIHostError
+	if errors.As(err, &nonAPI) {
 		return ""
 	}
 	if !errors.Is(err, io.EOF) && !errors.Is(err, io.ErrUnexpectedEOF) {
