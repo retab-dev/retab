@@ -691,8 +691,16 @@ func workflowEvalCell(row any, key string) string {
 // workflowEvalRunColumns is the dedicated TableColumn spec for
 // `workflows evals runs list --output table/csv`. The generic auto-renderer only
 // surfaced ID + a TYPE column that confusingly showed the lifecycle status; these
-// columns show what a user reads off an eval-suite run: status and the pass/fail
+// columns show what a user reads off an eval-suite run: status and the outcome
 // tally.
+//
+// PASSED/FAILED alone are NOT a partition of the suite. An assertion the runner
+// could not evaluate is bucketed `blocked`, and a child whose block execution
+// died never reaches an outcome at all — it only lands in
+// `counts.lifecycle_counts.error`. With just the two columns, both cases render
+// as `completed  1  <blank>  <blank>`, indistinguishable from a run where
+// nothing happened, even though `runs create --wait` correctly exits non-zero
+// for them. BLOCKED and ERRORED make the non-passing remainder visible.
 var workflowEvalRunColumns = []TableColumn{
 	{Header: "ID", Extract: func(row any) string { return workflowEvalCell(row, "id") }},
 	{Header: "STATUS", Extract: func(row any) string { return workflowEvalCell(row, "lifecycle.status") }},
@@ -706,6 +714,7 @@ var workflowEvalRunColumns = []TableColumn{
 	// renders as TESTS=1 with PASSED and FAILED both blank — indistinguishable
 	// from a run where nothing was evaluated at all.
 	{Header: "BLOCKED", Extract: func(row any) string { return workflowEvalCell(row, "counts.outcome.blocked") }},
+	{Header: "ERRORED", Extract: func(row any) string { return workflowEvalCell(row, "counts.lifecycle_counts.error") }},
 	{Header: "CREATED_AT", Extract: func(row any) string { return workflowEvalCell(row, "timing.created_at") }},
 }
 
@@ -1603,7 +1612,7 @@ func init() {
 	workflowsEvalsRunsListCmd.Flags().String("target-block-id", "", "filter by target block id")
 	workflowsEvalsRunsListCmd.Flags().String("status", "", "filter by lifecycle status")
 	workflowsEvalsRunsListCmd.Flags().String("exclude-status", "", "exclude lifecycle status")
-	workflowsEvalsRunsListCmd.Flags().String("trigger-type", "", "filter by trigger type")
+	workflowsEvalsRunsListCmd.Flags().String("trigger-type", "", "filter by trigger type: "+workflowRunTriggerTypeValues)
 	workflowsEvalsRunsListCmd.Flags().String("from-date", "", "created on or after YYYY-MM-DD")
 	workflowsEvalsRunsListCmd.Flags().String("to-date", "", "created on or before YYYY-MM-DD")
 	workflowsEvalsRunsListCmd.Flags().String("sort-by", "", "sort field")

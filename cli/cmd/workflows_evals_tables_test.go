@@ -101,3 +101,54 @@ func TestWorkflowEvalResultsListTableRendersVerdict(t *testing.T) {
 		}
 	}
 }
+
+// A run whose only child ERRORED (block execution died) or whose assertion was
+// BLOCKED carries an empty counts.outcome.passed/failed pair, so with only those
+// two columns the row rendered as `completed  1  <blank>  <blank>` — visually
+// identical to a clean run, even though `runs create --wait` exits non-zero for
+// it. Pin that the non-passing remainder is visible in the table.
+func TestWorkflowEvalRunsListTableSurfacesBlockedAndErrored(t *testing.T) {
+	resource := map[string]any{
+		"data": []any{
+			map[string]any{
+				"id":          "wfevalrun_errored",
+				"lifecycle":   map[string]any{"status": "completed"},
+				"total_evals": 1,
+				"counts": map[string]any{
+					"lifecycle_counts": map[string]any{"error": 1},
+					"outcome":          map[string]any{},
+				},
+				"timing": map[string]any{"created_at": "2026-08-25T22:15:28Z"},
+			},
+			map[string]any{
+				"id":          "wfevalrun_blocked",
+				"lifecycle":   map[string]any{"status": "completed"},
+				"total_evals": 2,
+				"counts": map[string]any{
+					"lifecycle_counts": map[string]any{"completed": 2},
+					"outcome":          map[string]any{"passed": 1, "blocked": 1},
+				},
+				"timing": map[string]any{"created_at": "2026-08-25T22:16:00Z"},
+			},
+		},
+	}
+	var buf strings.Builder
+	if err := RenderList(&buf, OutputTable, resource, workflowEvalRunColumns); err != nil {
+		t.Fatalf("RenderList: %v", err)
+	}
+	out := buf.String()
+	for _, want := range []string{"BLOCKED", "ERRORED", "wfevalrun_errored", "wfevalrun_blocked"} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("runs table missing %q:\n%s", want, out)
+		}
+	}
+	// The errored row must carry a visible tally, not a blank line of columns.
+	for _, line := range strings.Split(out, "\n") {
+		if !strings.Contains(line, "wfevalrun_errored") {
+			continue
+		}
+		if !strings.Contains(line, "1") {
+			t.Fatalf("errored run row shows no count:\n%s", line)
+		}
+	}
+}

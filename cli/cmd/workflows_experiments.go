@@ -589,8 +589,10 @@ func printExperimentRunsListResult(cmd *cobra.Command, result *retab.PaginatedLi
 var workflowsExperimentsGetCmd = &cobra.Command{
 	Use:   "get [workflow-id] <experiment-id>",
 	Short: "Get an experiment",
-	Long: `Fetch an experiment's definition: target block, document set,
-consensus count, recent run status.
+	Long: `Fetch an experiment's definition: target block, document count,
+consensus count, freshness, and recent run status. The document set itself
+is not returned — inspect per-document inputs and outputs with
+` + "`workflows experiments results list <run-id>`" + `.
 
 The experiment id is the only required positional. A leading
 ` + "`<workflow-id>`" + ` is also accepted for symmetry with
