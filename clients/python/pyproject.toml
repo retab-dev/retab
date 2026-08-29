@@ -40,6 +40,10 @@ line-length = 180
 target-version = "py312"
 
 [tool.ruff.lint]
+# Keep the SDK's lint contract explicit across Ruff releases. These are Ruff's
+# historical default correctness rules; generated SDK style is enforced by the
+# separate formatter and generated-tree freshness checks.
+select = ["E4", "E7", "E9", "F"]
 ignore = ["E701"]
 
 [tool.ruff.format]
