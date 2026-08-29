@@ -213,7 +213,7 @@ impl<'a> WorkflowRunsApi<'a> {
 
     /// Delete Workflow Run
     ///
-    /// Delete a workflow run and its associated step data.
+    /// Delete a workflow run and make its associated step data inaccessible.
     pub async fn delete(&self, run_id: &str) -> Result<(), Error> {
         self.delete_with_options(run_id, None).await
     }

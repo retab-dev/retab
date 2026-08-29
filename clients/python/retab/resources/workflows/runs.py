@@ -195,7 +195,7 @@ class WorkflowRunsMixin:
         return PreparedRequest(method="GET", url=f"/v1/workflows/runs/{run_id}", params=params or None, data=data)
 
     def prepare_delete(self, run_id: str, **extra_params: Any) -> PreparedRequest:
-        """Delete Workflow Run Delete a workflow run and its associated step data."""
+        """Delete Workflow Run Delete a workflow run and make its associated step data inaccessible."""
         params: dict[str, Any] = {}
         if extra_params:
             params.update(extra_params)
@@ -320,7 +320,7 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
         return WorkflowRun.model_validate(response)
 
     def delete(self, run_id: str, **extra_params: Any) -> None:
-        """Delete Workflow Run Delete a workflow run and its associated step data."""
+        """Delete Workflow Run Delete a workflow run and make its associated step data inaccessible."""
         prepared_request = self.prepare_delete(run_id, **extra_params)
         self._client._prepared_request(prepared_request)
         return None
@@ -440,7 +440,7 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
         return WorkflowRun.model_validate(response)
 
     async def delete(self, run_id: str, **extra_params: Any) -> None:
-        """Delete Workflow Run Delete a workflow run and its associated step data."""
+        """Delete Workflow Run Delete a workflow run and make its associated step data inaccessible."""
         prepared_request = self.prepare_delete(run_id, **extra_params)
         await self._client._prepared_request(prepared_request)
         return None

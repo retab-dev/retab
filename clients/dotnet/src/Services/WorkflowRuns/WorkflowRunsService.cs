@@ -114,7 +114,7 @@ namespace Retab
 
         /// <summary>Delete Workflow Run</summary>
         /// <remarks>
-        /// Delete a workflow run and its associated step data.
+        /// Delete a workflow run and make its associated step data inaccessible.
         /// </remarks>
         /// <param name="runId">The run id.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>

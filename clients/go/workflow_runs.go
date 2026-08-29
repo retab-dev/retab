@@ -134,7 +134,7 @@ func (s *WorkflowRunService) Get(ctx context.Context, runID string, opts ...Requ
 }
 
 // Delete workflow Run
-// Delete a workflow run and its associated step data.
+// Delete a workflow run and make its associated step data inaccessible.
 func (s *WorkflowRunService) Delete(ctx context.Context, runID string, opts ...RequestOption) error {
 	if runID == "" {
 		return fmt.Errorf("retab: run_id is required")

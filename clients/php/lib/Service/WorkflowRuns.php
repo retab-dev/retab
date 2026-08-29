@@ -207,7 +207,7 @@ class WorkflowRuns
     /**
      * Delete Workflow Run
      *
-     * Delete a workflow run and its associated step data.
+     * Delete a workflow run and make its associated step data inaccessible.
      * @param string $runId
      * @return void
      * @throws \Retab\Exception\RetabException
