@@ -62,7 +62,7 @@ var commandGroups = []commandGroup{
 		// first-class resource (FileService), not a utility — it leads here;
 		// `schemas` is the generator helper; `tables` is the CSV data resource.
 		title:    "Resources",
-		commands: []string{"files", "schemas", "tables"},
+		commands: []string{"files", "schemas", "tables", "endpoints"},
 	},
 	{
 		title:    "Workflows",

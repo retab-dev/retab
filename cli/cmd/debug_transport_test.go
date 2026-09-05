@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -9,6 +10,43 @@ import (
 	"strings"
 	"testing"
 )
+
+type credentialURLFailureTransport struct {
+	gotURL string
+}
+
+func (transport *credentialURLFailureTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	transport.gotURL = req.URL.String()
+	return nil, fmt.Errorf(`Get "%s": connection refused`, req.URL.String())
+}
+
+func TestDebugTransportRedactsURLCredentialsWithoutChangingWireRequest(t *testing.T) {
+	stderr := captureStderr(t)
+	defer stderr.restore()
+
+	wrapped := &credentialURLFailureTransport{}
+	transport := &debugTransport{wrapped: wrapped}
+	rawURL := "https://user:password@example.test/v1/items?token=secret#fragment"
+	req, err := http.NewRequest(http.MethodGet, rawURL, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := transport.RoundTrip(req); err == nil {
+		t.Fatal("expected transport failure")
+	}
+	if wrapped.gotURL != rawURL {
+		t.Fatalf("wire URL = %q, want %q", wrapped.gotURL, rawURL)
+	}
+	got := stderr.read()
+	if !strings.Contains(got, "https://example.test/v1/items") {
+		t.Fatalf("sanitized URL missing from debug output:\n%s", got)
+	}
+	for _, secret := range []string{"user:password", "token=secret", "#fragment"} {
+		if strings.Contains(got, secret) {
+			t.Fatalf("debug output leaked %q:\n%s", secret, got)
+		}
+	}
+}
 
 // Pins the security contract for `--debug`: when the user dumps wire-level
 // request/response for a bug report, the API key (and any OAuth Bearer

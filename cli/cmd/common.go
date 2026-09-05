@@ -86,6 +86,10 @@ func runE(fn func(cmd *cobra.Command, args []string) error) func(cmd *cobra.Comm
 			return nil
 		}
 		var apiErr *retab.APIError
+		if explicitOutputJSON(cmd) {
+			writeCLIErrorJSON(err, apiErrFromError(err))
+			return renderedError{err: err}
+		}
 		if errors.As(err, &apiErr) {
 			fmt.Fprintln(os.Stderr, renderAPIErrorForCLI(cmd, apiErr))
 			return errSilent
@@ -100,6 +104,109 @@ func runE(fn func(cmd *cobra.Command, args []string) error) func(cmd *cobra.Comm
 		}
 		fmt.Fprintln(os.Stderr, "error: "+err.Error())
 		return renderedError{err: err}
+	}
+}
+
+type cliJSONError struct {
+	StatusCode int            `json:"status_code,omitempty"`
+	Code       string         `json:"code,omitempty"`
+	Message    string         `json:"message"`
+	Details    map[string]any `json:"details,omitempty"`
+	RequestID  string         `json:"request_id,omitempty"`
+	Method     string         `json:"method,omitempty"`
+	URL        string         `json:"url,omitempty"`
+}
+
+type cliJSONErrorEnvelope struct {
+	Error cliJSONError `json:"error"`
+}
+
+func apiErrFromError(err error) *retab.APIError {
+	var apiErr *retab.APIError
+	if errors.As(err, &apiErr) {
+		return apiErr
+	}
+	return nil
+}
+
+// writeCLIErrorJSON keeps stderr machine-readable whenever JSON output was
+// explicitly requested. API response metadata is preserved without embedding
+// the raw response body; local/transport errors still use the same envelope.
+func writeCLIErrorJSON(err error, apiErr *retab.APIError) {
+	detail := cliJSONError{Message: sanitizeCLIErrorText(err.Error())}
+	if apiErr != nil {
+		detail = cliJSONError{
+			StatusCode: apiErr.StatusCode,
+			Code:       apiErr.Code,
+			Message:    sanitizeCLIErrorText(apiErr.Message),
+			Details:    sanitizedCLIErrorDetails(apiErr.Details),
+			RequestID:  apiErr.RequestID,
+			Method:     apiErr.Method,
+			URL:        sanitizeCLIErrorURL(apiErr.URL),
+		}
+	}
+	_ = json.NewEncoder(os.Stderr).Encode(cliJSONErrorEnvelope{Error: detail})
+}
+
+func sanitizeCLIErrorURL(raw string) string {
+	parsed, err := url.Parse(raw)
+	if err != nil || parsed.Scheme == "" || parsed.Host == "" {
+		return ""
+	}
+	parsed.User = nil
+	parsed.RawQuery = ""
+	parsed.ForceQuery = false
+	parsed.Fragment = ""
+	return parsed.String()
+}
+
+func sanitizeCLIErrorText(value string) string {
+	return urlInErrorText.ReplaceAllStringFunc(value, func(raw string) string {
+		if sanitized := sanitizeCLIErrorURL(raw); sanitized != "" {
+			return sanitized
+		}
+		return "[REDACTED URL]"
+	})
+}
+
+func sanitizedCLIErrorDetails(details map[string]any) map[string]any {
+	if details == nil {
+		return nil
+	}
+	encoded, err := json.Marshal(details)
+	if err != nil {
+		return nil
+	}
+	var cloned map[string]any
+	if err := json.Unmarshal(encoded, &cloned); err != nil {
+		return nil
+	}
+	sanitizeCLIErrorJSONValue(cloned)
+	return cloned
+}
+
+func sanitizeCLIErrorJSONValue(value any) {
+	switch typed := value.(type) {
+	case map[string]any:
+		for key, child := range typed {
+			if sensitiveJSONFields[strings.ToLower(key)] {
+				typed[key] = "[REDACTED]"
+				continue
+			}
+			if text, ok := child.(string); ok {
+				typed[key] = sanitizeCLIErrorText(text)
+				continue
+			}
+			sanitizeCLIErrorJSONValue(child)
+		}
+	case []any:
+		for index, child := range typed {
+			if text, ok := child.(string); ok {
+				typed[index] = sanitizeCLIErrorText(text)
+				continue
+			}
+			sanitizeCLIErrorJSONValue(child)
+		}
 	}
 }
 
@@ -2560,6 +2667,12 @@ func (t *debugTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	// Clone after restoring the request body so the debug dump cannot consume
 	// the body that still needs to go over the wire.
 	dumpReq := req.Clone(req.Context())
+	dumpURL := *dumpReq.URL
+	dumpURL.User = nil
+	dumpURL.RawQuery = ""
+	dumpURL.ForceQuery = false
+	dumpURL.Fragment = ""
+	dumpReq.URL = &dumpURL
 	redactSensitiveHeaders(dumpReq.Header)
 	if requestBody != nil {
 		debugRequestBody := redactSensitiveDebugBody(requestBody, req.Header.Get("Content-Type"), req.URL.Path)
@@ -2578,7 +2691,7 @@ func (t *debugTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	}
 	resp, err := t.wrapped.RoundTrip(req)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "--- HTTP error ---\n%v\n", err)
+		fmt.Fprintf(os.Stderr, "--- HTTP error ---\n%s\n", sanitizeCLIErrorText(err.Error()))
 		return nil, err
 	}
 	body, readErr := io.ReadAll(resp.Body)
@@ -2603,11 +2716,13 @@ func (t *debugTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 }
 
 var sensitiveJSONFields = map[string]bool{
-	"api_key":       true,
-	"access_token":  true,
-	"refresh_token": true,
-	"id_token":      true,
-	"token":         true,
+	"api_key":         true,
+	"access_token":    true,
+	"refresh_token":   true,
+	"id_token":        true,
+	"token":           true,
+	"password":        true,
+	"webhook_headers": true,
 }
 
 func redactSensitiveDebugBody(body []byte, contentType, path string) []byte {

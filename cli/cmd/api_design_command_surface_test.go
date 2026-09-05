@@ -16,7 +16,7 @@ func TestAPICommandSurfaceUsesCanonicalResourceActionNames(t *testing.T) {
 	canonicalNames := map[string]bool{
 		"access": true, "add": true, "api-calls": true, "apply": true, "apply-to": true, "approve": true, "artifacts": true, "auth": true,
 		"blocks": true, "blueprints": true, "cancel": true, "claim": true, "classifications": true, "complete-upload": true, "config": true, "consensus": true, "env": true,
-		"create": true, "create-upload": true, "delete": true, "discard-draft": true,
+		"create": true, "create-upload": true, "delete": true, "discard-draft": true, "endpoints": true,
 		"diff": true, "doctor": true, "download": true, "download-link": true, "edges": true, "edits": true,
 		"experiments": true, "export": true, "extractions": true, "files": true,
 		"functions": true, "generate": true, "get": true, "grant": true, "grep": true, "history": true, "hydrate": true, "inspect": true, "invitations": true,
@@ -122,7 +122,8 @@ func TestRemovedCommandSurfaceIsAbsent(t *testing.T) {
 
 func TestCoreAPIResourcesExposeExpectedCommandSurface(t *testing.T) {
 	expectedChildren := map[string][]string{
-		"":                              {"auth", "env", "org", "classifications", "consensus", "edits", "extractions", "files", "invitations", "members", "parses", "partitions", "projects", "schemas", "secrets", "setup", "splits", "sync", "tables", "usage", "version", "workflows"},
+		"":                              {"auth", "env", "org", "classifications", "consensus", "edits", "endpoints", "extractions", "files", "invitations", "members", "parses", "partitions", "projects", "schemas", "secrets", "setup", "splits", "sync", "tables", "usage", "version", "workflows"},
+		"endpoints":                     {"list", "get", "create", "update", "delete"},
 		"usage":                         {"runs", "blocks", "primitives"},
 		"auth":                          {"login", "logout", "status"},
 		"env":                           {"add", "switch", "which", "claim", "list", "get"},

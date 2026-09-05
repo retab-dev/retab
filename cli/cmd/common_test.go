@@ -66,6 +66,85 @@ func TestRenderConnectionDropForCLI(t *testing.T) {
 	}
 }
 
+func TestRunEOutputsStructuredJSONForAPIErrors(t *testing.T) {
+	root := &cobra.Command{Use: "retab"}
+	root.PersistentFlags().String("output", "", "output format")
+	if err := root.PersistentFlags().Set("output", "json"); err != nil {
+		t.Fatalf("set output: %v", err)
+	}
+	child := &cobra.Command{Use: "create"}
+	root.AddCommand(child)
+
+	apiErr := &retab.APIError{
+		StatusCode: 422,
+		Code:       "invalid_spec",
+		Message:    "workflow spec is invalid",
+		Details: map[string]any{
+			"field": "blocks", "password": "detail-password",
+			"diagnostic": "inspect https://user:password@example.test/debug?token=secret",
+		},
+		RequestID: "req_json_1",
+		Method:    http.MethodPost,
+		URL:       "https://user:password@api.retab.com/v1/workflows?token=secret#fragment",
+	}
+	var runErr error
+	_, stderr := captureStd(t, func() {
+		runErr = runE(func(*cobra.Command, []string) error { return apiErr })(child, nil)
+	})
+	if runErr == nil {
+		t.Fatal("runE must preserve a non-zero exit")
+	}
+	var got cliJSONErrorEnvelope
+	if err := json.Unmarshal([]byte(stderr), &got); err != nil {
+		t.Fatalf("stderr is not JSON: %v\nstderr=%q", err, stderr)
+	}
+	if got.Error.StatusCode != 422 || got.Error.Code != "invalid_spec" || got.Error.Message != "workflow spec is invalid" {
+		t.Fatalf("error envelope = %+v", got.Error)
+	}
+	if got.Error.RequestID != "req_json_1" || got.Error.Method != http.MethodPost || got.Error.URL != "https://api.retab.com/v1/workflows" {
+		t.Fatalf("API diagnostics missing from envelope: %+v", got.Error)
+	}
+	if got.Error.Details["field"] != "blocks" {
+		t.Fatalf("details = %+v", got.Error.Details)
+	}
+	if got.Error.Details["password"] != "[REDACTED]" || got.Error.Details["diagnostic"] != "inspect https://example.test/debug" {
+		t.Fatalf("sanitized details = %+v", got.Error.Details)
+	}
+	if strings.Contains(stderr, "Request-ID:") || strings.Contains(stderr, "URL:") {
+		t.Fatalf("stderr mixed human prose into JSON: %q", stderr)
+	}
+	for _, secret := range []string{"user:password", "detail-password", "token=secret", "#fragment"} {
+		if strings.Contains(stderr, secret) {
+			t.Fatalf("stderr leaked URL credential %q: %q", secret, stderr)
+		}
+	}
+}
+
+func TestRunEOutputsSanitizedJSONForTransportErrors(t *testing.T) {
+	root := &cobra.Command{Use: "retab"}
+	root.PersistentFlags().String("output", "", "output format")
+	if err := root.PersistentFlags().Set("output", "json"); err != nil {
+		t.Fatal(err)
+	}
+	child := &cobra.Command{Use: "list"}
+	root.AddCommand(child)
+	wantErr := fmt.Errorf(`Get "https://user:password@example.test/v1/items?api_key=secret": connection refused`)
+	var runErr error
+	_, stderr := captureStd(t, func() {
+		runErr = runE(func(*cobra.Command, []string) error { return wantErr })(child, nil)
+	})
+	if runErr == nil {
+		t.Fatal("runE must preserve a non-zero exit")
+	}
+	var got cliJSONErrorEnvelope
+	if err := json.Unmarshal([]byte(stderr), &got); err != nil {
+		t.Fatalf("stderr is not JSON: %v\nstderr=%q", err, stderr)
+	}
+	if got.Error.Message != `Get "https://example.test/v1/items": connection refused` {
+		t.Fatalf("sanitized message = %q", got.Error.Message)
+	}
+}
+
 // Regression: when the API base URL points at nothing listening (local dev
 // server down, or a typo'd --base-url), the bare net/http error surface was
 // `error: Post "http://localhost:4000/...": dial tcp ...: connection refused`

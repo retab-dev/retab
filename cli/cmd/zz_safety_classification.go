@@ -43,6 +43,7 @@ func readOnlyCommands() []*cobra.Command {
 		authStatusCmd, envListCmd,
 		workflowsListCmd, workflowsGetCmd,
 		projectsListCmd, projectsGetCmd,
+		endpointsListCmd, endpointsGetCmd,
 	}
 }
 
@@ -68,6 +69,7 @@ func highRiskCommands() []*cobra.Command {
 		workflowsRunsDeleteCmd,
 		workflowsExperimentsRunsCancelCmd,
 		workflowsExperimentsDeleteCmd,
+		endpointsDeleteCmd,
 	}
 }
 
