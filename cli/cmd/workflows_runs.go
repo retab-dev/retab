@@ -61,10 +61,12 @@ func documentPathHint(blockID, path string) string {
 	}
 }
 
-// isExternalFetchDocumentURL reports whether rawURL is an external http(s) URL
-// that the workflow runs API refuses to fetch and that the CLI must therefore
-// download and inline itself. Retab storage URLs (which the server resolves)
-// and non-http schemes such as `data:` are left untouched for the server.
+// isExternalFetchDocumentURL reports whether rawURL is a non-storage http(s) URL
+// the CLI downloads and inlines itself. The server fetches allowlisted
+// object-storage URLs on its own, but `--document-url` also accepts hosts it
+// never will, so the CLI inlines every non-storage http(s) URL rather than
+// duplicating the server's allowlist. Retab storage URLs (which the server
+// resolves) and non-http schemes such as `data:` are left untouched.
 func isExternalFetchDocumentURL(rawURL string) bool {
 	if !strings.HasPrefix(rawURL, "http://") && !strings.HasPrefix(rawURL, "https://") {
 		return false
@@ -290,9 +292,11 @@ four ways to supply them, mix and match as needed:
 
   ` + "`--document-url BLOCK=URL`" + ` — reference a document by URL. A
   Retab storage URL (` + "`https://storage.retab.com/...`" + `) is passed
-  through for the server to resolve; any other external http(s) URL is
-  downloaded and inlined by the CLI before upload, since the server does
-  not fetch arbitrary external URLs. Repeatable.
+  through for the server to resolve. The server also fetches HTTPS URLs on
+  supported object-storage hosts (Google Cloud Storage, Amazon S3,
+  Cloudflare R2, Azure Blob Storage); the CLI downloads and inlines any
+  other http(s) URL itself, so hosts the server will not fetch still work.
+  Repeatable.
 
   ` + "`--document-id BLOCK=FILE_ID`" + ` — reference a file you already
   uploaded (e.g. via ` + "`retab files upload`" + `) by its file id. The
@@ -515,12 +519,15 @@ removed in a future release.`,
 					URL:      rawURL,
 				}
 				// The workflow runs API refuses to fetch arbitrary external
-				// URLs (SSRF policy): it accepts only Retab storage URLs and
-				// inline data: content, otherwise it 422s. So an external URL
-				// like the `--document-url` help advertises must be downloaded
-				// and re-inlined client-side, mirroring the edit-template
-				// `--url` path. Retab storage and data: URLs pass through for
-				// the server to resolve.
+				// URLs (SSRF policy): it accepts Retab storage URLs, inline
+				// data: content, and HTTPS URLs on allowlisted object-storage
+				// hosts, and rejects everything else. The CLI deliberately
+				// keeps inlining every non-storage http(s) URL — including
+				// allowlisted ones — because `--document-url` also advertises
+				// hosts the server will never fetch, and one rule here is
+				// simpler than mirroring the server allowlist client-side.
+				// Mirrors the edit-template `--url` path. Retab storage and
+				// data: URLs pass through for the server to resolve.
 				if isExternalFetchDocumentURL(rawURL) {
 					inlined, err := materializeInlineMIMEData(ctx, doc)
 					if err != nil {
