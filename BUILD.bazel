@@ -301,6 +301,21 @@ sh_test(
     tags = ["generated-check"],
 )
 
+sh_test(
+    name = "check_php_generated_files",
+    srcs = [".scripts/check_php_generated_files.py"],
+    args = [
+        "$(location .gitignore)",
+        "$(location //public/sdk/clients/php:.oagen-manifest.json)",
+    ],
+    data = [
+        ".gitignore",
+        "//public/sdk/clients/php:.oagen-manifest.json",
+        "//public/sdk/clients/php:generated_tracking_inputs",
+    ],
+    tags = ["generated-check"],
+)
+
 # Fully hermetic Ruby SDK drift check (blueprint Phase 4, gold standard; mirrors
 # check_node): runs SANDBOXED with no network and is cached on no-op reruns. Both
 # inputs are Bazel-declared TreeArtifacts:
@@ -533,7 +548,7 @@ sh_binary(
 [
     test_suite(
         name = "generated_%s_sdk_check" % spec["language"],
-        tests = [spec["check"]],
+        tests = [spec["check"]] + ([":check_php_generated_files"] if spec["language"] == "php" else []),
     )
     for spec in SDK_UPDATE_SPECS
 ]
@@ -549,6 +564,7 @@ test_suite(
         ":check_rust",
         ":check_dotnet",
         ":check_php",
+        ":check_php_generated_files",
         ":check_ruby",
         ":check_java",
     ],

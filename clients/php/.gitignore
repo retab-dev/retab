@@ -8,12 +8,17 @@ composer.lock
 .idea/
 .vscode/
 
-# Hand-maintained runtime files that support generated services.
+# Generated client/exception files and runtime support must survive a clean clone.
 !lib/
 lib/*
+!lib/Client.php
 !lib/Exception/
 lib/Exception/*
 !lib/Exception/RetabException.php
+!lib/Exception/RetabAuthenticationException.php
+!lib/Exception/RetabNotFoundException.php
+!lib/Exception/RetabPermissionException.php
+!lib/Exception/RetabRateLimitException.php
 !lib/HttpClient.php
 !lib/PaginatedResponse.php
 !lib/RequestOptions.php

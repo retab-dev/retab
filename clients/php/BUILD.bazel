@@ -3,6 +3,21 @@ load("@aspect_bazel_lib//lib:run_binary.bzl", "run_binary")
 
 package(default_visibility = ["//visibility:public"])
 
+filegroup(
+    name = "generated_tracking_inputs",
+    srcs = [
+        ".gitignore",
+        ".oagen-manifest.json",
+        "composer.json",
+    ] + glob([
+        "lib/**/.gitignore",
+        "lib/**/*.php",
+        "tests/**/.gitignore",
+        "tests/**/*.json",
+        "tests/**/*.php",
+    ]),
+)
+
 # Hermetic php-cs-fixer step for the sandboxed PHP SDK drift check.
 #
 # The generator (//factory/generators/oagen/retab-gen:generated_php_sdk_raw) emits an
