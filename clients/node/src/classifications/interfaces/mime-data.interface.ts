@@ -5,7 +5,7 @@ import { z } from 'zod';
 export interface MIMEData {
   /** The filename of the file */
   filename: string;
-  /** The URL of the file in base64 format */
+  /** The URL of the file: a `data:` URL carrying inline base64 content, a Retab storage URL (`https://storage.retab.com/...`) returned by the file upload endpoint, or an https URL on a supported object-storage host (Google Cloud Storage, Amazon S3, Cloudflare R2, Azure Blob Storage), which the server fetches. */
   url: string;
 }
 
