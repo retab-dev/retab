@@ -64,7 +64,7 @@ func TestRunSetupInstallsSkillMCPAndRegistry(t *testing.T) {
 	}
 }
 
-func TestRunSetupLocalSkipsWindsurfByDefault(t *testing.T) {
+func TestRunSetupLocalIncludesDevinByDefault(t *testing.T) {
 	home := t.TempDir()
 	cwd := t.TempDir()
 	t.Setenv("HOME", home)
@@ -74,14 +74,56 @@ func TestRunSetupLocalSkipsWindsurfByDefault(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	devinMCPPath := filepath.Join(cwd, ".devin", "mcp_config.json")
+	hasDevinMCP := false
 	for _, result := range results {
-		if result.Agent == "windsurf" {
-			t.Fatal("local default setup included windsurf")
+		if result.Agent == "devin" && result.MCPPath == devinMCPPath {
+			hasDevinMCP = true
 		}
+	}
+	if !hasDevinMCP {
+		t.Fatalf("local default setup did not write devin MCP to %s: %+v", devinMCPPath, results)
 	}
 	assertFileContains(t, filepath.Join(cwd, ".agents", "skills", "retab", "SKILL.md"), "Six document primitives")
 	assertFileContains(t, filepath.Join(cwd, ".codex", "config.toml"), `[mcp_servers.retab]`)
 	assertFileContains(t, filepath.Join(cwd, ".mcp.json"), `"retab"`)
+	assertFileContains(t, devinMCPPath, `"retab"`)
+}
+
+func TestRunSetupDevinWritesTransportHTTPConfig(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("USERPROFILE", home)
+	t.Setenv("XDG_CONFIG_HOME", filepath.Join(home, ".config"))
+
+	if _, err := runSetup(setupOptions{
+		scope:  installScopeGlobal,
+		cwd:    t.TempDir(),
+		agents: []string{"devin"},
+		apiKey: "rtb_test",
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	assertFileContains(t, filepath.Join(devinConfigHome(), "skills", "retab", "SKILL.md"), "Six document primitives")
+	var devin map[string]any
+	readJSONFile(t, filepath.Join(devinConfigHome(), "mcp_config.json"), &devin)
+	servers := devin["mcpServers"].(map[string]any)
+	retabServer := servers["retab"].(map[string]any)
+	if retabServer["url"] != retabMCPURL || retabServer["transport"] != "http" {
+		t.Fatalf("devin retab server = %v, want url %s with transport http", retabServer, retabMCPURL)
+	}
+	if _, hasType := retabServer["type"]; hasType {
+		t.Fatalf("devin retab server should not carry a type field, got %v", retabServer)
+	}
+	headers := retabServer["headers"].(map[string]any)
+	if headers["Authorization"] != "Bearer rtb_test" {
+		t.Fatalf("devin retab headers = %v, want bearer rtb_test", headers)
+	}
+	docsServer := servers["retab-docs"].(map[string]any)
+	if docsServer["url"] != retabDocsMCPURL || docsServer["transport"] != "http" {
+		t.Fatalf("devin retab-docs server = %v, want url %s with transport http", docsServer, retabDocsMCPURL)
+	}
 }
 
 func TestRunSyncRefreshesUniversalSkillAndMCP(t *testing.T) {

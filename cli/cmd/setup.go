@@ -100,7 +100,7 @@ This always writes the bundled Retab skill to the universal .agents/skills
 directory used by mainstream agents such as Amp, Antigravity, Cline, Codex,
 Cursor, Deep Agents, Dexto, Firebender, Gemini CLI, GitHub Copilot, Kimi Code
 CLI, OpenCode, and Warp. It also writes agent-specific skills and MCP entries
-for Claude Code, Codex, Cursor, OpenCode, and Windsurf. Use --local to install
+for Claude Code, Codex, Cursor, Devin, and OpenCode. Use --local to install
 project-local config where supported.`,
 	Example: `  retab setup
   retab setup --local
@@ -157,8 +157,8 @@ project-local config where supported.`,
 //
 // Restricting the file mode protects the key from other accounts on the machine
 // but does nothing about `git add .` — and these paths (.mcp.json,
-// .cursor/mcp.json, opencode.json, .codex/config.toml) are exactly the ones
-// people commit. The mode is also not durable in a working tree: a later
+// .cursor/mcp.json, opencode.json, .codex/config.toml, .devin/mcp_config.json)
+// are exactly the ones people commit. The mode is also not durable in a working tree: a later
 // checkout of the file recreates it with default permissions. The user is the
 // only one who can decide to gitignore it, so say so rather than leave the
 // protection looking stronger than it is.
@@ -211,7 +211,7 @@ var syncCmd = &cobra.Command{
 
 func init() {
 	setupCmd.Flags().Bool("local", false, "install into the current project instead of global agent config")
-	setupCmd.Flags().StringArray("agent", nil, "target agent: claude-code, codex, cursor, opencode, windsurf (repeatable)")
+	setupCmd.Flags().StringArray("agent", nil, "target agent: claude-code, codex, cursor, devin, opencode (repeatable)")
 	setupCmd.Flags().String("mcp-api-key", "", "API key value to write as Authorization: Bearer in MCP config (env: RETAB_API_KEY)")
 	syncCmd.Flags().String("mcp-api-key", "", "API key value to write as Authorization: Bearer in MCP config (env: RETAB_API_KEY)")
 	rootCmd.AddCommand(setupCmd, syncCmd)
@@ -422,6 +422,14 @@ func supportedSetupAgents() map[string]setupAgent {
 			LocalMCPPath:   func(cwd string) string { return filepath.Join(cwd, ".cursor", "mcp.json") },
 			MCPFormat:      mcpConfigJSON, MCPKey: "mcpServers", SupportsLocalMCP: true,
 		},
+		"devin": {
+			Name: "devin", Label: "Devin",
+			GlobalSkillDir: func() (string, error) { return filepath.Join(devinConfigHome(), "skills"), nil },
+			LocalSkillDir:  func(cwd string) string { return filepath.Join(cwd, ".agents", "skills") },
+			GlobalMCPPath:  func() (string, error) { return filepath.Join(devinConfigHome(), "mcp_config.json"), nil },
+			LocalMCPPath:   func(cwd string) string { return filepath.Join(cwd, ".devin", "mcp_config.json") },
+			MCPFormat:      mcpConfigJSON, MCPKey: "mcpServers", TransformMCP: devinMCPConfig, SupportsLocalMCP: true,
+		},
 		"opencode": {
 			Name: "opencode", Label: "OpenCode",
 			GlobalSkillDir: configPath("opencode", "skills"),
@@ -429,13 +437,6 @@ func supportedSetupAgents() map[string]setupAgent {
 			GlobalMCPPath:  configPath("opencode", "opencode.json"),
 			LocalMCPPath:   func(cwd string) string { return filepath.Join(cwd, "opencode.json") },
 			MCPFormat:      mcpConfigJSON, MCPKey: "mcp", TransformMCP: opencodeMCPConfig, SupportsLocalMCP: true,
-		},
-		"windsurf": {
-			Name: "windsurf", Label: "Windsurf",
-			GlobalSkillDir: homePath(".codeium", "windsurf", "skills"),
-			LocalSkillDir:  func(cwd string) string { return filepath.Join(cwd, ".windsurf", "skills") },
-			GlobalMCPPath:  homePath(".codeium", "windsurf", "mcp_config.json"),
-			MCPFormat:      mcpConfigJSON, MCPKey: "mcpServers", SupportsLocalMCP: false,
 		},
 	}
 }
@@ -577,6 +578,19 @@ func opencodeMCPConfig(config mcpServerConfig) any {
 		"type":    "remote",
 		"url":     config.URL,
 		"enabled": true,
+	}
+	if len(config.Headers) > 0 {
+		value["headers"] = config.Headers
+	}
+	return value
+}
+
+// devinMCPConfig maps the shared server config onto Devin CLI's schema, which
+// selects Streamable HTTP with "transport": "http" rather than a "type" field.
+func devinMCPConfig(config mcpServerConfig) any {
+	value := map[string]any{
+		"url":       config.URL,
+		"transport": "http",
 	}
 	if len(config.Headers) > 0 {
 		value["headers"] = config.Headers
@@ -872,6 +886,17 @@ func xdgConfigHome() string {
 		return ".config"
 	}
 	return filepath.Join(home, ".config")
+}
+
+// devinConfigHome is Devin CLI's user config directory: %APPDATA%\devin on
+// Windows, $XDG_CONFIG_HOME/devin (default ~/.config/devin) elsewhere.
+func devinConfigHome() string {
+	if runtime.GOOS == "windows" {
+		if dir, err := os.UserConfigDir(); err == nil {
+			return filepath.Join(dir, "devin")
+		}
+	}
+	return filepath.Join(xdgConfigHome(), "devin")
 }
 
 func mustGetwd() string {
