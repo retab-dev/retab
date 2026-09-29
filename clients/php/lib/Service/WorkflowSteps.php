@@ -33,6 +33,7 @@ class WorkflowSteps
      * @param string|null $before Step id cursor: return the page before this id (mutually exclusive with `after`).
      * @param string|null $after Step id cursor: return the page after this id (mutually exclusive with `before`).
      * @param int|null $limit Maximum number of steps to return per page (1-1000). Each step hydrates its handle payloads from the artifact store, so raise it deliberately for larger pages and use cursor pagination for the rest. Defaults to 20.
+     * @param bool|null $includeDownloadUrls When true, every file payload in `handle_outputs` also carries a signed `download_url` (valid 30 minutes) and its `expires_at`. Off by default so plain reads skip URL signing. Defaults to false.
      * @return \Retab\PaginatedResponse<\Retab\Resource\WorkflowRunStep>
      * @throws \Retab\Exception\RetabException
      */
@@ -46,6 +47,7 @@ class WorkflowSteps
         ?string $before = null,
         ?string $after = null,
         ?int $limit = null,
+        ?bool $includeDownloadUrls = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\PaginatedResponse {
         $query = array_filter([
@@ -58,6 +60,7 @@ class WorkflowSteps
             'before' => $before,
             'after' => $after,
             'limit' => $limit,
+            'include_download_urls' => $includeDownloadUrls,
         ], fn($v) => $v !== null);
         return $this->client->requestPage(
             method: 'GET',
@@ -76,16 +79,19 @@ class WorkflowSteps
      * Returns the same step shape as `GET /workflows/steps`.
      * @param string $stepId
      * @param string|null $runId Optional workflow run ID disambiguator.
+     * @param bool|null $includeDownloadUrls When true, every file payload in `handle_outputs` also carries a signed `download_url` (valid 30 minutes) and its `expires_at`. Off by default so plain reads skip URL signing. Defaults to false.
      * @return \Retab\Resource\WorkflowRunStep
      * @throws \Retab\Exception\RetabException
      */
     public function get(
         string $stepId,
         ?string $runId = null,
+        ?bool $includeDownloadUrls = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\WorkflowRunStep {
         $query = array_filter([
             'run_id' => $runId,
+            'include_download_urls' => $includeDownloadUrls,
         ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'GET',

@@ -25,6 +25,9 @@ namespace Retab
         /// <summary>Optional step lifecycle status filter. Repeat the query parameter for multiple values.</summary>
         public List<string>? Status { get; set; }
 
+        /// <summary>When true, every file payload in `handle_outputs` also carries a signed `download_url` (valid 30 minutes) and its `expires_at`. Off by default so plain reads skip URL signing.</summary>
+        public bool? IncludeDownloadUrls { get; set; }
+
     }
 
     /// <summary>Request options for <see cref="WorkflowStepsService.GetAsync"/>: Get Workflow Step</summary>
@@ -32,6 +35,9 @@ namespace Retab
     {
         /// <summary>Optional workflow run ID disambiguator.</summary>
         public string? RunId { get; set; }
+
+        /// <summary>When true, every file payload in `handle_outputs` also carries a signed `download_url` (valid 30 minutes) and its `expires_at`. Off by default so plain reads skip URL signing.</summary>
+        public bool? IncludeDownloadUrls { get; set; }
 
     }
 }

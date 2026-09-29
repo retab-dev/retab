@@ -17,7 +17,7 @@ class WorkflowStepsTest extends TestCase
     {
         $fixture = $this->loadFixture('list_workflow_run_step');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflows()->steps()->list(runId: 'test_value', workflowId: 'test_value', blockId: 'test_value', stepId: 'test_value', blockType: [], status: [], before: 'test_value', after: 'test_value', limit: 1);
+        $result = $client->workflows()->steps()->list(runId: 'test_value', workflowId: 'test_value', blockId: 'test_value', stepId: 'test_value', blockType: [], status: [], before: 'test_value', after: 'test_value', limit: 1, includeDownloadUrls: true);
         $this->assertInstanceOf(\Retab\PaginatedResponse::class, $result);
         $request = $this->getLastRequest();
         $this->assertSame('GET', $request->getMethod());
@@ -30,13 +30,14 @@ class WorkflowStepsTest extends TestCase
         $this->assertSame('test_value', $query['before']);
         $this->assertSame('test_value', $query['after']);
         $this->assertArrayHasKey('limit', $query);
+        $this->assertArrayHasKey('include_download_urls', $query);
     }
 
     public function testGet(): void
     {
         $fixture = $this->loadFixture('workflow_run_step');
         $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->workflows()->steps()->get('test_step_id', runId: 'test_value');
+        $result = $client->workflows()->steps()->get('test_step_id', runId: 'test_value', includeDownloadUrls: true);
         $this->assertInstanceOf(\Retab\Resource\WorkflowRunStep::class, $result);
         $this->assertSame($fixture['block_id'], $result->blockId);
         $this->assertIsArray($result->toArray());
@@ -45,6 +46,7 @@ class WorkflowStepsTest extends TestCase
         $this->assertStringEndsWith('v1/workflows/steps/test_step_id', $request->getUri()->getPath());
         parse_str($request->getUri()->getQuery(), $query);
         $this->assertSame('test_value', $query['run_id']);
+        $this->assertArrayHasKey('include_download_urls', $query);
     }
 
     public function testPaginationBoundary(): void

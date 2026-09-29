@@ -18,6 +18,10 @@ readonly class PublicHandlePayload implements \JsonSerializable
         public ?FileRef $document = null,
         /** For JSON handles: structured data */
         public mixed $data = null,
+        /** For file handles in `handle_outputs`, when the step was read with `include_download_urls=true`: a short-lived signed URL for the document. Use `document.id` with `GET /v1/files/{file_id}/download-link` for a fresh link after it expires. */
+        public ?string $downloadUrl = null,
+        /** When `download_url` stops working. */
+        public ?\DateTimeImmutable $expiresAt = null,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -34,6 +38,8 @@ readonly class PublicHandlePayload implements \JsonSerializable
             type: PublicHandlePayloadType::from($data['type']),
             document: isset($data['document']) ? FileRef::fromArray($data['document']) : null,
             data: $data['data'] ?? null,
+            downloadUrl: $data['download_url'] ?? null,
+            expiresAt: isset($data['expires_at']) ? new \DateTimeImmutable($data['expires_at']) : null,
         );
     }
 
@@ -44,6 +50,8 @@ readonly class PublicHandlePayload implements \JsonSerializable
             'type' => $this->type->value,
             'document' => $this->document?->toArray(),
             'data' => $this->data,
+            'download_url' => $this->downloadUrl,
+            'expires_at' => $this->expiresAt?->format(\DateTimeInterface::RFC3339_EXTENDED),
         ];
     }
 }

@@ -5,5 +5,7 @@
     "filename": "Test",
     "mime_type": "test_mime_type"
   },
-  "data": {}
+  "data": {},
+  "download_url": "https://example.com",
+  "expires_at": "2023-01-01T00:00:00.000Z"
 }

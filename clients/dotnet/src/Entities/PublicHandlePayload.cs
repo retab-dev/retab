@@ -1,5 +1,6 @@
 namespace Retab
 {
+    using System;
     using Newtonsoft.Json;
     using STJS = System.Text.Json.Serialization;
 
@@ -17,6 +18,12 @@ namespace Retab
 
         /// <summary>For JSON handles: structured data</summary>
         public object? Data { get; set; }
+
+        /// <summary>For file handles in `handle_outputs`, when the step was read with `include_download_urls=true`: a short-lived signed URL for the document. Use `document.id` with `GET /v1/files/{file_id}/download-link` for a fresh link after it expires.</summary>
+        public string? DownloadUrl { get; set; }
+
+        /// <summary>When `download_url` stops working.</summary>
+        public DateTimeOffset? ExpiresAt { get; set; }
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a
