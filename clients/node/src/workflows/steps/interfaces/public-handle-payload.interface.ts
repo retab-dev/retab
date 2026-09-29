@@ -24,18 +24,26 @@ export interface PublicHandlePayload {
    * @default null
    */
   data?: unknown;
+  /** For file handles in `handle_outputs`, when the step was read with `include_download_urls=true`: a short-lived signed URL for the document. Use `document.id` with `GET /v1/files/{file_id}/download-link` for a fresh link after it expires. */
+  downloadUrl?: string;
+  /** When `download_url` stops working. */
+  expiresAt?: Date;
 }
 
 export interface PublicHandlePayloadResponse {
   type: PublicHandlePayloadType;
   document?: FileRefResponse | null;
   data?: unknown;
+  download_url?: string;
+  expires_at?: string;
 }
 
 export const ZPublicHandlePayload = z.object({
   type: ZPublicHandlePayloadType,
   document: ZFileRef.nullable().optional(),
   data: z.unknown().optional(),
+  downloadUrl: z.string().optional(),
+  expiresAt: z.coerce.date().optional(),
 }) as z.ZodType<PublicHandlePayload>;
 
 export function deserializePublicHandlePayload(
@@ -50,6 +58,9 @@ export function deserializePublicHandlePayload(
           ? wire['document']
           : deserializeFileRef(wire['document']),
     data: wire['data'],
+    downloadUrl: wire['download_url'],
+    expiresAt:
+      wire['expires_at'] == null ? (wire['expires_at'] as undefined) : new Date(wire['expires_at']),
   };
 }
 
@@ -65,5 +76,10 @@ export function serializePublicHandlePayload(
           ? domain['document']
           : serializeFileRef(domain['document']),
     data: domain['data'],
+    download_url: domain['downloadUrl'],
+    expires_at:
+      domain['expiresAt'] == null
+        ? (domain['expiresAt'] as undefined)
+        : domain['expiresAt'].toISOString(),
   };
 }

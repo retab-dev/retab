@@ -27,6 +27,18 @@ module Retab
     sig { params(value: T.nilable(T.untyped)).returns(T.nilable(T.untyped)) }
     def data=(value); end
 
+    sig { returns(T.nilable(String)) }
+    def download_url; end
+
+    sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
+    def download_url=(value); end
+
+    sig { returns(T.nilable(String)) }
+    def expires_at; end
+
+    sig { params(value: T.nilable(String)).returns(T.nilable(String)) }
+    def expires_at=(value); end
+
     sig { returns(T::Hash[Symbol, T.untyped]) }
     def to_h; end
 

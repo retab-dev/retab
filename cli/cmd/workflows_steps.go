@@ -34,7 +34,11 @@ full input/output payload of one step use ` + "`steps get`" + `.
 
 Paginate by passing the cursor from a previous response's
 ` + "`list_metadata`" + `: ` + "`--after`" + ` for the next page,
-` + "`--before`" + ` for the previous one. The two are mutually exclusive.`,
+` + "`--before`" + ` for the previous one. The two are mutually exclusive.
+
+Pass ` + "`--include-download-urls`" + ` to attach a signed ` + "`download_url`" + `
+(valid 30 minutes) and its ` + "`expires_at`" + ` to every file in
+` + "`handle_outputs`" + ` — for example each PDF a split block produced.`,
 	Example: `  # List steps
   retab workflows steps list run_xyz789
 
@@ -47,7 +51,12 @@ Paginate by passing the cursor from a previous response's
 
   # Find the first failed step
   retab workflows steps list run_xyz789 \
-    | jq '.data[] | select(.lifecycle.status == "error") | .block_id' | head -1`,
+    | jq '.data[] | select(.lifecycle.status == "error") | .block_id' | head -1
+
+  # Download link for every document a split block produced
+  retab workflows steps list run_xyz789 --include-download-urls \
+    | jq -r '.data[] | select(.block_type == "split") | .handle_outputs | to_entries[]
+        | select(.value.type == "file") | "\(.key)\t\(.value.download_url)"'`,
 	Args: cobra.RangeArgs(1, 2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		if err := validateBeforeAfterMutex(cmd); err != nil {
@@ -98,7 +107,19 @@ func workflowStepsListParams(cmd *cobra.Command, runID string) (*retab.WorkflowS
 			params.Limit = ptr(parsed)
 		}
 	}
+	params.IncludeDownloadURLs = includeDownloadURLsFlag(cmd)
 	return params, nil
+}
+
+// includeDownloadURLsFlag returns the --include-download-urls value when the
+// flag was passed, and nil otherwise so the request keeps the server default.
+func includeDownloadURLsFlag(cmd *cobra.Command) *bool {
+	f := cmd.Flags().Lookup("include-download-urls")
+	if f == nil || !f.Changed {
+		return nil
+	}
+	include, _ := cmd.Flags().GetBool("include-download-urls")
+	return &include
 }
 
 var workflowsStepsGetCmd = &cobra.Command{
@@ -114,13 +135,24 @@ correlate against the step's block config.
 
 A step id is ` + "`<run-id>_<block-id>`" + ` — take it from the
 ` + "`step_id`" + ` field of ` + "`workflows steps list <run-id>`" + `
-rather than assembling it by hand.`,
+rather than assembling it by hand.
+
+Pass ` + "`--include-download-urls`" + ` to attach a signed ` + "`download_url`" + `
+(valid 30 minutes) and its ` + "`expires_at`" + ` to every file in
+` + "`handle_outputs`" + `. After it expires, ` + "`retab files download-link <document.id>`" + `
+mints a fresh one.`,
 	Example: `  # Pull the full record for a single step
   retab workflows steps get run_xyz789_block_extract1
 
   # Save the input payload for offline replay
   retab workflows steps get run_xyz789_block_extract1 \
-    | jq '.handle_inputs' > inputs.json`,
+    | jq '.handle_inputs' > inputs.json
+
+  # Download every PDF a split step produced
+  retab workflows steps get run_xyz789_block_split1 --include-download-urls \
+    | jq -r '.handle_outputs | to_entries[] | select(.value.type == "file")
+        | "\(.key) \(.value.download_url)"' \
+    | while read -r name url; do curl -sSo "${name#output-file-}.pdf" "$url"; done`,
 	Args: cobra.RangeArgs(1, 2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		stepID, err := scopedResourceID(args, "step id")
@@ -131,9 +163,13 @@ rather than assembling it by hand.`,
 		if err != nil {
 			return err
 		}
+		var params *retab.WorkflowStepsGetParams
+		if include := includeDownloadURLsFlag(cmd); include != nil {
+			params = &retab.WorkflowStepsGetParams{IncludeDownloadURLs: include}
+		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Steps.Get(ctx, stepID, nil)
+		result, err := client.Workflows.Steps.Get(ctx, stepID, params)
 		if err != nil {
 			return err
 		}
@@ -147,6 +183,8 @@ func init() {
 	// Mutex enforced inside RunE via validateBeforeAfterMutex (concise
 	// handwritten message; see workflowsListCmd for the rationale).
 	workflowsStepsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 1000}, "limit", "max items to return (1-1000)")
+	workflowsStepsListCmd.Flags().Bool("include-download-urls", false, "attach a signed download_url (valid 30 minutes) to every file in handle_outputs")
+	workflowsStepsGetCmd.Flags().Bool("include-download-urls", false, "attach a signed download_url (valid 30 minutes) to every file in handle_outputs")
 
 	workflowsStepsCmd.AddCommand(workflowsStepsListCmd, workflowsStepsGetCmd)
 	workflowsCmd.AddCommand(workflowsStepsCmd)

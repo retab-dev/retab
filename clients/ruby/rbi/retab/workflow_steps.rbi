@@ -20,19 +20,21 @@ module Retab
         before: T.nilable(String),
         after: T.nilable(String),
         limit: T.nilable(Integer),
+        include_download_urls: T.nilable(T::Boolean),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::PaginatedList[Retab::WorkflowRunStep])
     end
-    def list(run_id:, workflow_id:, block_id:, step_id:, block_type:, status:, before:, after:, limit:, request_options:); end
+    def list(run_id:, workflow_id:, block_id:, step_id:, block_type:, status:, before:, after:, limit:, include_download_urls:, request_options:); end
 
     sig do
       params(
         step_id: String,
         run_id: T.nilable(String),
+        include_download_urls: T.nilable(T::Boolean),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::WorkflowRunStep)
     end
-    def get(step_id:, run_id:, request_options:); end
+    def get(step_id:, run_id:, include_download_urls:, request_options:); end
 
   end
 end

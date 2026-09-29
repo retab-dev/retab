@@ -24,6 +24,7 @@ class WorkflowStepsMixin:
         before: str | None = None,
         after: str | None = None,
         limit: int | None = 20,
+        include_download_urls: bool | None = False,
         **extra_params: Any,
     ) -> PreparedRequest:
         """List Workflow Run Steps List steps with status and artifact summaries. Sorted by `started_at` ascending with `step_id` as the tiebreaker (the same compound key the underlying index uses). Pass `after` for the next page, `before` for the previous page — mutually exclusive. `run_id` is optional; when omitted the list is scoped to the caller's organization."""
@@ -37,6 +38,7 @@ class WorkflowStepsMixin:
             "before": before,
             "after": after,
             "limit": limit,
+            "include_download_urls": include_download_urls,
         }
         if extra_params:
             params.update(extra_params)
@@ -44,10 +46,11 @@ class WorkflowStepsMixin:
         data = None
         return PreparedRequest(method="GET", url="/v1/workflows/steps", params=params or None, data=data)
 
-    def prepare_get(self, step_id: str, run_id: str | None = None, **extra_params: Any) -> PreparedRequest:
+    def prepare_get(self, step_id: str, run_id: str | None = None, include_download_urls: bool | None = False, **extra_params: Any) -> PreparedRequest:
         """Get Workflow Step Get one step by its step id. Returns the same step shape as `GET /workflows/steps`."""
         params: dict[str, Any] = {
             "run_id": run_id,
+            "include_download_urls": include_download_urls,
         }
         if extra_params:
             params.update(extra_params)
@@ -70,6 +73,7 @@ class WorkflowSteps(SyncAPIResource, WorkflowStepsMixin):
         before: str | None = None,
         after: str | None = None,
         limit: int | None = 20,
+        include_download_urls: bool | None = False,
         **extra_params: Any,
     ) -> PaginatedList[WorkflowRunStep]:
         """List Workflow Run Steps List steps with status and artifact summaries. Sorted by `started_at` ascending with `step_id` as the tiebreaker (the same compound key the underlying index uses). Pass `after` for the next page, `before` for the previous page — mutually exclusive. `run_id` is optional; when omitted the list is scoped to the caller's organization."""
@@ -83,13 +87,14 @@ class WorkflowSteps(SyncAPIResource, WorkflowStepsMixin):
             before=before,
             after=after,
             limit=limit,
+            include_download_urls=include_download_urls,
             **extra_params,
         )
         return self.request_page(prepared_request, model=WorkflowRunStep)
 
-    def get(self, step_id: str, run_id: str | None = None, **extra_params: Any) -> WorkflowRunStep:
+    def get(self, step_id: str, run_id: str | None = None, include_download_urls: bool | None = False, **extra_params: Any) -> WorkflowRunStep:
         """Get Workflow Step Get one step by its step id. Returns the same step shape as `GET /workflows/steps`."""
-        prepared_request = self.prepare_get(step_id, run_id=run_id, **extra_params)
+        prepared_request = self.prepare_get(step_id, run_id=run_id, include_download_urls=include_download_urls, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return WorkflowRunStep.model_validate(response)
 
@@ -108,6 +113,7 @@ class AsyncWorkflowSteps(AsyncAPIResource, WorkflowStepsMixin):
         before: str | None = None,
         after: str | None = None,
         limit: int | None = 20,
+        include_download_urls: bool | None = False,
         **extra_params: Any,
     ) -> AsyncPaginatedList[WorkflowRunStep]:
         """List Workflow Run Steps List steps with status and artifact summaries. Sorted by `started_at` ascending with `step_id` as the tiebreaker (the same compound key the underlying index uses). Pass `after` for the next page, `before` for the previous page — mutually exclusive. `run_id` is optional; when omitted the list is scoped to the caller's organization."""
@@ -121,13 +127,14 @@ class AsyncWorkflowSteps(AsyncAPIResource, WorkflowStepsMixin):
             before=before,
             after=after,
             limit=limit,
+            include_download_urls=include_download_urls,
             **extra_params,
         )
         return await self.request_page(prepared_request, model=WorkflowRunStep)
 
-    async def get(self, step_id: str, run_id: str | None = None, **extra_params: Any) -> WorkflowRunStep:
+    async def get(self, step_id: str, run_id: str | None = None, include_download_urls: bool | None = False, **extra_params: Any) -> WorkflowRunStep:
         """Get Workflow Step Get one step by its step id. Returns the same step shape as `GET /workflows/steps`."""
-        prepared_request = self.prepare_get(step_id, run_id=run_id, **extra_params)
+        prepared_request = self.prepare_get(step_id, run_id=run_id, include_download_urls=include_download_urls, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return WorkflowRunStep.model_validate(response)
 

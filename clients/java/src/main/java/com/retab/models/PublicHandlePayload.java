@@ -6,21 +6,28 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.retab.types.PublicHandlePayloadType;
+import java.time.OffsetDateTime;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class PublicHandlePayload {
   private final PublicHandlePayloadType type;
   private final FileRef document;
   private final Object data;
+  private final String downloadUrl;
+  private final OffsetDateTime expiresAt;
 
   @JsonCreator
   public PublicHandlePayload(
       @JsonProperty(value = "type", required = true) PublicHandlePayloadType type,
       @JsonProperty(value = "document", required = false) FileRef document,
-      @JsonProperty(value = "data", required = false) Object data) {
+      @JsonProperty(value = "data", required = false) Object data,
+      @JsonProperty(value = "download_url", required = false) String downloadUrl,
+      @JsonProperty(value = "expires_at", required = false) OffsetDateTime expiresAt) {
     this.type = type;
     this.document = document;
     this.data = data;
+    this.downloadUrl = downloadUrl;
+    this.expiresAt = expiresAt;
   }
 
   @JsonProperty("type")
@@ -36,5 +43,15 @@ public final class PublicHandlePayload {
   @JsonProperty("data")
   public Object getData() {
     return data;
+  }
+
+  @JsonProperty("download_url")
+  public String getDownloadUrl() {
+    return downloadUrl;
+  }
+
+  @JsonProperty("expires_at")
+  public OffsetDateTime getExpiresAt() {
+    return expiresAt;
   }
 }

@@ -1617,6 +1617,10 @@ type PublicHandlePayload struct {
 	Document *FileRef `json:"document,omitempty"`
 	// Data is for JSON handles: structured data
 	Data *interface{} `json:"data,omitempty"`
+	// DownloadURL is for file handles in `handle_outputs`, when the step was read with `include_download_urls=true`: a short-lived signed URL for the document. Use `document.id` with `GET /v1/files/{file_id}/download-link` for a fresh link after it expires.
+	DownloadURL *string `json:"download_url,omitempty"`
+	// ExpiresAt is when `download_url` stops working.
+	ExpiresAt *time.Time `json:"expires_at,omitempty"`
 }
 
 // PublishWorkflowRequest optional request body for publishing a workflow.

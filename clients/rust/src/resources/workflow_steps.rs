@@ -43,6 +43,11 @@ pub struct ListParams {
     /// Defaults to `20`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub limit: Option<i64>,
+    /// When true, every file payload in `handle_outputs` also carries a signed `download_url` (valid 30 minutes) and its `expires_at`. Off by default so plain reads skip URL signing.
+    ///
+    /// Defaults to `false`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub include_download_urls: Option<bool>,
 }
 
 impl Default for ListParams {
@@ -58,15 +63,31 @@ impl Default for ListParams {
             before: Default::default(),
             after: Default::default(),
             limit: Some(20),
+            include_download_urls: Some(false),
         }
     }
 }
 
-#[derive(Debug, Clone, Default, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct GetParams {
     /// Optional workflow run ID disambiguator.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub run_id: Option<String>,
+    /// When true, every file payload in `handle_outputs` also carries a signed `download_url` (valid 30 minutes) and its `expires_at`. Off by default so plain reads skip URL signing.
+    ///
+    /// Defaults to `false`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub include_download_urls: Option<bool>,
+}
+
+impl Default for GetParams {
+    #[allow(deprecated)]
+    fn default() -> Self {
+        Self {
+            run_id: Default::default(),
+            include_download_urls: Some(false),
+        }
+    }
 }
 
 impl<'a> WorkflowStepsApi<'a> {

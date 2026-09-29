@@ -27,6 +27,9 @@ type WorkflowStepsListParams struct {
 	BlockType []string `url:"block_type,omitempty" json:"-"`
 	// Status is optional step lifecycle status filter. Repeat the query parameter for multiple values.
 	Status []string `url:"status,omitempty" json:"-"`
+	// IncludeDownloadURLs is when true, every file payload in `handle_outputs` also carries a signed `download_url` (valid 30 minutes) and its `expires_at`. Off by default so plain reads skip URL signing.
+	// Defaults to false.
+	IncludeDownloadURLs *bool `url:"include_download_urls,omitempty" json:"-"`
 }
 
 // List workflow Run Steps
@@ -44,6 +47,9 @@ func (s *WorkflowStepService) List(ctx context.Context, params *WorkflowStepsLis
 type WorkflowStepsGetParams struct {
 	// RunID is optional workflow run ID disambiguator.
 	RunID *string `url:"run_id,omitempty" json:"-"`
+	// IncludeDownloadURLs is when true, every file payload in `handle_outputs` also carries a signed `download_url` (valid 30 minutes) and its `expires_at`. Off by default so plain reads skip URL signing.
+	// Defaults to false.
+	IncludeDownloadURLs *bool `url:"include_download_urls,omitempty" json:"-"`
 }
 
 // Get workflow Step

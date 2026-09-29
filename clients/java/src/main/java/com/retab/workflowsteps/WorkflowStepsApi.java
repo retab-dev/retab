@@ -26,7 +26,7 @@ public final class WorkflowStepsApi {
   }
 
   public List<WorkflowRunStep> list() throws IOException, InterruptedException {
-    return list(null, null, null, null, null, null, null, null, null);
+    return list(null, null, null, null, null, null, null, null, null, null);
   }
 
   public List<WorkflowRunStep> list(
@@ -38,7 +38,8 @@ public final class WorkflowStepsApi {
       List<String> status,
       String before,
       String after,
-      Long limit)
+      Long limit,
+      Boolean includeDownloadUrls)
       throws IOException, InterruptedException {
     String path = "/v1/workflows/steps";
     StringBuilder query = new StringBuilder();
@@ -51,6 +52,7 @@ public final class WorkflowStepsApi {
     appendQueryParam(query, "before", before);
     appendQueryParam(query, "after", after);
     appendQueryParam(query, "limit", limit);
+    appendQueryParam(query, "include_download_urls", includeDownloadUrls);
     URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
     HttpRequest.Builder requestBuilder =
@@ -78,13 +80,15 @@ public final class WorkflowStepsApi {
   }
 
   public WorkflowRunStep get(String stepId) throws IOException, InterruptedException {
-    return get(stepId, null);
+    return get(stepId, null, null);
   }
 
-  public WorkflowRunStep get(String stepId, String runId) throws IOException, InterruptedException {
+  public WorkflowRunStep get(String stepId, String runId, Boolean includeDownloadUrls)
+      throws IOException, InterruptedException {
     String path = "/v1/workflows/steps/" + encodePathSegment(stepId);
     StringBuilder query = new StringBuilder();
     appendQueryParam(query, "run_id", runId);
+    appendQueryParam(query, "include_download_urls", includeDownloadUrls);
     URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
     HttpRequest.Builder requestBuilder =

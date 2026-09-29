@@ -20,6 +20,7 @@ module Retab
     # @param before [String, nil] Step id cursor: return the page before this id (mutually exclusive with `after`).
     # @param after [String, nil] Step id cursor: return the page after this id (mutually exclusive with `before`).
     # @param limit [Integer, nil] Maximum number of steps to return per page (1-1000). Each step hydrates its handle payloads from the artifact store, so raise it deliberately for larger pages and use cursor pagination for the rest.
+    # @param include_download_urls [Boolean, nil] When true, every file payload in `handle_outputs` also carries a signed `download_url` (valid 30 minutes) and its `expires_at`. Off by default so plain reads skip URL signing.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::PaginatedList<Retab::WorkflowRunStep>]
     def list(
@@ -32,6 +33,7 @@ module Retab
       before: nil,
       after: nil,
       limit: 20,
+      include_download_urls: false,
       request_options: {}
     )
       params = {
@@ -43,7 +45,8 @@ module Retab
         "status" => status,
         "before" => before,
         "after" => after,
-        "limit" => limit
+        "limit" => limit,
+        "include_download_urls" => include_download_urls
       }.compact
       response = @client.request(
         method: :get,
@@ -63,6 +66,7 @@ module Retab
           before: before,
           after: cursor,
           limit: limit,
+          include_download_urls: include_download_urls,
           request_options: request_options
         )
       }
@@ -77,7 +81,8 @@ module Retab
           block_type: block_type,
           status: status,
           before: before,
-          limit: limit
+          limit: limit,
+          include_download_urls: include_download_urls
         },
         fetch_next: fetch_next
       )
@@ -86,15 +91,18 @@ module Retab
     # Get Workflow Step
     # @param step_id [String]
     # @param run_id [String, nil] Optional workflow run ID disambiguator.
+    # @param include_download_urls [Boolean, nil] When true, every file payload in `handle_outputs` also carries a signed `download_url` (valid 30 minutes) and its `expires_at`. Off by default so plain reads skip URL signing.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::WorkflowRunStep]
     def get(
       step_id:,
       run_id: nil,
+      include_download_urls: false,
       request_options: {}
     )
       params = {
-        "run_id" => run_id
+        "run_id" => run_id,
+        "include_download_urls" => include_download_urls
       }.compact
       response = @client.request(
         method: :get,

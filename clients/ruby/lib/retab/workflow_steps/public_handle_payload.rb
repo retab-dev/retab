@@ -8,13 +8,17 @@ module Retab
     HASH_ATTRS = {
       type: :type,
       document: :document,
-      data: :data
+      data: :data,
+      download_url: :download_url,
+      expires_at: :expires_at
     }.freeze
 
     attr_accessor(
       :type,
       :document,
-      :data
+      :data,
+      :download_url,
+      :expires_at
     )
 
     def initialize(json)
@@ -23,6 +27,8 @@ module Retab
       @type = hash[:type]
       @document = hash[:document] ? Retab::FileRef.new(hash[:document]) : nil
       @data = hash[:data]
+      @download_url = hash[:download_url]
+      @expires_at = hash[:expires_at]
     end
   end
 end

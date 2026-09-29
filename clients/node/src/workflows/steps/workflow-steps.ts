@@ -19,6 +19,7 @@ export class WorkflowSteps {
     stepId?: string | null | undefined;
     blockType?: string[] | null | undefined;
     status?: string[] | null | undefined;
+    includeDownloadUrls?: boolean | undefined;
     limit?: number;
     before?: string;
     after?: string;
@@ -34,6 +35,7 @@ export class WorkflowSteps {
         step_id: options?.stepId,
         block_type: options?.blockType,
         status: options?.status,
+        include_download_urls: options?.includeDownloadUrls,
         limit: options?.limit,
         before: options?.before,
         after: options?.after,
@@ -46,12 +48,12 @@ export class WorkflowSteps {
   /** Get Workflow Step */
   async get(
     stepId: string,
-    options?: { runId?: string | null | undefined }
+    options?: { runId?: string | null | undefined; includeDownloadUrls?: boolean | undefined }
   ): Promise<WorkflowRunStep> {
     const __wire = await this.client.request<WorkflowRunStepResponse>({
       method: 'GET',
       path: `/v1/workflows/steps/${stepId}`,
-      query: { run_id: options?.runId },
+      query: { run_id: options?.runId, include_download_urls: options?.includeDownloadUrls },
       body: undefined,
     });
     return deserializeWorkflowRunStep(__wire);

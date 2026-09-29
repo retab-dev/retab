@@ -2508,7 +2508,9 @@ class ModelRoundTripTest < Minitest::Test
     fixture = {
       "type" => "stub",
       "document" => nil,
-      "data" => nil
+      "data" => nil,
+      "download_url" => "stub",
+      "expires_at" => "stub"
     }
     model = Retab::PublicHandlePayload.new(fixture.to_json)
     json = model.to_h

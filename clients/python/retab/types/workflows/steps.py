@@ -116,6 +116,11 @@ class PublicHandlePayload(BaseModel):
     type: PublicHandlePayloadType = Field(..., description="Type of payload")
     document: FileRef | None = Field(default=None, description="For file handles: document reference")
     data: Any | None = Field(default=None, description="For JSON handles: structured data")
+    download_url: str | None = Field(
+        default=None,
+        description="For file handles in `handle_outputs`, when the step was read with `include_download_urls=true`: a short-lived signed URL for the document. Use `document.id` with `GET /v1/files/{file_id}/download-link` for a fresh link after it expires.",
+    )
+    expires_at: datetime.datetime | None = Field(default=None, description="When `download_url` stops working.")
 
 
 class QueuedStepLifecycle(BaseModel):

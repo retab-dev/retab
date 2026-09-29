@@ -17,6 +17,12 @@ pub struct PublicHandlePayload {
     /// For JSON handles: structured data
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub data: Option<serde_json::Value>,
+    /// For file handles in `handle_outputs`, when the step was read with `include_download_urls=true`: a short-lived signed URL for the document. Use `document.id` with `GET /v1/files/{file_id}/download-link` for a fresh link after it expires.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub download_url: Option<String>,
+    /// When `download_url` stops working.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub expires_at: Option<String>,
 }
 impl PublicHandlePayload {
     /// Construct a new `PublicHandlePayload` with the required fields set.
@@ -26,6 +32,8 @@ impl PublicHandlePayload {
             type_,
             document: Default::default(),
             data: Default::default(),
+            download_url: Default::default(),
+            expires_at: Default::default(),
         }
     }
 }
