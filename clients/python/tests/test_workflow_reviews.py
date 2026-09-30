@@ -169,6 +169,7 @@ def test_prepare_list_builds_get_with_hard_cutover_filters() -> None:
     assert request.url == "/v1/workflows/reviews"
     assert request.params == {
         "limit": 10,
+        "order": "asc",
         "decision_status": "decided",
         "workflow_id": "wf_1",
         "run_id": "run_1",

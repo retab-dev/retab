@@ -115,7 +115,7 @@ class ExtractionsMixin:
         bust_cache: bool = False,
         stream: bool = False,
         background: bool = False,
-        deep_extraction: bool = False,
+        deep_extraction: bool | None = None,
         **extra_params: Any,
     ) -> PreparedRequest:
         """Create Extraction Run a structured extraction on a document. Extracts structured data from the `document` according to the supplied `json_schema`, using the requested `model`. Returns the extraction with its `output`, consensus details, and usage on `201`. When `stream` is `true`, partial results are streamed back as they are produced."""
@@ -154,7 +154,7 @@ class ExtractionsMixin:
         bust_cache: bool = False,
         stream: bool = False,
         background: bool = False,
-        deep_extraction: bool = False,
+        deep_extraction: bool | None = None,
         **extra_params: Any,
     ) -> PreparedRequest:
         """Create Extraction Stream Run a structured extraction on a document and stream partial results as they are produced."""
@@ -269,7 +269,7 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
         bust_cache: bool = False,
         stream: bool = False,
         background: bool = False,
-        deep_extraction: bool = False,
+        deep_extraction: bool | None = None,
         **extra_params: Any,
     ) -> Extraction:
         """Create Extraction Run a structured extraction on a document. Extracts structured data from the `document` according to the supplied `json_schema`, using the requested `model`. Returns the extraction with its `output`, consensus details, and usage on `201`. When `stream` is `true`, partial results are streamed back as they are produced."""
@@ -305,7 +305,7 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
         bust_cache: bool = False,
         stream: bool = False,
         background: bool = False,
-        deep_extraction: bool = False,
+        deep_extraction: bool | None = None,
         **extra_params: Any,
     ) -> Any:
         """Create Extraction Stream Run a structured extraction on a document and stream partial results as they are produced."""
@@ -403,7 +403,7 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
         bust_cache: bool = False,
         stream: bool = False,
         background: bool = False,
-        deep_extraction: bool = False,
+        deep_extraction: bool | None = None,
         **extra_params: Any,
     ) -> Extraction:
         """Create Extraction Run a structured extraction on a document. Extracts structured data from the `document` according to the supplied `json_schema`, using the requested `model`. Returns the extraction with its `output`, consensus details, and usage on `201`. When `stream` is `true`, partial results are streamed back as they are produced."""
@@ -439,7 +439,7 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
         bust_cache: bool = False,
         stream: bool = False,
         background: bool = False,
-        deep_extraction: bool = False,
+        deep_extraction: bool | None = None,
         **extra_params: Any,
     ) -> Any:
         """Create Extraction Stream Run a structured extraction on a document and stream partial results as they are produced."""

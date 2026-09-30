@@ -50,7 +50,7 @@ class ExtractionRequest(BaseModel):
         default=False,
         description="If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.",
     )
-    deep_extraction: bool | None = Field(default=False, description="Optimizes for accuracy over latency in documents with very large arrays.")
+    deep_extraction: bool | None = Field(default=None, description="Optimizes for accuracy over latency in documents with very large arrays.")
 
 
 class Extraction(BaseModel):
