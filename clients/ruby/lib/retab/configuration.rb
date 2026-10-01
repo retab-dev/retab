@@ -18,7 +18,7 @@ module Retab
       @api_host = api_host || base_url || DEFAULT_API_HOST
       @timeout = timeout || 60
       @max_retries = max_retries || 3
-      @user_agent = user_agent || "retab-ruby/#{Retab::VERSION rescue "0.1.0"}"
+      @user_agent = user_agent || "retab-ruby/#{Retab::VERSION rescue "0.1.13"}"
     end
   end
 end
