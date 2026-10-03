@@ -18,6 +18,8 @@ class Usage
 
     /**
      * List Usage Blocks
+     *
+     * One row per workflow block with its credits, pages, runs and executions. An extract block's `execution_count` and `status_counts` include the cited sources pass of each extraction it made in an organization that uses cited sources (billed once per extraction; see Pricing), and its `credits` include their cost; its `page_count` counts each document once.
      * @param int|null $limit Maximum number of block rows to return. Defaults to 20.
      * @param \Retab\Resource\EditsOrder $order Sort direction on block id. Defaults to "desc".
      * @param string|null $before Return blocks before this cursor (opaque token from a prior page's list_metadata).
@@ -73,7 +75,7 @@ class Usage
      * @param string|null $userId Filter to executions triggered by a single user id (the user_id returned under triggered_by).
      * @param string|null $runId Filter to a single workflow run id (origin run).
      * @param string|null $blockId Filter to a single workflow block id (origin block).
-     * @param string|null $operation Filter by operation: extraction, classify, split, parse, edit, partition, schema_generation, or consensus. The stored-kind aliases extract and classification are also accepted. An unknown value is rejected with 422.
+     * @param string|null $operation Filter by operation: extraction, classify, split, parse, edit, partition, schema_generation, consensus, or cited_sources. The stored-kind aliases extract, classification and cite are also accepted. An unknown value is rejected with 422.
      * @param string|null $status Filter by execution lifecycle status: created, running, completed, failed, or canceled. Note the single-l spelling: a primitive execution is canceled, whereas a workflow run's status is cancelled. An unknown value is rejected with 422.
      * @param string|null $metadata Filter by metadata equality: a JSON object of string key/value pairs (e.g. {"tenant":"acme"}). Pairs AND together.
      * @param string|null $fromDate Inclusive created_at lower bound (YYYY-MM-DD, UTC).

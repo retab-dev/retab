@@ -12,8 +12,8 @@ from retab._resource import AsyncAPIResource, SyncAPIResource
 from retab.types.standards import PreparedRequest
 from retab.types.pagination import AsyncPaginatedList, PaginatedList, PaginationOrder
 from retab.utils.mime import prepare_mime_document
-from retab.types.classifications import ExtractionsStatus
-from retab.types.extractions import Extraction, ExtractionRequest, SourcesResponse
+from retab.types.classifications import ExtractionsMode, ExtractionsStatus
+from retab.types.extractions import CreateSourcesRequest, CreateSourcesRequestMode, Extraction, ExtractionRequest, SourceOptions, SourcesResponse
 from retab.types.mime import FileRef, MIMEData
 
 
@@ -116,6 +116,7 @@ class ExtractionsMixin:
         stream: bool = False,
         background: bool = False,
         deep_extraction: bool | None = None,
+        sources: SourceOptions | None = None,
         **extra_params: Any,
     ) -> PreparedRequest:
         """Create Extraction Run a structured extraction on a document. Extracts structured data from the `document` according to the supplied `json_schema`, using the requested `model`. Returns the extraction with its `output`, consensus details, and usage on `201`. When `stream` is `true`, partial results are streamed back as they are produced."""
@@ -138,6 +139,7 @@ class ExtractionsMixin:
             stream=cast(Any, stream),
             background=cast(Any, background),
             deep_extraction=cast(Any, deep_extraction),
+            sources=cast(Any, sources),
         )
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/extractions", params=params or None, data=data)
@@ -155,6 +157,7 @@ class ExtractionsMixin:
         stream: bool = False,
         background: bool = False,
         deep_extraction: bool | None = None,
+        sources: SourceOptions | None = None,
         **extra_params: Any,
     ) -> PreparedRequest:
         """Create Extraction Stream Run a structured extraction on a document and stream partial results as they are produced."""
@@ -177,6 +180,7 @@ class ExtractionsMixin:
             stream=cast(Any, stream),
             background=cast(Any, background),
             deep_extraction=cast(Any, deep_extraction),
+            sources=cast(Any, sources),
         )
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/extractions/stream", params=params or None, data=data)
@@ -210,14 +214,35 @@ class ExtractionsMixin:
         data = None
         return PreparedRequest(method="POST", url=f"/v1/extractions/{extraction_id}/cancel", params=params or None, data=data)
 
-    def prepare_sources(self, extraction_id: str, **extra_params: Any) -> PreparedRequest:
+    def prepare_sources(self, extraction_id: str, mode: ExtractionsMode | None = None, job_id: str | None = None, **extra_params: Any) -> PreparedRequest:
         """Get Extraction Sources Return the extraction result enriched with per-leaf source provenance. Each extracted leaf value is wrapped as {value, source} where source contains citation content, surrounding context, and a format-specific anchor (bbox for PDFs, cell ref for spreadsheets, text span for plain text, etc.)."""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+            "mode": mode,
+            "job_id": job_id,
+        }
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
         data = None
         return PreparedRequest(method="GET", url=f"/v1/extractions/{extraction_id}/sources", params=params or None, data=data)
+
+    def prepare_create_extraction_source(
+        self,
+        extraction_id: str,
+        background: bool = False,
+        job_id: str | None = None,
+        mode: CreateSourcesRequestMode = cast(CreateSourcesRequestMode, "located"),
+        retry: bool | None = None,
+        **extra_params: Any,
+    ) -> PreparedRequest:
+        """Create Extraction Sources Create or join a durable sources computation. Located finds printed answers; cited also seeks supporting inputs. Background requests return immediately; synchronous requests wait up to 20 seconds before returning 202 with a version-pinned Location. Repeated requests reuse work and never bill twice. Processing completion does not guarantee evidence for every field. A…"""
+        params: dict[str, Any] = {}
+        if extra_params:
+            params.update(extra_params)
+        params = {k: v for k, v in params.items() if v is not None}
+        payload = CreateSourcesRequest(background=cast(Any, background), job_id=cast(Any, job_id), mode=cast(Any, mode), retry=cast(Any, retry))
+        data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
+        return PreparedRequest(method="POST", url=f"/v1/extractions/{extraction_id}/sources", params=params or None, data=data)
 
 
 class Extractions(SyncAPIResource, ExtractionsMixin):
@@ -270,6 +295,7 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
         stream: bool = False,
         background: bool = False,
         deep_extraction: bool | None = None,
+        sources: SourceOptions | None = None,
         **extra_params: Any,
     ) -> Extraction:
         """Create Extraction Run a structured extraction on a document. Extracts structured data from the `document` according to the supplied `json_schema`, using the requested `model`. Returns the extraction with its `output`, consensus details, and usage on `201`. When `stream` is `true`, partial results are streamed back as they are produced."""
@@ -288,6 +314,7 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
             stream=stream,
             background=background,
             deep_extraction=deep_extraction,
+            sources=sources,
             **extra_params,
         )
         response = self._client._prepared_request(prepared_request)
@@ -306,6 +333,7 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
         stream: bool = False,
         background: bool = False,
         deep_extraction: bool | None = None,
+        sources: SourceOptions | None = None,
         **extra_params: Any,
     ) -> Any:
         """Create Extraction Stream Run a structured extraction on a document and stream partial results as they are produced."""
@@ -324,6 +352,7 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
             stream=stream,
             background=background,
             deep_extraction=deep_extraction,
+            sources=sources,
             **extra_params,
         )
         response = self._client._prepared_request(prepared_request)
@@ -347,9 +376,23 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
         response = self._client._prepared_request(prepared_request)
         return Extraction.model_validate(response)
 
-    def sources(self, extraction_id: str, **extra_params: Any) -> SourcesResponse:
+    def sources(self, extraction_id: str, mode: ExtractionsMode | None = None, job_id: str | None = None, **extra_params: Any) -> SourcesResponse:
         """Get Extraction Sources Return the extraction result enriched with per-leaf source provenance. Each extracted leaf value is wrapped as {value, source} where source contains citation content, surrounding context, and a format-specific anchor (bbox for PDFs, cell ref for spreadsheets, text span for plain text, etc.)."""
-        prepared_request = self.prepare_sources(extraction_id, **extra_params)
+        prepared_request = self.prepare_sources(extraction_id, mode=mode, job_id=job_id, **extra_params)
+        response = self._client._prepared_request(prepared_request)
+        return SourcesResponse.model_validate(response)
+
+    def create_extraction_source(
+        self,
+        extraction_id: str,
+        background: bool = False,
+        job_id: str | None = None,
+        mode: CreateSourcesRequestMode = cast(CreateSourcesRequestMode, "located"),
+        retry: bool | None = None,
+        **extra_params: Any,
+    ) -> SourcesResponse:
+        """Create Extraction Sources Create or join a durable sources computation. Located finds printed answers; cited also seeks supporting inputs. Background requests return immediately; synchronous requests wait up to 20 seconds before returning 202 with a version-pinned Location. Repeated requests reuse work and never bill twice. Processing completion does not guarantee evidence for every field. A…"""
+        prepared_request = self.prepare_create_extraction_source(extraction_id, background=background, job_id=job_id, mode=mode, retry=retry, **extra_params)
         response = self._client._prepared_request(prepared_request)
         return SourcesResponse.model_validate(response)
 
@@ -404,6 +447,7 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
         stream: bool = False,
         background: bool = False,
         deep_extraction: bool | None = None,
+        sources: SourceOptions | None = None,
         **extra_params: Any,
     ) -> Extraction:
         """Create Extraction Run a structured extraction on a document. Extracts structured data from the `document` according to the supplied `json_schema`, using the requested `model`. Returns the extraction with its `output`, consensus details, and usage on `201`. When `stream` is `true`, partial results are streamed back as they are produced."""
@@ -422,6 +466,7 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
             stream=stream,
             background=background,
             deep_extraction=deep_extraction,
+            sources=sources,
             **extra_params,
         )
         response = await self._client._prepared_request(prepared_request)
@@ -440,6 +485,7 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
         stream: bool = False,
         background: bool = False,
         deep_extraction: bool | None = None,
+        sources: SourceOptions | None = None,
         **extra_params: Any,
     ) -> Any:
         """Create Extraction Stream Run a structured extraction on a document and stream partial results as they are produced."""
@@ -458,6 +504,7 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
             stream=stream,
             background=background,
             deep_extraction=deep_extraction,
+            sources=sources,
             **extra_params,
         )
         response = await self._client._prepared_request(prepared_request)
@@ -481,9 +528,23 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
         response = await self._client._prepared_request(prepared_request)
         return Extraction.model_validate(response)
 
-    async def sources(self, extraction_id: str, **extra_params: Any) -> SourcesResponse:
+    async def sources(self, extraction_id: str, mode: ExtractionsMode | None = None, job_id: str | None = None, **extra_params: Any) -> SourcesResponse:
         """Get Extraction Sources Return the extraction result enriched with per-leaf source provenance. Each extracted leaf value is wrapped as {value, source} where source contains citation content, surrounding context, and a format-specific anchor (bbox for PDFs, cell ref for spreadsheets, text span for plain text, etc.)."""
-        prepared_request = self.prepare_sources(extraction_id, **extra_params)
+        prepared_request = self.prepare_sources(extraction_id, mode=mode, job_id=job_id, **extra_params)
+        response = await self._client._prepared_request(prepared_request)
+        return SourcesResponse.model_validate(response)
+
+    async def create_extraction_source(
+        self,
+        extraction_id: str,
+        background: bool = False,
+        job_id: str | None = None,
+        mode: CreateSourcesRequestMode = cast(CreateSourcesRequestMode, "located"),
+        retry: bool | None = None,
+        **extra_params: Any,
+    ) -> SourcesResponse:
+        """Create Extraction Sources Create or join a durable sources computation. Located finds printed answers; cited also seeks supporting inputs. Background requests return immediately; synchronous requests wait up to 20 seconds before returning 202 with a version-pinned Location. Repeated requests reuse work and never bill twice. Processing completion does not guarantee evidence for every field. A…"""
+        prepared_request = self.prepare_create_extraction_source(extraction_id, background=background, job_id=job_id, mode=mode, retry=retry, **extra_params)
         response = await self._client._prepared_request(prepared_request)
         return SourcesResponse.model_validate(response)
 

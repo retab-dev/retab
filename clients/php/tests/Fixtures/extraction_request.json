@@ -20,5 +20,8 @@
   "bust_cache": true,
   "stream": true,
   "background": true,
-  "deep_extraction": true
+  "deep_extraction": true,
+  "sources": {
+    "mode": "located"
+  }
 }

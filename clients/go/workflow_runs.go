@@ -58,6 +58,8 @@ type WorkflowRunsCreateParams struct {
 	Version *string `json:"version,omitempty" url:"-"`
 	// Metadata is user-defined metadata to associate with this workflow run.
 	Metadata *map[string]string `json:"metadata,omitempty" url:"-"`
+	// Sources is automatic source policy for extractions created by this run. Located prevents automatic paid citations.
+	Sources *SourceOptions `json:"sources,omitempty" url:"-"`
 }
 
 // Create workflow Run

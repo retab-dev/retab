@@ -36,6 +36,9 @@ readonly class SourcesResponse implements \JsonSerializable
          * @var array<string, mixed>
          */
         public array $sources,
+        /** @var array<string, \Retab\Resource\SourceFieldEvidence>|null */
+        public ?array $evidence = null,
+        public ?SourceJob $job = null,
         public string $object = 'extraction.sources',
     ) {}
 
@@ -59,6 +62,8 @@ readonly class SourcesResponse implements \JsonSerializable
             file: FileRef::fromArray($data['file']),
             extraction: $data['extraction'],
             sources: $data['sources'],
+            evidence: $data['evidence'] ?? null,
+            job: isset($data['job']) ? SourceJob::fromArray($data['job']) : null,
             object: $data['object'] ?? 'extraction.sources',
         );
     }
@@ -72,6 +77,8 @@ readonly class SourcesResponse implements \JsonSerializable
             'file' => $this->file->toArray(),
             'extraction' => $this->extraction,
             'sources' => $this->sources,
+            'evidence' => $this->evidence,
+            'job' => $this->job?->toArray(),
             'object' => $this->object,
         ];
     }

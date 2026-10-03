@@ -32,6 +32,8 @@ namespace Retab
 
         /// <summary>Same shape as extraction but leaves are {value, source} objects. Non-null source entries include file_id.</summary>
         public Dictionary<string, object> Sources { get; set; } = default!;
+        public Dictionary<string, SourceFieldEvidence>? Evidence { get; set; }
+        public SourceJob? Job { get; set; }
 
         /// <summary>
         /// Wire fields not modeled by this SDK version, preserved verbatim so a

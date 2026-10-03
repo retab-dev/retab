@@ -850,7 +850,8 @@ class ModelRoundTripTest < Minitest::Test
       "bust_cache" => true,
       "stream" => true,
       "background" => true,
-      "deep_extraction" => true
+      "deep_extraction" => true,
+      "sources" => {}
     }
     model = Retab::ExtractionRequest.new(fixture.to_json)
     json = model.to_h
@@ -950,6 +951,19 @@ class ModelRoundTripTest < Minitest::Test
     assert_kind_of(Hash, json)
     assert_equal(fixture["name"], json[:name])
     assert_equal(fixture["value"], json[:value])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_create_sources_request_round_trip
+    fixture = {
+      "background" => true,
+      "job_id" => "stub",
+      "mode" => "stub",
+      "retry" => true
+    }
+    model = Retab::CreateSourcesRequest.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
@@ -1053,7 +1067,8 @@ class ModelRoundTripTest < Minitest::Test
       "documents" => {},
       "json_inputs" => {},
       "version" => "stub",
-      "metadata" => nil
+      "metadata" => nil,
+      "sources" => {}
     }
     model = Retab::CreateWorkflowRunRequest.new(fixture.to_json)
     json = model.to_h
@@ -1530,6 +1545,48 @@ class ModelRoundTripTest < Minitest::Test
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 
+  def test_evidence_anchor_round_trip
+    fixture = {
+      "char_end" => 1,
+      "char_start" => 1,
+      "column" => "stub",
+      "coordinate" => "stub",
+      "height" => 1.0,
+      "kind" => "stub",
+      "left" => 1.0,
+      "line_end" => 1,
+      "line_start" => 1,
+      "page" => 1,
+      "paragraph" => 1,
+      "row" => 1,
+      "sheet_index" => 1,
+      "sheet_name" => "stub",
+      "table" => 1,
+      "top" => 1.0,
+      "width" => 1.0
+    }
+    model = Retab::EvidenceAnchor.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_evidence_source_round_trip
+    fixture = {
+      "anchor" => {},
+      "content" => "stub",
+      "file_id" => "stub",
+      "qualification" => "stub",
+      "role" => "stub"
+    }
+    model = Retab::EvidenceSource.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["content"], json[:content])
+    assert_equal(fixture["file_id"], json[:file_id])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
   def test_exist_condition_round_trip
     fixture = {
       "kind" => "exists"
@@ -1910,7 +1967,9 @@ class ModelRoundTripTest < Minitest::Test
       "document_type" => "stub",
       "file" => {},
       "extraction" => {},
-      "sources" => {}
+      "sources" => {},
+      "evidence" => {},
+      "job" => {}
     }
     model = Retab::SourcesResponse.new(fixture.to_json)
     json = model.to_h
@@ -3223,6 +3282,64 @@ class ModelRoundTripTest < Minitest::Test
     json = model.to_h
     assert_kind_of(Hash, json)
     assert_equal(fixture["reason"], json[:reason])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_source_field_evidence_round_trip
+    fixture = {
+      "kind" => "stub",
+      "sources" => nil,
+      "status" => "stub"
+    }
+    model = Retab::SourceFieldEvidence.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_source_job_round_trip
+    fixture = {
+      "error" => {},
+      "id" => "stub",
+      "is_partial" => true,
+      "mode" => "stub",
+      "object" => "extraction.sources.job",
+      "revision" => 1,
+      "status" => "stub",
+      "updated_at" => "stub"
+    }
+    model = Retab::SourceJob.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["id"], json[:id])
+    assert_equal(fixture["is_partial"], json[:is_partial])
+    assert_equal(fixture["revision"], json[:revision])
+    assert_equal(fixture["updated_at"], json[:updated_at])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_source_job_error_round_trip
+    fixture = {
+      "code" => "stub",
+      "is_retryable" => true,
+      "message" => "stub"
+    }
+    model = Retab::SourceJobError.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
+    assert_equal(fixture["code"], json[:code])
+    assert_equal(fixture["is_retryable"], json[:is_retryable])
+    assert_equal(fixture["message"], json[:message])
+    fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
+  end
+
+  def test_source_options_round_trip
+    fixture = {
+      "mode" => "stub"
+    }
+    model = Retab::SourceOptions.new(fixture.to_json)
+    json = model.to_h
+    assert_kind_of(Hash, json)
     fixture.each_key { |k| assert(json.key?(k.to_sym) || json.key?(k), "Expected to_h to include key #{k}") }
   end
 

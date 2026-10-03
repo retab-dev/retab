@@ -5,10 +5,14 @@ package com.retab.extractions;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.retab.RetabClient;
+import com.retab.models.CreateSourcesRequest;
 import com.retab.models.Extraction;
 import com.retab.models.ExtractionRequest;
 import com.retab.models.MimeData;
+import com.retab.models.SourceOptions;
 import com.retab.models.SourcesResponse;
+import com.retab.types.CreateSourcesRequestMode;
+import com.retab.types.ExtractionsMode;
 import com.retab.types.ExtractionsStatus;
 import com.retab.types.SortOrder;
 import java.io.IOException;
@@ -90,6 +94,34 @@ public final class ExtractionsApi {
             data.traverse(client.getObjectMapper()), new TypeReference<List<Extraction>>() {});
   }
 
+  public Extraction create(
+      MimeData document,
+      Map<String, Object> jsonSchema,
+      String model,
+      String instructions,
+      Long nConsensus,
+      Map<String, String> metadata,
+      List<Map<String, Object>> additionalMessages,
+      Boolean bustCache,
+      Boolean stream,
+      Boolean background,
+      Boolean deepExtraction)
+      throws IOException, InterruptedException {
+    return create(
+        document,
+        jsonSchema,
+        model,
+        instructions,
+        nConsensus,
+        metadata,
+        additionalMessages,
+        bustCache,
+        stream,
+        background,
+        deepExtraction,
+        null);
+  }
+
   public Extraction create(ExtractionRequest request) throws IOException, InterruptedException {
     return create(
         request == null ? null : request.getDocument(),
@@ -102,7 +134,8 @@ public final class ExtractionsApi {
         request == null ? null : request.isBustCache(),
         request == null ? null : request.isStream(),
         request == null ? null : request.isBackground(),
-        request == null ? null : request.isDeepExtraction());
+        request == null ? null : request.isDeepExtraction(),
+        request == null ? null : request.getSources());
   }
 
   public Extraction create(
@@ -116,7 +149,8 @@ public final class ExtractionsApi {
       Boolean bustCache,
       Boolean stream,
       Boolean background,
-      Boolean deepExtraction)
+      Boolean deepExtraction,
+      SourceOptions sources)
       throws IOException, InterruptedException {
     String path = "/v1/extractions";
     StringBuilder query = new StringBuilder();
@@ -151,6 +185,9 @@ public final class ExtractionsApi {
     if (deepExtraction != null) {
       body.put("deep_extraction", deepExtraction);
     }
+    if (sources != null) {
+      body.put("sources", sources);
+    }
     String requestBody = client.getObjectMapper().writeValueAsString(body);
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);
     HttpRequest.Builder requestBuilder =
@@ -170,6 +207,34 @@ public final class ExtractionsApi {
     return client.getObjectMapper().readValue(response.body(), Extraction.class);
   }
 
+  public Object createStream(
+      MimeData document,
+      Map<String, Object> jsonSchema,
+      String model,
+      String instructions,
+      Long nConsensus,
+      Map<String, String> metadata,
+      List<Map<String, Object>> additionalMessages,
+      Boolean bustCache,
+      Boolean stream,
+      Boolean background,
+      Boolean deepExtraction)
+      throws IOException, InterruptedException {
+    return createStream(
+        document,
+        jsonSchema,
+        model,
+        instructions,
+        nConsensus,
+        metadata,
+        additionalMessages,
+        bustCache,
+        stream,
+        background,
+        deepExtraction,
+        null);
+  }
+
   public Object createStream(ExtractionRequest request) throws IOException, InterruptedException {
     return createStream(
         request == null ? null : request.getDocument(),
@@ -182,7 +247,8 @@ public final class ExtractionsApi {
         request == null ? null : request.isBustCache(),
         request == null ? null : request.isStream(),
         request == null ? null : request.isBackground(),
-        request == null ? null : request.isDeepExtraction());
+        request == null ? null : request.isDeepExtraction(),
+        request == null ? null : request.getSources());
   }
 
   public Object createStream(
@@ -196,7 +262,8 @@ public final class ExtractionsApi {
       Boolean bustCache,
       Boolean stream,
       Boolean background,
-      Boolean deepExtraction)
+      Boolean deepExtraction,
+      SourceOptions sources)
       throws IOException, InterruptedException {
     String path = "/v1/extractions/stream";
     StringBuilder query = new StringBuilder();
@@ -230,6 +297,9 @@ public final class ExtractionsApi {
     }
     if (deepExtraction != null) {
       body.put("deep_extraction", deepExtraction);
+    }
+    if (sources != null) {
+      body.put("sources", sources);
     }
     String requestBody = client.getObjectMapper().writeValueAsString(body);
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);
@@ -320,15 +390,78 @@ public final class ExtractionsApi {
   }
 
   public SourcesResponse sources(String extractionId) throws IOException, InterruptedException {
+    return sources(extractionId, null, null, null);
+  }
+
+  public SourcesResponse sources(
+      String extractionId, ExtractionsMode mode, String jobId, String ifNoneMatch)
+      throws IOException, InterruptedException {
     String path = "/v1/extractions/" + encodePathSegment(extractionId) + "/sources";
     StringBuilder query = new StringBuilder();
+    appendQueryParam(query, "mode", mode);
+    appendQueryParam(query, "job_id", jobId);
     URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
     HttpRequest.Builder requestBuilder =
         HttpRequest.newBuilder(uri)
             .header("Accept", "application/json")
             .header("Authorization", "Bearer " + client.getApiKey());
+    if (ifNoneMatch != null) {
+      requestBuilder.header("If-None-Match", serializeParam(ifNoneMatch));
+    }
     HttpRequest httpRequest = requestBuilder.method("GET", publisher).build();
+    HttpResponse<String> response =
+        client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
+    if (response.statusCode() < 200 || response.statusCode() >= 300) {
+      throw new IOException("Request failed (" + response.statusCode() + "): " + response.body());
+    }
+    if (response.body() == null || response.body().isBlank()) {
+      return null;
+    }
+    return client.getObjectMapper().readValue(response.body(), SourcesResponse.class);
+  }
+
+  public SourcesResponse createSource(String extractionId, CreateSourcesRequest request)
+      throws IOException, InterruptedException {
+    return createSource(
+        extractionId,
+        request == null ? null : request.isBackground(),
+        request == null ? null : request.getJobId(),
+        request == null ? null : request.getMode(),
+        request == null ? null : request.isRetry());
+  }
+
+  public SourcesResponse createSource(
+      String extractionId,
+      Boolean background,
+      String jobId,
+      CreateSourcesRequestMode mode,
+      Boolean retry)
+      throws IOException, InterruptedException {
+    String path = "/v1/extractions/" + encodePathSegment(extractionId) + "/sources";
+    StringBuilder query = new StringBuilder();
+    URI uri = URI.create(client.getBaseUrl() + path + (query.length() == 0 ? "" : "?" + query));
+    Map<String, Object> body = new LinkedHashMap<>();
+    if (background != null) {
+      body.put("background", background);
+    }
+    if (jobId != null) {
+      body.put("job_id", jobId);
+    }
+    if (mode != null) {
+      body.put("mode", mode);
+    }
+    if (retry != null) {
+      body.put("retry", retry);
+    }
+    String requestBody = client.getObjectMapper().writeValueAsString(body);
+    HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);
+    HttpRequest.Builder requestBuilder =
+        HttpRequest.newBuilder(uri)
+            .header("Accept", "application/json")
+            .header("Authorization", "Bearer " + client.getApiKey());
+    requestBuilder.header("Content-Type", "application/json");
+    HttpRequest httpRequest = requestBuilder.method("POST", publisher).build();
     HttpResponse<String> response =
         client.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
     if (response.statusCode() < 200 || response.statusCode() >= 300) {

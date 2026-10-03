@@ -28,6 +28,9 @@ pub struct CreateWorkflowRunRequest {
     /// User-defined metadata to associate with this workflow run.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub metadata: Option<std::collections::HashMap<String, String>>,
+    /// Automatic source policy for extractions created by this run. Located prevents automatic paid citations.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub sources: Option<SourceOptions>,
 }
 impl CreateWorkflowRunRequest {
     /// Construct a new `CreateWorkflowRunRequest` with the required fields set.
@@ -39,6 +42,7 @@ impl CreateWorkflowRunRequest {
             json_inputs: Default::default(),
             version: Default::default(),
             metadata: Default::default(),
+            sources: Default::default(),
         }
     }
 }

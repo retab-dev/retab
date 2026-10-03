@@ -60,6 +60,9 @@ namespace Retab
         /// <summary>User-defined metadata to associate with this workflow run.</summary>
         public Dictionary<string, string>? Metadata { get; set; }
 
+        /// <summary>Automatic source policy for extractions created by this run. Located prevents automatic paid citations.</summary>
+        public SourceOptions? Sources { get; set; }
+
     }
 
     /// <summary>Request options for <see cref="WorkflowRunsService.ExportAsync"/>: Get Workflow Export Payload</summary>

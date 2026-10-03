@@ -110,6 +110,7 @@ module Retab
     # @param stream [Boolean, nil]
     # @param background [Boolean, nil] If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
     # @param deep_extraction [Boolean, nil] Optimizes for accuracy over latency in documents with very large arrays.
+    # @param sources [Retab::SourceOptions, nil] Automatic sources policy. Omit to inherit the organization default; located prevents automatic paid citations.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::Extraction]
     def create(
@@ -124,6 +125,7 @@ module Retab
       stream: nil,
       background: nil,
       deep_extraction: nil,
+      sources: nil,
       request_options: {}
     )
       document = Retab::MimeData.coerce(document, client: @client) unless document.nil?
@@ -138,7 +140,8 @@ module Retab
         "bust_cache" => bust_cache,
         "stream" => stream,
         "background" => background,
-        "deep_extraction" => deep_extraction
+        "deep_extraction" => deep_extraction,
+        "sources" => sources
       }.compact
       response = @client.request(
         method: :post,
@@ -168,6 +171,7 @@ module Retab
     # @param stream [Boolean, nil]
     # @param background [Boolean, nil] If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
     # @param deep_extraction [Boolean, nil] Optimizes for accuracy over latency in documents with very large arrays.
+    # @param sources [Retab::SourceOptions, nil] Automatic sources policy. Omit to inherit the organization default; located prevents automatic paid citations.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [void]
     def create_stream(
@@ -182,6 +186,7 @@ module Retab
       stream: nil,
       background: nil,
       deep_extraction: nil,
+      sources: nil,
       request_options: {}
     )
       document = Retab::MimeData.coerce(document, client: @client) unless document.nil?
@@ -196,7 +201,8 @@ module Retab
         "bust_cache" => bust_cache,
         "stream" => stream,
         "background" => background,
-        "deep_extraction" => deep_extraction
+        "deep_extraction" => deep_extraction,
+        "sources" => sources
       }.compact
       @client.request(
         method: :post,
@@ -279,16 +285,63 @@ module Retab
 
     # Get Extraction Sources
     # @param extraction_id [String]
+    # @param mode [Retab::Types::ExtractionsMode, nil] Opt into progressive sources for this mode. Omit to retain the legacy synchronous response.
+    # @param job_id [String, nil] Expected job identity returned by POST. A changed extraction returns 409.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::SourcesResponse]
     def sources(
       extraction_id:,
+      mode: nil,
+      job_id: nil,
       request_options: {}
     )
+      params = {
+        "mode" => mode,
+        "job_id" => job_id
+      }.compact
       response = @client.request(
         method: :get,
         path: "/v1/extractions/#{Retab::Util.encode_path(extraction_id)}/sources",
         auth: true,
+        params: params,
+        request_options: request_options
+      )
+      result = Retab::SourcesResponse.new(response.body)
+      result.last_response = Retab::Types::ApiResponse.new(
+        http_status: response.code.to_i,
+        http_headers: response.each_header.to_h,
+        request_id: response["x-request-id"]
+      )
+      result
+    end
+
+    # Create Extraction Sources
+    # @param extraction_id [String]
+    # @param background [Boolean, nil] Return immediately when true. Otherwise wait up to 20 seconds, then return 202 with Location while the same durable job continues.
+    # @param job_id [String, nil] Optional expected sources job identity. Returns 409 if the extraction changed.
+    # @param mode [Retab::Types::CreateSourcesRequestMode, nil]
+    # @param retry_ [Boolean, nil] Retry a terminal failed or incomplete computation. Concurrent requests join the current attempt; billing remains once per extraction.
+    # @param request_options [Hash] (see Retab::Types::RequestOptions)
+    # @return [Retab::SourcesResponse]
+    def create_extraction_source(
+      extraction_id:,
+      background: nil,
+      job_id: nil,
+      mode: nil,
+      retry_: nil,
+      request_options: {}
+    )
+      body = {
+        "background" => background,
+        "job_id" => job_id,
+        "mode" => mode,
+        "retry" => retry_
+      }.compact
+      response = @client.request(
+        method: :post,
+        path: "/v1/extractions/#{Retab::Util.encode_path(extraction_id)}/sources",
+        auth: true,
+        body: body,
         request_options: request_options
       )
       result = Retab::SourcesResponse.new(response.body)

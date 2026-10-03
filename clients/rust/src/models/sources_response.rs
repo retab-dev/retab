@@ -26,6 +26,11 @@ pub struct SourcesResponse {
     pub extraction: std::collections::HashMap<String, serde_json::Value>,
     /// Same shape as extraction but leaves are {value, source} objects. Non-null source entries include file_id.
     pub sources: std::collections::HashMap<String, serde_json::Value>,
+    /// Defaults to `{}`.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub evidence: Option<std::collections::HashMap<String, SourceFieldEvidence>>,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub job: Option<SourceJob>,
 }
 impl SourcesResponse {
     /// Construct a new `SourcesResponse` with the required fields set.
@@ -44,6 +49,8 @@ impl SourcesResponse {
             file,
             extraction,
             sources,
+            evidence: Default::default(),
+            job: Default::default(),
         }
     }
 }

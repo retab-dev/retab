@@ -14,6 +14,7 @@ public final class CreateWorkflowRunRequest {
   private final Map<String, Object> jsonInputs;
   private final String version;
   private final Map<String, String> metadata;
+  private final SourceOptions sources;
 
   @JsonCreator
   public CreateWorkflowRunRequest(
@@ -21,12 +22,23 @@ public final class CreateWorkflowRunRequest {
       @JsonProperty(value = "documents", required = false) Map<String, MimeData> documents,
       @JsonProperty(value = "json_inputs", required = false) Map<String, Object> jsonInputs,
       @JsonProperty(value = "version", required = false) String version,
-      @JsonProperty(value = "metadata", required = false) Map<String, String> metadata) {
+      @JsonProperty(value = "metadata", required = false) Map<String, String> metadata,
+      @JsonProperty(value = "sources", required = false) SourceOptions sources) {
     this.workflowId = workflowId;
     this.documents = documents;
     this.jsonInputs = jsonInputs;
     this.version = version != null ? version : "production";
     this.metadata = metadata;
+    this.sources = sources;
+  }
+
+  public CreateWorkflowRunRequest(
+      String workflowId,
+      Map<String, MimeData> documents,
+      Map<String, Object> jsonInputs,
+      String version,
+      Map<String, String> metadata) {
+    this(workflowId, documents, jsonInputs, version, metadata, null);
   }
 
   @JsonProperty("workflow_id")
@@ -52,5 +64,10 @@ public final class CreateWorkflowRunRequest {
   @JsonProperty("metadata")
   public Map<String, String> getMetadata() {
     return metadata;
+  }
+
+  @JsonProperty("sources")
+  public SourceOptions getSources() {
+    return sources;
   }
 }

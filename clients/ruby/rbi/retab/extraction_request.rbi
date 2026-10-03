@@ -75,6 +75,12 @@ module Retab
     sig { params(value: T.nilable(T::Boolean)).returns(T.nilable(T::Boolean)) }
     def deep_extraction=(value); end
 
+    sig { returns(T.nilable(Retab::SourceOptions)) }
+    def sources; end
+
+    sig { params(value: T.nilable(Retab::SourceOptions)).returns(T.nilable(Retab::SourceOptions)) }
+    def sources=(value); end
+
     sig { returns(T::Hash[Symbol, T.untyped]) }
     def to_h; end
 

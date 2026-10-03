@@ -45,6 +45,18 @@ module Retab
     sig { params(value: T::Hash[String, T.untyped]).returns(T::Hash[String, T.untyped]) }
     def sources=(value); end
 
+    sig { returns(T.nilable(T::Hash[String, Retab::SourceFieldEvidence])) }
+    def evidence; end
+
+    sig { params(value: T.nilable(T::Hash[String, Retab::SourceFieldEvidence])).returns(T.nilable(T::Hash[String, Retab::SourceFieldEvidence])) }
+    def evidence=(value); end
+
+    sig { returns(T.nilable(Retab::SourceJob)) }
+    def job; end
+
+    sig { params(value: T.nilable(Retab::SourceJob)).returns(T.nilable(Retab::SourceJob)) }
+    def job=(value); end
+
     sig { returns(T::Hash[Symbol, T.untyped]) }
     def to_h; end
 

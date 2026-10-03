@@ -18,6 +18,11 @@ class EditsStatus(str, Enum):
     CANCELLED = "cancelled"
 
 
+class ExtractionsMode(str, Enum):
+    LOCATED = "located"
+    CITED = "cited"
+
+
 class WorkflowArtifactsOperation(str, Enum):
     EXTRACTION = "extraction"
     SPLIT = "split"

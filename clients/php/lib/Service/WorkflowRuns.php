@@ -91,6 +91,7 @@ class WorkflowRuns
      * @param array<string, mixed>|null $jsonInputs Mapping of start-json block IDs to their input JSON data.
      * @param string|null $version Workflow version to run: 'production', 'draft', or a pinned version id like 'ver_...'. Only valid for fresh-run creation.
      * @param array<string, string>|null $metadata User-defined metadata to associate with this workflow run.
+     * @param \Retab\Resource\SourceOptions|null $sources Automatic source policy for extractions created by this run. Located prevents automatic paid citations.
      * @return \Retab\Resource\WorkflowRun
      * @throws \Retab\Exception\RetabException
      */
@@ -100,6 +101,7 @@ class WorkflowRuns
         ?array $jsonInputs = null,
         ?string $version = null,
         ?array $metadata = null,
+        ?\Retab\Resource\SourceOptions $sources = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\WorkflowRun {
         if ($documents !== null) {
@@ -111,6 +113,7 @@ class WorkflowRuns
             'json_inputs' => $jsonInputs,
             'version' => $version,
             'metadata' => $metadata,
+            'sources' => $sources,
         ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',

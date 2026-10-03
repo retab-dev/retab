@@ -8,6 +8,7 @@ import com.retab.RetabClient;
 import com.retab.models.CancelWorkflowResponse;
 import com.retab.models.CreateWorkflowRunRequest;
 import com.retab.models.MimeData;
+import com.retab.models.SourceOptions;
 import com.retab.models.WorkflowExportPayloadRequest;
 import com.retab.models.WorkflowExportPayloadResponse;
 import com.retab.models.WorkflowRun;
@@ -105,6 +106,16 @@ public final class WorkflowRunsApi {
             data.traverse(client.getObjectMapper()), new TypeReference<List<WorkflowRun>>() {});
   }
 
+  public WorkflowRun create(
+      String workflowId,
+      Map<String, MimeData> documents,
+      Map<String, Object> jsonInputs,
+      String version,
+      Map<String, String> metadata)
+      throws IOException, InterruptedException {
+    return create(workflowId, documents, jsonInputs, version, metadata, null);
+  }
+
   public WorkflowRun create(CreateWorkflowRunRequest request)
       throws IOException, InterruptedException {
     return create(
@@ -112,7 +123,8 @@ public final class WorkflowRunsApi {
         request == null ? null : request.getDocuments(),
         request == null ? null : request.getJsonInputs(),
         request == null ? null : request.getVersion(),
-        request == null ? null : request.getMetadata());
+        request == null ? null : request.getMetadata(),
+        request == null ? null : request.getSources());
   }
 
   public WorkflowRun create(
@@ -120,7 +132,8 @@ public final class WorkflowRunsApi {
       Map<String, MimeData> documents,
       Map<String, Object> jsonInputs,
       String version,
-      Map<String, String> metadata)
+      Map<String, String> metadata,
+      SourceOptions sources)
       throws IOException, InterruptedException {
     String path = "/v1/workflows/runs";
     StringBuilder query = new StringBuilder();
@@ -138,6 +151,9 @@ public final class WorkflowRunsApi {
     }
     if (metadata != null) {
       body.put("metadata", metadata);
+    }
+    if (sources != null) {
+      body.put("sources", sources);
     }
     String requestBody = client.getObjectMapper().writeValueAsString(body);
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);

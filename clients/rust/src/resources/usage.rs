@@ -103,7 +103,7 @@ pub struct ListPrimitivesParams {
     /// Filter to a single workflow block id (origin block).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub block_id: Option<String>,
-    /// Filter by operation: extraction, classify, split, parse, edit, partition, schema_generation, or consensus. The stored-kind aliases extract and classification are also accepted. An unknown value is rejected with 422.
+    /// Filter by operation: extraction, classify, split, parse, edit, partition, schema_generation, consensus, or cited_sources. The stored-kind aliases extract, classification and cite are also accepted. An unknown value is rejected with 422.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
     /// Filter by execution lifecycle status: created, running, completed, failed, or canceled. Note the single-l spelling: a primitive execution is canceled, whereas a workflow run's status is cancelled. An unknown value is rejected with 422.
@@ -199,6 +199,8 @@ impl Default for ListRunsParams {
 
 impl<'a> UsageApi<'a> {
     /// List Usage Blocks
+    ///
+    /// One row per workflow block with its credits, pages, runs and executions. An extract block's `execution_count` and `status_counts` include the cited sources pass of each extraction it made in an organization that uses cited sources (billed once per extraction; see Pricing), and its `credits` include their cost; its `page_count` counts each document once.
     pub async fn list_blocks(&self, params: ListBlocksParams) -> Result<UsageBlockList, Error> {
         self.list_blocks_with_options(params, None).await
     }

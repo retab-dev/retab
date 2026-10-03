@@ -291,13 +291,14 @@ func TestExtractionsStreamCommandSendsDeepExtractionOnTheWire(t *testing.T) {
 		"model":           "retab-large",
 		"json-schema":     `{"type":"object"}`,
 		"deep-extraction": "true",
+		"sources-mode":    "located",
 	} {
 		if err := cmd.Flags().Set(name, value); err != nil {
 			t.Fatalf("set --%s: %v", name, err)
 		}
 	}
 	t.Cleanup(func() {
-		for _, name := range []string{"url", "model", "json-schema", "deep-extraction"} {
+		for _, name := range []string{"url", "model", "json-schema", "deep-extraction", "sources-mode"} {
 			_ = cmd.Flags().Set(name, cmd.Flags().Lookup(name).DefValue)
 			cmd.Flags().Lookup(name).Changed = false
 		}
@@ -308,6 +309,9 @@ func TestExtractionsStreamCommandSendsDeepExtractionOnTheWire(t *testing.T) {
 	}
 	if path != "/v1/extractions/stream" {
 		t.Fatalf("request path = %q, want /v1/extractions/stream", path)
+	}
+	if sources, _ := body["sources"].(map[string]any); sources["mode"] != "located" {
+		t.Fatalf("sources policy lost: %v", body)
 	}
 	if body == nil {
 		t.Fatal("no request body captured")
@@ -337,6 +341,7 @@ var streamBodyExclusions = map[string]string{
 // accepts it, and the request runs without it. Enumerating the params struct
 // and requiring an explicit exclusion reason turns that silent omission into a
 // failing test.
+
 func TestStreamBodyCarriesEveryCreateField(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
@@ -364,6 +369,7 @@ func TestStreamBodyCarriesEveryCreateField(t *testing.T) {
 		"instructions":    "steer me",
 		"n-consensus":     "3",
 		"bust-cache":      "true",
+		"sources-mode":    "located",
 	}
 	for name, value := range flags {
 		if err := cmd.Flags().Set(name, value); err != nil {

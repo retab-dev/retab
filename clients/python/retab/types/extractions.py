@@ -10,6 +10,28 @@ from retab.types.documents.usage import RetabUsage
 from retab.types.mime import FileRef, MIMEData
 
 
+class EvidenceAnchorKind(str, Enum):
+    PDF_BBOX = "pdf_bbox"
+    IMAGE_BBOX = "image_bbox"
+    TEXT_SPAN = "text_span"
+    SPREADSHEET_CELL = "spreadsheet_cell"
+    CSV_CELL = "csv_cell"
+    DOCX_TEXT_SPAN = "docx_text_span"
+    DOCX_TABLE_CELL = "docx_table_cell"
+
+
+class EvidenceSourceQualification(str, Enum):
+    DIRECT = "direct"
+    PARTIAL = "partial"
+    LEGACY = "legacy"
+
+
+class EvidenceSourceRole(str, Enum):
+    ANSWER = "answer"
+    INPUT = "input"
+    COMPARISON = "comparison"
+
+
 class ExtractionStatus(str, Enum):
     PENDING = "pending"
     QUEUED = "queued"
@@ -26,6 +48,40 @@ class SourcesResponseDocumentType(str, Enum):
     XLSX = "xlsx"
     DOCX = "docx"
     TXT = "txt"
+
+
+class SourceFieldEvidenceKind(str, Enum):
+    DIRECT = "direct"
+    SUPPORTING = "supporting"
+    UNAVAILABLE = "unavailable"
+
+
+class SourceFieldEvidenceStatus(str, Enum):
+    PENDING = "pending"
+    MATCHED = "matched"
+    PARTIAL = "partial"
+    MISSING = "missing"
+    AMBIGUOUS = "ambiguous"
+    UNSUPPORTED = "unsupported"
+    ERROR = "error"
+
+
+class SourceJobMode(str, Enum):
+    LOCATED = "located"
+    CITED = "cited"
+
+
+class SourceJobStatus(str, Enum):
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    ERROR = "error"
+
+
+CreateSourcesRequestMode = SourceJobMode
+
+
+SourceOptionsMode = SourceJobMode
 
 
 class ExtractionRequest(BaseModel):
@@ -51,6 +107,54 @@ class ExtractionRequest(BaseModel):
         description="If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.",
     )
     deep_extraction: bool | None = Field(default=None, description="Optimizes for accuracy over latency in documents with very large arrays.")
+    sources: SourceOptions | None = Field(
+        default=None, description="Automatic sources policy. Omit to inherit the organization default; located prevents automatic paid citations."
+    )
+
+
+class CreateSourcesRequest(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    background: bool | None = Field(
+        default=False, description="Return immediately when true. Otherwise wait up to 20 seconds, then return 202 with Location while the same durable job continues."
+    )
+    job_id: str | None = Field(default=None, description="Optional expected sources job identity. Returns 409 if the extraction changed.")
+    mode: SourceJobMode | None = Field(default=cast(SourceJobMode, "located"), validate_default=True)
+    retry: bool | None = Field(
+        default=None, description="Retry a terminal failed or incomplete computation. Concurrent requests join the current attempt; billing remains once per extraction."
+    )
+
+
+class EvidenceAnchor(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    char_end: int | None = None
+    char_start: int | None = None
+    column: str | int | None = None
+    coordinate: str | None = None
+    height: float | None = None
+    kind: EvidenceAnchorKind
+    left: float | None = None
+    line_end: int | None = None
+    line_start: int | None = None
+    page: int | None = None
+    paragraph: int | None = None
+    row: int | None = None
+    sheet_index: int | None = None
+    sheet_name: str | None = None
+    table: int | None = None
+    top: float | None = None
+    width: float | None = None
+
+
+class EvidenceSource(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    anchor: EvidenceAnchor
+    content: str
+    file_id: str
+    qualification: EvidenceSourceQualification
+    role: EvidenceSourceRole
 
 
 class Extraction(BaseModel):
@@ -106,6 +210,45 @@ class SourcesResponse(BaseModel):
     file: FileRef = Field(..., description="Source file metadata (id, filename, mime_type).")
     extraction: dict[str, Any] = Field(..., description="Original extraction output")
     sources: dict[str, Any] = Field(..., description="Same shape as extraction but leaves are {value, source} objects. Non-null source entries include file_id.")
+    evidence: dict[str, SourceFieldEvidence] | None = Field(default={})
+    job: SourceJob | None = None
+
+
+class SourceFieldEvidence(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    kind: SourceFieldEvidenceKind
+    sources: list[EvidenceSource] | None = Field(
+        ..., description="Printed answer locations and supporting inputs. Supporting evidence does not establish that an inferred answer is correct."
+    )
+    status: SourceFieldEvidenceStatus
+
+
+class SourceJob(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    error: SourceJobError | None = None
+    id: str
+    is_partial: bool = Field(..., description="Processing stopped before all requested work finished. A missing match alone is not a processing failure.")
+    mode: SourceJobMode
+    object: Literal["extraction.sources.job"]
+    revision: int
+    status: SourceJobStatus
+    updated_at: datetime.datetime
+
+
+class SourceJobError(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    code: str
+    is_retryable: bool
+    message: str
+
+
+class SourceOptions(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, protected_namespaces=())
+
+    mode: SourceJobMode
 
 
 # Resolve forward references (Pydantic v2). Safe no-op when
@@ -114,6 +257,13 @@ class SourcesResponse(BaseModel):
 # annotations` and a referenced symbol comes from another
 # generated module via a TYPE_CHECKING-guarded import.
 ExtractionRequest.model_rebuild()
+CreateSourcesRequest.model_rebuild()
+EvidenceAnchor.model_rebuild()
+EvidenceSource.model_rebuild()
 Extraction.model_rebuild()
 ExtractionConsensus.model_rebuild()
 SourcesResponse.model_rebuild()
+SourceFieldEvidence.model_rebuild()
+SourceJob.model_rebuild()
+SourceJobError.model_rebuild()
+SourceOptions.model_rebuild()

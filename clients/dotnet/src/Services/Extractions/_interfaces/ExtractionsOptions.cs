@@ -63,6 +63,9 @@ namespace Retab
         /// <summary>Optimizes for accuracy over latency in documents with very large arrays.</summary>
         public bool? DeepExtraction { get; set; }
 
+        /// <summary>Automatic sources policy. Omit to inherit the organization default; located prevents automatic paid citations.</summary>
+        public SourceOptions? Sources { get; set; }
+
     }
 
     /// <summary>Request options for <see cref="ExtractionsService.CreateStreamAsync"/>: Create Extraction Stream</summary>
@@ -99,6 +102,9 @@ namespace Retab
         /// <summary>Optimizes for accuracy over latency in documents with very large arrays.</summary>
         public bool? DeepExtraction { get; set; }
 
+        /// <summary>Automatic sources policy. Omit to inherit the organization default; located prevents automatic paid citations.</summary>
+        public SourceOptions? Sources { get; set; }
+
     }
 
     /// <summary>Request options for <see cref="ExtractionsService.GetAsync"/>: Get Extraction</summary>
@@ -106,6 +112,33 @@ namespace Retab
     {
         /// <summary>When false, returns a cheap status-only projection (no output), served from cache for in-flight background runs.</summary>
         public bool? IncludeOutput { get; set; }
+
+    }
+
+    /// <summary>Request options for <see cref="ExtractionsService.SourcesAsync"/>: Get Extraction Sources</summary>
+    public class ExtractionsSourcesOptions : BaseOptions
+    {
+        /// <summary>Opt into progressive sources for this mode. Omit to retain the legacy synchronous response.</summary>
+        public CreateSourcesRequestMode? Mode { get; set; }
+
+        /// <summary>Expected job identity returned by POST. A changed extraction returns 409.</summary>
+        public string? JobId { get; set; }
+
+    }
+
+    /// <summary>Request options for <see cref="ExtractionsService.CreateSourceAsync"/>: Create Extraction Sources</summary>
+    public class ExtractionsCreateSourceOptions : BaseOptions
+    {
+        /// <summary>Return immediately when true. Otherwise wait up to 20 seconds, then return 202 with Location while the same durable job continues.</summary>
+        public bool? Background { get; set; }
+
+        /// <summary>Optional expected sources job identity. Returns 409 if the extraction changed.</summary>
+        public string? JobId { get; set; }
+
+        public CreateSourcesRequestMode? Mode { get; set; }
+
+        /// <summary>Retry a terminal failed or incomplete computation. Concurrent requests join the current attempt; billing remains once per extraction.</summary>
+        public bool? Retry { get; set; }
 
     }
 }

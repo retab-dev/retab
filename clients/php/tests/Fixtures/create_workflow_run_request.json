@@ -12,5 +12,8 @@
   "version": "test_version",
   "metadata": {
     "key": "test_value"
+  },
+  "sources": {
+    "mode": "located"
   }
 }

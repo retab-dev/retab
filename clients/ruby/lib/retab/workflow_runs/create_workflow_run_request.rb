@@ -10,7 +10,8 @@ module Retab
       documents: :documents,
       json_inputs: :json_inputs,
       version: :version,
-      metadata: :metadata
+      metadata: :metadata,
+      sources: :sources
     }.freeze
 
     attr_accessor(
@@ -18,7 +19,8 @@ module Retab
       :documents,
       :json_inputs,
       :version,
-      :metadata
+      :metadata,
+      :sources
     )
 
     def initialize(json)
@@ -29,6 +31,7 @@ module Retab
       @json_inputs = hash[:json_inputs] || {}
       @version = hash[:version].nil? ? "production" : hash[:version]
       @metadata = hash[:metadata] || {}
+      @sources = hash[:sources] ? Retab::SourceOptions.new(hash[:sources]) : nil
     end
   end
 end

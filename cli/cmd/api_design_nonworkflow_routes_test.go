@@ -140,6 +140,12 @@ func nonWorkflowCLIClientCallRouteContracts() map[string][]cliRouteContract {
 		"Extractions.List": {
 			{method: http.MethodGet, path: "/extractions"},
 		},
+		"Extractions.CreateSource": {
+			{method: http.MethodPost, path: "/extractions/{extraction_id}/sources"},
+		},
+		"Extractions.SourcesWithParams": {
+			{method: http.MethodGet, path: "/extractions/{extraction_id}/sources"},
+		},
 		"Extractions.Sources": {
 			{method: http.MethodGet, path: "/extractions/{extraction_id}/sources"},
 		},

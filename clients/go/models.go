@@ -923,6 +923,36 @@ type EvalRunTrigger struct {
 	Type EvalRunTriggerType `json:"type"`
 }
 
+// EvidenceAnchor represents an evidence anchor.
+type EvidenceAnchor struct {
+	CharEnd    *int               `json:"char_end,omitempty"`
+	CharStart  *int               `json:"char_start,omitempty"`
+	Column     *interface{}       `json:"column,omitempty"`
+	Coordinate *string            `json:"coordinate,omitempty"`
+	Height     *float64           `json:"height,omitempty"`
+	Kind       EvidenceAnchorKind `json:"kind"`
+	Left       *float64           `json:"left,omitempty"`
+	LineEnd    *int               `json:"line_end,omitempty"`
+	LineStart  *int               `json:"line_start,omitempty"`
+	Page       *int               `json:"page,omitempty"`
+	Paragraph  *int               `json:"paragraph,omitempty"`
+	Row        *int               `json:"row,omitempty"`
+	SheetIndex *int               `json:"sheet_index,omitempty"`
+	SheetName  *string            `json:"sheet_name,omitempty"`
+	Table      *int               `json:"table,omitempty"`
+	Top        *float64           `json:"top,omitempty"`
+	Width      *float64           `json:"width,omitempty"`
+}
+
+// EvidenceSource represents an evidence source.
+type EvidenceSource struct {
+	Anchor        EvidenceAnchor              `json:"anchor"`
+	Content       string                      `json:"content"`
+	FileID        string                      `json:"file_id"`
+	Qualification EvidenceSourceQualification `json:"qualification"`
+	Role          EvidenceSourceRole          `json:"role"`
+}
+
 // ExistCondition represents an exist condition.
 type ExistCondition struct {
 	Kind *string `json:"kind,omitempty"`
@@ -1181,7 +1211,9 @@ type SourcesResponse struct {
 	// Extraction is original extraction output
 	Extraction map[string]interface{} `json:"extraction"`
 	// Sources is same shape as extraction but leaves are {value, source} objects. Non-null source entries include file_id.
-	Sources map[string]interface{} `json:"sources"`
+	Sources  map[string]interface{}          `json:"sources"`
+	Evidence map[string]*SourceFieldEvidence `json:"evidence,omitempty"`
+	Job      *SourceJob                      `json:"job,omitempty"`
 }
 
 // ExtractionWorkflowArtifact an extraction produced by a workflow run, tagged with its artifact `operation` and creation time.
@@ -1991,6 +2023,39 @@ type SkippedBlockExecutionLifecycle struct {
 
 // SkippedStepLifecycle is an alias for SkippedBlockExecutionLifecycle.
 type SkippedStepLifecycle = SkippedBlockExecutionLifecycle
+
+// SourceFieldEvidence represents a source field evidence.
+type SourceFieldEvidence struct {
+	Kind SourceFieldEvidenceKind `json:"kind"`
+	// Sources is printed answer locations and supporting inputs. Supporting evidence does not establish that an inferred answer is correct.
+	Sources []*EvidenceSource         `json:"sources"`
+	Status  SourceFieldEvidenceStatus `json:"status"`
+}
+
+// SourceJob represents a source job.
+type SourceJob struct {
+	Error *SourceJobError `json:"error,omitempty"`
+	ID    string          `json:"id"`
+	// IsPartial is processing stopped before all requested work finished. A missing match alone is not a processing failure.
+	IsPartial bool            `json:"is_partial"`
+	Mode      SourceJobMode   `json:"mode"`
+	Object    string          `json:"object"`
+	Revision  int             `json:"revision"`
+	Status    SourceJobStatus `json:"status"`
+	UpdatedAt time.Time       `json:"updated_at"`
+}
+
+// SourceJobError represents a source job error.
+type SourceJobError struct {
+	Code        string `json:"code"`
+	IsRetryable bool   `json:"is_retryable"`
+	Message     string `json:"message"`
+}
+
+// SourceOptions represents a source options.
+type SourceOptions struct {
+	Mode SourceOptionsMode `json:"mode"`
+}
 
 // Split a split result: a document divided into its constituent `subdocuments`.
 type Split struct {

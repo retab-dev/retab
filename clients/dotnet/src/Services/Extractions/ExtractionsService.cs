@@ -156,18 +156,39 @@ namespace Retab
         /// anchor (bbox for PDFs, cell ref for spreadsheets, text span for plain text, etc.).
         /// </remarks>
         /// <param name="extractionId">The extraction id.</param>
+        /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The <see cref="SourcesResponse"/> result.</returns>
-        public virtual async Task<SourcesResponse> SourcesAsync(string extractionId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual async Task<SourcesResponse> SourcesAsync(string extractionId, ExtractionsSourcesOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return await this.GetAsync<SourcesResponse>($"/v1/extractions/{Uri.EscapeDataString(extractionId)}/sources", null, requestOptions, cancellationToken);
+            return await this.GetAsync<SourcesResponse>($"/v1/extractions/{Uri.EscapeDataString(extractionId)}/sources", options, requestOptions, cancellationToken);
         }
 
         /// <summary>Compatibility wrapper for <see cref="SourcesAsync"/>.</summary>
-        public virtual Task<SourcesResponse> Sources(string extractionId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        public virtual Task<SourcesResponse> Sources(string extractionId, ExtractionsSourcesOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
-            return this.SourcesAsync(extractionId, requestOptions, cancellationToken);
+            return this.SourcesAsync(extractionId, options, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Create Extraction Sources</summary>
+        /// <remarks>
+        /// Create or join a durable sources computation. Located finds printed answers; cited also seeks supporting inputs. Background requests return immediately; synchronous requests wait up to 20 seconds before returning 202 with a version-pinned Location. Repeated requests reuse work and never bill twice. Processing completion does not guarantee evidence for every field. A cited request during a located-only computation returns 409; retry after that computation finishes.
+        /// </remarks>
+        /// <param name="extractionId">The extraction id.</param>
+        /// <param name="options">Request options.</param>
+        /// <param name="requestOptions">Per-request configuration overrides.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The <see cref="SourcesResponse"/> result.</returns>
+        public virtual async Task<SourcesResponse> CreateSourceAsync(string extractionId, ExtractionsCreateSourceOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return await this.PostAsync<SourcesResponse>($"/v1/extractions/{Uri.EscapeDataString(extractionId)}/sources", options, requestOptions, cancellationToken);
+        }
+
+        /// <summary>Compatibility wrapper for <see cref="CreateSourceAsync"/>.</summary>
+        public virtual Task<SourcesResponse> CreateSource(string extractionId, ExtractionsCreateSourceOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+        {
+            return this.CreateSourceAsync(extractionId, options, requestOptions, cancellationToken);
         }
     }
 }

@@ -11,7 +11,9 @@ module Retab
       document_type: :document_type,
       file: :file,
       extraction: :extraction,
-      sources: :sources
+      sources: :sources,
+      evidence: :evidence,
+      job: :job
     }.freeze
 
     attr_accessor(
@@ -20,7 +22,9 @@ module Retab
       :document_type,
       :file,
       :extraction,
-      :sources
+      :sources,
+      :evidence,
+      :job
     )
 
     def initialize(json)
@@ -32,6 +36,8 @@ module Retab
       @file = hash[:file] ? Retab::FileRef.new(hash[:file]) : nil
       @extraction = hash[:extraction] || {}
       @sources = hash[:sources] || {}
+      @evidence = hash[:evidence] || {}
+      @job = hash[:job] ? Retab::SourceJob.new(hash[:job]) : nil
     end
   end
 end

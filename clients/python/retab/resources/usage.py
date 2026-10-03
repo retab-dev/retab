@@ -25,7 +25,7 @@ class UsageMixin:
         to_date: str | None = None,
         **extra_params: Any,
     ) -> PreparedRequest:
-        """List Usage Blocks"""
+        """List Usage Blocks One row per workflow block with its credits, pages, runs and executions. An extract block's `execution_count` and `status_counts` include the cited sources pass of each extraction it made in an organization that uses cited sources (billed once per extraction; see Pricing), and its `credits` include their cost; its `page_count` counts each document once."""
         params: dict[str, Any] = {
             "limit": limit,
             "order": order,
@@ -136,7 +136,7 @@ class Usage(SyncAPIResource, UsageMixin):
         to_date: str | None = None,
         **extra_params: Any,
     ) -> PaginatedList[UsageBlockRecord]:
-        """List Usage Blocks"""
+        """List Usage Blocks One row per workflow block with its credits, pages, runs and executions. An extract block's `execution_count` and `status_counts` include the cited sources pass of each extraction it made in an organization that uses cited sources (billed once per extraction; see Pricing), and its `credits` include their cost; its `page_count` counts each document once."""
         prepared_request = self.prepare_list_blocks(
             limit=limit, order=order, before=before, after=after, workflow_id=workflow_id, block_type=block_type, from_date=from_date, to_date=to_date, **extra_params
         )
@@ -230,7 +230,7 @@ class AsyncUsage(AsyncAPIResource, UsageMixin):
         to_date: str | None = None,
         **extra_params: Any,
     ) -> AsyncPaginatedList[UsageBlockRecord]:
-        """List Usage Blocks"""
+        """List Usage Blocks One row per workflow block with its credits, pages, runs and executions. An extract block's `execution_count` and `status_counts` include the cited sources pass of each extraction it made in an organization that uses cited sources (billed once per extraction; see Pricing), and its `credits` include their cost; its `page_count` counts each document once."""
         prepared_request = self.prepare_list_blocks(
             limit=limit, order=order, before=before, after=after, workflow_id=workflow_id, block_type=block_type, from_date=from_date, to_date=to_date, **extra_params
         )

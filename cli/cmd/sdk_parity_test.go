@@ -51,6 +51,9 @@ var sdkResourceCommandAliases = map[string]string{
 }
 
 var sdkOperationCommandAliases = map[string]string{
+	// The sources command selects creation or polling with --mode and --poll.
+	"extractions.CreateSource":      "extractions sources",
+	"extractions.SourcesWithParams": "extractions sources",
 	// Secrets use one CLI-safe command that reads values from prompt/stdin/file
 	// instead of exposing raw secret values as shell-history-friendly flags.
 	"secrets.Create":    "secrets set",

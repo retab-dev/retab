@@ -10,6 +10,12 @@ import {
   deserializeMIMEData,
   serializeMIMEData,
 } from '../../classifications/interfaces/mime-data.interface.js';
+import type { SourceOptions, SourceOptionsResponse } from './source-options.interface.js';
+import {
+  ZSourceOptions,
+  deserializeSourceOptions,
+  serializeSourceOptions,
+} from './source-options.interface.js';
 
 /** Request to run a structured extraction on a single document. */
 export interface ExtractionRequest {
@@ -49,6 +55,8 @@ export interface ExtractionRequest {
    * @default false
    */
   deepExtraction?: boolean;
+  /** Automatic sources policy. Omit to inherit the organization default; located prevents automatic paid citations. */
+  sources?: SourceOptions;
 }
 
 export interface ExtractionRequestResponse {
@@ -63,6 +71,7 @@ export interface ExtractionRequestResponse {
   stream?: boolean;
   background?: boolean;
   deep_extraction?: boolean;
+  sources?: SourceOptionsResponse;
 }
 
 export const ZExtractionRequest = z.object({
@@ -77,6 +86,7 @@ export const ZExtractionRequest = z.object({
   stream: z.boolean().optional(),
   background: z.boolean().optional(),
   deepExtraction: z.boolean().optional(),
+  sources: ZSourceOptions.optional(),
 }) as z.ZodType<ExtractionRequest>;
 
 export function deserializeExtractionRequest(wire: ExtractionRequestResponse): ExtractionRequest {
@@ -92,6 +102,10 @@ export function deserializeExtractionRequest(wire: ExtractionRequestResponse): E
     stream: wire['stream'],
     background: wire['background'],
     deepExtraction: wire['deep_extraction'],
+    sources:
+      wire['sources'] == null
+        ? (wire['sources'] as undefined)
+        : deserializeSourceOptions(wire['sources']),
   };
 }
 
@@ -108,5 +122,9 @@ export function serializeExtractionRequest(domain: ExtractionRequest): Extractio
     stream: domain['stream'],
     background: domain['background'],
     deep_extraction: domain['deepExtraction'],
+    sources:
+      domain['sources'] == null
+        ? (domain['sources'] as undefined)
+        : serializeSourceOptions(domain['sources']),
   };
 }

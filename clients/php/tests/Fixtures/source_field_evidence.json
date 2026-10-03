@@ -1,0 +1,31 @@
+{
+  "kind": "direct",
+  "sources": [
+    {
+      "anchor": {
+        "char_end": 1,
+        "char_start": 1,
+        "column": "test_column",
+        "coordinate": "test_coordinate",
+        "height": 1,
+        "kind": "pdf_bbox",
+        "left": 1,
+        "line_end": 1,
+        "line_start": 1,
+        "page": 1,
+        "paragraph": 1,
+        "row": 1,
+        "sheet_index": 1,
+        "sheet_name": "Test",
+        "table": 1,
+        "top": 1,
+        "width": 1
+      },
+      "content": "test_content",
+      "file_id": "file_id_01234",
+      "qualification": "direct",
+      "role": "answer"
+    }
+  ],
+  "status": "pending"
+}

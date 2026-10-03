@@ -147,7 +147,15 @@ For streaming output (one event per line, useful on slow extractions), see
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Extractions.Create(ctx, &req)
+		policy, err := sourcePolicyFromFlag(cmd)
+		if err != nil {
+			return err
+		}
+		var options []retab.RequestOption
+		if policy != nil {
+			options = append(options, retab.WithRequestBody(map[string]any{"sources": policy}))
+		}
+		result, err := client.Extractions.Create(ctx, &req, options...)
 		if err != nil {
 			return err
 		}
@@ -220,6 +228,13 @@ Flags and document/schema resolution are identical to
 		// extraction and nothing said so.
 		if req.DeepExtraction != nil {
 			body["deep_extraction"] = *req.DeepExtraction
+		}
+		policy, err := sourcePolicyFromFlag(cmd)
+		if err != nil {
+			return err
+		}
+		if policy != nil {
+			body["sources"] = policy
 		}
 		return cliStreamLinesRequest(cmd, http.MethodPost, "/v1/extractions/stream", nil, body, cmd.OutOrStdout())
 	}),
@@ -313,28 +328,54 @@ page or region of the source document each value came from), use
 
 var extractionsSourcesCmd = &cobra.Command{
 	Use:   "sources <extraction-id>",
-	Short: "Get the provenance for an extraction",
-	Long: `Return the source location of every field in an extraction.
-
-The provenance side-band maps each JSON field in the extraction to the
-page and (when available) bounding region of the source document that
-produced it. Use it to render citations, drive review UIs, or audit which
-content actually backed an extracted value.`,
-	Example: `  # Inspect per-field provenance
-  retab extractions sources extr_xyz789
-
-  # Pipe into jq to list only the field paths and pages
-  retab extractions sources extr_xyz789 \
-    | jq '.sources | map({path, page})'`,
+	Short: "Get or compute sources for an extraction",
+	Long: `Without --mode, return the existing synchronous sources response.
+With --mode, create or join a durable sources job. Use --background to return
+immediately, or --poll to read its current snapshot. Processing completion
+does not guarantee a match for every field. Cited mode can incur citation charges.`,
+	Example: `  retab extractions sources extr_123
+  retab extractions sources extr_123 --mode located --background
+  retab extractions sources extr_123 --mode located --poll --job-id src_123
+  retab extractions sources extr_123 --mode cited --background`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		mode, _ := cmd.Flags().GetString("mode")
+		jobID, _ := cmd.Flags().GetString("job-id")
+		background, _ := cmd.Flags().GetBool("background")
+		retry, _ := cmd.Flags().GetBool("retry")
+		poll, _ := cmd.Flags().GetBool("poll")
+		if mode != "" && mode != "located" && mode != "cited" {
+			return fmt.Errorf("--mode must be located or cited")
+		}
+		if mode == "" && (jobID != "" || background || retry || poll) {
+			return fmt.Errorf("--mode is required with job options")
+		}
+		if poll && (background || retry) {
+			return fmt.Errorf("--poll cannot be combined with --background or --retry")
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Extractions.Sources(ctx, args[0])
+		var result *retab.SourcesResponse
+		switch {
+		case mode == "":
+			result, err = client.Extractions.Sources(ctx, args[0])
+		case poll:
+			params := &retab.ExtractionsSourcesParams{Mode: ptr(retab.ExtractionsMode(mode))}
+			if jobID != "" {
+				params.JobID = &jobID
+			}
+			result, err = client.Extractions.SourcesWithParams(ctx, args[0], params)
+		default:
+			params := &retab.ExtractionsCreateSourceParams{Mode: ptr(retab.CreateSourcesRequestMode(mode)), Background: &background, Retry: &retry}
+			if jobID != "" {
+				params.JobID = &jobID
+			}
+			result, err = client.Extractions.CreateSource(ctx, args[0], params)
+		}
 		if err != nil {
 			return err
 		}
@@ -406,6 +447,7 @@ an idempotent no-op: the API returns the existing record unchanged.`,
 }
 
 func addExtractionBodyFlags(cmd *cobra.Command) {
+	cmd.Flags().String("sources-mode", "", "automatic sources policy: located or cited; default inherits organization policy")
 	addDocumentFlags(cmd)
 	addSchemaFlags(cmd)
 	cmd.Flags().String("model", "", "model identifier (required)")
@@ -443,6 +485,11 @@ func init() {
 	addExtractionBodyFlags(extractionsStreamCmd)
 
 	addListFlags(extractionsListCmd, false)
+	extractionsSourcesCmd.Flags().String("mode", "", "compute located (free) or cited sources")
+	extractionsSourcesCmd.Flags().String("job-id", "", "pin the request to a sources job identity")
+	extractionsSourcesCmd.Flags().Bool("background", false, "return immediately while computation continues")
+	extractionsSourcesCmd.Flags().Bool("retry", false, "retry terminal incomplete or failed work")
+	extractionsSourcesCmd.Flags().Bool("poll", false, "read the current job snapshot without starting work")
 	extractionsListCmd.Flags().StringArray("metadata", nil, "metadata key=value filter (repeatable)")
 	extractionsDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
 

@@ -26,6 +26,7 @@
     "create_experiment",
     "create_experiment_run",
     "create_extraction",
+    "create_extraction_sources",
     "create_extraction_stream",
     "create_file_blueprint",
     "create_parse",
@@ -188,6 +189,12 @@
     },
     "create_extraction": {
       "command": "retab extractions create",
+      "source_files": [
+        "public/sdk/cli/cmd/extractions.go"
+      ]
+    },
+    "create_extraction_sources": {
+      "command": "retab extractions sources",
       "source_files": [
         "public/sdk/cli/cmd/extractions.go"
       ]

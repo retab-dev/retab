@@ -10,6 +10,17 @@ import {
   deserializeFileRef,
   serializeFileRef,
 } from '../../classifications/interfaces/file-ref.interface.js';
+import type {
+  SourceFieldEvidence,
+  SourceFieldEvidenceResponse,
+} from './source-field-evidence.interface.js';
+import {
+  ZSourceFieldEvidence,
+  deserializeSourceFieldEvidence,
+  serializeSourceFieldEvidence,
+} from './source-field-evidence.interface.js';
+import type { SourceJob, SourceJobResponse } from './source-job.interface.js';
+import { ZSourceJob, deserializeSourceJob, serializeSourceJob } from './source-job.interface.js';
 import type { SourcesResponseDocumentType } from './sources-response-document-type.interface.js';
 import { ZSourcesResponseDocumentType } from './sources-response-document-type.interface.js';
 
@@ -27,6 +38,9 @@ export interface SourcesResponse {
   extraction: Record<string, unknown>;
   /** Same shape as extraction but leaves are {value, source} objects. Non-null source entries include file_id. */
   sources: Record<string, unknown>;
+  /** @default {} */
+  evidence?: Record<string, SourceFieldEvidence>;
+  job?: SourceJob;
 }
 
 export interface SourcesResponseResponse {
@@ -36,6 +50,8 @@ export interface SourcesResponseResponse {
   file: FileRefResponse;
   extraction: Record<string, unknown>;
   sources: Record<string, unknown>;
+  evidence?: Record<string, SourceFieldEvidenceResponse>;
+  job?: SourceJobResponse;
 }
 
 export const ZSourcesResponse = z.object({
@@ -45,6 +61,8 @@ export const ZSourcesResponse = z.object({
   file: ZFileRef,
   extraction: z.record(z.string(), z.unknown()),
   sources: z.record(z.string(), z.unknown()),
+  evidence: z.record(z.string(), ZSourceFieldEvidence).optional(),
+  job: ZSourceJob.optional(),
 }) as z.ZodType<SourcesResponse>;
 
 export function deserializeSourcesResponse(wire: SourcesResponseResponse): SourcesResponse {
@@ -55,6 +73,16 @@ export function deserializeSourcesResponse(wire: SourcesResponseResponse): Sourc
     file: deserializeFileRef(wire['file']),
     extraction: wire['extraction'],
     sources: wire['sources'],
+    evidence:
+      wire['evidence'] == null
+        ? (wire['evidence'] as undefined)
+        : Object.fromEntries(
+            Object.entries(wire['evidence']).map(([__k, __v]) => [
+              __k,
+              deserializeSourceFieldEvidence(__v),
+            ])
+          ),
+    job: wire['job'] == null ? (wire['job'] as undefined) : deserializeSourceJob(wire['job']),
   };
 }
 
@@ -66,5 +94,15 @@ export function serializeSourcesResponse(domain: SourcesResponse): SourcesRespon
     file: serializeFileRef(domain['file']),
     extraction: domain['extraction'],
     sources: domain['sources'],
+    evidence:
+      domain['evidence'] == null
+        ? (domain['evidence'] as undefined)
+        : Object.fromEntries(
+            Object.entries(domain['evidence']).map(([__k, __v]) => [
+              __k,
+              serializeSourceFieldEvidence(__v),
+            ])
+          ),
+    job: domain['job'] == null ? (domain['job'] as undefined) : serializeSourceJob(domain['job']),
   };
 }

@@ -21,6 +21,7 @@ public final class ExtractionRequest {
   private final Boolean stream;
   private final Boolean background;
   private final Boolean deepExtraction;
+  private final SourceOptions sources;
 
   @JsonCreator
   public ExtractionRequest(
@@ -35,7 +36,8 @@ public final class ExtractionRequest {
       @JsonProperty(value = "bust_cache", required = false) Boolean bustCache,
       @JsonProperty(value = "stream", required = false) Boolean stream,
       @JsonProperty(value = "background", required = false) Boolean background,
-      @JsonProperty(value = "deep_extraction", required = false) Boolean deepExtraction) {
+      @JsonProperty(value = "deep_extraction", required = false) Boolean deepExtraction,
+      @JsonProperty(value = "sources", required = false) SourceOptions sources) {
     this.document = document;
     this.jsonSchema = jsonSchema;
     this.model = model != null ? model : "retab-small";
@@ -47,6 +49,34 @@ public final class ExtractionRequest {
     this.stream = stream != null ? stream : false;
     this.background = background != null ? background : false;
     this.deepExtraction = deepExtraction != null ? deepExtraction : false;
+    this.sources = sources;
+  }
+
+  public ExtractionRequest(
+      MimeData document,
+      Map<String, Object> jsonSchema,
+      String model,
+      String instructions,
+      Long nConsensus,
+      Map<String, String> metadata,
+      List<Map<String, Object>> additionalMessages,
+      Boolean bustCache,
+      Boolean stream,
+      Boolean background,
+      Boolean deepExtraction) {
+    this(
+        document,
+        jsonSchema,
+        model,
+        instructions,
+        nConsensus,
+        metadata,
+        additionalMessages,
+        bustCache,
+        stream,
+        background,
+        deepExtraction,
+        null);
   }
 
   @JsonProperty("document")
@@ -102,5 +132,10 @@ public final class ExtractionRequest {
   @JsonProperty("deep_extraction")
   public Boolean isDeepExtraction() {
     return deepExtraction;
+  }
+
+  @JsonProperty("sources")
+  public SourceOptions getSources() {
+    return sources;
   }
 }

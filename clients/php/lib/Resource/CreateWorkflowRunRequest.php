@@ -31,6 +31,8 @@ readonly class CreateWorkflowRunRequest implements \JsonSerializable
          * @var array<string, string>|null
          */
         public ?array $metadata = null,
+        /** Automatic source policy for extractions created by this run. Located prevents automatic paid citations. */
+        public ?SourceOptions $sources = null,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -49,6 +51,7 @@ readonly class CreateWorkflowRunRequest implements \JsonSerializable
             jsonInputs: $data['json_inputs'] ?? null,
             version: $data['version'] ?? null,
             metadata: $data['metadata'] ?? null,
+            sources: isset($data['sources']) ? SourceOptions::fromArray($data['sources']) : null,
         );
     }
 
@@ -61,6 +64,7 @@ readonly class CreateWorkflowRunRequest implements \JsonSerializable
             'json_inputs' => $this->jsonInputs,
             'version' => $this->version,
             'metadata' => $this->metadata,
+            'sources' => $this->sources?->toArray(),
         ];
     }
 }

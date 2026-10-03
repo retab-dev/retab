@@ -5,6 +5,7 @@ import datetime
 from enum import Enum
 from typing import Any, Literal, cast
 from pydantic import BaseModel, ConfigDict, Field
+from retab.types.extractions import SourceOptions
 from retab.types.mime import FileRef, MIMEData
 from retab.types.workflows.artifacts import ErrorDetails
 
@@ -127,6 +128,7 @@ class CreateWorkflowRunRequest(BaseModel):
         default="production", description="Workflow version to run: 'production', 'draft', or a pinned version id like 'ver_...'. Only valid for fresh-run creation."
     )
     metadata: dict[str, str] | None = Field(default=None, description="User-defined metadata to associate with this workflow run.")
+    sources: SourceOptions | None = Field(default=None, description="Automatic source policy for extractions created by this run. Located prevents automatic paid citations.")
 
 
 class ErrorTerminal(BaseModel):

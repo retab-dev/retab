@@ -10,6 +10,15 @@ import {
   deserializeMIMEData,
   serializeMIMEData,
 } from '../../../classifications/interfaces/mime-data.interface.js';
+import type {
+  SourceOptions,
+  SourceOptionsResponse,
+} from '../../../extractions/interfaces/source-options.interface.js';
+import {
+  ZSourceOptions,
+  deserializeSourceOptions,
+  serializeSourceOptions,
+} from '../../../extractions/interfaces/source-options.interface.js';
 
 /** Create a new workflow run from a workflow id, an optional version selector, and optional inputs. */
 export interface CreateWorkflowRunRequest {
@@ -32,6 +41,8 @@ export interface CreateWorkflowRunRequest {
   version?: string;
   /** User-defined metadata to associate with this workflow run. */
   metadata?: Record<string, string> | null;
+  /** Automatic source policy for extractions created by this run. Located prevents automatic paid citations. */
+  sources?: SourceOptions;
 }
 
 export interface CreateWorkflowRunRequestResponse {
@@ -40,6 +51,7 @@ export interface CreateWorkflowRunRequestResponse {
   json_inputs?: Record<string, unknown>;
   version?: string;
   metadata?: Record<string, string> | null;
+  sources?: SourceOptionsResponse;
 }
 
 export const ZCreateWorkflowRunRequest = z.object({
@@ -48,6 +60,7 @@ export const ZCreateWorkflowRunRequest = z.object({
   jsonInputs: z.record(z.string(), z.unknown()).optional(),
   version: z.string().optional(),
   metadata: z.record(z.string(), z.string()).nullable().optional(),
+  sources: ZSourceOptions.optional(),
 }) as z.ZodType<CreateWorkflowRunRequest>;
 
 export function deserializeCreateWorkflowRunRequest(
@@ -64,6 +77,10 @@ export function deserializeCreateWorkflowRunRequest(
     jsonInputs: wire['json_inputs'],
     version: wire['version'],
     metadata: wire['metadata'],
+    sources:
+      wire['sources'] == null
+        ? (wire['sources'] as undefined)
+        : deserializeSourceOptions(wire['sources']),
   };
 }
 
@@ -81,5 +98,9 @@ export function serializeCreateWorkflowRunRequest(
     json_inputs: domain['jsonInputs'],
     version: domain['version'],
     metadata: domain['metadata'],
+    sources:
+      domain['sources'] == null
+        ? (domain['sources'] as undefined)
+        : serializeSourceOptions(domain['sources']),
   };
 }

@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "dotnet",
-  "generatedAt": "2026-08-06T14:10:39.144Z",
+  "generatedAt": "2026-10-03T11:26:06.564Z",
   "files": [
     "README.md",
     "Retab.csproj",
@@ -98,6 +98,8 @@
     "src/Entities/EvalRunBlockTarget.cs",
     "src/Entities/EvalRunFreshness.cs",
     "src/Entities/EvalRunTrigger.cs",
+    "src/Entities/EvidenceAnchor.cs",
+    "src/Entities/EvidenceSource.cs",
     "src/Entities/ExistCondition.cs",
     "src/Entities/ExperimentByDocumentMetricsResponse.cs",
     "src/Entities/ExperimentByDocumentTargetMetric.cs",
@@ -201,6 +203,10 @@
     "src/Entities/SheetRegion.cs",
     "src/Entities/SimilarityGteCondition.cs",
     "src/Entities/SkippedBlockExecutionLifecycle.cs",
+    "src/Entities/SourceFieldEvidence.cs",
+    "src/Entities/SourceJob.cs",
+    "src/Entities/SourceJobError.cs",
+    "src/Entities/SourceOptions.cs",
     "src/Entities/SourcesResponse.cs",
     "src/Entities/Split.cs",
     "src/Entities/SplitConsensus.cs",
@@ -279,6 +285,7 @@
     "src/Enums/ConditionEvaluationDetailsLogicalOperator.cs",
     "src/Enums/CreateExperimentRequestNConsensus.cs",
     "src/Enums/CreateFileBlueprintRequestMode.cs",
+    "src/Enums/CreateSourcesRequestMode.cs",
     "src/Enums/DeclarativeApplyResponseAction.cs",
     "src/Enums/DeclarativePlanFieldChangeAction.cs",
     "src/Enums/DeclarativePlanResourceChangeTarget.cs",
@@ -286,6 +293,9 @@
     "src/Enums/ErrorStepLifecycleCategory.cs",
     "src/Enums/ErrorStepLifecycleStage.cs",
     "src/Enums/EvalRunTriggerType.cs",
+    "src/Enums/EvidenceAnchorKind.cs",
+    "src/Enums/EvidenceSourceQualification.cs",
+    "src/Enums/EvidenceSourceRole.cs",
     "src/Enums/ExperimentBlockType.cs",
     "src/Enums/ExperimentPublicStatus.cs",
     "src/Enums/ExperimentRunMetricsView.cs",
@@ -299,6 +309,9 @@
     "src/Enums/ReviewDecisionStatus.cs",
     "src/Enums/ReviewEvaluationReviewDecision.cs",
     "src/Enums/SimilarityGteConditionMethod.cs",
+    "src/Enums/SourceFieldEvidenceKind.cs",
+    "src/Enums/SourceFieldEvidenceStatus.cs",
+    "src/Enums/SourceJobStatus.cs",
     "src/Enums/SourcesResponseDocumentType.cs",
     "src/Enums/StepArtifactRefOperation.cs",
     "src/Enums/SubmissionStatus.cs",
@@ -474,6 +487,10 @@
     },
     "GET /v1/extractions/{extraction_id}/sources": {
       "sdkMethod": "SourcesAsync",
+      "service": "extractions"
+    },
+    "POST /v1/extractions/{extraction_id}/sources": {
+      "sdkMethod": "CreateSourceAsync",
       "service": "extractions"
     },
     "GET /v1/files": {

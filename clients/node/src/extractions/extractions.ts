@@ -3,16 +3,19 @@
 import type { Retab } from '../retab.js';
 import { PaginatedList } from '../_pagination.js';
 import { coerceMimeData, type DocumentInput } from '../runtime/mime.js';
-import type { ExtractionsStatus } from '../common/interfaces/index.js';
+import type { ExtractionsMode, ExtractionsStatus } from '../common/interfaces/index.js';
 import type {
+  CreateSourcesRequestMode,
   Extraction,
   ExtractionResponse,
+  SourceOptions,
   SourcesResponse,
   SourcesResponseResponse,
 } from '../extractions/interfaces/index.js';
 import {
   deserializeExtraction,
   deserializeSourcesResponse,
+  serializeSourceOptions,
 } from '../extractions/interfaces/index.js';
 
 export class Extractions {
@@ -66,7 +69,8 @@ export class Extractions {
     bustCache?: boolean,
     stream?: boolean,
     background?: boolean,
-    deepExtraction?: boolean
+    deepExtraction?: boolean,
+    sources?: SourceOptions
   ): Promise<Extraction> {
     const documentCoerced = await coerceMimeData(document, (__id) =>
       this.client.files.get_download_link(__id)
@@ -83,6 +87,7 @@ export class Extractions {
       stream: stream,
       background: background,
       deep_extraction: deepExtraction,
+      sources: sources === undefined ? undefined : serializeSourceOptions(sources),
     };
     const __wire = await this.client.request<ExtractionResponse>({
       method: 'POST',
@@ -105,7 +110,8 @@ export class Extractions {
     bustCache?: boolean,
     stream?: boolean,
     background?: boolean,
-    deepExtraction?: boolean
+    deepExtraction?: boolean,
+    sources?: SourceOptions
   ): Promise<unknown> {
     const documentCoerced = await coerceMimeData(document, (__id) =>
       this.client.files.get_download_link(__id)
@@ -122,6 +128,7 @@ export class Extractions {
       stream: stream,
       background: background,
       deep_extraction: deepExtraction,
+      sources: sources === undefined ? undefined : serializeSourceOptions(sources),
     };
     const __wire = await this.client.request<unknown>({
       method: 'POST',
@@ -168,12 +175,38 @@ export class Extractions {
   }
 
   /** Get Extraction Sources */
-  async sources(extractionId: string): Promise<SourcesResponse> {
+  async sources(
+    extractionId: string,
+    options?: { mode?: ExtractionsMode | null | undefined; jobId?: string | null | undefined }
+  ): Promise<SourcesResponse> {
     const __wire = await this.client.request<SourcesResponseResponse>({
       method: 'GET',
       path: `/v1/extractions/${extractionId}/sources`,
-      query: undefined,
+      query: { mode: options?.mode, job_id: options?.jobId },
       body: undefined,
+    });
+    return deserializeSourcesResponse(__wire);
+  }
+
+  /** Create Extraction Sources */
+  async create_extraction_source(
+    extractionId: string,
+    background?: boolean,
+    jobId?: string,
+    mode?: CreateSourcesRequestMode,
+    retry?: boolean
+  ): Promise<SourcesResponse> {
+    const body = {
+      background: background,
+      job_id: jobId,
+      mode: mode,
+      retry: retry,
+    };
+    const __wire = await this.client.request<SourcesResponseResponse>({
+      method: 'POST',
+      path: `/v1/extractions/${extractionId}/sources`,
+      query: undefined,
+      body: body,
     });
     return deserializeSourcesResponse(__wire);
   }

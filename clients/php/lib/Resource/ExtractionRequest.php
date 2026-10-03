@@ -47,6 +47,8 @@ readonly class ExtractionRequest implements \JsonSerializable
         public ?bool $background = null,
         /** Optimizes for accuracy over latency in documents with very large arrays. */
         public ?bool $deepExtraction = null,
+        /** Automatic sources policy. Omit to inherit the organization default; located prevents automatic paid citations. */
+        public ?SourceOptions $sources = null,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -72,6 +74,7 @@ readonly class ExtractionRequest implements \JsonSerializable
             stream: $data['stream'] ?? null,
             background: $data['background'] ?? null,
             deepExtraction: $data['deep_extraction'] ?? null,
+            sources: isset($data['sources']) ? SourceOptions::fromArray($data['sources']) : null,
         );
     }
 
@@ -90,6 +93,7 @@ readonly class ExtractionRequest implements \JsonSerializable
             'stream' => $this->stream,
             'background' => $this->background,
             'deep_extraction' => $this->deepExtraction,
+            'sources' => $this->sources?->toArray(),
         ];
     }
 }

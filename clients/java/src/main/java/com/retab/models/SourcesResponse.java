@@ -16,6 +16,8 @@ public final class SourcesResponse {
   private final FileRef file;
   private final Map<String, Object> extraction;
   private final Map<String, Object> sources;
+  private final Map<String, SourceFieldEvidence> evidence;
+  private final SourceJob job;
 
   @JsonCreator
   public SourcesResponse(
@@ -25,13 +27,27 @@ public final class SourcesResponse {
           SourcesResponseDocumentType documentType,
       @JsonProperty(value = "file", required = true) FileRef file,
       @JsonProperty(value = "extraction", required = true) Map<String, Object> extraction,
-      @JsonProperty(value = "sources", required = true) Map<String, Object> sources) {
+      @JsonProperty(value = "sources", required = true) Map<String, Object> sources,
+      @JsonProperty(value = "evidence", required = false) Map<String, SourceFieldEvidence> evidence,
+      @JsonProperty(value = "job", required = false) SourceJob job) {
     this.objectType = objectType != null ? objectType : "extraction.sources";
     this.extractionId = extractionId;
     this.documentType = documentType;
     this.file = file;
     this.extraction = extraction;
     this.sources = sources;
+    this.evidence = evidence;
+    this.job = job;
+  }
+
+  public SourcesResponse(
+      String objectType,
+      String extractionId,
+      SourcesResponseDocumentType documentType,
+      FileRef file,
+      Map<String, Object> extraction,
+      Map<String, Object> sources) {
+    this(objectType, extractionId, documentType, file, extraction, sources, null, null);
   }
 
   @JsonProperty("object")
@@ -62,5 +78,15 @@ public final class SourcesResponse {
   @JsonProperty("sources")
   public Map<String, Object> getSources() {
     return sources;
+  }
+
+  @JsonProperty("evidence")
+  public Map<String, SourceFieldEvidence> getEvidence() {
+    return evidence;
+  }
+
+  @JsonProperty("job")
+  public SourceJob getJob() {
+    return job;
   }
 }

@@ -166,6 +166,14 @@ const (
 	ParseRequestTableParsingFormatJSON     ParseRequestTableParsingFormat = "json"
 )
 
+// CreateSourcesRequestMode represents create sources request mode values.
+type CreateSourcesRequestMode string
+
+const (
+	CreateSourcesRequestModeLocated CreateSourcesRequestMode = "located"
+	CreateSourcesRequestModeCited   CreateSourcesRequestMode = "cited"
+)
+
 // WorkflowBlockCreateRequestType represents workflow block create request type values.
 type WorkflowBlockCreateRequestType string
 
@@ -301,6 +309,37 @@ const (
 	EvalRunTriggerTypeRestart  EvalRunTriggerType = "restart"
 )
 
+// EvidenceAnchorKind represents evidence anchor kind values.
+type EvidenceAnchorKind string
+
+const (
+	EvidenceAnchorKindPdfBbox         EvidenceAnchorKind = "pdf_bbox"
+	EvidenceAnchorKindImageBbox       EvidenceAnchorKind = "image_bbox"
+	EvidenceAnchorKindTextSpan        EvidenceAnchorKind = "text_span"
+	EvidenceAnchorKindSpreadsheetCell EvidenceAnchorKind = "spreadsheet_cell"
+	EvidenceAnchorKindCsvCell         EvidenceAnchorKind = "csv_cell"
+	EvidenceAnchorKindDocxTextSpan    EvidenceAnchorKind = "docx_text_span"
+	EvidenceAnchorKindDocxTableCell   EvidenceAnchorKind = "docx_table_cell"
+)
+
+// EvidenceSourceQualification represents evidence source qualification values.
+type EvidenceSourceQualification string
+
+const (
+	EvidenceSourceQualificationDirect  EvidenceSourceQualification = "direct"
+	EvidenceSourceQualificationPartial EvidenceSourceQualification = "partial"
+	EvidenceSourceQualificationLegacy  EvidenceSourceQualification = "legacy"
+)
+
+// EvidenceSourceRole represents evidence source role values.
+type EvidenceSourceRole string
+
+const (
+	EvidenceSourceRoleAnswer     EvidenceSourceRole = "answer"
+	EvidenceSourceRoleInput      EvidenceSourceRole = "input"
+	EvidenceSourceRoleComparison EvidenceSourceRole = "comparison"
+)
+
 // ExperimentSummaryMetricsResponseBlockType is an alias for ExperimentBlockType.
 type ExperimentSummaryMetricsResponseBlockType = ExperimentBlockType
 
@@ -402,6 +441,44 @@ const (
 	SimilarityGteConditionMethodLevenshtein SimilarityGteConditionMethod = "levenshtein"
 	SimilarityGteConditionMethodEmbeddings  SimilarityGteConditionMethod = "embeddings"
 )
+
+// SourceFieldEvidenceKind represents source field evidence kind values.
+type SourceFieldEvidenceKind string
+
+const (
+	SourceFieldEvidenceKindDirect      SourceFieldEvidenceKind = "direct"
+	SourceFieldEvidenceKindSupporting  SourceFieldEvidenceKind = "supporting"
+	SourceFieldEvidenceKindUnavailable SourceFieldEvidenceKind = "unavailable"
+)
+
+// SourceFieldEvidenceStatus represents source field evidence status values.
+type SourceFieldEvidenceStatus string
+
+const (
+	SourceFieldEvidenceStatusPending     SourceFieldEvidenceStatus = "pending"
+	SourceFieldEvidenceStatusMatched     SourceFieldEvidenceStatus = "matched"
+	SourceFieldEvidenceStatusPartial     SourceFieldEvidenceStatus = "partial"
+	SourceFieldEvidenceStatusMissing     SourceFieldEvidenceStatus = "missing"
+	SourceFieldEvidenceStatusAmbiguous   SourceFieldEvidenceStatus = "ambiguous"
+	SourceFieldEvidenceStatusUnsupported SourceFieldEvidenceStatus = "unsupported"
+	SourceFieldEvidenceStatusError       SourceFieldEvidenceStatus = "error"
+)
+
+// SourceJobMode is an alias for CreateSourcesRequestMode.
+type SourceJobMode = CreateSourcesRequestMode
+
+// SourceJobStatus represents source job status values.
+type SourceJobStatus string
+
+const (
+	SourceJobStatusPending   SourceJobStatus = "pending"
+	SourceJobStatusRunning   SourceJobStatus = "running"
+	SourceJobStatusCompleted SourceJobStatus = "completed"
+	SourceJobStatusError     SourceJobStatus = "error"
+)
+
+// SourceOptionsMode is an alias for CreateSourcesRequestMode.
+type SourceOptionsMode = CreateSourcesRequestMode
 
 // SplitStatus is an alias for ClassificationStatus.
 type SplitStatus = ClassificationStatus
@@ -665,6 +742,9 @@ type ExtractionsOrder = ClassificationsOrder
 
 // ExtractionsStatus is an alias for ClassificationStatus.
 type ExtractionsStatus = ClassificationStatus
+
+// ExtractionsMode is an alias for CreateSourcesRequestMode.
+type ExtractionsMode = CreateSourcesRequestMode
 
 // FilesOrder is an alias for ClassificationsOrder.
 type FilesOrder = ClassificationsOrder

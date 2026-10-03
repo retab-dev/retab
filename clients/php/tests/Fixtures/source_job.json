@@ -1,0 +1,14 @@
+{
+  "error": {
+    "code": "test_code",
+    "is_retryable": true,
+    "message": "test_message"
+  },
+  "id": "01234",
+  "is_partial": true,
+  "mode": "located",
+  "object": "extraction.sources.job",
+  "revision": 1,
+  "status": "pending",
+  "updated_at": "2023-01-01T00:00:00.000Z"
+}

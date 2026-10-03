@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "go",
-  "generatedAt": "2026-07-29T09:40:21.502Z",
+  "generatedAt": "2026-10-03T11:26:06.252Z",
   "files": [
     "classifications.go",
     "compat.go",
@@ -136,6 +136,10 @@
     },
     "GET /v1/extractions/{extraction_id}/sources": {
       "sdkMethod": "Sources",
+      "service": "extractions"
+    },
+    "POST /v1/extractions/{extraction_id}/sources": {
+      "sdkMethod": "CreateSource",
       "service": "extractions"
     },
     "GET /v1/files": {

@@ -16,7 +16,8 @@ module Retab
       bust_cache: :bust_cache,
       stream: :stream,
       background: :background,
-      deep_extraction: :deep_extraction
+      deep_extraction: :deep_extraction,
+      sources: :sources
     }.freeze
 
     attr_accessor(
@@ -30,7 +31,8 @@ module Retab
       :bust_cache,
       :stream,
       :background,
-      :deep_extraction
+      :deep_extraction,
+      :sources
     )
 
     def initialize(json)
@@ -47,6 +49,7 @@ module Retab
       @stream = hash[:stream].nil? ? false : hash[:stream]
       @background = hash[:background].nil? ? false : hash[:background]
       @deep_extraction = hash[:deep_extraction].nil? ? false : hash[:deep_extraction]
+      @sources = hash[:sources] ? Retab::SourceOptions.new(hash[:sources]) : nil
     end
   end
 end

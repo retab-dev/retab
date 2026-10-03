@@ -18,6 +18,9 @@ namespace Retab
         public UsageService(Retab client) : base(client) { }
 
         /// <summary>List Usage Blocks</summary>
+        /// <remarks>
+        /// One row per workflow block with its credits, pages, runs and executions. An extract block's `execution_count` and `status_counts` include the cited sources pass of each extraction it made in an organization that uses cited sources (billed once per extraction; see Pricing), and its `credits` include their cost; its `page_count` counts each document once.
+        /// </remarks>
         /// <param name="options">Request options.</param>
         /// <param name="requestOptions">Per-request configuration overrides.</param>
         /// <param name="cancellationToken">Cancellation token.</param>

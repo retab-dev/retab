@@ -8,6 +8,7 @@ import type {
   WorkflowRunsStatus,
   WorkflowRunsTriggerType,
 } from '../../common/interfaces/index.js';
+import type { SourceOptions } from '../../extractions/interfaces/index.js';
 import type {
   CancelWorkflowResponse,
   CancelWorkflowResponseResponse,
@@ -20,6 +21,7 @@ import type {
   WorkflowRun,
   WorkflowRunResponse,
 } from '../../workflows/runs/interfaces/index.js';
+import { serializeSourceOptions } from '../../extractions/interfaces/index.js';
 import {
   deserializeCancelWorkflowResponse,
   deserializeWorkflowExportPayloadResponse,
@@ -77,7 +79,8 @@ export class WorkflowRuns {
     documents?: Record<string, DocumentInput>,
     jsonInputs?: Record<string, unknown>,
     version?: string,
-    metadata?: Record<string, string> | null
+    metadata?: Record<string, string> | null,
+    sources?: SourceOptions
   ): Promise<WorkflowRun> {
     const documentsCoerced =
       documents === undefined
@@ -96,6 +99,7 @@ export class WorkflowRuns {
       json_inputs: jsonInputs,
       version: version,
       metadata: metadata,
+      sources: sources === undefined ? undefined : serializeSourceOptions(sources),
     };
     const __wire = await this.client.request<WorkflowRunResponse>({
       method: 'POST',

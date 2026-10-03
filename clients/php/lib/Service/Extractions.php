@@ -96,6 +96,7 @@ class Extractions
      * @param bool|null $stream
      * @param bool|null $background If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
      * @param bool|null $deepExtraction Optimizes for accuracy over latency in documents with very large arrays.
+     * @param \Retab\Resource\SourceOptions|null $sources Automatic sources policy. Omit to inherit the organization default; located prevents automatic paid citations.
      * @return \Retab\Resource\Extraction
      * @throws \Retab\Exception\RetabException
      */
@@ -111,6 +112,7 @@ class Extractions
         ?bool $stream = null,
         ?bool $background = null,
         ?bool $deepExtraction = null,
+        ?\Retab\Resource\SourceOptions $sources = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\Extraction {
         $document = \Retab\Resource\MimeDataCoerce::coerce($document, $this->client);
@@ -126,6 +128,7 @@ class Extractions
             'stream' => $stream,
             'background' => $background,
             'deep_extraction' => $deepExtraction,
+            'sources' => $sources,
         ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',
@@ -151,6 +154,7 @@ class Extractions
      * @param bool|null $stream
      * @param bool|null $background If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
      * @param bool|null $deepExtraction Optimizes for accuracy over latency in documents with very large arrays.
+     * @param \Retab\Resource\SourceOptions|null $sources Automatic sources policy. Omit to inherit the organization default; located prevents automatic paid citations.
      * @return mixed
      * @throws \Retab\Exception\RetabException
      */
@@ -166,6 +170,7 @@ class Extractions
         ?bool $stream = null,
         ?bool $background = null,
         ?bool $deepExtraction = null,
+        ?\Retab\Resource\SourceOptions $sources = null,
         ?\Retab\RequestOptions $options = null,
     ): mixed {
         $document = \Retab\Resource\MimeDataCoerce::coerce($document, $this->client);
@@ -181,6 +186,7 @@ class Extractions
             'stream' => $stream,
             'background' => $background,
             'deep_extraction' => $deepExtraction,
+            'sources' => $sources,
         ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'POST',
@@ -270,16 +276,60 @@ class Extractions
      * contains citation content, surrounding context, and a format-specific
      * anchor (bbox for PDFs, cell ref for spreadsheets, text span for plain text, etc.).
      * @param string $extractionId
+     * @param \Retab\Resource\SourceJobMode|null $mode Opt into progressive sources for this mode. Omit to retain the legacy synchronous response.
+     * @param string|null $jobId Expected job identity returned by POST. A changed extraction returns 409.
      * @return \Retab\Resource\SourcesResponse
      * @throws \Retab\Exception\RetabException
      */
     public function sources(
         string $extractionId,
+        ?\Retab\Resource\SourceJobMode $mode = null,
+        ?string $jobId = null,
         ?\Retab\RequestOptions $options = null,
     ): \Retab\Resource\SourcesResponse {
+        $query = array_filter([
+            'mode' => $mode?->value,
+            'job_id' => $jobId,
+        ], fn($v) => $v !== null);
         $response = $this->client->request(
             method: 'GET',
             path: 'v1/extractions/' . rawurlencode($extractionId) . '/sources',
+            query: $query,
+            options: $options,
+        );
+        return SourcesResponse::fromArray($response);
+    }
+
+    /**
+     * Create Extraction Sources
+     *
+     * Create or join a durable sources computation. Located finds printed answers; cited also seeks supporting inputs. Background requests return immediately; synchronous requests wait up to 20 seconds before returning 202 with a version-pinned Location. Repeated requests reuse work and never bill twice. Processing completion does not guarantee evidence for every field. A cited request during a located-only computation returns 409; retry after that computation finishes.
+     * @param string $extractionId
+     * @param bool|null $background Return immediately when true. Otherwise wait up to 20 seconds, then return 202 with Location while the same durable job continues.
+     * @param string|null $jobId Optional expected sources job identity. Returns 409 if the extraction changed.
+     * @param \Retab\Resource\SourceJobMode|null $mode
+     * @param bool|null $retry Retry a terminal failed or incomplete computation. Concurrent requests join the current attempt; billing remains once per extraction.
+     * @return \Retab\Resource\SourcesResponse
+     * @throws \Retab\Exception\RetabException
+     */
+    public function createExtractionSource(
+        string $extractionId,
+        ?bool $background = null,
+        ?string $jobId = null,
+        ?\Retab\Resource\SourceJobMode $mode = null,
+        ?bool $retry = null,
+        ?\Retab\RequestOptions $options = null,
+    ): \Retab\Resource\SourcesResponse {
+        $body = array_filter([
+            'background' => $background,
+            'job_id' => $jobId,
+            'mode' => $mode?->value,
+            'retry' => $retry,
+        ], fn($v) => $v !== null);
+        $response = $this->client->request(
+            method: 'POST',
+            path: 'v1/extractions/' . rawurlencode($extractionId) . '/sources',
+            body: $body,
             options: $options,
         );
         return SourcesResponse::fromArray($response);

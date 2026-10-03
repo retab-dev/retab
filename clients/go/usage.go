@@ -25,6 +25,7 @@ type UsageListBlocksParams struct {
 }
 
 // ListBlocks list Usage Blocks
+// One row per workflow block with its credits, pages, runs and executions. An extract block's `execution_count` and `status_counts` include the cited sources pass of each extraction it made in an organization that uses cited sources (billed once per extraction; see Pricing), and its `credits` include their cost; its `page_count` counts each document once.
 func (s *UsageService) ListBlocks(ctx context.Context, params *UsageListBlocksParams, opts ...RequestOption) (*PaginatedList[UsageBlockRecord], error) {
 	return doPaginated[UsageBlockRecord](ctx, s.client, "GET", "/v1/usage/blocks", params, nil, opts...)
 }
@@ -48,7 +49,7 @@ type UsageListPrimitivesParams struct {
 	RunID *string `url:"run_id,omitempty" json:"-"`
 	// BlockID is filter to a single workflow block id (origin block).
 	BlockID *string `url:"block_id,omitempty" json:"-"`
-	// Operation is filter by operation: extraction, classify, split, parse, edit, partition, schema_generation, or consensus. The stored-kind aliases extract and classification are also accepted. An unknown value is rejected with 422.
+	// Operation is filter by operation: extraction, classify, split, parse, edit, partition, schema_generation, consensus, or cited_sources. The stored-kind aliases extract, classification and cite are also accepted. An unknown value is rejected with 422.
 	Operation *string `url:"operation,omitempty" json:"-"`
 	// Status is filter by execution lifecycle status: created, running, completed, failed, or canceled. Note the single-l spelling: a primitive execution is canceled, whereas a workflow run's status is cancelled. An unknown value is rejected with 422.
 	Status *string `url:"status,omitempty" json:"-"`

@@ -64,6 +64,13 @@ class ExtractionsTest < Minitest::Test
     refute_nil(result)
   end
 
+  def test_create_extraction_source_returns_expected_result
+    stub_request(:post, %r{\Ahttps://api\.retab\.com/v1/extractions/stub/sources(\?|\z)})
+      .to_return(body: "{}", status: 200)
+    result = @client.extractions.create_extraction_source(extraction_id: "stub")
+    refute_nil(result)
+  end
+
   # Parameterized authentication error tests (one per endpoint).
   [
     {name: :list, verb: :get, url: %r{\Ahttps://api\.retab\.com/v1/extractions(\?|\z)}},
@@ -100,6 +107,12 @@ class ExtractionsTest < Minitest::Test
     {
       name: :sources,
       verb: :get,
+      url: %r{\Ahttps://api\.retab\.com/v1/extractions/stub/sources(\?|\z)},
+      args: {extraction_id: "stub"}
+    },
+    {
+      name: :create_extraction_source,
+      verb: :post,
       url: %r{\Ahttps://api\.retab\.com/v1/extractions/stub/sources(\?|\z)},
       args: {extraction_id: "stub"}
     }
