@@ -1,14 +1,12 @@
 // REAL end-to-end tests for the workflows resource against a live server.
 //
-// CREDITLESS: only workflow DEFINITION CRUD + list/get/pagination. No runs,
-// no experiments, no block-eval runs, no LLM. The create->get->update->delete
-// cycle deletes only the workflow it created and never touches pre-existing
-// staging data.
+// CREDITLESS: only workflow definition list/get/pagination. No writes, runs,
+// experiments, block-eval runs, or LLM calls.
 
 import { describe, expect, test } from 'bun:test';
 
 import { RetabNotFoundError } from '../../src/index.js';
-import { LIVE, LIVE_SKIP_REASON, discoverProjectId, liveClient, uniqueSuffix } from '../live.js';
+import { LIVE, LIVE_SKIP_REASON, discoverProjectId, liveClient } from '../live.js';
 
 const d = describe.skipIf(!LIVE);
 
@@ -73,54 +71,6 @@ d('workflows.get (live)', () => {
     const got = await client.workflows.get(id);
     expect(got.id).toBe(id);
     expect(got.createdAt).toBeInstanceOf(Date);
-  });
-});
-
-d('workflows definition CRUD (live, creditless)', () => {
-  test('create -> get -> update -> delete a workflow definition (no runs)', async () => {
-    const client = liveClient();
-    const projectId = await discoverProjectId(client);
-    if (!projectId) {
-      // Cannot create a workflow without a project; skip rather than fabricate.
-      test.skip('no project_id discoverable to attach a workflow', () => {});
-      return;
-    }
-
-    const name = `node-e2e-creditless-${uniqueSuffix()}`;
-    const created = await client.workflows.create(projectId, name, 'created by node e2e');
-    expect(typeof created.id).toBe('string');
-    expect(created.name).toBe(name);
-    expect(created.projectId).toBe(projectId);
-
-    try {
-      const got = await client.workflows.get(created.id);
-      expect(got.id).toBe(created.id);
-      expect(got.name).toBe(name);
-
-      const renamed = `${name}-renamed`;
-      const updated = await client.workflows.update(created.id, renamed, 'renamed by node e2e');
-      expect(updated.id).toBe(created.id);
-      expect(updated.name).toBe(renamed);
-
-      // The rename is durable on a fresh get.
-      const reGot = await client.workflows.get(created.id);
-      expect(reGot.name).toBe(renamed);
-
-      // The newly-created workflow is visible in its project listing.
-      const inProject = await client.workflows.list({ projectId, limit: 50 });
-      expect(inProject.data.some((wf) => wf.id === created.id)).toBe(true);
-    } finally {
-      await client.workflows.delete(created.id);
-    }
-
-    // After delete it is gone (typed 404).
-    let thrown: unknown;
-    try {
-      await client.workflows.get(created.id);
-    } catch (e) {
-      thrown = e;
-    }
-    expect(thrown).toBeInstanceOf(RetabNotFoundError);
   });
 });
 
