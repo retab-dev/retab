@@ -447,7 +447,7 @@ an idempotent no-op: the API returns the existing record unchanged.`,
 }
 
 func addExtractionBodyFlags(cmd *cobra.Command) {
-	cmd.Flags().String("sources-mode", "", "automatic sources policy: located or cited; default inherits organization policy")
+	cmd.Flags().String("sources-mode", "", "automatic sources policy: located (default) or cited")
 	addDocumentFlags(cmd)
 	addSchemaFlags(cmd)
 	cmd.Flags().String("model", "", "model identifier (required)")

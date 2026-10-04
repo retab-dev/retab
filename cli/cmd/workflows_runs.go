@@ -1959,7 +1959,7 @@ func init() {
 	workflowsRunsCreateCmd.Flags().StringArray("document-url", nil, "document url as block-id=url (repeatable)")
 	workflowsRunsCreateCmd.Flags().StringArray("document-id", nil, "previously-uploaded file as block-id=file-id (repeatable)")
 	workflowsRunsCreateCmd.Flags().String("json-inputs-file", "", "JSON inputs object (or - for stdin)")
-	workflowsRunsCreateCmd.Flags().String("sources-mode", "", "automatic sources policy for this run: located or cited")
+	workflowsRunsCreateCmd.Flags().String("sources-mode", "", "automatic sources policy for this run: located (default) or cited")
 	workflowsRunsCreateCmd.Flags().StringArray("metadata", nil, "user-defined metadata as key=value (repeatable)")
 	// --wait blocks until the run settles (completed/error/cancelled) or
 	// pauses for review (awaiting_review); --poll-interval-ms / --timeout-seconds
