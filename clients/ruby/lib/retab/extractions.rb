@@ -110,7 +110,7 @@ module Retab
     # @param stream [Boolean, nil]
     # @param background [Boolean, nil] If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
     # @param deep_extraction [Boolean, nil] Optimizes for accuracy over latency in documents with very large arrays.
-    # @param sources [Retab::SourceOptions, nil] Automatic sources policy. Omit to inherit the organization default; located prevents automatic paid citations.
+    # @param sources [Retab::SourceOptions, nil] Automatic source computation. Omission defaults to located; cited must be requested explicitly.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::Extraction]
     def create(
@@ -171,7 +171,7 @@ module Retab
     # @param stream [Boolean, nil]
     # @param background [Boolean, nil] If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
     # @param deep_extraction [Boolean, nil] Optimizes for accuracy over latency in documents with very large arrays.
-    # @param sources [Retab::SourceOptions, nil] Automatic sources policy. Omit to inherit the organization default; located prevents automatic paid citations.
+    # @param sources [Retab::SourceOptions, nil] Automatic source computation. Omission defaults to located; cited must be requested explicitly.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [void]
     def create_stream(

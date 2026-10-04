@@ -107,9 +107,7 @@ class ExtractionRequest(BaseModel):
         description="If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.",
     )
     deep_extraction: bool | None = Field(default=None, description="Optimizes for accuracy over latency in documents with very large arrays.")
-    sources: SourceOptions | None = Field(
-        default=None, description="Automatic sources policy. Omit to inherit the organization default; located prevents automatic paid citations."
-    )
+    sources: SourceOptions | None = Field(default=None, description="Automatic source computation. Omission defaults to located; cited must be requested explicitly.")
 
 
 class CreateSourcesRequest(BaseModel):

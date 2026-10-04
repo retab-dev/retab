@@ -47,7 +47,7 @@ readonly class ExtractionRequest implements \JsonSerializable
         public ?bool $background = null,
         /** Optimizes for accuracy over latency in documents with very large arrays. */
         public ?bool $deepExtraction = null,
-        /** Automatic sources policy. Omit to inherit the organization default; located prevents automatic paid citations. */
+        /** Automatic source computation. Omission defaults to located; cited must be requested explicitly. */
         public ?SourceOptions $sources = null,
     ) {}
 

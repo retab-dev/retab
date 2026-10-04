@@ -96,7 +96,7 @@ class Extractions
      * @param bool|null $stream
      * @param bool|null $background If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
      * @param bool|null $deepExtraction Optimizes for accuracy over latency in documents with very large arrays.
-     * @param \Retab\Resource\SourceOptions|null $sources Automatic sources policy. Omit to inherit the organization default; located prevents automatic paid citations.
+     * @param \Retab\Resource\SourceOptions|null $sources Automatic source computation. Omission defaults to located; cited must be requested explicitly.
      * @return \Retab\Resource\Extraction
      * @throws \Retab\Exception\RetabException
      */
@@ -154,7 +154,7 @@ class Extractions
      * @param bool|null $stream
      * @param bool|null $background If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
      * @param bool|null $deepExtraction Optimizes for accuracy over latency in documents with very large arrays.
-     * @param \Retab\Resource\SourceOptions|null $sources Automatic sources policy. Omit to inherit the organization default; located prevents automatic paid citations.
+     * @param \Retab\Resource\SourceOptions|null $sources Automatic source computation. Omission defaults to located; cited must be requested explicitly.
      * @return mixed
      * @throws \Retab\Exception\RetabException
      */

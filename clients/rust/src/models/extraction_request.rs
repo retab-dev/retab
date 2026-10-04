@@ -51,7 +51,7 @@ pub struct ExtractionRequest {
     /// Defaults to `false`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub deep_extraction: Option<bool>,
-    /// Automatic sources policy. Omit to inherit the organization default; located prevents automatic paid citations.
+    /// Automatic source computation. Omission defaults to located; cited must be requested explicitly.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub sources: Option<SourceOptions>,
 }

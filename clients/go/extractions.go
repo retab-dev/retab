@@ -59,7 +59,7 @@ type ExtractionsCreateParams struct {
 	Background *bool `json:"background,omitempty" url:"-"`
 	// DeepExtraction is optimizes for accuracy over latency in documents with very large arrays.
 	DeepExtraction *bool `json:"deep_extraction,omitempty" url:"-"`
-	// Sources is automatic sources policy. Omit to inherit the organization default; located prevents automatic paid citations.
+	// Sources is automatic source computation. Omission defaults to located; cited must be requested explicitly.
 	Sources *SourceOptions `json:"sources,omitempty" url:"-"`
 }
 
@@ -151,7 +151,7 @@ type ExtractionsCreateStreamParams struct {
 	Background *bool `json:"background,omitempty" url:"-"`
 	// DeepExtraction is optimizes for accuracy over latency in documents with very large arrays.
 	DeepExtraction *bool `json:"deep_extraction,omitempty" url:"-"`
-	// Sources is automatic sources policy. Omit to inherit the organization default; located prevents automatic paid citations.
+	// Sources is automatic source computation. Omission defaults to located; cited must be requested explicitly.
 	Sources *SourceOptions `json:"sources,omitempty" url:"-"`
 }
 

@@ -55,7 +55,7 @@ export interface ExtractionRequest {
    * @default false
    */
   deepExtraction?: boolean;
-  /** Automatic sources policy. Omit to inherit the organization default; located prevents automatic paid citations. */
+  /** Automatic source computation. Omission defaults to located; cited must be requested explicitly. */
   sources?: SourceOptions;
 }
 

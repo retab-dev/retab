@@ -63,7 +63,7 @@ namespace Retab
         /// <summary>Optimizes for accuracy over latency in documents with very large arrays.</summary>
         public bool? DeepExtraction { get; set; }
 
-        /// <summary>Automatic sources policy. Omit to inherit the organization default; located prevents automatic paid citations.</summary>
+        /// <summary>Automatic source computation. Omission defaults to located; cited must be requested explicitly.</summary>
         public SourceOptions? Sources { get; set; }
 
     }
@@ -102,7 +102,7 @@ namespace Retab
         /// <summary>Optimizes for accuracy over latency in documents with very large arrays.</summary>
         public bool? DeepExtraction { get; set; }
 
-        /// <summary>Automatic sources policy. Omit to inherit the organization default; located prevents automatic paid citations.</summary>
+        /// <summary>Automatic source computation. Omission defaults to located; cited must be requested explicitly.</summary>
         public SourceOptions? Sources { get; set; }
 
     }
