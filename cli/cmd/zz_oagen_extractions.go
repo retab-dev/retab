@@ -166,27 +166,6 @@ var extractionsGetCmd = &cobra.Command{
 	}),
 }
 
-var extractionsSourcesCmd = &cobra.Command{
-	Use:     "sources <extraction-id>",
-	Short:   "Get the provenance for an extraction",
-	Long:    "Return the source location of every field in an extraction.\n\nThe provenance side-band maps each JSON field in the extraction to the\npage and, when available, bounding region of the source document that\nproduced it. Use it to render citations, drive review UIs, or audit which\ncontent actually backed an extracted value.",
-	Example: "  # Inspect per-field provenance\n  retab extractions sources extr_xyz789\n\n  # Pipe into jq to list only the field paths and pages\n  retab extractions sources extr_xyz789 \\\n    | jq '.sources | map({path, page})'",
-	Args:    cobra.ExactArgs(1),
-	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		result, err := client.Extractions.Sources(ctx, args[0])
-		if err != nil {
-			return err
-		}
-		return printJSON(result)
-	}),
-}
-
 var extractionsDeleteCmd = &cobra.Command{
 	Use:     "delete <extraction-id>",
 	Short:   "Delete an extraction",
@@ -263,6 +242,6 @@ func init() {
 
 	addExtractionBodyFlags(extractionsStreamCmd)
 
-	extractionsCmd.AddCommand(extractionsCreateCmd, extractionsStreamCmd, extractionsListCmd, extractionsGetCmd, extractionsSourcesCmd, extractionsDeleteCmd, extractionsCancelCmd)
+	extractionsCmd.AddCommand(extractionsCreateCmd, extractionsStreamCmd, extractionsListCmd, extractionsGetCmd, extractionsDeleteCmd, extractionsCancelCmd)
 	rootCmd.AddCommand(extractionsCmd)
 }
