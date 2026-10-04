@@ -133,6 +133,7 @@ func NewClient(apiKey string, opts ...Option) (*Client, error) {
 	c.Edits = &EditService{client: c}
 	editTemplates := &EditTemplateService{client: c}
 	c.Extractions = &ExtractionService{client: c}
+	extractionSources := &ExtractionSourceService{client: c}
 	c.Files = &FileService{client: c}
 	c.Parses = &ParseService{client: c}
 	c.Partitions = &PartitionService{client: c}
@@ -159,6 +160,7 @@ func NewClient(apiKey string, opts ...Option) (*Client, error) {
 	workflowSpec := &WorkflowSpecService{client: c}
 	workflowSteps := &WorkflowStepService{client: c}
 	c.Edits.Templates = editTemplates
+	c.Extractions.Sources = extractionSources
 	workflowBlocks.Executions = workflowBlockExecutions
 	workflowEvals.Results = workflowEvalRunResults
 	workflowEvals.Runs = workflowEvalRuns

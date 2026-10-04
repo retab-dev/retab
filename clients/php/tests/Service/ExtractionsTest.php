@@ -98,35 +98,6 @@ class ExtractionsTest extends TestCase
         $this->assertStringEndsWith('v1/extractions/test_extraction_id/cancel', $request->getUri()->getPath());
     }
 
-    public function testSources(): void
-    {
-        $fixture = $this->loadFixture('sources_response');
-        $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->extractions()->sources('test_extraction_id', mode: \Retab\Resource\SourceJobMode::Located, jobId: 'test_value');
-        $this->assertInstanceOf(\Retab\Resource\SourcesResponse::class, $result);
-        $this->assertSame($fixture['extraction_id'], $result->extractionId);
-        $this->assertIsArray($result->toArray());
-        $request = $this->getLastRequest();
-        $this->assertSame('GET', $request->getMethod());
-        $this->assertStringEndsWith('v1/extractions/test_extraction_id/sources', $request->getUri()->getPath());
-        parse_str($request->getUri()->getQuery(), $query);
-        $this->assertSame('located', $query['mode']);
-        $this->assertSame('test_value', $query['job_id']);
-    }
-
-    public function testCreateExtractionSource(): void
-    {
-        $fixture = $this->loadFixture('sources_response');
-        $client = $this->createMockClient([['status' => 200, 'body' => $fixture]]);
-        $result = $client->extractions()->createExtractionSource('test_extraction_id');
-        $this->assertInstanceOf(\Retab\Resource\SourcesResponse::class, $result);
-        $this->assertSame($fixture['extraction_id'], $result->extractionId);
-        $this->assertIsArray($result->toArray());
-        $request = $this->getLastRequest();
-        $this->assertSame('POST', $request->getMethod());
-        $this->assertStringEndsWith('v1/extractions/test_extraction_id/sources', $request->getUri()->getPath());
-    }
-
     public function testPaginationBoundary(): void
     {
         $fixture = $this->loadFixture('list_extraction');

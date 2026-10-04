@@ -17,6 +17,9 @@ namespace Retab
         /// <param name="client">The Retab API client used to make HTTP requests.</param>
         public ExtractionsService(Retab client) : base(client) { }
 
+        /// <summary>Gets the nested <see cref="ExtractionSourcesService"/> service.</summary>
+        public virtual ExtractionSourcesService Sources => new ExtractionSourcesService(this.Client);
+
         /// <summary>List Extractions</summary>
         /// <remarks>
         /// List and paginate extractions with optional filtering.
@@ -146,49 +149,6 @@ namespace Retab
         public virtual Task<Extraction> CreateCancel(string extractionId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
         {
             return this.CreateCancelAsync(extractionId, requestOptions, cancellationToken);
-        }
-
-        /// <summary>Get Extraction Sources</summary>
-        /// <remarks>
-        /// Return the extraction result enriched with per-leaf source provenance.
-        /// Each extracted leaf value is wrapped as {value, source} where source
-        /// contains citation content, surrounding context, and a format-specific
-        /// anchor (bbox for PDFs, cell ref for spreadsheets, text span for plain text, etc.).
-        /// </remarks>
-        /// <param name="extractionId">The extraction id.</param>
-        /// <param name="options">Request options.</param>
-        /// <param name="requestOptions">Per-request configuration overrides.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>The <see cref="SourcesResponse"/> result.</returns>
-        public virtual async Task<SourcesResponse> SourcesAsync(string extractionId, ExtractionsSourcesOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
-        {
-            return await this.GetAsync<SourcesResponse>($"/v1/extractions/{Uri.EscapeDataString(extractionId)}/sources", options, requestOptions, cancellationToken);
-        }
-
-        /// <summary>Compatibility wrapper for <see cref="SourcesAsync"/>.</summary>
-        public virtual Task<SourcesResponse> Sources(string extractionId, ExtractionsSourcesOptions? options = null, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
-        {
-            return this.SourcesAsync(extractionId, options, requestOptions, cancellationToken);
-        }
-
-        /// <summary>Create Extraction Sources</summary>
-        /// <remarks>
-        /// Create or join a durable sources computation. Located finds printed answers; cited also seeks supporting inputs. Background requests return immediately; synchronous requests wait up to 20 seconds before returning 202 with a version-pinned Location. Repeated requests reuse work and never bill twice. Processing completion does not guarantee evidence for every field. A cited request during a located-only computation returns 409; retry after that computation finishes.
-        /// </remarks>
-        /// <param name="extractionId">The extraction id.</param>
-        /// <param name="options">Request options.</param>
-        /// <param name="requestOptions">Per-request configuration overrides.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>The <see cref="SourcesResponse"/> result.</returns>
-        public virtual async Task<SourcesResponse> CreateSourceAsync(string extractionId, ExtractionsCreateSourceOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
-        {
-            return await this.PostAsync<SourcesResponse>($"/v1/extractions/{Uri.EscapeDataString(extractionId)}/sources", options, requestOptions, cancellationToken);
-        }
-
-        /// <summary>Compatibility wrapper for <see cref="CreateSourceAsync"/>.</summary>
-        public virtual Task<SourcesResponse> CreateSource(string extractionId, ExtractionsCreateSourceOptions options, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
-        {
-            return this.CreateSourceAsync(extractionId, options, requestOptions, cancellationToken);
         }
     }
 }

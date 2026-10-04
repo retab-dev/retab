@@ -4,6 +4,6 @@
 
 module Retab
   module Types
-    ExtractionsMode = CreateSourcesRequestMode
+    ExtractionSourcesMode = CreateSourcesRequestMode
   end
 end

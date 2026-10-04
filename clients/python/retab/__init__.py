@@ -52,7 +52,7 @@ _LAZY_EXPORTS: dict[str, tuple[str, str | None]] = {
     "Split": (".types.splits", "Split"),
     "Extraction": (".types.extractions", "Extraction"),
     "ExtractionRequest": (".types.extractions", "ExtractionRequest"),
-    "SourcesResponse": (".types.extractions", "SourcesResponse"),
+    "SourcesResponse": (".types.extraction_sources", "SourcesResponse"),
     "MIMEData": (".types.mime", "MIMEData"),
     "PaginatedList": (".types.pagination", "PaginatedList"),
     "AsyncPaginatedList": (".types.pagination", "AsyncPaginatedList"),
@@ -92,7 +92,8 @@ if TYPE_CHECKING:
         ValidationError,
     )
     from .types.classifications import Classification
-    from .types.extractions import Extraction, ExtractionRequest, SourcesResponse
+    from .types.extraction_sources import SourcesResponse
+    from .types.extractions import Extraction, ExtractionRequest
     from .types.mime import MIMEData
     from .types.pagination import AsyncPaginatedList, PaginatedList
     from .types.partitions import Partition

@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "dotnet",
-  "generatedAt": "2026-10-03T11:26:06.564Z",
+  "generatedAt": "2026-10-04T20:07:58.318Z",
   "files": [
     "README.md",
     "Retab.csproj",
@@ -346,6 +346,8 @@
     "src/Services/ExperimentRunResults/_interfaces/ExperimentRunResultsOptions.cs",
     "src/Services/ExperimentRuns/ExperimentRunsService.cs",
     "src/Services/ExperimentRuns/_interfaces/ExperimentRunsOptions.cs",
+    "src/Services/ExtractionSources/ExtractionSourcesService.cs",
+    "src/Services/ExtractionSources/_interfaces/ExtractionSourcesOptions.cs",
     "src/Services/Extractions/ExtractionsService.cs",
     "src/Services/Extractions/_interfaces/ExtractionsOptions.cs",
     "src/Services/Files/FilesService.cs",
@@ -486,12 +488,12 @@
       "service": "extractions"
     },
     "GET /v1/extractions/{extraction_id}/sources": {
-      "sdkMethod": "SourcesAsync",
-      "service": "extractions"
+      "sdkMethod": "GetAsync",
+      "service": "extractions.sources"
     },
     "POST /v1/extractions/{extraction_id}/sources": {
-      "sdkMethod": "CreateSourceAsync",
-      "service": "extractions"
+      "sdkMethod": "CreateAsync",
+      "service": "extractions.sources"
     },
     "GET /v1/files": {
       "sdkMethod": "ListAsync",

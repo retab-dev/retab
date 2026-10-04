@@ -3,23 +3,21 @@
 import type { Retab } from '../retab.js';
 import { PaginatedList } from '../_pagination.js';
 import { coerceMimeData, type DocumentInput } from '../runtime/mime.js';
-import type { ExtractionsMode, ExtractionsStatus } from '../common/interfaces/index.js';
+import type { ExtractionsStatus } from '../common/interfaces/index.js';
 import type {
-  CreateSourcesRequestMode,
   Extraction,
   ExtractionResponse,
   SourceOptions,
-  SourcesResponse,
-  SourcesResponseResponse,
 } from '../extractions/interfaces/index.js';
-import {
-  deserializeExtraction,
-  deserializeSourcesResponse,
-  serializeSourceOptions,
-} from '../extractions/interfaces/index.js';
+import { deserializeExtraction, serializeSourceOptions } from '../extractions/interfaces/index.js';
+import { ExtractionSources } from '../extraction-sources/extraction-sources.js';
 
 export class Extractions {
-  constructor(private readonly client: Retab) {}
+  readonly sources: ExtractionSources;
+
+  constructor(private readonly client: Retab) {
+    this.sources = new ExtractionSources(client);
+  }
 
   /** List Extractions */
   async list(options?: {
@@ -172,42 +170,5 @@ export class Extractions {
       body: undefined,
     });
     return deserializeExtraction(__wire);
-  }
-
-  /** Get Extraction Sources */
-  async sources(
-    extractionId: string,
-    options?: { mode?: ExtractionsMode | null | undefined; jobId?: string | null | undefined }
-  ): Promise<SourcesResponse> {
-    const __wire = await this.client.request<SourcesResponseResponse>({
-      method: 'GET',
-      path: `/v1/extractions/${extractionId}/sources`,
-      query: { mode: options?.mode, job_id: options?.jobId },
-      body: undefined,
-    });
-    return deserializeSourcesResponse(__wire);
-  }
-
-  /** Create Extraction Sources */
-  async create_extraction_source(
-    extractionId: string,
-    background?: boolean,
-    jobId?: string,
-    mode?: CreateSourcesRequestMode,
-    retry?: boolean
-  ): Promise<SourcesResponse> {
-    const body = {
-      background: background,
-      job_id: jobId,
-      mode: mode,
-      retry: retry,
-    };
-    const __wire = await this.client.request<SourcesResponseResponse>({
-      method: 'POST',
-      path: `/v1/extractions/${extractionId}/sources`,
-      query: undefined,
-      body: body,
-    });
-    return deserializeSourcesResponse(__wire);
   }
 }

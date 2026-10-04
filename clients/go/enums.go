@@ -743,8 +743,8 @@ type ExtractionsOrder = ClassificationsOrder
 // ExtractionsStatus is an alias for ClassificationStatus.
 type ExtractionsStatus = ClassificationStatus
 
-// ExtractionsMode is an alias for CreateSourcesRequestMode.
-type ExtractionsMode = CreateSourcesRequestMode
+// ExtractionSourcesMode is an alias for CreateSourcesRequestMode.
+type ExtractionSourcesMode = CreateSourcesRequestMode
 
 // FilesOrder is an alias for ClassificationsOrder.
 type FilesOrder = ClassificationsOrder

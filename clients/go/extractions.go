@@ -10,7 +10,8 @@ import (
 
 // ExtractionService handles Extractions operations.
 type ExtractionService struct {
-	client *Client
+	client  *Client
+	Sources *ExtractionSourceService
 }
 
 // ExtractionsListParams contains the parameters for List.
@@ -244,61 +245,6 @@ func (s *ExtractionService) CreateCancel(ctx context.Context, extractionID strin
 	}
 	var result Extraction
 	_, err := s.client.request(ctx, "POST", fmt.Sprintf("/v1/extractions/%s/cancel", url.PathEscape(extractionID)), nil, nil, &result, opts)
-	if err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// ExtractionsSourcesParams contains the parameters for Sources.
-type ExtractionsSourcesParams struct {
-	// Mode is opt into progressive sources for this mode. Omit to retain the legacy synchronous response.
-	Mode *ExtractionsMode `url:"mode,omitempty" json:"-"`
-	// JobID is expected job identity returned by POST. A changed extraction returns 409.
-	JobID *string `url:"job_id,omitempty" json:"-"`
-}
-
-// Sources get Extraction Sources
-// Return the extraction result enriched with per-leaf source provenance.
-// Each extracted leaf value is wrapped as {value, source} where source
-// contains citation content, surrounding context, and a format-specific
-// anchor (bbox for PDFs, cell ref for spreadsheets, text span for plain text, etc.).
-func (s *ExtractionService) Sources(ctx context.Context, extractionID string, opts ...RequestOption) (*SourcesResponse, error) {
-	return s.SourcesWithParams(ctx, extractionID, nil, opts...)
-}
-
-// SourcesWithParams reads a progressive snapshot when mode is provided.
-func (s *ExtractionService) SourcesWithParams(ctx context.Context, extractionID string, params *ExtractionsSourcesParams, opts ...RequestOption) (*SourcesResponse, error) {
-	if extractionID == "" {
-		return nil, fmt.Errorf("retab: extraction_id is required")
-	}
-	var result SourcesResponse
-	_, err := s.client.request(ctx, "GET", fmt.Sprintf("/v1/extractions/%s/sources", url.PathEscape(extractionID)), params, nil, &result, opts)
-	if err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// ExtractionsCreateSourceParams contains the parameters for CreateSource.
-type ExtractionsCreateSourceParams struct {
-	// Background is return immediately when true. Otherwise wait up to 20 seconds, then return 202 with Location while the same durable job continues.
-	Background *bool `json:"background,omitempty" url:"-"`
-	// JobID is optional expected sources job identity. Returns 409 if the extraction changed.
-	JobID *string                   `json:"job_id,omitempty" url:"-"`
-	Mode  *CreateSourcesRequestMode `json:"mode,omitempty" url:"-"`
-	// Retry is retry a terminal failed or incomplete computation. Concurrent requests join the current attempt; billing remains once per extraction.
-	Retry *bool `json:"retry,omitempty" url:"-"`
-}
-
-// CreateSource create Extraction Sources
-// Create or join a durable sources computation. Located finds printed answers; cited also seeks supporting inputs. Background requests return immediately; synchronous requests wait up to 20 seconds before returning 202 with a version-pinned Location. Repeated requests reuse work and never bill twice. Processing completion does not guarantee evidence for every field. A cited request during a located-only computation returns 409; retry after that computation finishes.
-func (s *ExtractionService) CreateSource(ctx context.Context, extractionID string, params *ExtractionsCreateSourceParams, opts ...RequestOption) (*SourcesResponse, error) {
-	if extractionID == "" {
-		return nil, fmt.Errorf("retab: extraction_id is required")
-	}
-	var result SourcesResponse
-	_, err := s.client.request(ctx, "POST", fmt.Sprintf("/v1/extractions/%s/sources", url.PathEscape(extractionID)), nil, params, &result, opts)
 	if err != nil {
 		return nil, err
 	}

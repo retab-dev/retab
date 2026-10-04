@@ -10,6 +10,10 @@ module Retab
       @client = client
     end
 
+    def sources
+      @sources ||= Retab::ExtractionSources.new(@client)
+    end
+
     # List Extractions
     # @param before [String, nil]
     # @param after [String, nil]
@@ -275,76 +279,6 @@ module Retab
         request_options: request_options
       )
       result = Retab::Extraction.new(response.body)
-      result.last_response = Retab::Types::ApiResponse.new(
-        http_status: response.code.to_i,
-        http_headers: response.each_header.to_h,
-        request_id: response["x-request-id"]
-      )
-      result
-    end
-
-    # Get Extraction Sources
-    # @param extraction_id [String]
-    # @param mode [Retab::Types::ExtractionsMode, nil] Opt into progressive sources for this mode. Omit to retain the legacy synchronous response.
-    # @param job_id [String, nil] Expected job identity returned by POST. A changed extraction returns 409.
-    # @param request_options [Hash] (see Retab::Types::RequestOptions)
-    # @return [Retab::SourcesResponse]
-    def sources(
-      extraction_id:,
-      mode: nil,
-      job_id: nil,
-      request_options: {}
-    )
-      params = {
-        "mode" => mode,
-        "job_id" => job_id
-      }.compact
-      response = @client.request(
-        method: :get,
-        path: "/v1/extractions/#{Retab::Util.encode_path(extraction_id)}/sources",
-        auth: true,
-        params: params,
-        request_options: request_options
-      )
-      result = Retab::SourcesResponse.new(response.body)
-      result.last_response = Retab::Types::ApiResponse.new(
-        http_status: response.code.to_i,
-        http_headers: response.each_header.to_h,
-        request_id: response["x-request-id"]
-      )
-      result
-    end
-
-    # Create Extraction Sources
-    # @param extraction_id [String]
-    # @param background [Boolean, nil] Return immediately when true. Otherwise wait up to 20 seconds, then return 202 with Location while the same durable job continues.
-    # @param job_id [String, nil] Optional expected sources job identity. Returns 409 if the extraction changed.
-    # @param mode [Retab::Types::CreateSourcesRequestMode, nil]
-    # @param retry_ [Boolean, nil] Retry a terminal failed or incomplete computation. Concurrent requests join the current attempt; billing remains once per extraction.
-    # @param request_options [Hash] (see Retab::Types::RequestOptions)
-    # @return [Retab::SourcesResponse]
-    def create_extraction_source(
-      extraction_id:,
-      background: nil,
-      job_id: nil,
-      mode: nil,
-      retry_: nil,
-      request_options: {}
-    )
-      body = {
-        "background" => background,
-        "job_id" => job_id,
-        "mode" => mode,
-        "retry" => retry_
-      }.compact
-      response = @client.request(
-        method: :post,
-        path: "/v1/extractions/#{Retab::Util.encode_path(extraction_id)}/sources",
-        auth: true,
-        body: body,
-        request_options: request_options
-      )
-      result = Retab::SourcesResponse.new(response.body)
       result.last_response = Retab::Types::ApiResponse.new(
         http_status: response.code.to_i,
         http_headers: response.each_header.to_h,

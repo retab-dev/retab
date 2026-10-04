@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "go",
-  "generatedAt": "2026-10-03T11:26:06.252Z",
+  "generatedAt": "2026-10-04T20:07:58.035Z",
   "files": [
     "classifications.go",
     "compat.go",
@@ -13,6 +13,7 @@
     "experiment_run_metrics.go",
     "experiment_run_results.go",
     "experiment_runs.go",
+    "extraction_sources.go",
     "extractions.go",
     "files.go",
     "go.mod",
@@ -135,12 +136,12 @@
       "service": "extractions"
     },
     "GET /v1/extractions/{extraction_id}/sources": {
-      "sdkMethod": "Sources",
-      "service": "extractions"
+      "sdkMethod": "Get",
+      "service": "extractions.sources"
     },
     "POST /v1/extractions/{extraction_id}/sources": {
-      "sdkMethod": "CreateSource",
-      "service": "extractions"
+      "sdkMethod": "Create",
+      "service": "extractions.sources"
     },
     "GET /v1/files": {
       "sdkMethod": "List",

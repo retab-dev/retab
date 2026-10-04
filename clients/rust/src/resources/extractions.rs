@@ -6,6 +6,7 @@ use crate::enums::*;
 use crate::error::Error;
 #[allow(unused_imports)]
 use crate::models::*;
+use crate::resources::extraction_sources::ExtractionSourcesApi;
 #[allow(unused_imports)]
 use serde::Serialize;
 
@@ -162,37 +163,14 @@ impl Default for GetParams {
     }
 }
 
-#[derive(Debug, Clone, Default, Serialize)]
-pub struct SourcesParams {
-    /// Opt into progressive sources for this mode. Omit to retain the legacy synchronous response.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub mode: Option<ExtractionsMode>,
-    /// Expected job identity returned by POST. A changed extraction returns 409.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub job_id: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(rename = "If-None-Match")]
-    pub if_none_match: Option<String>,
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct CreateExtractionSourceParams {
-    /// Request body sent with this call.
-    ///
-    /// Required.
-    #[serde(skip)]
-    pub body: CreateSourcesRequest,
-}
-
-impl CreateExtractionSourceParams {
-    /// Construct a new `CreateExtractionSourceParams` with the required fields set.
-    #[allow(deprecated)]
-    pub fn new(body: CreateSourcesRequest) -> Self {
-        Self { body }
-    }
-}
-
 impl<'a> ExtractionsApi<'a> {
+    /// Access the `sources` sub-resource.
+    pub fn sources(&self) -> ExtractionSourcesApi<'a> {
+        ExtractionSourcesApi {
+            client: self.client,
+        }
+    }
+
     /// List Extractions
     ///
     /// List and paginate extractions with optional filtering.
@@ -329,78 +307,6 @@ impl<'a> ExtractionsApi<'a> {
         let method = http::Method::POST;
         self.client
             .request_with_query_opts(method, &path, &(), options)
-            .await
-    }
-
-    pub async fn sources(&self, extraction_id: &str) -> Result<SourcesResponse, Error> {
-        self.sources_with_params(extraction_id, SourcesParams::default())
-            .await
-    }
-
-    pub async fn sources_with_options(
-        &self,
-        extraction_id: &str,
-        options: Option<&crate::RequestOptions>,
-    ) -> Result<SourcesResponse, Error> {
-        self.sources_with_params_with_options(extraction_id, SourcesParams::default(), options)
-            .await
-    }
-
-    /// Get Extraction Sources
-    ///
-    /// Return the extraction result enriched with per-leaf source provenance.
-    ///
-    /// Each extracted leaf value is wrapped as {value, source} where source
-    /// contains citation content, surrounding context, and a format-specific
-    /// anchor (bbox for PDFs, cell ref for spreadsheets, text span for plain text, etc.).
-    pub async fn sources_with_params(
-        &self,
-        extraction_id: &str,
-        params: SourcesParams,
-    ) -> Result<SourcesResponse, Error> {
-        self.sources_with_params_with_options(extraction_id, params, None)
-            .await
-    }
-
-    /// Variant of [`Self::sources_with_params`] that accepts per-request [`crate::RequestOptions`].
-    pub async fn sources_with_params_with_options(
-        &self,
-        extraction_id: &str,
-        params: SourcesParams,
-        options: Option<&crate::RequestOptions>,
-    ) -> Result<SourcesResponse, Error> {
-        let extraction_id = crate::client::path_segment(extraction_id);
-        let path = format!("/v1/extractions/{extraction_id}/sources");
-        let method = http::Method::GET;
-        self.client
-            .request_with_query_opts(method, &path, &params, options)
-            .await
-    }
-
-    /// Create Extraction Sources
-    ///
-    /// Create or join a durable sources computation. Located finds printed answers; cited also seeks supporting inputs. Background requests return immediately; synchronous requests wait up to 20 seconds before returning 202 with a version-pinned Location. Repeated requests reuse work and never bill twice. Processing completion does not guarantee evidence for every field. A cited request during a located-only computation returns 409; retry after that computation finishes.
-    pub async fn create_extraction_source(
-        &self,
-        extraction_id: &str,
-        params: CreateExtractionSourceParams,
-    ) -> Result<SourcesResponse, Error> {
-        self.create_extraction_source_with_options(extraction_id, params, None)
-            .await
-    }
-
-    /// Variant of [`Self::create_extraction_source`] that accepts per-request [`crate::RequestOptions`].
-    pub async fn create_extraction_source_with_options(
-        &self,
-        extraction_id: &str,
-        params: CreateExtractionSourceParams,
-        options: Option<&crate::RequestOptions>,
-    ) -> Result<SourcesResponse, Error> {
-        let extraction_id = crate::client::path_segment(extraction_id);
-        let path = format!("/v1/extractions/{extraction_id}/sources");
-        let method = http::Method::POST;
-        self.client
-            .request_with_body_opts(method, &path, &params, Some(&params.body), options)
             .await
     }
 }

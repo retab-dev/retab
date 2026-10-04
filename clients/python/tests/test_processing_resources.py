@@ -15,7 +15,8 @@ from retab import AsyncRetab, Retab
 from retab.exceptions import InternalServerError, ValidationError as RetabValidationError
 from retab.types.classifications import Classification
 from retab.types.edits import Edit
-from retab.types.extractions import Extraction, SourcesResponse
+from retab.types.extractions import Extraction
+from retab.types.extraction_sources import SourcesResponse
 from retab.types.mime import MIMEData
 from retab.types.pagination import AsyncPaginatedList, PaginatedList
 from retab.types.parses import Parse
@@ -247,7 +248,7 @@ def test_extractions_resource_crud(
 def test_extractions_sources_returns_provenance(sync_client: Retab, created_extraction: Extraction) -> None:
     try:
         with sync_client as client:
-            sources = client.extractions.sources(created_extraction.id)
+            sources = client.extractions.sources.get(created_extraction.id)
     except RetabValidationError as exc:
         pytest.skip(f"/v1/extractions/{{id}}/sources unavailable in local stack: {exc}")
 

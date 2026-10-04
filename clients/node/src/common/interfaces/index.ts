@@ -8,7 +8,7 @@ export * from './edits-status.interface.js';
 export * from './experiment-run-metrics-view.interface.js';
 export * from './experiment-run-results-order.interface.js';
 export * from './experiment-runs-order.interface.js';
-export * from './extractions-mode.interface.js';
+export * from './extraction-sources-mode.interface.js';
 export * from './extractions-order.interface.js';
 export * from './extractions-status.interface.js';
 export * from './files-order.interface.js';

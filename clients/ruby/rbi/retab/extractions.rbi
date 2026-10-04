@@ -9,6 +9,9 @@ module Retab
     sig { params(client: Retab::BaseClient).void }
     def initialize(client); end
 
+    sig { returns(Retab::ExtractionSources) }
+    def sources; end
+
     sig do
       params(
         before: T.nilable(String),
@@ -90,28 +93,6 @@ module Retab
       ).returns(Retab::Extraction)
     end
     def create_extraction_cancel(extraction_id:, request_options:); end
-
-    sig do
-      params(
-        extraction_id: String,
-        mode: T.nilable(String),
-        job_id: T.nilable(String),
-        request_options: T::Hash[Symbol, T.untyped]
-      ).returns(Retab::SourcesResponse)
-    end
-    def sources(extraction_id:, mode:, job_id:, request_options:); end
-
-    sig do
-      params(
-        extraction_id: String,
-        background: T.nilable(T::Boolean),
-        job_id: T.nilable(String),
-        mode: T.nilable(String),
-        retry_: T.nilable(T::Boolean),
-        request_options: T::Hash[Symbol, T.untyped]
-      ).returns(Retab::SourcesResponse)
-    end
-    def create_extraction_source(extraction_id:, background:, job_id:, mode:, retry_:, request_options:); end
 
   end
 end

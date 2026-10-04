@@ -18,7 +18,7 @@ class EditsStatus(str, Enum):
     CANCELLED = "cancelled"
 
 
-class ExtractionsMode(str, Enum):
+class ExtractionSourcesMode(str, Enum):
     LOCATED = "located"
     CITED = "cited"
 

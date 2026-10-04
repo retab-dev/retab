@@ -362,19 +362,19 @@ does not guarantee a match for every field. Cited mode can incur citation charge
 		var result *retab.SourcesResponse
 		switch {
 		case mode == "":
-			result, err = client.Extractions.Sources(ctx, args[0])
+			result, err = client.Extractions.Sources.Get(ctx, args[0], nil)
 		case poll:
-			params := &retab.ExtractionsSourcesParams{Mode: ptr(retab.ExtractionsMode(mode))}
+			params := &retab.ExtractionSourcesGetParams{Mode: ptr(retab.ExtractionSourcesMode(mode))}
 			if jobID != "" {
 				params.JobID = &jobID
 			}
-			result, err = client.Extractions.SourcesWithParams(ctx, args[0], params)
+			result, err = client.Extractions.Sources.Get(ctx, args[0], params)
 		default:
-			params := &retab.ExtractionsCreateSourceParams{Mode: ptr(retab.CreateSourcesRequestMode(mode)), Background: &background, Retry: &retry}
+			params := &retab.ExtractionSourcesCreateParams{Mode: ptr(retab.CreateSourcesRequestMode(mode)), Background: &background, Retry: &retry}
 			if jobID != "" {
 				params.JobID = &jobID
 			}
-			result, err = client.Extractions.CreateSource(ctx, args[0], params)
+			result, err = client.Extractions.Sources.Create(ctx, args[0], params)
 		}
 		if err != nil {
 			return err

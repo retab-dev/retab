@@ -285,10 +285,14 @@ func TestResourceGetDeleteAndFilePaths(t *testing.T) {
 			_, err := client.Extractions.Get(ctx, "ext_123", nil)
 			return err
 		}, http.MethodGet, "/v1/extractions/ext_123"},
-		{"extractions sources", func(ctx context.Context, client *Client) error {
-			_, err := client.Extractions.Sources(ctx, "ext_123")
+		{"extractions sources get", func(ctx context.Context, client *Client) error {
+			_, err := client.Extractions.Sources.Get(ctx, "ext_123", nil)
 			return err
 		}, http.MethodGet, "/v1/extractions/ext_123/sources"},
+		{"extractions sources create", func(ctx context.Context, client *Client) error {
+			_, err := client.Extractions.Sources.Create(ctx, "ext_123", &ExtractionSourcesCreateParams{})
+			return err
+		}, http.MethodPost, "/v1/extractions/ext_123/sources"},
 		{"classifications get", func(ctx context.Context, client *Client) error {
 			_, err := client.Classifications.Get(ctx, "cls_123", nil)
 			return err

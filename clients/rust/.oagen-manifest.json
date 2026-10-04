@@ -1,7 +1,7 @@
 {
   "version": 2,
   "language": "rust",
-  "generatedAt": "2026-10-03T11:26:06.533Z",
+  "generatedAt": "2026-10-04T20:07:58.400Z",
   "files": [
     "Cargo.toml",
     "LICENSE-MIT",
@@ -54,9 +54,9 @@
     "src/enums/experiment_runs_order.rs",
     "src/enums/experiment_schema_drift_status.rs",
     "src/enums/experiment_summary_metrics_response_block_type.rs",
+    "src/enums/extraction_sources_mode.rs",
     "src/enums/extraction_status.rs",
     "src/enums/extraction_workflow_artifact_status.rs",
-    "src/enums/extractions_mode.rs",
     "src/enums/extractions_order.rs",
     "src/enums/extractions_status.rs",
     "src/enums/field_type.rs",
@@ -501,6 +501,7 @@
     "src/resources/experiment_run_metrics.rs",
     "src/resources/experiment_run_results.rs",
     "src/resources/experiment_runs.rs",
+    "src/resources/extraction_sources.rs",
     "src/resources/extractions.rs",
     "src/resources/files.rs",
     "src/resources/mod.rs",
@@ -620,12 +621,12 @@
       "service": "extractions"
     },
     "GET /v1/extractions/{extraction_id}/sources": {
-      "sdkMethod": "sources",
-      "service": "extractions"
+      "sdkMethod": "get",
+      "service": "extractions.sources"
     },
     "POST /v1/extractions/{extraction_id}/sources": {
-      "sdkMethod": "create_extraction_source",
-      "service": "extractions"
+      "sdkMethod": "create",
+      "service": "extractions.sources"
     },
     "GET /v1/files": {
       "sdkMethod": "list",

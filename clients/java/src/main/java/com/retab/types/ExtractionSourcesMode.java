@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonEnumDefaultValue;
 import com.fasterxml.jackson.annotation.JsonValue;
 
-public enum ExtractionsMode {
+public enum ExtractionSourcesMode {
   @JsonEnumDefaultValue
   UNKNOWN("unknown"),
   LOCATED("located"),
@@ -14,7 +14,7 @@ public enum ExtractionsMode {
 
   private final String value;
 
-  ExtractionsMode(String value) {
+  ExtractionSourcesMode(String value) {
     this.value = value;
   }
 
@@ -24,8 +24,8 @@ public enum ExtractionsMode {
   }
 
   @JsonCreator
-  public static ExtractionsMode fromValue(String value) {
-    for (ExtractionsMode item : values()) {
+  public static ExtractionSourcesMode fromValue(String value) {
+    for (ExtractionSourcesMode item : values()) {
       if (item.value.equals(value)) {
         return item;
       }
