@@ -43,11 +43,13 @@ jobs:
         run: bun test tests/
         env:
           RETAB_ENV_FILE: /dev/null
-      - name: Pack and validate publication
+      - name: Pack the tested SDK
         run: |
           mkdir -p "$RUNNER_TEMP/node-sdk"
           npm pack --ignore-scripts --pack-destination "$RUNNER_TEMP/node-sdk"
-          npm publish "$RUNNER_TEMP"/node-sdk/*.tgz --dry-run --ignore-scripts --access public
+      - name: Check publication eligibility
+        if: inputs.publish
+        run: npm publish "$RUNNER_TEMP"/node-sdk/*.tgz --dry-run --ignore-scripts --access public
       - uses: actions/upload-artifact@v4
         with:
           name: node-sdk-package
