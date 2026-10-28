@@ -68,7 +68,8 @@ export class Extractions {
     stream?: boolean,
     background?: boolean,
     deepExtraction?: boolean,
-    sources?: SourceOptions
+    sources?: SourceOptions,
+    agenticExtraction?: boolean
   ): Promise<Extraction> {
     const documentCoerced = await coerceMimeData(document, (__id) =>
       this.client.files.get_download_link(__id)
@@ -86,6 +87,7 @@ export class Extractions {
       background: background,
       deep_extraction: deepExtraction,
       sources: sources === undefined ? undefined : serializeSourceOptions(sources),
+      agentic_extraction: agenticExtraction,
     };
     const __wire = await this.client.request<ExtractionResponse>({
       method: 'POST',
@@ -109,7 +111,8 @@ export class Extractions {
     stream?: boolean,
     background?: boolean,
     deepExtraction?: boolean,
-    sources?: SourceOptions
+    sources?: SourceOptions,
+    agenticExtraction?: boolean
   ): Promise<unknown> {
     const documentCoerced = await coerceMimeData(document, (__id) =>
       this.client.files.get_download_link(__id)
@@ -127,6 +130,7 @@ export class Extractions {
       background: background,
       deep_extraction: deepExtraction,
       sources: sources === undefined ? undefined : serializeSourceOptions(sources),
+      agentic_extraction: agenticExtraction,
     };
     const __wire = await this.client.request<unknown>({
       method: 'POST',

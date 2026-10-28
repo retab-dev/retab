@@ -23,5 +23,6 @@
   "deep_extraction": true,
   "sources": {
     "mode": "located"
-  }
+  },
+  "agentic_extraction": true
 }

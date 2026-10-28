@@ -101,6 +101,7 @@ impl CreateParams {
                 background: Default::default(),
                 deep_extraction: Default::default(),
                 sources: Default::default(),
+                agentic_extraction: Default::default(),
             },
         }
     }
@@ -140,6 +141,7 @@ impl CreateStreamParams {
                 background: Default::default(),
                 deep_extraction: Default::default(),
                 sources: Default::default(),
+                agentic_extraction: Default::default(),
             },
         }
     }

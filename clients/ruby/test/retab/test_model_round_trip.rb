@@ -851,7 +851,8 @@ class ModelRoundTripTest < Minitest::Test
       "stream" => true,
       "background" => true,
       "deep_extraction" => true,
-      "sources" => {}
+      "sources" => {},
+      "agentic_extraction" => true
     }
     model = Retab::ExtractionRequest.new(fixture.to_json)
     json = model.to_h

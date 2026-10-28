@@ -49,6 +49,8 @@ readonly class ExtractionRequest implements \JsonSerializable
         public ?bool $deepExtraction = null,
         /** Automatic source computation. Omission defaults to located; cited must be requested explicitly. */
         public ?SourceOptions $sources = null,
+        /** Agentic extraction for long documents with large repeated arrays: an agent reads the document, writes and runs extraction code in a sandbox, and submits an output checked against the schema. Requires model retab-large, a PDF, n_consensus 1, and no instructions or additional_messages; not supported with stream=true or on POST /v1/extractions/stream. Runs the standard deep extraction instead where agentic extraction is not available, when it does not apply to the document, or when it cannot finish. */
+        public ?bool $agenticExtraction = null,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -75,6 +77,7 @@ readonly class ExtractionRequest implements \JsonSerializable
             background: $data['background'] ?? null,
             deepExtraction: $data['deep_extraction'] ?? null,
             sources: isset($data['sources']) ? SourceOptions::fromArray($data['sources']) : null,
+            agenticExtraction: $data['agentic_extraction'] ?? null,
         );
     }
 
@@ -94,6 +97,7 @@ readonly class ExtractionRequest implements \JsonSerializable
             'background' => $this->background,
             'deep_extraction' => $this->deepExtraction,
             'sources' => $this->sources?->toArray(),
+            'agentic_extraction' => $this->agenticExtraction,
         ];
     }
 }

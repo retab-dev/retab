@@ -22,6 +22,7 @@ public final class ExtractionRequest {
   private final Boolean background;
   private final Boolean deepExtraction;
   private final SourceOptions sources;
+  private final Boolean agenticExtraction;
 
   @JsonCreator
   public ExtractionRequest(
@@ -37,7 +38,8 @@ public final class ExtractionRequest {
       @JsonProperty(value = "stream", required = false) Boolean stream,
       @JsonProperty(value = "background", required = false) Boolean background,
       @JsonProperty(value = "deep_extraction", required = false) Boolean deepExtraction,
-      @JsonProperty(value = "sources", required = false) SourceOptions sources) {
+      @JsonProperty(value = "sources", required = false) SourceOptions sources,
+      @JsonProperty(value = "agentic_extraction", required = false) Boolean agenticExtraction) {
     this.document = document;
     this.jsonSchema = jsonSchema;
     this.model = model != null ? model : "retab-small";
@@ -50,6 +52,7 @@ public final class ExtractionRequest {
     this.background = background != null ? background : false;
     this.deepExtraction = deepExtraction != null ? deepExtraction : false;
     this.sources = sources;
+    this.agenticExtraction = agenticExtraction != null ? agenticExtraction : false;
   }
 
   public ExtractionRequest(
@@ -76,6 +79,36 @@ public final class ExtractionRequest {
         stream,
         background,
         deepExtraction,
+        null,
+        null);
+  }
+
+  public ExtractionRequest(
+      MimeData document,
+      Map<String, Object> jsonSchema,
+      String model,
+      String instructions,
+      Long nConsensus,
+      Map<String, String> metadata,
+      List<Map<String, Object>> additionalMessages,
+      Boolean bustCache,
+      Boolean stream,
+      Boolean background,
+      Boolean deepExtraction,
+      SourceOptions sources) {
+    this(
+        document,
+        jsonSchema,
+        model,
+        instructions,
+        nConsensus,
+        metadata,
+        additionalMessages,
+        bustCache,
+        stream,
+        background,
+        deepExtraction,
+        sources,
         null);
   }
 
@@ -137,5 +170,10 @@ public final class ExtractionRequest {
   @JsonProperty("sources")
   public SourceOptions getSources() {
     return sources;
+  }
+
+  @JsonProperty("agentic_extraction")
+  public Boolean isAgenticExtraction() {
+    return agenticExtraction;
   }
 }

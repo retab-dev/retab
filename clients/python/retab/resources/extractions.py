@@ -119,6 +119,7 @@ class ExtractionsMixin:
         background: bool = False,
         deep_extraction: bool | None = None,
         sources: SourceOptions | None = None,
+        agentic_extraction: bool | None = None,
         **extra_params: Any,
     ) -> PreparedRequest:
         """Create Extraction Run a structured extraction on a document. Extracts structured data from the `document` according to the supplied `json_schema`, using the requested `model`. Returns the extraction with its `output`, consensus details, and usage on `201`. When `stream` is `true`, partial results are streamed back as they are produced."""
@@ -142,6 +143,7 @@ class ExtractionsMixin:
             background=cast(Any, background),
             deep_extraction=cast(Any, deep_extraction),
             sources=cast(Any, sources),
+            agentic_extraction=cast(Any, agentic_extraction),
         )
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/extractions", params=params or None, data=data)
@@ -160,6 +162,7 @@ class ExtractionsMixin:
         background: bool = False,
         deep_extraction: bool | None = None,
         sources: SourceOptions | None = None,
+        agentic_extraction: bool | None = None,
         **extra_params: Any,
     ) -> PreparedRequest:
         """Create Extraction Stream Run a structured extraction on a document and stream partial results as they are produced."""
@@ -183,6 +186,7 @@ class ExtractionsMixin:
             background=cast(Any, background),
             deep_extraction=cast(Any, deep_extraction),
             sources=cast(Any, sources),
+            agentic_extraction=cast(Any, agentic_extraction),
         )
         data = payload.model_dump(mode="json", exclude_none=True, by_alias=True) if payload is not None else None
         return PreparedRequest(method="POST", url="/v1/extractions/stream", params=params or None, data=data)
@@ -272,6 +276,7 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
         background: bool = False,
         deep_extraction: bool | None = None,
         sources: SourceOptions | None = None,
+        agentic_extraction: bool | None = None,
         **extra_params: Any,
     ) -> Extraction:
         """Create Extraction Run a structured extraction on a document. Extracts structured data from the `document` according to the supplied `json_schema`, using the requested `model`. Returns the extraction with its `output`, consensus details, and usage on `201`. When `stream` is `true`, partial results are streamed back as they are produced."""
@@ -291,6 +296,7 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
             background=background,
             deep_extraction=deep_extraction,
             sources=sources,
+            agentic_extraction=agentic_extraction,
             **extra_params,
         )
         response = self._client._prepared_request(prepared_request)
@@ -310,6 +316,7 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
         background: bool = False,
         deep_extraction: bool | None = None,
         sources: SourceOptions | None = None,
+        agentic_extraction: bool | None = None,
         **extra_params: Any,
     ) -> Any:
         """Create Extraction Stream Run a structured extraction on a document and stream partial results as they are produced."""
@@ -329,6 +336,7 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
             background=background,
             deep_extraction=deep_extraction,
             sources=sources,
+            agentic_extraction=agentic_extraction,
             **extra_params,
         )
         response = self._client._prepared_request(prepared_request)
@@ -408,6 +416,7 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
         background: bool = False,
         deep_extraction: bool | None = None,
         sources: SourceOptions | None = None,
+        agentic_extraction: bool | None = None,
         **extra_params: Any,
     ) -> Extraction:
         """Create Extraction Run a structured extraction on a document. Extracts structured data from the `document` according to the supplied `json_schema`, using the requested `model`. Returns the extraction with its `output`, consensus details, and usage on `201`. When `stream` is `true`, partial results are streamed back as they are produced."""
@@ -427,6 +436,7 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
             background=background,
             deep_extraction=deep_extraction,
             sources=sources,
+            agentic_extraction=agentic_extraction,
             **extra_params,
         )
         response = await self._client._prepared_request(prepared_request)
@@ -446,6 +456,7 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
         background: bool = False,
         deep_extraction: bool | None = None,
         sources: SourceOptions | None = None,
+        agentic_extraction: bool | None = None,
         **extra_params: Any,
     ) -> Any:
         """Create Extraction Stream Run a structured extraction on a document and stream partial results as they are produced."""
@@ -465,6 +476,7 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
             background=background,
             deep_extraction=deep_extraction,
             sources=sources,
+            agentic_extraction=agentic_extraction,
             **extra_params,
         )
         response = await self._client._prepared_request(prepared_request)

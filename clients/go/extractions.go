@@ -62,6 +62,8 @@ type ExtractionsCreateParams struct {
 	DeepExtraction *bool `json:"deep_extraction,omitempty" url:"-"`
 	// Sources is automatic source computation. Omission defaults to located; cited must be requested explicitly.
 	Sources *SourceOptions `json:"sources,omitempty" url:"-"`
+	// AgenticExtraction is agentic extraction for long documents with large repeated arrays: an agent reads the document, writes and runs extraction code in a sandbox, and submits an output checked against the schema. Requires model retab-large, a PDF, n_consensus 1, and no instructions or additional_messages; not supported with stream=true or on POST /v1/extractions/stream. Runs the standard deep extraction instead where agentic extraction is not available, when it does not apply to the document, or when it cannot finish.
+	AgenticExtraction *bool `json:"agentic_extraction,omitempty" url:"-"`
 }
 
 // Create extraction
@@ -96,6 +98,7 @@ func (s *ExtractionService) Create(ctx context.Context, params *ExtractionsCreat
 		Background         *bool                    `json:"background,omitempty"`
 		DeepExtraction     *bool                    `json:"deep_extraction,omitempty"`
 		Sources            *SourceOptions           `json:"sources,omitempty"`
+		AgenticExtraction  *bool                    `json:"agentic_extraction,omitempty"`
 	}
 	if params == nil {
 		return nil, fmt.Errorf("retab: params is required")
@@ -121,6 +124,7 @@ func (s *ExtractionService) Create(ctx context.Context, params *ExtractionsCreat
 		Background:         params.Background,
 		DeepExtraction:     params.DeepExtraction,
 		Sources:            params.Sources,
+		AgenticExtraction:  params.AgenticExtraction,
 	}
 	var result Extraction
 	_, err := s.client.request(ctx, "POST", "/v1/extractions", nil, body, &result, opts)
@@ -154,6 +158,8 @@ type ExtractionsCreateStreamParams struct {
 	DeepExtraction *bool `json:"deep_extraction,omitempty" url:"-"`
 	// Sources is automatic source computation. Omission defaults to located; cited must be requested explicitly.
 	Sources *SourceOptions `json:"sources,omitempty" url:"-"`
+	// AgenticExtraction is agentic extraction for long documents with large repeated arrays: an agent reads the document, writes and runs extraction code in a sandbox, and submits an output checked against the schema. Requires model retab-large, a PDF, n_consensus 1, and no instructions or additional_messages; not supported with stream=true or on POST /v1/extractions/stream. Runs the standard deep extraction instead where agentic extraction is not available, when it does not apply to the document, or when it cannot finish.
+	AgenticExtraction *bool `json:"agentic_extraction,omitempty" url:"-"`
 }
 
 // CreateStream create Extraction Stream
@@ -172,6 +178,7 @@ func (s *ExtractionService) CreateStream(ctx context.Context, params *Extraction
 		Background         *bool                    `json:"background,omitempty"`
 		DeepExtraction     *bool                    `json:"deep_extraction,omitempty"`
 		Sources            *SourceOptions           `json:"sources,omitempty"`
+		AgenticExtraction  *bool                    `json:"agentic_extraction,omitempty"`
 	}
 	if params == nil {
 		return fmt.Errorf("retab: params is required")
@@ -197,6 +204,7 @@ func (s *ExtractionService) CreateStream(ctx context.Context, params *Extraction
 		Background:         params.Background,
 		DeepExtraction:     params.DeepExtraction,
 		Sources:            params.Sources,
+		AgenticExtraction:  params.AgenticExtraction,
 	}
 	_, err := s.client.request(ctx, "POST", "/v1/extractions/stream", nil, body, nil, opts)
 	return err

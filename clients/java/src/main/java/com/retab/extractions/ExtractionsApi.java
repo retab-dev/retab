@@ -120,6 +120,37 @@ public final class ExtractionsApi {
         stream,
         background,
         deepExtraction,
+        null,
+        null);
+  }
+
+  public Extraction create(
+      MimeData document,
+      Map<String, Object> jsonSchema,
+      String model,
+      String instructions,
+      Long nConsensus,
+      Map<String, String> metadata,
+      List<Map<String, Object>> additionalMessages,
+      Boolean bustCache,
+      Boolean stream,
+      Boolean background,
+      Boolean deepExtraction,
+      SourceOptions sources)
+      throws IOException, InterruptedException {
+    return create(
+        document,
+        jsonSchema,
+        model,
+        instructions,
+        nConsensus,
+        metadata,
+        additionalMessages,
+        bustCache,
+        stream,
+        background,
+        deepExtraction,
+        sources,
         null);
   }
 
@@ -136,7 +167,8 @@ public final class ExtractionsApi {
         request == null ? null : request.isStream(),
         request == null ? null : request.isBackground(),
         request == null ? null : request.isDeepExtraction(),
-        request == null ? null : request.getSources());
+        request == null ? null : request.getSources(),
+        request == null ? null : request.isAgenticExtraction());
   }
 
   public Extraction create(
@@ -151,7 +183,8 @@ public final class ExtractionsApi {
       Boolean stream,
       Boolean background,
       Boolean deepExtraction,
-      SourceOptions sources)
+      SourceOptions sources,
+      Boolean agenticExtraction)
       throws IOException, InterruptedException {
     String path = "/v1/extractions";
     StringBuilder query = new StringBuilder();
@@ -188,6 +221,9 @@ public final class ExtractionsApi {
     }
     if (sources != null) {
       body.put("sources", sources);
+    }
+    if (agenticExtraction != null) {
+      body.put("agentic_extraction", agenticExtraction);
     }
     String requestBody = client.getObjectMapper().writeValueAsString(body);
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);
@@ -233,6 +269,37 @@ public final class ExtractionsApi {
         stream,
         background,
         deepExtraction,
+        null,
+        null);
+  }
+
+  public Object createStream(
+      MimeData document,
+      Map<String, Object> jsonSchema,
+      String model,
+      String instructions,
+      Long nConsensus,
+      Map<String, String> metadata,
+      List<Map<String, Object>> additionalMessages,
+      Boolean bustCache,
+      Boolean stream,
+      Boolean background,
+      Boolean deepExtraction,
+      SourceOptions sources)
+      throws IOException, InterruptedException {
+    return createStream(
+        document,
+        jsonSchema,
+        model,
+        instructions,
+        nConsensus,
+        metadata,
+        additionalMessages,
+        bustCache,
+        stream,
+        background,
+        deepExtraction,
+        sources,
         null);
   }
 
@@ -249,7 +316,8 @@ public final class ExtractionsApi {
         request == null ? null : request.isStream(),
         request == null ? null : request.isBackground(),
         request == null ? null : request.isDeepExtraction(),
-        request == null ? null : request.getSources());
+        request == null ? null : request.getSources(),
+        request == null ? null : request.isAgenticExtraction());
   }
 
   public Object createStream(
@@ -264,7 +332,8 @@ public final class ExtractionsApi {
       Boolean stream,
       Boolean background,
       Boolean deepExtraction,
-      SourceOptions sources)
+      SourceOptions sources,
+      Boolean agenticExtraction)
       throws IOException, InterruptedException {
     String path = "/v1/extractions/stream";
     StringBuilder query = new StringBuilder();
@@ -301,6 +370,9 @@ public final class ExtractionsApi {
     }
     if (sources != null) {
       body.put("sources", sources);
+    }
+    if (agenticExtraction != null) {
+      body.put("agentic_extraction", agenticExtraction);
     }
     String requestBody = client.getObjectMapper().writeValueAsString(body);
     HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofString(requestBody);

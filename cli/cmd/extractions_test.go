@@ -13,6 +13,7 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 
@@ -35,6 +36,7 @@ func newExtractionRequestTestCmd(t *testing.T) *cobra.Command {
 	cmd.Flags().StringArray("metadata", nil, "")
 	cmd.Flags().String("messages-file", "", "")
 	cmd.Flags().Bool("deep-extraction", false, "")
+	cmd.Flags().Bool("agentic-extraction", false, "")
 	return cmd
 }
 
@@ -330,7 +332,8 @@ func TestExtractionsStreamCommandSendsDeepExtractionOnTheWire(t *testing.T) {
 // "Flags and document/schema resolution are identical to
 // retab extractions create".
 var streamBodyExclusions = map[string]string{
-	"background": "background and stream are mutually exclusive execution modes: one returns a queued record to poll, the other holds the connection open",
+	"background":         "background and stream are mutually exclusive execution modes: one returns a queued record to poll, the other holds the connection open",
+	"agentic_extraction": "agentic extraction does not support streaming: the server answers 422 on /v1/extractions/stream and on stream=true, so `retab extractions stream` does not register --agentic-extraction and its body never carries the field",
 }
 
 // TestStreamBodyCarriesEveryCreateField is the structural guard for the whole
@@ -542,6 +545,320 @@ func TestDeepExtractionThreeStatesMatchOnCreateAndStream(t *testing.T) {
 		for _, flagName := range []string{"url", "model", "json-schema", "deep-extraction"} {
 			_ = streamCmd.Flags().Set(flagName, streamCmd.Flags().Lookup(flagName).DefValue)
 			streamCmd.Flags().Lookup(flagName).Changed = false
+		}
+	}
+}
+
+// TestNewExtractionRequestGatesAgenticExtractionParam pins the three states of
+// --agentic-extraction on `retab extractions create`, the same contract as
+// --deep-extraction: unset OMITS agentic_extraction (absent == false on the
+// server, so no existing request changes shape), --agentic-extraction sends
+// true, and an explicit --agentic-extraction=false sends false so a user can
+// override a wrapper that turned it on.
+//
+// The CLI sends the field as given and nothing else. It does not also send
+// deep_extraction (the server implies it) and it does not check the model or
+// the document type: the server is the source of truth for model aliases
+// (auto-large, any case) and for the PDF check after the document is stored.
+func TestNewExtractionRequestGatesAgenticExtractionParam(t *testing.T) {
+	build := func(t *testing.T, cmd *cobra.Command, extra map[string]string) retab.ExtractionsCreateParams {
+		t.Helper()
+		for n, v := range map[string]string{
+			"url":         "https://example.com/ledger.pdf",
+			"model":       "retab-large",
+			"json-schema": `{"type":"object"}`,
+		} {
+			if err := cmd.Flags().Set(n, v); err != nil {
+				t.Fatalf("set --%s: %v", n, err)
+			}
+		}
+		for n, v := range extra {
+			if err := cmd.Flags().Set(n, v); err != nil {
+				t.Fatalf("set --%s: %v", n, err)
+			}
+		}
+		params, err := newExtractionRequest(cmd)
+		if err != nil {
+			t.Fatalf("newExtractionRequest: %v", err)
+		}
+		return params
+	}
+
+	t.Run("omitted when unset", func(t *testing.T) {
+		params := build(t, newExtractionRequestTestCmd(t), nil)
+		if params.AgenticExtraction != nil {
+			t.Fatalf("AgenticExtraction must be nil when the flag is unset, got %v", *params.AgenticExtraction)
+		}
+	})
+
+	t.Run("sent when set, without adding deep_extraction", func(t *testing.T) {
+		params := build(t, newExtractionRequestTestCmd(t), map[string]string{"agentic-extraction": "true"})
+		if params.AgenticExtraction == nil || !*params.AgenticExtraction {
+			t.Fatalf("AgenticExtraction = %v, want true", params.AgenticExtraction)
+		}
+		if params.DeepExtraction != nil {
+			t.Fatalf("DeepExtraction = %v, want nil: the server implies deep extraction, the CLI must not add the field", *params.DeepExtraction)
+		}
+	})
+
+	t.Run("explicit false is sent", func(t *testing.T) {
+		params := build(t, newExtractionRequestTestCmd(t), map[string]string{"agentic-extraction": "false"})
+		if params.AgenticExtraction == nil || *params.AgenticExtraction {
+			t.Fatalf("AgenticExtraction = %v, want an explicit false", params.AgenticExtraction)
+		}
+	})
+
+	t.Run("no client-side model check", func(t *testing.T) {
+		params := build(t, newExtractionRequestTestCmd(t), map[string]string{"agentic-extraction": "true", "model": "auto-large"})
+		if params.AgenticExtraction == nil || !*params.AgenticExtraction {
+			t.Fatalf("AgenticExtraction = %v, want true: the server, not the CLI, decides which models are accepted", params.AgenticExtraction)
+		}
+	})
+
+	t.Run("never sent by a command that does not register the flag", func(t *testing.T) {
+		// The stream command registers addExtractionBodyFlags only. Changed()
+		// on an unregistered flag is false, so its request never carries
+		// the field.
+		cmd := &cobra.Command{Use: "test-extraction-stream"}
+		addExtractionBodyFlags(cmd)
+		params := build(t, cmd, nil)
+		if params.AgenticExtraction != nil {
+			t.Fatalf("AgenticExtraction = %v, want nil on a command without --agentic-extraction", *params.AgenticExtraction)
+		}
+	})
+}
+
+// TestExtractionsCreateCommandSendsAgenticExtractionOnTheWire runs the
+// documented example through the real command tree:
+//
+//	retab extractions create --file ./ledger.pdf --json-schema-file ./ledger-schema.json \
+//	  --model retab-large --agentic-extraction --background --wait --timeout-seconds 3600
+//
+// against a stub server, and asserts the field reaches the POST /v1/extractions
+// body. This is the twin of TestExtractionsCreateCommandSendsDeepExtractionOnTheWire
+// and it catches three breaks the params test cannot: the flag not registered on
+// `create`, a params field the generated SDK never serializes, and the example
+// not working with --background --wait.
+func TestExtractionsCreateCommandSendsAgenticExtractionOnTheWire(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+	resetCommandTreeFlags(extractionsCreateCmd)
+
+	var (
+		mu         sync.Mutex
+		createBody map[string]any
+		creates    int
+		polls      int
+	)
+	const record = `"file":{"id":"file_1","filename":"ledger.pdf","mime_type":"application/pdf"},"model":"retab-large","json_schema":{"type":"object"}`
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == "/v1/extractions":
+			var body map[string]any
+			_ = json.NewDecoder(r.Body).Decode(&body)
+			mu.Lock()
+			createBody = body
+			creates++
+			mu.Unlock()
+			w.WriteHeader(http.StatusAccepted)
+			_, _ = fmt.Fprint(w, `{"id":"extr_1","status":"queued",`+record+`,"output":{}}`)
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/extractions/extr_1":
+			mu.Lock()
+			polls++
+			mu.Unlock()
+			_, _ = fmt.Fprint(w, `{"id":"extr_1","status":"completed",`+record+`,"output":{"rows":[]}}`)
+		default:
+			t.Errorf("unexpected request %s %s", r.Method, r.URL.Path)
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	dir := t.TempDir()
+	pdf := filepath.Join(dir, "ledger.pdf")
+	if err := os.WriteFile(pdf, []byte("%PDF-1.4\n%%EOF\n"), 0o600); err != nil {
+		t.Fatalf("write pdf: %v", err)
+	}
+	schema := filepath.Join(dir, "ledger-schema.json")
+	if err := os.WriteFile(schema, []byte(`{"type":"object","properties":{"rows":{"type":"array","items":{"type":"object"}}}}`), 0o600); err != nil {
+		t.Fatalf("write schema: %v", err)
+	}
+
+	// The documented example, apart from the local paths and a 1 ms poll so
+	// the test does not sleep.
+	err := runRootForTest(t, "extractions", "create",
+		"--file", pdf,
+		"--json-schema-file", schema,
+		"--model", "retab-large",
+		"--agentic-extraction",
+		"--background", "--wait", "--timeout-seconds", "3600",
+		"--poll-interval-ms", "1",
+	)
+	if err != nil {
+		t.Fatalf("retab extractions create --agentic-extraction: %v", err)
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+	if creates != 1 {
+		t.Fatalf("POST /v1/extractions was called %d times, want 1", creates)
+	}
+	if createBody == nil {
+		t.Fatal("no request body captured")
+	}
+	if createBody["agentic_extraction"] != true {
+		t.Fatalf("wire body agentic_extraction = %#v, want true (body keys %v)", createBody["agentic_extraction"], sortedKeys(createBody))
+	}
+	if createBody["model"] != "retab-large" {
+		t.Fatalf("wire body model = %#v, want retab-large", createBody["model"])
+	}
+	if createBody["background"] != true {
+		t.Fatalf("wire body background = %#v, want true", createBody["background"])
+	}
+	if value, present := createBody["deep_extraction"]; present {
+		t.Fatalf("wire body carries deep_extraction=%#v; --agentic-extraction alone must not add it (the server implies it)", value)
+	}
+	if polls < 1 {
+		t.Fatalf("--background --wait must poll GET /v1/extractions/extr_1 at least once, polled %d", polls)
+	}
+}
+
+// TestExtractionsStreamCommandHasNoAgenticExtractionFlag pins that agentic
+// extraction is a `create`-only option. The server rejects it on the stream
+// route (422), so a stream flag would be accepted only to fail remotely — or,
+// worse, be silently dropped by the hand-assembled stream body, the exact bug
+// class TestStreamBodyCarriesEveryCreateField guards. An unknown-flag error,
+// raised before any request, is the honest answer.
+func TestExtractionsStreamCommandHasNoAgenticExtractionFlag(t *testing.T) {
+	if f := extractionsStreamCmd.Flags().Lookup("agentic-extraction"); f != nil {
+		t.Fatalf("retab extractions stream registers --agentic-extraction (%q); agentic extraction does not support streaming", f.Usage)
+	}
+
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var (
+		mu     sync.Mutex
+		bodies []map[string]any
+	)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
+		var body map[string]any
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		mu.Lock()
+		bodies = append(bodies, body)
+		mu.Unlock()
+		w.Header().Set("Content-Type", "application/stream+json")
+		_, _ = fmt.Fprint(w, "{\"id\":\"chatcmpl_1\",\"extraction_id\":\"extr_1\"}\n")
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	streamArgs := []string{
+		"extractions", "stream",
+		"--url", "https://example.com/ledger.pdf",
+		"--model", "retab-large",
+		"--json-schema", `{"type":"object"}`,
+	}
+
+	t.Run("the flag is an unknown-flag error before any request", func(t *testing.T) {
+		mu.Lock()
+		bodies = nil
+		mu.Unlock()
+		err := runRootForTest(t, append(append([]string{}, streamArgs...), "--agentic-extraction")...)
+		if err == nil {
+			t.Fatal("retab extractions stream --agentic-extraction: expected an unknown-flag error, got nil")
+		}
+		if !strings.Contains(err.Error(), "unknown flag") || !strings.Contains(err.Error(), "--agentic-extraction") {
+			t.Fatalf("error = %v, want an unknown-flag error naming --agentic-extraction", err)
+		}
+		mu.Lock()
+		defer mu.Unlock()
+		if len(bodies) != 0 {
+			t.Fatalf("the server received %d request(s); the flag must fail before any request", len(bodies))
+		}
+	})
+
+	t.Run("the stream body never carries agentic_extraction", func(t *testing.T) {
+		mu.Lock()
+		bodies = nil
+		mu.Unlock()
+		if err := runRootForTest(t, append(append([]string{}, streamArgs...), "--deep-extraction")...); err != nil {
+			t.Fatalf("retab extractions stream: %v", err)
+		}
+		mu.Lock()
+		defer mu.Unlock()
+		if len(bodies) != 1 {
+			t.Fatalf("the server received %d request(s), want 1", len(bodies))
+		}
+		if value, present := bodies[0]["agentic_extraction"]; present {
+			t.Fatalf("stream body carries agentic_extraction=%#v", value)
+		}
+		if bodies[0]["stream"] != true {
+			t.Fatalf("stream body stream = %#v, want true", bodies[0]["stream"])
+		}
+	})
+}
+
+// TestAgenticExtractionHelpText pins what a user reads about the option. It
+// names only "agentic extraction" (never the internal names of the
+// implementation), states the requirements the server enforces (retab-large,
+// a PDF), points long runs at --background, and ships a working example: every
+// flag in that example is registered on `retab extractions create`.
+func TestAgenticExtractionHelpText(t *testing.T) {
+	flag := extractionsCreateCmd.Flags().Lookup("agentic-extraction")
+	if flag == nil {
+		t.Fatal("retab extractions create does not register --agentic-extraction")
+	}
+	if flag.DefValue != "false" || flag.Value.Type() != "bool" {
+		t.Fatalf("--agentic-extraction is %s with default %q, want a bool defaulting to false", flag.Value.Type(), flag.DefValue)
+	}
+
+	internalNames := []string{"AgentX", "long_list_strategy", "progressive_windowing", "orchestrator", "Claude"}
+	for label, text := range map[string]string{
+		"--agentic-extraction usage":       flag.Usage,
+		"retab extractions create Long":    extractionsCreateCmd.Long,
+		"retab extractions create Example": extractionsCreateCmd.Example,
+		"retab extractions stream Long":    extractionsStreamCmd.Long,
+	} {
+		for _, name := range internalNames {
+			if strings.Contains(strings.ToLower(text), strings.ToLower(name)) {
+				t.Errorf("%s exposes the internal name %q:\n%s", label, name, text)
+			}
+		}
+	}
+
+	for _, want := range []string{"retab-large", "PDF", "--background", "--deep-extraction"} {
+		if !strings.Contains(flag.Usage, want) {
+			t.Errorf("--agentic-extraction usage does not mention %q:\n%s", want, flag.Usage)
+		}
+	}
+
+	var example string
+	for _, block := range strings.Split(extractionsCreateCmd.Example, "\n\n") {
+		if strings.Contains(block, "--agentic-extraction") {
+			example = block
+			break
+		}
+	}
+	if example == "" {
+		t.Fatalf("retab extractions create Example has no --agentic-extraction example:\n%s", extractionsCreateCmd.Example)
+	}
+	for _, want := range []string{"--model retab-large", ".pdf", "--background", "--wait", "--timeout-seconds"} {
+		if !strings.Contains(example, want) {
+			t.Errorf("the --agentic-extraction example does not contain %q:\n%s", want, example)
+		}
+	}
+	for _, field := range strings.Fields(example) {
+		if !strings.HasPrefix(field, "--") {
+			continue
+		}
+		name := strings.TrimPrefix(field, "--")
+		if extractionsCreateCmd.Flags().Lookup(name) == nil && extractionsCreateCmd.InheritedFlags().Lookup(name) == nil {
+			t.Errorf("the --agentic-extraction example uses --%s, which retab extractions create does not register:\n%s", name, example)
 		}
 	}
 }

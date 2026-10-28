@@ -45,10 +45,11 @@ module Retab
         background: T.nilable(T::Boolean),
         deep_extraction: T.nilable(T::Boolean),
         sources: T.nilable(Retab::SourceOptions),
+        agentic_extraction: T.nilable(T::Boolean),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(Retab::Extraction)
     end
-    def create(document:, json_schema:, model:, instructions:, n_consensus:, metadata:, additional_messages:, bust_cache:, stream:, background:, deep_extraction:, sources:, request_options:); end
+    def create(document:, json_schema:, model:, instructions:, n_consensus:, metadata:, additional_messages:, bust_cache:, stream:, background:, deep_extraction:, sources:, agentic_extraction:, request_options:); end
 
     sig do
       params(
@@ -64,10 +65,11 @@ module Retab
         background: T.nilable(T::Boolean),
         deep_extraction: T.nilable(T::Boolean),
         sources: T.nilable(Retab::SourceOptions),
+        agentic_extraction: T.nilable(T::Boolean),
         request_options: T::Hash[Symbol, T.untyped]
       ).returns(NilClass)
     end
-    def create_stream(document:, json_schema:, model:, instructions:, n_consensus:, metadata:, additional_messages:, bust_cache:, stream:, background:, deep_extraction:, sources:, request_options:); end
+    def create_stream(document:, json_schema:, model:, instructions:, n_consensus:, metadata:, additional_messages:, bust_cache:, stream:, background:, deep_extraction:, sources:, agentic_extraction:, request_options:); end
 
     sig do
       params(

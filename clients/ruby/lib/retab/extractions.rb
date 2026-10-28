@@ -115,6 +115,7 @@ module Retab
     # @param background [Boolean, nil] If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
     # @param deep_extraction [Boolean, nil] Optimizes for accuracy over latency in documents with very large arrays.
     # @param sources [Retab::SourceOptions, nil] Automatic source computation. Omission defaults to located; cited must be requested explicitly.
+    # @param agentic_extraction [Boolean, nil] Agentic extraction for long documents with large repeated arrays: an agent reads the document, writes and runs extraction code in a sandbox, and submits an output checked against the schema. Requires model retab-large, a PDF, n_consensus 1, and no instructions or additional_messages; not supported with stream=true or on POST /v1/extractions/stream. Runs the standard deep extraction instead where agentic extraction is not available, when it does not apply to the document, or when it cannot finish.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [Retab::Extraction]
     def create(
@@ -130,6 +131,7 @@ module Retab
       background: nil,
       deep_extraction: nil,
       sources: nil,
+      agentic_extraction: nil,
       request_options: {}
     )
       document = Retab::MimeData.coerce(document, client: @client) unless document.nil?
@@ -145,7 +147,8 @@ module Retab
         "stream" => stream,
         "background" => background,
         "deep_extraction" => deep_extraction,
-        "sources" => sources
+        "sources" => sources,
+        "agentic_extraction" => agentic_extraction
       }.compact
       response = @client.request(
         method: :post,
@@ -176,6 +179,7 @@ module Retab
     # @param background [Boolean, nil] If true, run asynchronously: returns immediately with status 'queued' and an empty output. Poll GET /v1/<primitive>/{id} until status is terminal. Mutually exclusive with stream.
     # @param deep_extraction [Boolean, nil] Optimizes for accuracy over latency in documents with very large arrays.
     # @param sources [Retab::SourceOptions, nil] Automatic source computation. Omission defaults to located; cited must be requested explicitly.
+    # @param agentic_extraction [Boolean, nil] Agentic extraction for long documents with large repeated arrays: an agent reads the document, writes and runs extraction code in a sandbox, and submits an output checked against the schema. Requires model retab-large, a PDF, n_consensus 1, and no instructions or additional_messages; not supported with stream=true or on POST /v1/extractions/stream. Runs the standard deep extraction instead where agentic extraction is not available, when it does not apply to the document, or when it cannot finish.
     # @param request_options [Hash] (see Retab::Types::RequestOptions)
     # @return [void]
     def create_stream(
@@ -191,6 +195,7 @@ module Retab
       background: nil,
       deep_extraction: nil,
       sources: nil,
+      agentic_extraction: nil,
       request_options: {}
     )
       document = Retab::MimeData.coerce(document, client: @client) unless document.nil?
@@ -206,7 +211,8 @@ module Retab
         "stream" => stream,
         "background" => background,
         "deep_extraction" => deep_extraction,
-        "sources" => sources
+        "sources" => sources,
+        "agentic_extraction" => agentic_extraction
       }.compact
       @client.request(
         method: :post,

@@ -57,6 +57,11 @@ export interface ExtractionRequest {
   deepExtraction?: boolean;
   /** Automatic source computation. Omission defaults to located; cited must be requested explicitly. */
   sources?: SourceOptions;
+  /**
+   * Agentic extraction for long documents with large repeated arrays: an agent reads the document, writes and runs extraction code in a sandbox, and submits an output checked against the schema. Requires model retab-large, a PDF, n_consensus 1, and no instructions or additional_messages; not supported with stream=true or on POST /v1/extractions/stream. Runs the standard deep extraction instead where agentic extraction is not available, when it does not apply to the document, or when it cannot finish.
+   * @default false
+   */
+  agenticExtraction?: boolean;
 }
 
 export interface ExtractionRequestResponse {
@@ -72,6 +77,7 @@ export interface ExtractionRequestResponse {
   background?: boolean;
   deep_extraction?: boolean;
   sources?: SourceOptionsResponse;
+  agentic_extraction?: boolean;
 }
 
 export const ZExtractionRequest = z.object({
@@ -87,6 +93,7 @@ export const ZExtractionRequest = z.object({
   background: z.boolean().optional(),
   deepExtraction: z.boolean().optional(),
   sources: ZSourceOptions.optional(),
+  agenticExtraction: z.boolean().optional(),
 }) as z.ZodType<ExtractionRequest>;
 
 export function deserializeExtractionRequest(wire: ExtractionRequestResponse): ExtractionRequest {
@@ -106,6 +113,7 @@ export function deserializeExtractionRequest(wire: ExtractionRequestResponse): E
       wire['sources'] == null
         ? (wire['sources'] as undefined)
         : deserializeSourceOptions(wire['sources']),
+    agenticExtraction: wire['agentic_extraction'],
   };
 }
 
@@ -126,5 +134,6 @@ export function serializeExtractionRequest(domain: ExtractionRequest): Extractio
       domain['sources'] == null
         ? (domain['sources'] as undefined)
         : serializeSourceOptions(domain['sources']),
+    agentic_extraction: domain['agenticExtraction'],
   };
 }

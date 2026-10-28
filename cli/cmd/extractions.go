@@ -96,6 +96,15 @@ func newExtractionRequest(cmd *cobra.Command) (retab.ExtractionsCreateParams, er
 		deepExtraction, _ := cmd.Flags().GetBool("deep-extraction")
 		params.DeepExtraction = ptr(deepExtraction)
 	}
+	// Same "sent only when set" rule. --agentic-extraction is registered on
+	// `create` only; Changed is false for an unregistered flag, so the stream
+	// command never sends it. No client-side checks: the server owns the model
+	// aliases and the PDF check (which needs the stored document), and it
+	// implies deep_extraction, so the CLI does not add that field either.
+	if cmd.Flags().Changed("agentic-extraction") {
+		agenticExtraction, _ := cmd.Flags().GetBool("agentic-extraction")
+		params.AgenticExtraction = ptr(agenticExtraction)
+	}
 	return params, nil
 }
 
@@ -135,7 +144,16 @@ For streaming output (one event per line, useful on slow extractions), see
  # Multiple metadata key=value tags for audit
   retab extractions create \
     --file ./doc.pdf --json-schema-file ./s.json --model gpt-4o \
-    --metadata customer=acme --metadata env=prod`,
+    --metadata customer=acme --metadata env=prod
+
+  # Agentic extraction of a long PDF with large repeated arrays
+  # (runs can take several minutes: run in the background and wait)
+  retab extractions create \
+    --file ./ledger.pdf \
+    --json-schema-file ./ledger-schema.json \
+    --model retab-large \
+    --agentic-extraction \
+    --background --wait --timeout-seconds 3600`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		req, err := newExtractionRequest(cmd)
 		if err != nil {
@@ -174,7 +192,8 @@ this over ` + "`retab extractions create`" + ` when extractions run longer than 
 few seconds and you want partial results visible as they land.
 
 Flags and document/schema resolution are identical to
-` + "`retab extractions create`" + `.`,
+` + "`retab extractions create`" + `, except ` + "`--agentic-extraction`" + `:
+agentic extraction does not support streaming.`,
 	Example: `  # Stream an extraction, line by line
   retab extractions stream \
     --file ./contract.pdf \
@@ -482,6 +501,10 @@ func init() {
 	addExtractionBodyFlags(extractionsCreateCmd)
 	addPrimitiveBackgroundFlag(extractionsCreateCmd)
 	addPrimitiveCreateWaitFlags(extractionsCreateCmd)
+	// create only, not addExtractionBodyFlags: agentic extraction does not
+	// support streaming, so `retab extractions stream --agentic-extraction` is
+	// an unknown-flag error rather than a flag the server would reject.
+	extractionsCreateCmd.Flags().Bool("agentic-extraction", false, "agentic extraction for long PDFs with large repeated arrays: an agent reads the document, writes and runs extraction code, and checks the output against the schema. Implies --deep-extraction. Requires --model retab-large and a PDF; no --n-consensus above 1, no --instructions or --messages-file. Runs can take several minutes: combine with --background --wait --timeout-seconds 3600. Runs the standard deep extraction instead where agentic extraction is not available, when it does not apply to the document, or when it cannot finish.")
 	addExtractionBodyFlags(extractionsStreamCmd)
 
 	addListFlags(extractionsListCmd, false)
