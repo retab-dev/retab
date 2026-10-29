@@ -703,7 +703,7 @@ func resolveCLIRequest(cmd *cobra.Command) (resolvedCredential, string, retabCon
 	return cred, baseURL, cfg, nil
 }
 
-func newClient(cmd *cobra.Command) (*retab.Client, error) {
+func newClient(cmd *cobra.Command, extra ...retab.Option) (*retab.Client, error) {
 	// Resolution order (first match wins), shared with the safety gate via
 	// resolveCLIRequest -> resolveCredential:
 	//   1. `--api-key` flag                       -> Bearer
@@ -732,6 +732,9 @@ func newClient(cmd *cobra.Command) (*retab.Client, error) {
 	if authHTTPClient != http.DefaultClient {
 		opts = append(opts, retab.WithHTTPClient(authHTTPClient))
 	}
+	// A command's own options (extractions create's longer request timeout)
+	// apply after the shared ones, so they win.
+	opts = append(opts, extra...)
 
 	// API-key credential (flag, env, --env/--live/default profile, or legacy).
 	if cred.APIKey != "" {
@@ -976,6 +979,17 @@ func debugHTTPClient(cmd *cobra.Command) *http.Client {
 		}
 	}
 	return http.DefaultClient
+}
+
+// requestHTTPClient is the *http.Client of a command whose one request can
+// legitimately outlast the SDK's 30-minute default (extractions create): the
+// given timeout instead, with debugHTTPClient's wire dump when --debug is set.
+func requestHTTPClient(cmd *cobra.Command, timeout time.Duration) *http.Client {
+	client := &http.Client{Timeout: timeout}
+	if debug, _ := cmd.Root().PersistentFlags().GetBool("debug"); debug {
+		client.Transport = &debugTransport{wrapped: http.DefaultTransport}
+	}
+	return client
 }
 
 // resolveCLIRequestAuth resolves the API key / bearer token pair for the raw

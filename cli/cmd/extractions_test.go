@@ -16,6 +16,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -726,6 +727,95 @@ func TestExtractionsCreateCommandSendsAgenticExtractionOnTheWire(t *testing.T) {
 	}
 }
 
+// extractionsCreateDeadlineRecorder stands in for http.DefaultTransport and
+// records how long the POST /v1/extractions request had left before its
+// client timeout (http.Client.Timeout sets the deadline of the request's
+// context), then sends the request on.
+type extractionsCreateDeadlineRecorder struct {
+	wrapped http.RoundTripper
+	mu      sync.Mutex
+	left    time.Duration
+	seen    bool
+}
+
+func (r *extractionsCreateDeadlineRecorder) RoundTrip(req *http.Request) (*http.Response, error) {
+	if req.Method == http.MethodPost && req.URL.Path == "/v1/extractions" {
+		r.mu.Lock()
+		r.seen = true
+		if deadline, ok := req.Context().Deadline(); ok {
+			r.left = time.Until(deadline)
+		}
+		r.mu.Unlock()
+	}
+	return r.wrapped.RoundTrip(req)
+}
+
+// TestExtractionsCreateWaitsForALongSynchronousRun pins how long a synchronous
+// `retab extractions create` waits for its answer. A deep or agentic
+// extraction of a large spreadsheet or CSV runs synchronously only (the server
+// refuses --background for it) and can take up to about 40 minutes (the
+// windows after an agent attempt included), while the SDK's default client
+// gives up at 30 minutes: the CLI exited with a client timeout and no output
+// for a run the server was still computing, and no flag raised the limit
+// (--timeout-seconds bounds only the --wait polling). create waits up to the
+// server's own 60-minute request ceiling, with --debug too, and the help says
+// so.
+func TestExtractionsCreateWaitsForALongSynchronousRun(t *testing.T) {
+	for _, debug := range []bool{false, true} {
+		t.Run(fmt.Sprintf("debug=%v", debug), func(t *testing.T) {
+			t.Setenv("RETAB_API_KEY", "test-key")
+			t.Setenv("HOME", t.TempDir())
+			resetCommandTreeFlags(rootCmd)
+
+			recorder := &extractionsCreateDeadlineRecorder{wrapped: http.DefaultTransport}
+			original := http.DefaultTransport
+			http.DefaultTransport = recorder
+			t.Cleanup(func() { http.DefaultTransport = original })
+
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				defer r.Body.Close()
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = fmt.Fprint(w, `{"id":"extr_1","status":"completed","file":{"id":"file_1","filename":"rows.csv","mime_type":"text/csv"},"model":"retab-large","json_schema":{"type":"object"},"output":{}}`)
+			}))
+			defer server.Close()
+			t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+			args := []string{"extractions", "create",
+				"--url", "https://example.com/rows.csv",
+				"--json-schema", `{"type":"object"}`,
+				"--model", "retab-large",
+				"--agentic-extraction",
+			}
+			if debug {
+				args = append(args, "--debug")
+			}
+			if err := runRootForTest(t, args...); err != nil {
+				t.Fatalf("retab extractions create: %v", err)
+			}
+
+			recorder.mu.Lock()
+			defer recorder.mu.Unlock()
+			if !recorder.seen {
+				t.Fatal("POST /v1/extractions never reached the transport")
+			}
+			if recorder.left < 59*time.Minute {
+				t.Fatalf("the synchronous create gives up after %v, want the server's 60-minute request ceiling (a large spreadsheet can take about 40 minutes)", recorder.left.Round(time.Minute))
+			}
+		})
+	}
+
+	for name, usage := range map[string]string{
+		"--agentic-extraction": extractionsCreateCmd.Flags().Lookup("agentic-extraction").Usage,
+		"--deep-extraction":    extractionsCreateCmd.Flags().Lookup("deep-extraction").Usage,
+	} {
+		for _, want := range []string{"up to about 40 minutes", "waits up to 60 minutes"} {
+			if !strings.Contains(usage, want) {
+				t.Errorf("%s usage does not say %q:\n%s", name, want, usage)
+			}
+		}
+	}
+}
+
 // TestExtractionsStreamCommandHasNoAgenticExtractionFlag pins that agentic
 // extraction is a `create`-only option. The server rejects it on the stream
 // route (422), so a stream flag would be accepted only to fail remotely — or,
@@ -810,8 +900,10 @@ func TestExtractionsStreamCommandHasNoAgenticExtractionFlag(t *testing.T) {
 // only"), that images and scans are read with OCR, that HTML, MHTML, audio
 // and body-only email count one page per 3,000 characters, and that a short
 // document runs the standard deep extraction, points long runs at
-// --background, and ships a working example on a document that is not a PDF:
-// every flag in that example is registered on `retab extractions create`.
+// --background except a spreadsheet or CSV, which runs synchronously only (the
+// server refuses --background for it), and ships a working example on a
+// document that is neither a PDF nor a spreadsheet: every flag in that example
+// is registered on `retab extractions create`.
 func TestAgenticExtractionHelpText(t *testing.T) {
 	flag := extractionsCreateCmd.Flags().Lookup("agentic-extraction")
 	if flag == nil {
@@ -835,9 +927,16 @@ func TestAgenticExtractionHelpText(t *testing.T) {
 		}
 	}
 
-	for _, want := range []string{"retab-large", "every document type", "read with OCR", "one page per 3,000 characters", "short document", "--background", "--deep-extraction"} {
+	for _, want := range []string{"retab-large", "every document type", "read with OCR", "one page per 3,000 characters", "short document", "--background", "--deep-extraction", "spreadsheet or CSV", "synchronously only"} {
 		if !strings.Contains(flag.Usage, want) {
 			t.Errorf("--agentic-extraction usage does not mention %q:\n%s", want, flag.Usage)
+		}
+	}
+	// A spreadsheet or CSV runs synchronously only: the server answers 422 to
+	// --background for it, so the help never says it works.
+	for _, stale := range []string{"--background works", "not in 50-row windows", "runs as one request"} {
+		if strings.Contains(flag.Usage, stale) {
+			t.Errorf("--agentic-extraction usage still says %q:\n%s", stale, flag.Usage)
 		}
 	}
 	// The server accepts every document type extraction accepts, so the help
@@ -868,9 +967,16 @@ func TestAgenticExtractionHelpText(t *testing.T) {
 			t.Errorf("the --agentic-extraction example does not contain %q:\n%s", want, example)
 		}
 	}
-	// Any document type works, so the example is not a PDF.
+	// Any document type works, so the example is not a PDF. It runs with
+	// --background, so it is not a spreadsheet or CSV either: the server
+	// refuses --background for those.
 	if strings.Contains(strings.ToLower(example), ".pdf") {
 		t.Errorf("the --agentic-extraction example uses a PDF; show another document type:\n%s", example)
+	}
+	for _, spreadsheet := range []string{".xlsx", ".xlsm", ".xls", ".ods", ".csv", ".tsv"} {
+		if strings.Contains(strings.ToLower(example), spreadsheet) {
+			t.Errorf("the --agentic-extraction example runs a %s file with --background, which the server refuses:\n%s", spreadsheet, example)
+		}
 	}
 	for _, field := range strings.Fields(example) {
 		if !strings.HasPrefix(field, "--") {

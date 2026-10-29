@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
@@ -109,6 +110,15 @@ func newExtractionRequest(cmd *cobra.Command) (retab.ExtractionsCreateParams, er
 	return params, nil
 }
 
+// extractionsCreateRequestTimeout is how long `extractions create` waits for
+// its one request. A deep or agentic extraction of a large spreadsheet or CSV
+// runs synchronously only and can take up to about 40 minutes, past the SDK's
+// 30-minute default client timeout, so create waits up to the server's own
+// 60-minute request ceiling. --background answers at once; --timeout-seconds
+// bounds only the --wait polling. The --deep-extraction and
+// --agentic-extraction help name this limit.
+const extractionsCreateRequestTimeout = 60 * time.Minute
+
 var extractionsCreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Create an extraction",
@@ -150,7 +160,7 @@ For streaming output (one event per line, useful on slow extractions), see
   # Agentic extraction of a long document with large repeated arrays
   # (runs can take several minutes: run in the background and wait)
   retab extractions create \
-    --file ./ledger.xlsx \
+    --file ./ledger.docx \
     --json-schema-file ./ledger-schema.json \
     --model retab-large \
     --agentic-extraction \
@@ -160,7 +170,7 @@ For streaming output (one event per line, useful on slow extractions), see
 		if err != nil {
 			return err
 		}
-		client, err := newClient(cmd)
+		client, err := newClient(cmd, retab.WithHTTPClient(requestHTTPClient(cmd, extractionsCreateRequestTimeout)))
 		if err != nil {
 			return err
 		}
@@ -494,7 +504,7 @@ func addExtractionBodyFlags(cmd *cobra.Command) {
 	// and that pipeline has no consensus vote and no background/stream mode.
 	// The response shape is the caller's schema on both paths — it was not
 	// always: the reduce used to hand back {"data": [<chunk output>, ...]}.
-	cmd.Flags().Bool("deep-extraction", false, `optimizes for accuracy over latency in documents with very large arrays. A spreadsheet (xlsx/CSV) is instead extracted in fixed 50-row windows, which runs synchronously only (no --background, no stream) and returns no consensus`)
+	cmd.Flags().Bool("deep-extraction", false, `optimizes for accuracy over latency in documents with very large arrays. A spreadsheet (xlsx/CSV) is instead extracted in fixed 50-row windows, which runs synchronously only (no --background, no stream) and returns no consensus. A large one can take up to about 40 minutes; retab extractions create waits up to 60 minutes for it`)
 	_ = cmd.MarkFlagRequired("model")
 }
 
@@ -505,7 +515,7 @@ func init() {
 	// create only, not addExtractionBodyFlags: agentic extraction does not
 	// support streaming, so `retab extractions stream --agentic-extraction` is
 	// an unknown-flag error rather than a flag the server would reject.
-	extractionsCreateCmd.Flags().Bool("agentic-extraction", false, "agentic extraction for long documents with large repeated arrays: an agent reads the document, writes and runs extraction code, and checks the output against the schema. Accepts every document type extraction accepts; images and scanned pages are read with OCR. Where agentic extraction is available, HTML, MHTML, audio and emails without paged attachments are counted and billed like text files: one page per 3,000 characters. Implies --deep-extraction. Requires --model retab-large; no --n-consensus above 1, no --instructions or --messages-file. Runs can take several minutes: combine with --background --wait --timeout-seconds 3600 (a spreadsheet or CSV runs as one request, not in 50-row windows, so --background works). Runs the standard deep extraction instead where agentic extraction is not available, when it does not apply to the document (for example a short document), or when it cannot finish.")
+	extractionsCreateCmd.Flags().Bool("agentic-extraction", false, "agentic extraction for long documents with large repeated arrays: an agent reads the document, writes and runs extraction code, and checks the output against the schema. Accepts every document type extraction accepts; images and scanned pages are read with OCR. Where agentic extraction is available, HTML, MHTML, audio and emails without paged attachments are counted and billed like text files: one page per 3,000 characters. Implies --deep-extraction. Requires --model retab-large; no --n-consensus above 1, no --instructions or --messages-file. Runs can take several minutes: combine with --background --wait --timeout-seconds 3600, except for a spreadsheet or CSV, which runs synchronously only (no --background) and can take up to about 40 minutes (this command waits up to 60 minutes for it): the agent reads it where agentic extraction is available; otherwise, or when the agent does not finish, it runs in the same 50-row windows as --deep-extraction. Runs the standard deep extraction instead where agentic extraction is not available, when it does not apply to the document (for example a short document), or when it cannot finish.")
 	addExtractionBodyFlags(extractionsStreamCmd)
 
 	addListFlags(extractionsListCmd, false)
