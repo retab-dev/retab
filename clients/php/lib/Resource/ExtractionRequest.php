@@ -49,7 +49,7 @@ readonly class ExtractionRequest implements \JsonSerializable
         public ?bool $deepExtraction = null,
         /** Automatic source computation. Omission defaults to located; cited must be requested explicitly. */
         public ?SourceOptions $sources = null,
-        /** Agentic extraction for long documents with large repeated arrays: an agent reads the document, writes and runs extraction code in a sandbox, and submits an output checked against the schema. Requires model retab-large, a PDF, n_consensus 1, and no instructions or additional_messages; not supported with stream=true or on POST /v1/extractions/stream. Runs the standard deep extraction instead where agentic extraction is not available, when it does not apply to the document, or when it cannot finish. */
+        /** Agentic extraction for long documents with large repeated arrays: an agent reads the document, writes and runs extraction code in a sandbox, and submits an output checked against the schema. Accepts every document type extraction accepts; images and scanned pages are read with OCR. Where agentic extraction is available, HTML, MHTML, audio and emails without paged attachments are counted and billed like text files: one page per 3,000 characters. Requires model retab-large, n_consensus 1, and no instructions or additional_messages; not supported with stream=true or on POST /v1/extractions/stream. Runs the standard deep extraction instead where agentic extraction is not available, when it does not apply to the document (for example a short document), or when it cannot finish. */
         public ?bool $agenticExtraction = null,
     ) {}
 

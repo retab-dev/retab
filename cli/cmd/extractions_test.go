@@ -559,7 +559,7 @@ func TestDeepExtractionThreeStatesMatchOnCreateAndStream(t *testing.T) {
 // The CLI sends the field as given and nothing else. It does not also send
 // deep_extraction (the server implies it) and it does not check the model or
 // the document type: the server is the source of truth for model aliases
-// (auto-large, any case) and for the PDF check after the document is stored.
+// (auto-large, any case) and for what the stored document allows.
 func TestNewExtractionRequestGatesAgenticExtractionParam(t *testing.T) {
 	build := func(t *testing.T, cmd *cobra.Command, extra map[string]string) retab.ExtractionsCreateParams {
 		t.Helper()
@@ -805,9 +805,13 @@ func TestExtractionsStreamCommandHasNoAgenticExtractionFlag(t *testing.T) {
 
 // TestAgenticExtractionHelpText pins what a user reads about the option. It
 // names only "agentic extraction" (never the internal names of the
-// implementation), states the requirements the server enforces (retab-large,
-// a PDF), points long runs at --background, and ships a working example: every
-// flag in that example is registered on `retab extractions create`.
+// implementation), states the requirement the server enforces (retab-large)
+// and that every document type extraction accepts is accepted (never "PDF
+// only"), that images and scans are read with OCR, that HTML, MHTML, audio
+// and body-only email count one page per 3,000 characters, and that a short
+// document runs the standard deep extraction, points long runs at
+// --background, and ships a working example on a document that is not a PDF:
+// every flag in that example is registered on `retab extractions create`.
 func TestAgenticExtractionHelpText(t *testing.T) {
 	flag := extractionsCreateCmd.Flags().Lookup("agentic-extraction")
 	if flag == nil {
@@ -831,9 +835,21 @@ func TestAgenticExtractionHelpText(t *testing.T) {
 		}
 	}
 
-	for _, want := range []string{"retab-large", "PDF", "--background", "--deep-extraction"} {
+	for _, want := range []string{"retab-large", "every document type", "read with OCR", "one page per 3,000 characters", "short document", "--background", "--deep-extraction"} {
 		if !strings.Contains(flag.Usage, want) {
 			t.Errorf("--agentic-extraction usage does not mention %q:\n%s", want, flag.Usage)
+		}
+	}
+	// The server accepts every document type extraction accepts, so the help
+	// never limits the option to PDFs.
+	for label, text := range map[string]string{
+		"--agentic-extraction usage":       flag.Usage,
+		"retab extractions create Example": extractionsCreateCmd.Example,
+	} {
+		for _, stale := range []string{"PDF only", "a PDF", "long PDF"} {
+			if strings.Contains(text, stale) {
+				t.Errorf("%s still says %q:\n%s", label, stale, text)
+			}
 		}
 	}
 
@@ -847,10 +863,14 @@ func TestAgenticExtractionHelpText(t *testing.T) {
 	if example == "" {
 		t.Fatalf("retab extractions create Example has no --agentic-extraction example:\n%s", extractionsCreateCmd.Example)
 	}
-	for _, want := range []string{"--model retab-large", ".pdf", "--background", "--wait", "--timeout-seconds"} {
+	for _, want := range []string{"--file ./", "--model retab-large", "--background", "--wait", "--timeout-seconds"} {
 		if !strings.Contains(example, want) {
 			t.Errorf("the --agentic-extraction example does not contain %q:\n%s", want, example)
 		}
+	}
+	// Any document type works, so the example is not a PDF.
+	if strings.Contains(strings.ToLower(example), ".pdf") {
+		t.Errorf("the --agentic-extraction example uses a PDF; show another document type:\n%s", example)
 	}
 	for _, field := range strings.Fields(example) {
 		if !strings.HasPrefix(field, "--") {

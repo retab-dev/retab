@@ -99,8 +99,9 @@ func newExtractionRequest(cmd *cobra.Command) (retab.ExtractionsCreateParams, er
 	// Same "sent only when set" rule. --agentic-extraction is registered on
 	// `create` only; Changed is false for an unregistered flag, so the stream
 	// command never sends it. No client-side checks: the server owns the model
-	// aliases and the PDF check (which needs the stored document), and it
-	// implies deep_extraction, so the CLI does not add that field either.
+	// aliases and decides from the stored document whether the agent runs and
+	// how its pages are counted, and it implies deep_extraction, so the CLI
+	// does not add that field either.
 	if cmd.Flags().Changed("agentic-extraction") {
 		agenticExtraction, _ := cmd.Flags().GetBool("agentic-extraction")
 		params.AgenticExtraction = ptr(agenticExtraction)
@@ -146,10 +147,10 @@ For streaming output (one event per line, useful on slow extractions), see
     --file ./doc.pdf --json-schema-file ./s.json --model gpt-4o \
     --metadata customer=acme --metadata env=prod
 
-  # Agentic extraction of a long PDF with large repeated arrays
+  # Agentic extraction of a long document with large repeated arrays
   # (runs can take several minutes: run in the background and wait)
   retab extractions create \
-    --file ./ledger.pdf \
+    --file ./ledger.xlsx \
     --json-schema-file ./ledger-schema.json \
     --model retab-large \
     --agentic-extraction \
@@ -504,7 +505,7 @@ func init() {
 	// create only, not addExtractionBodyFlags: agentic extraction does not
 	// support streaming, so `retab extractions stream --agentic-extraction` is
 	// an unknown-flag error rather than a flag the server would reject.
-	extractionsCreateCmd.Flags().Bool("agentic-extraction", false, "agentic extraction for long PDFs with large repeated arrays: an agent reads the document, writes and runs extraction code, and checks the output against the schema. Implies --deep-extraction. Requires --model retab-large and a PDF; no --n-consensus above 1, no --instructions or --messages-file. Runs can take several minutes: combine with --background --wait --timeout-seconds 3600. Runs the standard deep extraction instead where agentic extraction is not available, when it does not apply to the document, or when it cannot finish.")
+	extractionsCreateCmd.Flags().Bool("agentic-extraction", false, "agentic extraction for long documents with large repeated arrays: an agent reads the document, writes and runs extraction code, and checks the output against the schema. Accepts every document type extraction accepts; images and scanned pages are read with OCR. Where agentic extraction is available, HTML, MHTML, audio and emails without paged attachments are counted and billed like text files: one page per 3,000 characters. Implies --deep-extraction. Requires --model retab-large; no --n-consensus above 1, no --instructions or --messages-file. Runs can take several minutes: combine with --background --wait --timeout-seconds 3600 (a spreadsheet or CSV runs as one request, not in 50-row windows, so --background works). Runs the standard deep extraction instead where agentic extraction is not available, when it does not apply to the document (for example a short document), or when it cannot finish.")
 	addExtractionBodyFlags(extractionsStreamCmd)
 
 	addListFlags(extractionsListCmd, false)

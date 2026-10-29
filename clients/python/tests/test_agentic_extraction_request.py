@@ -1,6 +1,6 @@
 """Request-shape tests for the agentic_extraction extraction field.
 
-agentic_extraction asks the server to run agentic extraction on a long PDF
+agentic_extraction asks the server to run agentic extraction on a long document
 (it implies deep extraction). Its client-side failure modes are silent: a
 dropped field, a renamed key, a value routed into the query string by
 ``**extra_params``, or an unset default that serializes as ``false`` all give a

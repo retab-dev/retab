@@ -4,7 +4,7 @@ import { Retab } from '../../src/index.js';
 
 // Wire-shape tests for the agentic_extraction extraction field.
 //
-// agentic_extraction asks the server to run agentic extraction on a long PDF
+// agentic_extraction asks the server to run agentic extraction on a long document
 // (it implies deep extraction). Its client-side failure modes are silent: a
 // dropped field, a camelCase key the API ignores, or an unset default that
 // serializes as `false` each give a request that succeeds and quietly runs
