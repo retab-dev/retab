@@ -23,6 +23,7 @@ from .exceptions import (
 )
 from .resources import files, schemas, extractions, classifications, consensus, parses, splits, partitions, edits, workflows, tables, secrets, usage
 from .types.standards import PreparedRequest
+from .utils.uploads import check_document_request_size, plan_document_uploads, replace_uploaded_document
 
 logger = logging.getLogger("retab")
 
@@ -246,6 +247,30 @@ class Retab(BaseRetab):
         self.secrets = secrets.Secrets(client=self)
         self.usage = usage.Usage(client=self)
 
+    def _upload_inline_documents(self, data: object) -> object:
+        uploads = plan_document_uploads(data)
+        for upload in uploads:
+            session = self.files.create_upload(filename=upload.filename, size_bytes=len(upload.content), content_type=upload.content_type)
+            request = self.client.build_request(
+                session.upload_method or "PUT",
+                session.upload_url,
+                content=upload.content,
+                headers={**(session.upload_headers or {}), "Content-Type": upload.content_type},
+            )
+            # A signed storage request carries no Retab bearer credential.
+            request.headers.pop("Authorization", None)
+            try:
+                response = self.client.send(request, follow_redirects=False)
+            except httpx.HTTPError:
+                raise APIConnectionError("Direct document upload failed") from None
+            if not response.is_success:
+                raise APIError("Direct document upload failed", status_code=response.status_code)
+            reference = self.files.complete_upload(session.file_id)
+            data = replace_uploaded_document(data, upload, reference)
+        if uploads:
+            check_document_request_size(data)
+        return data
+
     def _request(
         self,
         method: str,
@@ -275,6 +300,9 @@ class Retab(BaseRetab):
         Raises:
             APIError: If request fails (AuthenticationError, ValidationError, etc.)
         """
+
+        if not files and not form_data:
+            data = self._upload_inline_documents(data)
 
         def raw_request() -> Any:
             url = self._prepare_url(endpoint)
@@ -336,6 +364,9 @@ class Retab(BaseRetab):
         raise_for_status: bool = False,
     ) -> bytes:
         """Makes a synchronous HTTP request and returns the raw response body."""
+
+        if not files and not form_data:
+            data = self._upload_inline_documents(data)
 
         def raw_request() -> bytes:
             url = self._prepare_url(endpoint)
@@ -408,6 +439,9 @@ class Retab(BaseRetab):
         Raises:
             APIError: If request fails (AuthenticationError, ValidationError, etc.)
         """
+
+        if not files and not form_data:
+            data = self._upload_inline_documents(data)
 
         def raw_request() -> Iterator[Any]:
             url = self._prepare_url(endpoint)
@@ -586,6 +620,30 @@ class AsyncRetab(BaseRetab):
         self.secrets = secrets.AsyncSecrets(client=self)
         self.usage = usage.AsyncUsage(client=self)
 
+    async def _upload_inline_documents(self, data: object) -> object:
+        uploads = plan_document_uploads(data)
+        for upload in uploads:
+            session = await self.files.create_upload(filename=upload.filename, size_bytes=len(upload.content), content_type=upload.content_type)
+            request = self.client.build_request(
+                session.upload_method or "PUT",
+                session.upload_url,
+                content=upload.content,
+                headers={**(session.upload_headers or {}), "Content-Type": upload.content_type},
+            )
+            # A signed storage request carries no Retab bearer credential.
+            request.headers.pop("Authorization", None)
+            try:
+                response = await self.client.send(request, follow_redirects=False)
+            except httpx.HTTPError:
+                raise APIConnectionError("Direct document upload failed") from None
+            if not response.is_success:
+                raise APIError("Direct document upload failed", status_code=response.status_code)
+            reference = await self.files.complete_upload(session.file_id)
+            data = replace_uploaded_document(data, upload, reference)
+        if uploads:
+            check_document_request_size(data)
+        return data
+
     async def _request(
         self,
         method: str,
@@ -614,6 +672,9 @@ class AsyncRetab(BaseRetab):
         Raises:
             APIError: If request fails (AuthenticationError, ValidationError, etc.)
         """
+
+        if not files and not form_data:
+            data = await self._upload_inline_documents(data)
 
         async def raw_request() -> Any:
             url = self._prepare_url(endpoint)
@@ -674,6 +735,9 @@ class AsyncRetab(BaseRetab):
         raise_for_status: bool = False,
     ) -> bytes:
         """Makes an asynchronous HTTP request and returns the raw response body."""
+
+        if not files and not form_data:
+            data = await self._upload_inline_documents(data)
 
         async def raw_request() -> bytes:
             url = self._prepare_url(endpoint)
@@ -746,6 +810,9 @@ class AsyncRetab(BaseRetab):
         Raises:
             APIError: If request fails (AuthenticationError, ValidationError, etc.)
         """
+
+        if not files and not form_data:
+            data = await self._upload_inline_documents(data)
 
         async def raw_request() -> AsyncIterator[Any]:
             url = self._prepare_url(endpoint)

@@ -109,6 +109,10 @@ func uploadFile(ctx context.Context, client *retab.Client, uploadPath string, fi
 	if filenameOverride != "" {
 		filename = filenameOverride
 	}
+	return uploadFileBytes(ctx, client, data, filename)
+}
+
+func uploadFileBytes(ctx context.Context, client *retab.Client, data []byte, filename string) (*retab.MIMEData, string, error) {
 	contentType := detectUploadContentType(filename, data)
 	sum := sha256.Sum256(data)
 	sha256Hash := hex.EncodeToString(sum[:])
