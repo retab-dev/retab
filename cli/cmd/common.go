@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
 	"errors"
@@ -1037,6 +1038,10 @@ func cliJSONRequestIntoCtx(ctx context.Context, cmd *cobra.Command, method strin
 		return err
 	}
 
+	body, err = prepareCLIInlineDocuments(ctx, cmd, body)
+	if err != nil {
+		return err
+	}
 	return doCLIJSONRequest(ctx, httpClient, baseURL, method, requestPath, query, body, apiKey, bearerToken, result)
 }
 
@@ -1065,6 +1070,10 @@ func cliRawRequestBytes(
 		return nil, err
 	}
 
+	body, err = prepareCLIInlineDocuments(ctx, cmd, body)
+	if err != nil {
+		return nil, err
+	}
 	return doCLIRawRequest(ctx, httpClient, baseURL, method, requestPath, query, body, accept, apiKey, bearerToken)
 }
 
@@ -1091,6 +1100,10 @@ func cliStreamLinesRequest(cmd *cobra.Command, method string, requestPath string
 		return err
 	}
 
+	body, err = prepareCLIInlineDocuments(ctx, cmd, body)
+	if err != nil {
+		return err
+	}
 	bodyBytes, err := json.Marshal(body)
 	if err != nil {
 		return fmt.Errorf("encode request body: %w", err)
@@ -1190,6 +1203,108 @@ func cliMultipartRequestInto(
 	}
 
 	return doCLIBodyRequest(ctx, httpClient, baseURL, method, requestPath, query, &body, writer.FormDataContentType(), apiKey, bearerToken, result)
+}
+
+// Large workflow inputs must reach storage before the processing request.
+// Transform only document slots, preserving arbitrary JSON inputs verbatim.
+func prepareCLIInlineDocuments(ctx context.Context, cmd *cobra.Command, body any) (any, error) {
+	encoded, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	const maxBodyBytes = 30 * 1024 * 1024
+	const maxInlineBytes = 20 * 1024 * 1024
+	if len(encoded) < maxInlineBytes {
+		return body, nil
+	}
+	var root map[string]json.RawMessage
+	if json.Unmarshal(encoded, &root) != nil || root == nil {
+		return body, nil
+	}
+	force := len(encoded) > maxBodyBytes
+	changed := false
+	var client *retab.Client
+	replace := func(raw json.RawMessage) (json.RawMessage, error) {
+		var doc struct {
+			Filename string `json:"filename"`
+			URL      string `json:"url"`
+		}
+		if json.Unmarshal(raw, &doc) != nil || doc.Filename == "" || !strings.HasPrefix(doc.URL, "data:") {
+			return raw, nil
+		}
+		header, content, ok := strings.Cut(doc.URL, ",")
+		if !force && base64.StdEncoding.DecodedLen(len(content)) <= maxInlineBytes {
+			return raw, nil
+		}
+		if !ok || !strings.HasSuffix(strings.ToLower(header), ";base64") {
+			return nil, fmt.Errorf("large inline documents must use base64 data URLs; upload the file first")
+		}
+		data, err := base64.StdEncoding.DecodeString(content)
+		if err != nil {
+			return nil, fmt.Errorf("invalid inline document base64")
+		}
+		if client == nil {
+			client, err = newClient(cmd)
+			if err != nil {
+				return nil, err
+			}
+		}
+		reference, _, err := uploadFileBytes(ctx, client, data, doc.Filename)
+		if err != nil {
+			return nil, err
+		}
+		if reference.URL == "" || strings.HasPrefix(reference.URL, "data:") {
+			return nil, fmt.Errorf("upload did not return a stored document reference")
+		}
+		var fields map[string]json.RawMessage
+		if err := json.Unmarshal(raw, &fields); err != nil {
+			return nil, err
+		}
+		fields["filename"], _ = json.Marshal(reference.Filename)
+		fields["url"], _ = json.Marshal(reference.URL)
+		changed = true
+		return json.Marshal(fields)
+	}
+	if raw, ok := root["document"]; ok {
+		root["document"], err = replace(raw)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if raw, ok := root["documents"]; ok {
+		var documents map[string]json.RawMessage
+		if json.Unmarshal(raw, &documents) == nil && documents != nil {
+			keys := make([]string, 0, len(documents))
+			for key := range documents {
+				keys = append(keys, key)
+			}
+			sort.Strings(keys)
+			for _, key := range keys {
+				documents[key], err = replace(documents[key])
+				if err != nil {
+					return nil, err
+				}
+			}
+			root["documents"], err = json.Marshal(documents)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	if !changed {
+		if force {
+			return nil, fmt.Errorf("request exceeds 30 MiB; upload documents first or reduce JSON inputs")
+		}
+		return body, nil
+	}
+	encoded, err = json.Marshal(root)
+	if err != nil {
+		return nil, err
+	}
+	if len(encoded) > maxBodyBytes {
+		return nil, fmt.Errorf("request exceeds 30 MiB after document upload; reduce JSON inputs")
+	}
+	return json.RawMessage(encoded), nil
 }
 
 func doCLIJSONRequest(

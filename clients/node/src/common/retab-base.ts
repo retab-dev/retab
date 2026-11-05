@@ -53,6 +53,96 @@ export class RetabBase {
     this.fetchImpl = options.fetch ?? fetch;
   }
 
+  private async prepareDocumentBody(body: unknown): Promise<unknown> {
+    if (!body || typeof body !== 'object' || Array.isArray(body)) return body;
+    const original = body as Record<string, unknown>;
+    const documents: Array<{ key?: string; value: Record<string, unknown> }> = [];
+    const add = (value: unknown, key?: string) => {
+      if (!value || typeof value !== 'object' || Array.isArray(value)) return;
+      const doc = value as Record<string, unknown>;
+      if (
+        typeof doc.filename === 'string' &&
+        typeof doc.url === 'string' &&
+        doc.url.startsWith('data:')
+      ) {
+        documents.push({ key, value: doc });
+      }
+    };
+    add(original.document);
+    if (
+      original.documents &&
+      typeof original.documents === 'object' &&
+      !Array.isArray(original.documents)
+    ) {
+      for (const [key, value] of Object.entries(original.documents)) add(value, key);
+    }
+    if (documents.length === 0) return body;
+    const maxBodyBytes = 30 * 1024 * 1024;
+    const mustOffloadAll = new TextEncoder().encode(JSON.stringify(body)).byteLength > maxBodyBytes;
+    const prepared = { ...original };
+    const mapped = { ...(original.documents as Record<string, unknown> | undefined) };
+    for (const { key, value: doc } of documents) {
+      const url = doc.url as string;
+      const comma = url.indexOf(',');
+      const header = url.slice(5, comma);
+      const encoded = url.slice(comma + 1);
+      const decodedSize =
+        Math.floor((encoded.length * 3) / 4) -
+        (encoded.endsWith('==') ? 2 : encoded.endsWith('=') ? 1 : 0);
+      if (!mustOffloadAll && decodedSize <= 20 * 1024 * 1024) continue;
+      if (
+        comma < 0 ||
+        !header.toLowerCase().endsWith(';base64') ||
+        !/^[A-Za-z0-9+/]*={0,2}$/.test(encoded)
+      ) {
+        throw new Error(
+          'Large inline documents must use valid base64 data URLs; upload the file first.'
+        );
+      }
+      const bytes = Buffer.from(encoded, 'base64');
+      const contentType = header.slice(0, -7) || 'application/octet-stream';
+      const session = await this.request<{
+        fileId: string;
+        uploadUrl: string;
+        uploadMethod?: string;
+        uploadHeaders?: Record<string, string>;
+      }>({
+        method: 'POST',
+        path: '/v1/files/upload',
+        body: {
+          filename: doc.filename,
+          content_type: contentType,
+          size_bytes: bytes.byteLength,
+        },
+      });
+      if (!session.fileId || !session.uploadUrl)
+        throw new Error('Retab upload session is missing its file ID or upload URL.');
+      const uploaded = await this.fetchImpl(session.uploadUrl, {
+        method: session.uploadMethod || 'PUT',
+        headers: { ...session.uploadHeaders, 'Content-Type': contentType },
+        body: new Uint8Array(bytes),
+        redirect: 'error',
+      });
+      if (!uploaded.ok)
+        throw new Error('Retab direct file upload failed (HTTP ' + uploaded.status + ').');
+      const reference = await this.request<{ filename: string; url: string }>({
+        method: 'POST',
+        path: '/v1/files/upload/' + encodeURIComponent(session.fileId) + '/complete',
+        body: {},
+      });
+      if (!reference.url || reference.url.startsWith('data:'))
+        throw new Error('Retab upload did not return a stored document reference.');
+      const replacement = { ...doc, filename: reference.filename, url: reference.url };
+      if (key === undefined) prepared.document = replacement;
+      else mapped[key] = replacement;
+    }
+    if (original.documents !== undefined) prepared.documents = mapped;
+    if (new TextEncoder().encode(JSON.stringify(prepared)).byteLength > maxBodyBytes) {
+      throw new Error('Retab request exceeds 30 MiB after document upload; reduce JSON inputs.');
+    }
+    return prepared;
+  }
+
   async request<T>(opts: RequestOptions): Promise<T> {
     const url = new URL(this.baseUrl.replace(/\/$/, '') + opts.path);
     if (opts.query) {
@@ -85,7 +175,7 @@ export class RetabBase {
       bodyInit = opts.body;
     } else if (opts.body !== undefined) {
       headers['Content-Type'] = 'application/json';
-      bodyInit = JSON.stringify(opts.body);
+      bodyInit = JSON.stringify(await this.prepareDocumentBody(opts.body));
     }
     const res = await this.fetchImpl(url, { method: opts.method, headers, body: bodyInit });
     if (!res.ok) {
@@ -123,7 +213,7 @@ export class RetabBase {
       bodyInit = opts.body;
     } else if (opts.body !== undefined) {
       headers['Content-Type'] = 'application/json';
-      bodyInit = JSON.stringify(opts.body);
+      bodyInit = JSON.stringify(await this.prepareDocumentBody(opts.body));
     }
     const res = await this.fetchImpl(url, { method: opts.method, headers, body: bodyInit });
     if (!res.ok) {

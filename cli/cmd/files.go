@@ -351,6 +351,10 @@ func uploadFile(ctx context.Context, client *retab.Client, uploadPath string, fi
 		return nil, "", err
 	}
 	filename := effectiveUploadFilename(uploadPath, filenameOverride)
+	return uploadFileBytes(ctx, client, data, filename)
+}
+
+func uploadFileBytes(ctx context.Context, client *retab.Client, data []byte, filename string) (*retab.MIMEData, string, error) {
 	// Derive the content type from the name actually being recorded, not from
 	// the local path. The server re-applies extension->mime to the stored
 	// filename, so declaring application/pdf alongside a stored name of
