@@ -70,15 +70,28 @@ def test_large_document_upload_precedes_submission_and_survives_retry() -> None:
 
 
 @pytest.mark.asyncio
-async def test_async_upload_uses_combined_request_budget(monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.parametrize("as_array", [False, True])
+async def test_async_upload_uses_combined_request_budget(monkeypatch: pytest.MonkeyPatch, as_array: bool) -> None:
     monkeypatch.setattr(uploads, "MAX_DOCUMENT_REQUEST_BYTES", 1000)
     calls: list[httpx.Request] = []
-    body = {"documents": {"one": document(500), "two": document(500)}}
+    first, last = document(500), document(500)
+    remote = {"filename": "remote.pdf", "url": "https://example.com/remote.pdf"}
+    body = {"documents": [first, remote, last] if as_array else {"one": first, "two": last}}
+    original = json.dumps(body)
+    endpoint = "/v1/schemas/generate" if as_array else "/v1/workflows/runs"
     async with AsyncRetab(api_key="test_key") as client:
         await client.client.aclose()
         client.client = httpx.AsyncClient(transport=storage_transport(calls))
-        assert await client._request("POST", "/v1/workflows/runs", data=body) == {"id": "run_1"}
+        assert await client._request("POST", endpoint, data=body) == {"id": "run_1"}
     assert len([request for request in calls if request.url.host == "upload.example"]) == 2
+    submitted = json.loads(calls[-1].content)["documents"]
+    if as_array:
+        assert isinstance(submitted, list)
+        assert submitted[1] == remote
+        assert submitted[0]["url"] == submitted[2]["url"] == "https://storage.retab.com/file_large"
+    else:
+        assert isinstance(submitted, dict)
+    assert json.dumps(body) == original
 
 
 def test_small_documents_and_unrelated_json_are_preserved() -> None:
