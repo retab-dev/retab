@@ -56,8 +56,8 @@ export class RetabBase {
   private async prepareDocumentBody(body: unknown): Promise<unknown> {
     if (!body || typeof body !== 'object' || Array.isArray(body)) return body;
     const original = body as Record<string, unknown>;
-    const documents: Array<{ key?: string; value: Record<string, unknown> }> = [];
-    const add = (value: unknown, key?: string) => {
+    const documents: Array<{ key?: string | number; value: Record<string, unknown> }> = [];
+    const add = (value: unknown, key?: string | number) => {
       if (!value || typeof value !== 'object' || Array.isArray(value)) return;
       const doc = value as Record<string, unknown>;
       if (
@@ -69,18 +69,20 @@ export class RetabBase {
       }
     };
     add(original.document);
-    if (
-      original.documents &&
-      typeof original.documents === 'object' &&
-      !Array.isArray(original.documents)
-    ) {
+    if (Array.isArray(original.documents)) {
+      original.documents.forEach((value, index) => add(value, index));
+    } else if (original.documents && typeof original.documents === 'object') {
       for (const [key, value] of Object.entries(original.documents)) add(value, key);
     }
     if (documents.length === 0) return body;
     const maxBodyBytes = 30 * 1024 * 1024;
     const mustOffloadAll = new TextEncoder().encode(JSON.stringify(body)).byteLength > maxBodyBytes;
     const prepared = { ...original };
-    const mapped = { ...(original.documents as Record<string, unknown> | undefined) };
+    const array = Array.isArray(original.documents) ? [...original.documents] : undefined;
+    const mapped =
+      !array && original.documents && typeof original.documents === 'object'
+        ? { ...(original.documents as Record<string, unknown>) }
+        : undefined;
     for (const { key, value: doc } of documents) {
       const url = doc.url as string;
       const comma = url.indexOf(',');
@@ -134,9 +136,11 @@ export class RetabBase {
         throw new Error('Retab upload did not return a stored document reference.');
       const replacement = { ...doc, filename: reference.filename, url: reference.url };
       if (key === undefined) prepared.document = replacement;
-      else mapped[key] = replacement;
+      else if (typeof key === 'number' && array) array[key] = replacement;
+      else if (typeof key === 'string' && mapped) mapped[key] = replacement;
     }
-    if (original.documents !== undefined) prepared.documents = mapped;
+    if (array) prepared.documents = array;
+    else if (mapped) prepared.documents = mapped;
     if (new TextEncoder().encode(JSON.stringify(prepared)).byteLength > maxBodyBytes) {
       throw new Error('Retab request exceeds 30 MiB after document upload; reduce JSON inputs.');
     }
