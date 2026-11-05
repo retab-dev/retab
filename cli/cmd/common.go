@@ -1287,6 +1287,7 @@ func prepareCLIInlineDocuments(ctx context.Context, cmd *cobra.Command, body any
 	}
 	if raw, ok := root["documents"]; ok {
 		var documents map[string]json.RawMessage
+		var array []json.RawMessage
 		if json.Unmarshal(raw, &documents) == nil && documents != nil {
 			keys := make([]string, 0, len(documents))
 			for key := range documents {
@@ -1300,6 +1301,17 @@ func prepareCLIInlineDocuments(ctx context.Context, cmd *cobra.Command, body any
 				}
 			}
 			root["documents"], err = json.Marshal(documents)
+			if err != nil {
+				return nil, err
+			}
+		} else if json.Unmarshal(raw, &array) == nil && array != nil {
+			for index := range array {
+				array[index], err = replace(array[index])
+				if err != nil {
+					return nil, err
+				}
+			}
+			root["documents"], err = json.Marshal(array)
 			if err != nil {
 				return nil, err
 			}

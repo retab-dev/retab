@@ -13,7 +13,7 @@ MAX_DOCUMENT_REQUEST_BYTES = 30 * 1024 * 1024
 
 
 class InlineDocumentUpload(BaseModel):
-    document_key: str | None
+    document_key: str | int | None
     filename: str
     content_type: str
     content: bytes = Field(repr=False)
@@ -22,11 +22,13 @@ class InlineDocumentUpload(BaseModel):
 def plan_document_uploads(data: object) -> list[InlineDocumentUpload]:
     if not isinstance(data, dict):
         return []
-    candidates: list[tuple[str | None, object]] = [(None, data.get("document"))]
+    candidates: list[tuple[str | int | None, object]] = [(None, data.get("document"))]
     documents = data.get("documents")
     if isinstance(documents, dict):
         candidates.extend((key, value) for key, value in documents.items() if isinstance(key, str))
-    inline: list[tuple[str | None, MIMEData]] = []
+    elif isinstance(documents, list):
+        candidates.extend(enumerate(documents))
+    inline: list[tuple[str | int | None, MIMEData]] = []
     for key, value in candidates:
         if not isinstance(value, dict):
             continue
@@ -60,6 +62,10 @@ def replace_uploaded_document(data: object, upload: InlineDocumentUpload, refere
     result = dict(data)
     if upload.document_key is None:
         result["document"] = {**data["document"], "filename": reference.filename, "url": reference.url}
+    elif isinstance(upload.document_key, int):
+        array = list(data["documents"])
+        array[upload.document_key] = {**array[upload.document_key], "filename": reference.filename, "url": reference.url}
+        result["documents"] = array
     else:
         documents = dict(data["documents"])
         documents[upload.document_key] = {**documents[upload.document_key], "filename": reference.filename, "url": reference.url}
